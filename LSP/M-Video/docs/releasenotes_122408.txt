@@ -1,0 +1,11 @@
+/* Version 0.0.1*/
+/* Label ST_LSP_02_10_001_AVM */
+In This release
+***********
+SD loopback for DM365, DM355, DM6446
+
+Yet to ADD
+********
+Component display to DM6446
+LCD display for DM355, DM6446, DM365
+Automating the booting and image loading.

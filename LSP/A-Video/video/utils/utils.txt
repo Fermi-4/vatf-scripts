@@ -1,0 +1,28 @@
+NAME
+	blank
+	blend
+	rgbwrite
+
+SYNOPSIS
+	blank [options...]
+	blend [options...]
+	rgbwrite [options...]
+
+DESCRIPTION
+
+OPTIONS
+
+EXAMPLE USAGE
+
+COPYRIGHT
+
+KNOWN ISSUES
+
+VERSION
+	LSP 1.20
+
+CHANGELOG
+	1.0
+
+SEE ALSO
+       For Video User Guides, see PSP_##_##_##_###/docs directory.

@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "USBView2", "USBView2\USBView2.vcproj", "{16027DE1-7291-403B-9EA2-D3E200292F97}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{16027DE1-7291-403B-9EA2-D3E200292F97}.Debug|Win32.ActiveCfg = Debug|Win32
+		{16027DE1-7291-403B-9EA2-D3E200292F97}.Debug|Win32.Build.0 = Debug|Win32
+		{16027DE1-7291-403B-9EA2-D3E200292F97}.Release|Win32.ActiveCfg = Release|Win32
+		{16027DE1-7291-403B-9EA2-D3E200292F97}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,50 @@
+# MakeFile function     :: MakeFile for compiling v4l2 display test suite for OMAP35x platform 
+# Creation  Date        :: 30-Sep-2008
+# Author                :: Prathap.M.S
+# Modification Details  :: Modified for -----
+# Modification  Date    :: 
+# Revision              :: 0.10 
+
+#Version string for the test suite. Change as required
+VERSION_STRING  = "0.10"
+
+#Tool chain path. Change based on product/platform used
+TOOL_PREFIX     = /opt/omap/arm-2007q3/bin/arm-none-linux-gnueabi-
+CC              = $(TOOL_PREFIX)gcc 
+
+#Flags for compilation
+CFLAGS          = -g -Wall -O1 -fomit-frame-pointer
+
+#Path of Kernel include directory- Change as per your settings/setup path
+KERNEL_INCLUDE_DIR = /home/som/pratap/REL_OMAP35x_LINUX_PSP_1.0.0/PSP_1_0_0/src/linux/kernel_org/2.6_kernel/include
+
+#LD flags
+LDFLAGS         = -g -static
+
+#Installation directory - Change based on desired path for placing test suite executable
+INSTDIR         = ../bin
+
+#Path of header files to be included
+INCLUDES        = -I $(KERNEL_INCLUDE_DIR) -I ../inc
+
+#List of source files- Update this on adding a new C file
+SOURCES := \
+        testcases/st_v4l2_display_stability_test.c\
+        testcases/st_v4l2_display_test.c\
+        testcases/st_v4l2_display_test_from_file.c\
+        testcases/st_v4l2_display_api_test.c\
+        interface/st_v4l2_display_interface_omap35x.c\
+        parser/st_v4l2_display_common.c\
+        parser/st_v4l2_display_parser.c\
+
+
+#Rules to build
+all: 
+	$(CC) $(LDFLAGS) -D VERSION_STRING=$(VERSION_STRING) -o v4l2DisplayTests $(INCLUDES) $(SOURCES) 
+	mv v4l2DisplayTests $(INSTDIR) 
+
+#Rule to clean
+clean:
+	rm -f  *.o 
+	rm -f  v4l2DisplayTests 
+

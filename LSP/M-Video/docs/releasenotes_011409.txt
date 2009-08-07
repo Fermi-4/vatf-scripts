@@ -1,0 +1,12 @@
+/* Version 0.0.1*/
+/* Label ST_LSP_02_10_008_AVM */
+In This release
+***********
+HD loopback for DM365
+
+Yet to ADD
+********
+IPIPE support
+Component display to DM6446
+LCD display for DM355, DM6446, DM365
+Automating the booting and image loading.
