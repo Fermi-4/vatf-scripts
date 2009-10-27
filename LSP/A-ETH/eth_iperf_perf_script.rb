@@ -34,14 +34,14 @@ def run
 		puts iface
 		puts "* * * * * * * * * * * * * "
     
-    puts @equipment['pc1'].send_cmd("ifconfig #{iface}", @equipment['dut1'].prompt)
+    puts @equipment['pc1'].send_cmd("ifconfig #{iface}", @equipment['pc1'].prompt)
 		puts "* * * * * * * * * * * * * "
 		
     dest_ip = reg_ensureb(/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/, 1)
 		
 		puts "default_perf_iperf_script_run-2: Checking link continuity."
 			
-    @equipment['dut1'].send_cmd("ping -c 4 #{@equipment['pc1'].telnet_ip}", /4 received/)
+    @equipment['dut1'].send_cmd("ping -c 4 #{@equipment['pc1'].telnet_ip}", /4\s*(?:packets)*\s*received/i)
 			
     if @equipment['dut1'].is_timeout
       result = 4
@@ -193,13 +193,13 @@ private
     # *********************** setup the iperf server side PC/DUT ***********************
 		if proto == 'tcp'
 			puts "eth_iperf_perf_script-7a - Starting Iperf Server TCP on Linux PC."
-			@equipment['pc1'].send_cmd("./iperf -s &> perf.log", /\]\s+\d+/)
+			@equipment['pc1'].send_cmd("./iperf -s &> perf.log", @equipment['pc1'].prompt)
 		elsif proto == 'mlti'
 			puts "eth_iperf_perf_script-7b - Starting Iperf Multicast TCP on Linux PC."
-			@equipment['pc1'].send_cmd("./iperf -s -u -B 224.0.36.36 &> perf.log", /\]\s+\d+/)
+			@equipment['pc1'].send_cmd("./iperf -s -u -B 224.0.36.36 &> perf.log", @equipment['pc1'].prompt)
 		else
 			puts "eth_iperf_perf_script-7c - Starting Iperf Server UDP on Linux PC."
-			@equipment['pc1'].send_cmd("./iperf -u -s &> perf.log", /\]\s+\d+/)
+			@equipment['pc1'].send_cmd("./iperf -u -s &> perf.log", @equipment['pc1'].prompt)
 		end
 				
 		response = @equipment['pc1'].response
@@ -222,13 +222,13 @@ private
 			
     if proto == 'tcp'
       puts "eth_iperf_perf_script-8a - Transferring iperf TCP data to and from PC."
-			@equipment['dut1'].send_cmd("./iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -d  >perf.log", /@/, duration.to_i + 60)
+			@equipment['dut1'].send_cmd("./iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -d  >perf.log", @equipment['dut1'].prompt, duration.to_i + 60)
     elsif proto == 'mlti'
       puts "eth_iperf_perf_script-8b - Transferring iperf Client Multicast CDC UDP data from Linux PC."
-			@equipment['dut1'].send_cmd("./iperf -c 224.0.36.36 -u -w #{packet_size}k -t #{duration} -b 30M >perf.log", /@/, duration.to_i + 60)
+			@equipment['dut1'].send_cmd("./iperf -c 224.0.36.36 -u -w #{packet_size}k -t #{duration} -b 30M >perf.log", @equipment['dut1'].prompt, duration.to_i + 60)
     else
       puts "eth_iperf_perf_script-8c - Transferring iperf CDC UDP data from DUT."
-			@equipment['dut1'].send_cmd("./iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -u -b #{bw_size}m >perf.log", /@/, duration.to_i + 60)
+			@equipment['dut1'].send_cmd("./iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -u -b #{bw_size}m >perf.log", @equipment['dut1'].prompt, duration.to_i + 60)
     end
 			
 			# *********************** check for errors ***********************

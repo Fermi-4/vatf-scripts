@@ -39,7 +39,11 @@ class V4l2_capture_run_params < Video_run_params
         dev_node        = params.params_chan.dev_node[0]
         buffers   		= params.params_chan.number_of_buffers[0] 
         frames   		= params.params_chan.number_of_frames[0] 
-        @test_cmd  		= "pspTest ThruPut FRv4l2capture #{dev_node} #{buffers} #{frames}"  
+        mode   			= params.params_chan.mode[0] 
+        input   			= params.params_chan.input[0] 
+        options   			= params.params_chan.options[0] 
+
+        @test_cmd  		= "pspTest ThruPut FRv4l2capture #{dev_node} #{buffers} #{frames} #{mode} #{input} #{options}"  
     	@test_regex 	= /Capture\s*frame\s*rate:\s*([\d|\.]+).*percentage\s*cpu\s*load:\s*([\d|\.]+)/mi
     	@test_timeout 	= 2+(frames.to_i/5)   # Assumes that the DUT is doing at least 5 frames per second
     end

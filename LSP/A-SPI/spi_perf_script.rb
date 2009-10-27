@@ -28,7 +28,7 @@ def run_perf_test(is_read, mnt_point, buffer_size, file_size, counter)
     end  
     dev_node = @test_params.params_chan.dev_node[0]
     sleep 2
-    @equipment['dut1'].send_cmd("./pspTest ThruPut #{action_cmd} #{dev_node} #{buffer_size} #{file_size}",
+    @equipment['dut1'].send_cmd("pspTest ThruPut #{action_cmd} #{dev_node} #{buffer_size} #{file_size}",
                                 #/#{parse_txt}:\s+Kbits\/Sec:\s+[\d\.]+/,
                                 /#{parse_txt}:\s+percentage\s+cpu\s+load:\s+[\d|\.]+%/,
                                 600)   

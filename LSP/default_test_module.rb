@@ -6,24 +6,66 @@ module LspTestScript
     class TargetCommand
         attr_accessor :cmd_to_send, :pass_regex, :fail_regex, :ruby_code
     end
-    
-    include Bootscript, Boot
+       
+    include Boot
     public
+    
+    def samba_root_path
+      @samba_root_path
+    end
+    
+    def nfs_root_path
+      @nfs_root_path
+    end
+    
+   
+    
     def setup
         puts "default.setup"
-        # Boot DUT        
+        # Initialize some test variables       
         tester_from_cli  = @tester.downcase
         target_from_db   = @test_params.target.downcase
         platform_from_db = @test_params.platform.downcase
-        dst_folder = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['server1'].samba_root_path}\\#{tester_from_cli}\\#{target_from_db}\\#{platform_from_db}"
-        boot_params = {'platform' => platform_from_db, 'image_path' => @test_params.kernel, 'tftp_path' => @equipment['server1'].tftp_path, 'tftp_ip' => @equipment['server1'].telnet_ip,  'samba_path' => dst_folder}
+				
+				# Install Filesystem (if specified)
+				begin
+					nfs 	 = @test_params.nfs
+					nandfs = @test_params.nandfs
+					ramfs  = @test_params.ramfs
+				rescue UndefinedSwAsset=>e
+				end
+				samba_root_path = @equipment['server1'].samba_root_path
+				nfs_root_path		= @equipment['server1'].nfs_root_path
+				if nfs or nandfs or ramfs
+				  fs = ([nfs, nandfs, ramfs].select {|f| f != nil})[0]
+          fs.gsub!(/\\/,'/')
+          build_id, build_name = /\/([^\/\\]+?)\/([\w\.\-]+?)$/.match("#{fs.strip}").captures
+          @equipment['server1'].send_cmd("mkdir -p -m 777  #{nfs_root_path}/autofs", @equipment['server1'].prompt, 10)  if !File.directory?("\\\\#{@equipment['server1'].telnet_ip}\\#{samba_root_path}\\autofs")		
+					samba_root_path = samba_root_path + "\\autofs\\#{build_id}"
+					nfs_root_path 	= nfs_root_path + "/autofs/#{build_id}"
+					# Copy  nfs filesystem to linux server and untar it if it doesn't exist
+					if nfs and  !File.directory?("\\\\#{@equipment['server1'].telnet_ip}\\#{samba_root_path}\\usr")
+            @equipment['server1'].send_cmd("mkdir -p  #{nfs_root_path}", @equipment['server1'].prompt, 10) 		
+						BuildClient.copy(@test_params.nfs, "\\\\#{@equipment['server1'].telnet_ip}\\#{samba_root_path}\\#{File.basename(@test_params.nfs)}")	
+						@equipment['server1'].send_cmd("cd #{nfs_root_path}", @equipment['server1'].prompt, 10) 		
+            @equipment['server1'].send_sudo_cmd("tar -xvzf #{build_name}", @equipment['server1'].prompt, 300)
+            @equipment['server1'].send_sudo_cmd("mkdir -p -m 777 #{nfs_root_path}/test", @equipment['server1'].prompt, 10)
+          end
+					# Need to add logic to handle nandfs and ramfs
+				end
+				LspTestScript.set_paths(samba_root_path, nfs_root_path)
+				# Boot DUT
+        samba_path = "\\\\#{@equipment['server1'].telnet_ip}\\#{samba_root_path}\\test\\#{tester_from_cli}\\#{target_from_db}\\#{platform_from_db}\\bin"
+				nfs_path   = "/test/#{tester_from_cli}/#{target_from_db}/#{platform_from_db}/bin"
+        boot_params = {'power_handler'=> @power_handler, 'platform' => platform_from_db, 'tester' => tester_from_cli, 'target' => target_from_db ,'image_path' => @test_params.kernel, 'server' => @equipment['server1'],  'samba_path' => samba_path, 'nfs_root' => nfs_root_path, 'nfs_path' => "#{nfs_root_path}#{nfs_path}"}
         boot_params['bootargs'] = @test_params.params_chan.bootargs[0] if @test_params.params_chan.instance_variable_defined?(:@bootargs)
         @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
-        boot_dut(boot_params) if Boot::boot_required?(@old_keys, @new_keys) # call bootscript if required
+        @equipment['dut1'].boot(boot_params) if Boot::boot_required?(@old_keys, @new_keys) # call bootscript if required
         # by now, the dut should already login and is up; if not, dut may hang.
         raise "UUT may be hanging!" if !is_uut_up?
-        # Copy executable sources to NFS server
-        if @test_params.params_chan.instance_variable_defined?(:@target_sources) 
+        
+				# Copy executable sources to NFS server (if filesystem was not specified and there are @target_sources
+        if @test_params.params_chan.instance_variable_defined?(:@target_sources) && !(nfs or nandfs or ramfs)
             files_array = Array.new
             src_folder = @view_drive+@test_params.params_chan.target_sources[0].to_s
             puts "target_source_drive is #{@target_source_drive}"
@@ -37,7 +79,7 @@ module LspTestScript
             dst_folder_regex  = Regexp.new("#{last_folder}\\\\.+")
             files_array.each {|f|
               if File.extname(f) != '.yuv' && File.extname(f) != '.raw' && File.extname(f) != 'bmp' && File.extname(f) != 'rgb' && File.extname(f) != 'pdf' && File.extname(f) != 'doc' then
-                dst_path   = dst_folder+"\\"+dst_folder_regex.match(f).to_s
+                dst_path   = samba_path+"\\..\\"+dst_folder_regex.match(f).to_s
                 BuildClient.copy(f, dst_path)
               end
             }
@@ -67,12 +109,12 @@ module LspTestScript
             # sometimes, the one which is copied over is empty. so add delay here.
             sleep 1
             # copy the output file(s) under bin to target.
-            @equipment['dut1'].send_cmd("mkdir -p /#{tester_from_cli}/#{target_from_db}/#{platform_from_db}/bin/", @equipment['dut1'].prompt, 10)
-            @equipment['dut1'].send_cmd("cp -f /#{tester_from_cli}/#{target_from_db}/#{platform_from_db}/#{last_folder}/bin/* /#{tester_from_cli}/#{target_from_db}/#{platform_from_db}/bin/", @equipment['dut1'].prompt, 30)
+            @equipment['dut1'].send_cmd("mkdir -p -m 777 #{nfs_path}", @equipment['dut1'].prompt, 10)
+            @equipment['dut1'].send_cmd("cp -f #{nfs_path}/../#{last_folder}/bin/* #{nfs_path}", @equipment['dut1'].prompt, 30)
         end 
 
         # Leave target in appropriate directory
-        @equipment['dut1'].send_cmd("cd /#{tester_from_cli}/#{target_from_db}/#{platform_from_db}/bin/\n", /#{@equipment['dut1'].prompt}/, 10)
+        @equipment['dut1'].send_cmd("cd #{nfs_path}\n", /#{@equipment['dut1'].prompt}/, 10)  if !(nfs or nandfs or ramfs)
         
     end
     
@@ -202,6 +244,12 @@ module LspTestScript
       keys = @test_params.platform.to_s
       keys
     end
+    
+    def set_paths(samba, nfs)
+      @samba_root_path = samba
+      @nfs_root_path   = nfs
+    end
+    
 end
    
 

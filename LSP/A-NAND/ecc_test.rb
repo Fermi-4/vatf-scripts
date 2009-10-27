@@ -20,11 +20,11 @@ def run
  
  
   # copy original nandpage hex and nandpage with errbits to the test location
-  test_folder = "/#{@tester}/#{@test_params.target.downcase}/#{@test_params.platform.downcase}/#{page_size}_nand"
-  test_dir_in_server = "#{@equipment['server1'].nfs_root_path}#{test_folder}"
+  test_folder = "/test/#{@tester}/#{@test_params.target.downcase}/#{@test_params.platform.downcase}/#{page_size}_nand"
+  test_dir_in_server = "#{LspTestScript.nfs_root_path()}#{test_folder}"
   @equipment['server1'].send_cmd("mkdir -p #{test_dir_in_server}", @equipment['server1'].prompt, 10)
 
-  dst_folder = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['server1'].samba_root_path}#{test_folder.gsub('/',"\\")}"
+  dst_folder = "\\\\#{@equipment['server1'].telnet_ip}\\#{LspTestScript.samba_root_path()}#{test_folder.gsub('/',"\\")}"
   puts "dst_folder is #{dst_folder}"
   src_file = @view_drive + hex_file_orig_nandpage.to_s
   BuildClient.copy(src_file, dst_folder+"\\"+File.basename(hex_file_orig_nandpage))
@@ -38,6 +38,10 @@ def run
   @equipment['dut1'].send_cmd("flash_eraseall #{dev_node}", @equipment['dut1'].prompt, 60)
 
   @equipment['dut1'].send_cmd("nandwrite -n -o #{dev_node} #{bin_file_w_errbits}", @equipment['dut1'].prompt, 60)
+  if /error|no\s+such/.match(@equipment['dut1'].response)
+    set_result(FrameworkConstants::Result[:fail], "nandwrite did not success.")
+    return
+  end
   
   @equipment['dut1'].send_cmd("nanddump -p -l #{page_size} #{dev_node}", @equipment['dut1'].prompt, 60)
   
@@ -47,18 +51,24 @@ def run
   @equipment['server1'].send_cmd("cd #{test_dir_in_server}", @equipment['server1'].prompt, 30)
   @equipment['server1'].send_cmd("xxd #{bin_file_w_correction} #{hex_file_w_correction}", @equipment['server1'].prompt, 30)
   @equipment['server1'].send_cmd("diff #{hex_file_orig_nandpage} #{hex_file_w_correction}", @equipment['server1'].prompt, 60)
+  @equipment['server1'].send_cmd("diff --brief #{hex_file_orig_nandpage} #{hex_file_w_correction}", @equipment['server1'].prompt, 60)
   
   # check if there is difference
   puts ">>>> response: "
   puts @equipment['server1'].response
   puts ""
   puts ">>>> end of response"
-  if /\d+c\d+/.match(@equipment['server1'].response) && /[<>]/.match(@equipment['server1'].response)
+  #if /\d+c\d+|no\s+such/.match(@equipment['server1'].response) && /[<>]/.match(@equipment['server1'].response)
+  if /Files.*differ|no\s+such/.match(@equipment['server1'].response) 
     set_result(FrameworkConstants::Result[:fail], "corrected nandpage is not the same as the orignal nandpage.")
     return
   end
 
   set_result(FrameworkConstants::Result[:pass], result_msg)
+  
+  #temp clean up to clear any ECC introduced.
+  # @equipment['dut1'].send_cmd("flash_eraseall #{dev_node}", @equipment['dut1'].prompt, 60)
+  # @equipment['dut1'].send_cmd("flash_eraseall /dev/mtd3", @equipment['dut1'].prompt, 240)
 end
 
 def clean

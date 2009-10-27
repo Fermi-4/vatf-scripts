@@ -34,7 +34,7 @@ def run_perf_test(is_read, mnt_point, buffer_size, file_size, counter)
     @equipment['dut1'].send_cmd("cat /proc/mtd", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("df -h", @equipment['dut1'].prompt, 10)
     sleep 5
-    @equipment['dut1'].send_cmd("./pspTest ThruPut #{action_cmd} #{devchar_node} #{buffer_size} #{file_size}",
+    @equipment['dut1'].send_cmd("pspTest ThruPut #{action_cmd} #{devchar_node} #{buffer_size} #{file_size}",
                                 /#{parse_txt}:\s+percentage\s+cpu\s+load:\s+[\d|\.]+%/,
                                 900) #orignal is 5400. too long. 900 should be enough. if 0.2MB/S for 100MB, it only need 500s.
     if @equipment['dut1'].is_timeout
