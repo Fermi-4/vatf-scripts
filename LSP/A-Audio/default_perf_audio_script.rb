@@ -81,7 +81,7 @@ def run
                     @equipment['dut1'].send_cmd("pspTest #{test_cmd} #{dev_node} #{sampling_rate} #{buffer_size} #{data_size}",
                                                 test_regex,
                                                 10+(data_size.to_i/sampling_rate.to_i/4))   
-                    result = 1 if @equipment['dut1'].is_timeout
+                    result = 1 if @equipment['dut1'].timeout?
                     break if result > 0
                     test_values = test_regex.match(@equipment['dut1'].response).captures
                     table_row = run_params.get_table_row(type,test_values)

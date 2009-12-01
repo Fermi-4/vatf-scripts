@@ -22,9 +22,13 @@ class DemoAppEncodeSubjectiveTestPlan < TestPlan
          '720p60' => [1280,720],        
          '1080i50' => [1920,1080],
          '1080i60' => [1920,1080],
+         '1080p50' => [1920,1080],
+         '1080p60' => [1920,1080],
+         '1080p25' => [1920,1080],
+         '1080p30' => [1920,1080],  
 	  }
       params = {
-          'command_name'		=> ['encode', 'encodedecode', 'multi_encode'],
+          'command_name'		=> ['encode', 'encodedecode'],
           'media_source'		=> ['camera', 'dvd'],
           'disable_deinterlace'	=> ['yes', 'no'],
           'enable_osd'			=> ['yes', 'no'],
@@ -37,11 +41,7 @@ class DemoAppEncodeSubjectiveTestPlan < TestPlan
           'video_input'			=> ['composite', 'svideo', 'component'],
           'video_signal_format' => ['525', '625', '1080i50', '1080i59', '1080i60', '720p50', '720p59', '720p60', '1080p23', '1080p24', '1080p25', '1080p29', '1080p30', '1080p50', '1080p59', '1080p60', 'dummy'],
           'display_out'			=> ['composite', 'component', 'svideo'],
-          # Image-Related
-          'image_type' 			=> ['off', 'jpeg'],
-          'image_resolution'	=> ['176x120', '352x240', '720x480', '176x144', '352x288', '720x576',   '128x96', '320x240', '640x480', '704x288', '704x480', '704x576', '800x600', '1024x768', '1280x720', '1280x960', '1920x1080'],
-          'image_qvalue'	   	=> [25,50,75,100],
-	      # Speech-Related
+          # Speech-Related
           'speech_type' 		=> ['off', 'g711'],
           # Audio-Related
           'audio_type' 			=> ['off', 'aac'],
@@ -119,8 +119,6 @@ class DemoAppEncodeSubjectiveTestPlan < TestPlan
          format_constraints << 'IF [video_signal_format] = "'+ format + '" THEN [video_resolution_and_bit_rate] NOT IN {'+ current_group +'};'
      end
      format_constraints << 'IF [video_type] = "off" THEN [video_resolution_and_bit_rate] = "' + @res_params['video_resolution_and_bit_rate'][0] + '";' 
-     format_constraints << 'IF [image_type] = "off" THEN [image_resolution] = "' + @res_params['image_resolution'][0] + '";'
-     format_constraints << 'IF [image_type] = "off" THEN [image_qvalue] = ' + @res_params['image_qvalue'][0].to_s + ';'
      format_constraints << 'IF [audio_type] = "off" THEN [audio_bitrate] = ' + @res_params['audio_bitrate'][0].to_s + ';'
      format_constraints | [
       'IF [speech_type] <> "off" THEN [audio_type] = "off";',
@@ -143,34 +141,30 @@ class DemoAppEncodeSubjectiveTestPlan < TestPlan
 		 'bestFinal' 	=> true,
 		 'reg'       	=> true,
 		 'auto'			=> true,
-		 'script'		=> 'Common\A-DEMO\demo_app_encode_subjective.rb',
-		 'configID' 	=> '..\Config\demo_app_subjective.ini',
+		 'script'    =>  'DVSDK/A-DEMO/demo_app_encode_subjective.rb',
+		 'configID' 	=> '../Config/demo_app_subjective.ini',
 		 'paramsChan' 	=> {
 			'command_name'			=> params['command_name'],
-			'media_source'			=> params['media_source'],
+			'media_source'			=> get_source(params),
 			'time'					=> params['time'],
-            'disable_deinterlace'	=> params['disable_deinterlace'],
-            'enable_osd'			=> params['enable_osd'],
-            'enable_keyboard'		=> params['enable_keyboard'],
-            'enable_remote'			=> params['enable_remote'],
-            'passthrough'			=> params['passthrough'],
-            # Video-Related
-			'video_file'			=> get_video_filename(params),
-            'video_bitrate'			=> get_video_bit_rate(params),
+      'disable_deinterlace'	=> params['disable_deinterlace'],
+      'enable_osd'			=> params['enable_osd'],
+      'enable_keyboard'		=> params['enable_keyboard'],
+      'enable_remote'			=> params['enable_remote'],
+      'passthrough'			=> params['passthrough'],
+      # Video-Related
+      'video_bitrate'			=> get_video_bit_rate(params),
 		 	'video_resolution'		=> get_video_resolution(params),
-            'video_signal_format'	=> params['video_signal_format'],
-            'display_out'			=> params['display_out'],
-            'video_input'			=> params['video_input'],
-            # Image-Related
-			'image_file'			=> get_image_filename(params),
-            'image_resolution'		=> params['image_resolution'],
-            'image_qvalue'			=> params['image_qvalue'],
-            # Audio-Related
+      'video_signal_format'	=> params['video_signal_format'],
+      'display_out'			=> params['display_out'],
+      'video_input'			=> params['video_input'],
+      'video_type'      => params['video_type'],
+      # Audio-Related
 			'audio_file' 			=> get_audio_filename(params),
-            'audio_input'			=> params['audio_input'],
-            'audio_bitrate'			=> params['audio_bitrate'],
-            'audio_samplerate'		=> params['audio_samplerate'],
-            # Speech-Related
+      'audio_input'			=> params['audio_input'],
+      'audio_bitrate'			=> params['audio_bitrate'],
+      'audio_samplerate'		=> params['audio_samplerate'],
+      # Speech-Related
 			'speech_file' 			=> get_speech_filename(params),
             
          },
@@ -222,29 +216,12 @@ class DemoAppEncodeSubjectiveTestPlan < TestPlan
       end
   end
   
-  def get_image_filename(params)
-      if params['image_type'] == 'off' 
-          return 'none'
-      else
-          return 'image_files'
-      end
-  end
-  
   def get_speech_filename(params)
       if params['speech_type'] == 'off' 
           return 'none'
       else
           return 'test'+get_speech_extension(params)
       end
-  end
-  
-  def get_video_extension(params)
-      case params['video_type']
-          when 'h264': return '.264'
-          when 'mpeg4': return '.mpeg4'
-          when 'mpeg2': return '.m2v'
-          else raise "Unknown video_type #{params['video_type']}"
-          end
   end
   
   def get_audio_extension(params)
@@ -262,7 +239,7 @@ class DemoAppEncodeSubjectiveTestPlan < TestPlan
   end
   
   def get_test_description(params)
-      "#{params['command_name']} demo test with Video #{get_test_description_video(params)} : Image #{get_test_description_image(params)} : Speech #{get_test_description_speech(params)} : Audio #{get_test_description_audio(params)}"
+      "#{params['command_name']} demo test with Video #{get_test_description_video(params)} : Speech #{get_test_description_speech(params)} : Audio #{get_test_description_audio(params)}"
   end
   
   def get_test_description_video(params)
@@ -283,15 +260,6 @@ class DemoAppEncodeSubjectiveTestPlan < TestPlan
       
   end
   
-  def get_test_description_image(params)
-      if params['image_type'] == 'off'
-          "disabled"
-      else
-          "#{params['image_type']} codec, #{params['image_resolution']} resolution, #{params['image_qvalue']} qvalue"
-      end
-      
-  end
-  
   def get_test_description_speech(params)
       if params['speech_type'] == 'off'
           "disabled"
@@ -300,6 +268,16 @@ class DemoAppEncodeSubjectiveTestPlan < TestPlan
       end
   end
   
-  
-  
+  def get_source(params)
+    if params['media_source'].strip.downcase == 'dvd'
+      source  = case params['video_signal_format'].strip.downcase
+        when '525' : 'ntsc_dvd'
+        when '625' : 'pal_dvd'
+        else 'hd_dvd'
+      end
+      source
+    else
+      params['media_source']
+    end
+  end
 end

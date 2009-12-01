@@ -17,7 +17,7 @@ end
 
 def clean
   @equipment['dut1'].send_cmd("\cC", @equipment['dut1'].prompt, 3)
-  @equipment['dut1'].send_cmd("\cC") if @equipment['dut1'].is_timeout
+  @equipment['dut1'].send_cmd("\cC") if @equipment['dut1'].timeout?
   self.as(LspTestScript).clean
 end
 

@@ -12,7 +12,7 @@ def run
     device = @test_params.params_chan.usb_device[0] # One device per test cases
     operation = @test_params.params_chan.usb_device[0] == 'mouse' ? @test_params.params_chan.mouse_op[0] :  @test_params.params_chan.key_op[0]
 	@equipment['dut1'].send_cmd('lsmod',/evdev/mi,2)
-	@equipment['dut1'].send_cmd('insmod evdev.ko',@equipment['dut1'].prompt) if @equipment['dut1'].is_timeout
+	@equipment['dut1'].send_cmd('insmod evdev.ko',@equipment['dut1'].prompt) if @equipment['dut1'].timeout?
     #@equipment['dut1'].send_cmd('evtestkill.sh') # Netoyage force. Arret the Process avant de commencer
       begin 
         a = MessageBox.Show("Plug in your USB #{device} into the target")# La boite a message
@@ -31,7 +31,7 @@ def run
     regex = get_reg_expr(device,operation)
 	puts "Regex to use #{regex}"
     @equipment['dut1'].send_cmd('',regex, 10) # N'ennvoyer aucune commande, attendez que l'operateur bouge l'element
-    if @equipment['dut1'].is_timeout  # S'il n'y a aucun movement echec
+    if @equipment['dut1'].timeout?  # S'il n'y a aucun movement echec
     	set_result(FrameworkConstants::Result[:fail], "Fail: No match found for #{device} #{operation}" )
 
     else  

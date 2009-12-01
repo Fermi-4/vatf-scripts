@@ -1,5 +1,5 @@
 # -*- coding: ISO-8859-1 -*-
-
+require File.dirname(__FILE__)+'/default_test_module'
 # Default Server-Side Test script implementation for LSP releases
 include LspTestScript
 
@@ -114,7 +114,7 @@ private
     end
     
     # check for errors
-    if @equipment['dut1'].is_timeout
+    if @equipment['dut1'].timeout?
         @equipment['pc1'].send_cmd("kill -9 #{pid.to_s}", /Killed/) 
         result = 1
         return result

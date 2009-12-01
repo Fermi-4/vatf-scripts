@@ -35,7 +35,7 @@ def run
       @equipment['pc1'].send_cmd("dmesg | grep usb0", /usb/)
     end
 			
-    if @equipment['dut1'].is_timeout || @equipment['pc1'].is_timeout
+    if @equipment['dut1'].timeout? || @equipment['pc1'].timeout?
       result = 1
       return result
     end
@@ -67,7 +67,7 @@ def run
 			
     @equipment['dut1'].send_cmd("ping -c 4 #{@equipment['pc1'].usb_ip}", /4 received/)
 			
-    if @equipment['dut1'].is_timeout
+    if @equipment['dut1'].timeout?
       result = 4
     end
 			

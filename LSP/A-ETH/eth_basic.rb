@@ -45,7 +45,7 @@ def ping_self
   puts "##dut_ip=#{dut_ip}##"
   
   @equipment['dut1'].send_cmd("ping -c 2 #{dut_ip}", /2 packets transmitted\, 2 received/)
-  if @equipment['dut1'].is_timeout
+  if @equipment['dut1'].timeout?
         @result = 1
   end
 end
@@ -89,7 +89,7 @@ private
     end
     
     # check for errors
-    if @equipment['dut1'].is_timeout
+    if @equipment['dut1'].timeout?
         @equipment['pc1'].send_cmd("kill -9 #{pid.to_s}", /Killed/) 
         result = 1
         return result

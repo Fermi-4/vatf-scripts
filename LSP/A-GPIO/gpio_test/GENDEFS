@@ -46,8 +46,9 @@
 ###############################################################################
 #  Define the different executables
 ###############################################################################
-CC=arm_v5t_le-gcc
-CROSS_COMPILE_OPTION=arm_v5t_le-
+#CC=arm_v5t_le-gcc
+CC=arm-none-linux-gnueabi-gcc
+CROSS_COMPILE_OPTION=arm-none-linux-gnueabi-
 RM=rm
 MV=mv
 CP=cp

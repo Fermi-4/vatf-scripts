@@ -1,7 +1,7 @@
 # -*- coding: ISO-8859-1 -*-
-#require 'C:\views\Snapshot\vatf_lsp120_a0850405_laptop_view\gtsystst_tp\TestPlans\LSP\default_lsp_script'
+require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
-include Bootscript
+
 def setup
   self.as(LspTestScript).setup
 end
@@ -18,13 +18,13 @@ def run
   bin_file_w_correction = 'nandpage_err_correct.bin'
   hex_file_w_correction = 'nandpage_err_correct.hex'
  
- 
+  #puts "\n\n NFS=#{LspTestScript.nfs_root_path}, SAMBA=#{LspTestScript.samba_root_path}\n" 
   # copy original nandpage hex and nandpage with errbits to the test location
   test_folder = "/test/#{@tester}/#{@test_params.target.downcase}/#{@test_params.platform.downcase}/#{page_size}_nand"
-  test_dir_in_server = "#{LspTestScript.nfs_root_path()}#{test_folder}"
-  @equipment['server1'].send_cmd("mkdir -p #{test_dir_in_server}", @equipment['server1'].prompt, 10)
+  test_dir_in_server = "#{LspTestScript.nfs_root_path}#{test_folder}"
+  @equipment['server1'].send_cmd("mkdir -p -m 777 #{test_dir_in_server}", @equipment['server1'].prompt, 10)
 
-  dst_folder = "\\\\#{@equipment['server1'].telnet_ip}\\#{LspTestScript.samba_root_path()}#{test_folder.gsub('/',"\\")}"
+  dst_folder = "#{LspTestScript.samba_root_path}#{test_folder.gsub('/',"\\")}"
   puts "dst_folder is #{dst_folder}"
   src_file = @view_drive + hex_file_orig_nandpage.to_s
   BuildClient.copy(src_file, dst_folder+"\\"+File.basename(hex_file_orig_nandpage))

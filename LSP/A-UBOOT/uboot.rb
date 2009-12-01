@@ -99,10 +99,10 @@ def execute_cmd(commands)
 			puts "<<<<<<<<<<<<<<<"
       puts "Response:  " + @equipment['dut1'].response
       puts "<<<<<<<<<<<<<<<"
-      puts "Result:  (#{@equipment['dut1'].is_timeout})"
+      puts "Result:  (#{@equipment['dut1'].timeout?})"
       puts "<<<<<<<<<<<<<<<"
 =end
-			if @equipment['dut1'].is_timeout
+			if @equipment['dut1'].timeout?
          result = 1
          break
       elsif cmd.instance_variable_defined?(:@fail_regex) && Regexp.new(cmd.fail_regex).match(@equipment['dut1'].response)

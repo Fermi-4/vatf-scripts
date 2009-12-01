@@ -31,8 +31,8 @@ def run_perf_test(is_read, mnt_point, buffer_size, file_size, counter)
     @equipment['dut1'].send_cmd("pspTest ThruPut #{action_cmd} #{dev_node} #{buffer_size} #{file_size}",
                                 #/#{parse_txt}:\s+Kbits\/Sec:\s+[\d\.]+/,
                                 /#{parse_txt}:\s+percentage\s+cpu\s+load:\s+[\d|\.]+%/,
-                                600)   
-    if @equipment['dut1'].is_timeout
+                                120)   
+    if @equipment['dut1'].timeout?
         result = 1
         return result
     end

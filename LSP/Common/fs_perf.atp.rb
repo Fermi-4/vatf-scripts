@@ -74,13 +74,14 @@ class Fs_perfTestPlan < TestPlan
         'configID'     => '..\Config\lsp_generic.ini',
         'script'       => 'LSP\default_perf_fs_script.rb',
         'paramsChan'   => {
-            'init_cmds'      => '[dut_timeout\=20];'+
-                                'mount;'+
-                                '[vars[0] \= @equipment["dut1"].response];'+
-                                "[vars[1] \\= \"#{params['dev_node']} on #{params['mount_point']} type (\\\\w+) \"];"+
-                                '[vars[2] \= Regexp.new(vars[1]).match(vars[0].to_s)];'+
-                                '[(vars[2]\=\=nil) ? (vars[3]\="") : (vars[3]\= vars[2][1])];'+
-                                "[return 0 if vars[3].to_s.strip \\=\\=  \"#{params['filesystem']}\".strip];"+
+            'init_cmds'      => '[dut_timeout\=60];'+
+                                # 'mount;'+
+                                # '[vars[0] \= @equipment["dut1"].response];'+
+                                # "[vars[1] \\= \"#{params['dev_node']} on #{params['mount_point']} type (\\\\w+) \"];"+
+                                # '[vars[2] \= Regexp.new(vars[1]).match(vars[0].to_s)];'+
+                                # '[(vars[2]\=\=nil) ? (vars[3]\="") : (vars[3]\= vars[2][1])];'+
+                                # "[return 0 if vars[3].to_s.strip \\=\\=  \"#{params['filesystem']}\".strip];"+
+                                "umount #{params['dev_node']};"+
                                 "mkdir -p #{params['mount_point']};"+
                                 "mount -t #{params['filesystem']} -o sync #{params['dev_node']} #{params['mount_point']};"+
                                 'mount;'+
@@ -91,7 +92,7 @@ class Fs_perfTestPlan < TestPlan
                                 "[return 0 if vars[3].to_s.strip \\=\\=  \"#{params['filesystem']}\".strip];"+
                                 "umount #{params['mount_point']};"+
                                 '[dut_timeout\=720];'+
-                                "mkfs -t #{params['filesystem']} #{params['dev_node']};"+
+                                "mkfs\.#{params['filesystem']} #{params['dev_node']};"+
                                 '[dut_timeout\=30];'+
                                 "mount -t #{params['filesystem']} -o sync #{params['dev_node']} #{params['mount_point']}`--(?i:wrong)|(?i:Error)|(?i:bad)|(?i:busy)`;"+
                                 "mount`++on #{params['mount_point']} type #{params['filesystem']}`",

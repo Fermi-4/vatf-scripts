@@ -1,7 +1,8 @@
 # -*- coding: ISO-8859-1 -*-
-#require 'C:\views\Snapshot\vatf_lsp120_a0850405_laptop_view\gtsystst_tp\TestPlans\LSP\default_lsp_script'
+require File.dirname(__FILE__)+'/default_test_module'
+
 include LspTestScript
-include Bootscript
+
 def setup
   self.as(LspTestScript).setup
 end
@@ -40,7 +41,9 @@ def run
     target_reduced_fs_tarball = @view_drive+  @test_params.params_chan.target_reduced_fs[0].to_s
     target_reduced_fs_tarball_name = File.basename(target_reduced_fs_tarball)
     # copy this fs to target
-    dst_folder = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['server1'].samba_root_path}\\#{@tester}\\#{@test_params.target.downcase}"
+    test_folder = "/test/#{@tester}/#{@test_params.target.downcase}/#{@test_params.platform.downcase}"
+    dst_folder = "#{LspTestScript.nfs_root_path}#{test_folder}"
+    #dst_folder = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}\\#{@tester}\\#{@test_params.target.downcase}"
     puts "dst_folder is #{dst_folder}"
     BuildClient.copy(target_reduced_fs_tarball, dst_folder+"\\"+File.basename(target_reduced_fs_tarball))
     fs_location_target = "/#{@tester}/#{@test_params.target.downcase}"
@@ -55,10 +58,10 @@ def run
                     Time.now.min.to_s.rjust(2, '0') + Time.now.year.to_s.rjust(4, '0')
     @equipment['dut1'].send_cmd("cd #{mnt_point}", @equipment['dut1'].prompt, 20)
     @equipment['dut1'].send_cmd("date #{current_time}", @equipment['dut1'].prompt, 20)
-    @equipment['dut1'].send_cmd("tar #{untar_option} /#{@tester}/#{@test_params.target.downcase}/#{target_reduced_fs_tarball_name}", @equipment['dut1'].prompt, 120)
+    @equipment['dut1'].send_cmd("tar #{untar_option} /#{test_folder}/#{target_reduced_fs_tarball_name}", @equipment['dut1'].prompt, 120)
     # catch the tar error if any
     if /error/i =~ @equipment['dut1'].response then
-      raise "tar #{untar_option} /#{@tester}/#{@test_params.target.downcase}/#{target_reduced_fs_tarball_name} had error!"
+      raise "tar #{untar_option} /#{test_folder}/#{target_reduced_fs_tarball_name} had error!"
     end
        
     @equipment['dut1'].send_cmd("ls #{mnt_point}", @equipment['dut1'].prompt, 20)
@@ -91,16 +94,16 @@ def run
   # set bootargs to this fs and boot
   bootargs_mtd = @test_params.params_chan.bootargs_mtd[0]
   @equipment['dut1'].send_cmd("setenv bootargs #{bootargs_mtd}",@equipment['dut1'].boot_prompt, 30)
-  raise 'Unable to set bootargs' if @equipment['dut1'].is_timeout
+  raise 'Unable to set bootargs' if @equipment['dut1'].timeout?
   @equipment['dut1'].send_cmd("saveenv",@equipment['dut1'].boot_prompt, 10)
   @equipment['dut1'].send_cmd('boot', @equipment['dut1'].login_prompt, 180)
-  #raise 'Unable to boot platform' if @equipment['dut1'].is_timeout
-  if @equipment['dut1'].is_timeout
+  #raise 'Unable to boot platform' if @equipment['dut1'].timeout?
+  if @equipment['dut1'].timeout?
     set_result(FrameworkConstants::Result[:fail], "rootfs=#{fs_type}: Unable to boot platform.")
     return    
   end
   @equipment['dut1'].send_cmd(@equipment['dut1'].login, @equipment['dut1'].prompt, 10) # login to the unit
-  raise 'Unable to login' if @equipment['dut1'].is_timeout
+  raise 'Unable to login' if @equipment['dut1'].timeout?
 
   #not necessary for mount since it is already in nand
 =begin
@@ -161,16 +164,16 @@ def clean
   boot_args = SiteInfo::Bootargs[@test_params.platform.downcase.strip]
 
   boot_to_bootloader(params)
-  dut.send_cmd("setenv nfs_root_path #{params['server'].telnet_ip}:#{params['server'].nfs_root_path}",/setenv.+#{dut.boot_prompt}/im, 30)
-  raise 'Unable to set nfs root path' if dut.is_timeout
+  dut.send_cmd("setenv nfs_root_path #{LspTestScript.nfs_root_path()}",/setenv.+#{dut.boot_prompt}/im, 30)
+  raise 'Unable to set nfs root path' if dut.timeout?
   dut.send_cmd("setenv bootargs #{boot_args}",/setenv.+#{dut.boot_prompt}/im, 30)
-  raise 'Unable to set bootargs' if dut.is_timeout
+  raise 'Unable to set bootargs' if dut.timeout?
   dut.send_cmd("saveenv",/saveenv.+#{dut.boot_prompt}/im, 10)
-  raise 'Unable save environment' if dut.is_timeout
+  raise 'Unable save environment' if dut.timeout?
   dut.send_cmd('boot', /login/, 200)
-  raise 'Unable to boot platform' if dut.is_timeout
+  raise 'Unable to boot platform' if dut.timeout?
   dut.send_cmd(dut.login, dut.prompt, 10) # login to the unit
-  raise 'Unable to login' if dut.is_timeout
+  raise 'Unable to login' if dut.timeout?
   
   # todo: remove the testfile which was written from nand/nor when roofs is nfs
 	run_cmds('cmd_mount', '')
@@ -216,10 +219,10 @@ def reboot_dut(is_soft_reboot)
     @equipment['apc1'].reset(@equipment['dut1'].power_port.to_s)
     @equipment['dut1'].send_cmd('', @equipment['dut1'].login_prompt, 180)
   end
-  raise 'Unable to boot platform' if @equipment['dut1'].is_timeout
+  raise 'Unable to boot platform' if @equipment['dut1'].timeout?
   booting_log = @equipment['dut1'].response
   @equipment['dut1'].send_cmd(@equipment['dut1'].login, @equipment['dut1'].prompt, 20) # login to the unit
-  raise 'Unable to login' if @equipment['dut1'].is_timeout
+  raise 'Unable to login' if @equipment['dut1'].timeout?
   
   return booting_log
 end

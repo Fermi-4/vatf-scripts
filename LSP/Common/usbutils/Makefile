@@ -174,8 +174,8 @@ man_MANS = lsusb.8
 EXTRA_DIST = $(man_MANS) usb.ids update-usbids.sh
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
-	mv -f $(APP_HOME)/lsusb $(APP_HOME)/$(BIN)
-	cp -f $(APP_HOME)/usb.ids $(APP_HOME)/$(BIN)
+	mv -f $(APP_HOME)/lsusb $(APP_HOME)/bin
+	cp -f $(APP_HOME)/usb.ids $(APP_HOME)/bin
 
 .SUFFIXES:
 .SUFFIXES: .c .o .obj

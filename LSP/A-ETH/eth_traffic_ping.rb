@@ -103,7 +103,7 @@ private
 			
 		ipaddr = /([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(response)[1]
 		
-		if @equipment['dut1'].is_timeout
+		if @equipment['dut1'].timeout?
         @result = 1
 		end
 		
@@ -117,7 +117,7 @@ private
 			
 		ipaddr = /([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(response)[1]
 			
-		if @equipment['pc1'].is_timeout
+		if @equipment['pc1'].timeout?
         @result = 1
 		end
 		
@@ -198,7 +198,7 @@ private
     end
 		
     # ******************************************* check for timeout *******************************************
-    if @equipment['dut1'].is_timeout || @equipment['pc1'].is_timeout
+    if @equipment['dut1'].timeout? || @equipment['pc1'].timeout?
 				result = 1
        return result
     end
@@ -224,7 +224,7 @@ private
     end
 		
     # ******************************************* check for timeout*******************************************
-    if @equipment['dut1'].is_timeout || @equipment['pc1'].is_timeout
+    if @equipment['dut1'].timeout? || @equipment['pc1'].timeout?
         result = 1
         return result
     end

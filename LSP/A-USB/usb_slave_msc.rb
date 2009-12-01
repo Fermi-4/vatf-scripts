@@ -50,13 +50,13 @@ def setup
 			param_string += ' stall=0'
 		end
 		send_linux_command('insmod '+modules_dir+'musb_hdrc.ko')
-		raise "Unable to insert musb_hdrc.ko module" if @equipment['dut'].is_timeout
+		raise "Unable to insert musb_hdrc.ko module" if @equipment['dut'].timeout?
 		send_linux_command('insmod '+modules_dir+'g_file_storage.ko '+param_string) 
-		raise "Unable to insert g_file_storage.ko module" if @equipment['dut'].is_timeout
+		raise "Unable to insert g_file_storage.ko module" if @equipment['dut'].timeout?
 	else
 		0.upto(backing_files.length-1) do |lun_number|
 			send_linux_command('echo '+backing_files[lun_number]+' > /sys/devices/platform/musb_hdrc/gadget/gadget-lun'+lun_number.to_s+'/file')
-			raise "Unable to set bakcing file for lun #{lun_number}" if @equipment['dut'].is_timeout
+			raise "Unable to set bakcing file for lun #{lun_number}" if @equipment['dut'].timeout?
 		end
 	end
 		rescue Exception => e
@@ -453,7 +453,7 @@ def create_file_partitions(dev_luns)
 		if backing_file_size.length < 1 || backing_file_size[0][0].to_i != (10485760*@test_params.params_chan.backing_file_size[0].to_i)
 		    send_linux_command('rm -f '+base_backing_file_path+'*',50) if lun_number == 0 && backing_file_size.length > 0
 			send_linux_command('dd bs=1M count=' + @test_params.params_chan.backing_file_size[0] + ' if=/dev/zero of='+ backing_file_path,4800*@test_params.params_chan.backing_file_size[0].to_i/180)
-			raise 'Unable to create backing file ' if @equipment['dut'].is_timeout
+			raise 'Unable to create backing file ' if @equipment['dut'].timeout?
 		end
 		
 		fdisk_def_regex = /Command\s*\(m\s*for\s*help\):/i
@@ -514,18 +514,18 @@ def mount_device(check_partition=true)
   if check_partition
 		send_linux_command('e2fsck -n /dev/' + @test_params.params_chan.usb_device[0], 500)
 		
-		if @equipment['dut'].is_timeout
+		if @equipment['dut'].timeout?
 			send_linux_command('mkfs -t ext3 /dev/' + @test_params.params_chan.usb_device[0],500)
-			raise 'Unable to create file system in device' if @equipment['dut'].is_timeout
+			raise 'Unable to create file system in device' if @equipment['dut'].timeout?
 		end 
 	end
 	
 	send_linux_command( 'mount -t ext3 /dev/' + @test_params.params_chan.usb_device[0] + ' ' +@test_params.params_chan.dev_mount_point[0])
 	
-	if @equipment['dut'].is_timeout
+	if @equipment['dut'].timeout?
 		send_linux_command('mkfs -t ext3 /dev/' + @test_params.params_chan.usb_device[0],500)
 		send_linux_command('mount -t ext3 /dev/' + @test_params.params_chan.usb_device[0] + ' ' +@test_params.params_chan.dev_mount_point[0])
-		raise 'Unable to create file system in device' if @equipment['dut'].is_timeout
+		raise 'Unable to create file system in device' if @equipment['dut'].timeout?
 	end 
 	
 end
@@ -542,7 +542,7 @@ def prepare_read_only_device_partitions(partitioned_device)
 			current_partitions.each do |part_info|
 				send_linux_command('mkfs -t vfat '+part_info[0],500)
 				send_linux_command('ls /mnt/loop',2)
-				send_linux_command('mkdir /mnt/loop') if @equipment['dut'].is_timeout
+				send_linux_command('mkdir /mnt/loop') if @equipment['dut'].timeout?
 				send_linux_command('mount -t vfat '+part_info[0]+' /mnt/loop')
 				send_linux_command('rm -rf /mnt/loop/*')
 				send_linux_command('mkdir /mnt/loop'+USB_DEV_TEST_DIR)
@@ -561,7 +561,7 @@ def create_loop_device
 	modules_dir = './'
 	send_linux_command('modinfo loop')
 	
-	if @equipment['dut'].is_timeout
+	if @equipment['dut'].timeout?
 		@equipment['dut'].send_cmd('insmod '+modules_dir+'loop.ko',/insmod.+#{@equipment['dut'].prompt}/im)
 		raise "Error 1: Unable to insert loop.ko kernel module partition is not ready for read_only operation" if !@equipment['dut'].response.match(/(.*loop:\s+loaded.+)|(.+File exists.*)/im)
 	end
@@ -569,9 +569,9 @@ def create_loop_device
 	puts "--------------- usb_slave_msc - create_loop_device ---598b---------------"
 	send_linux_command('ls /dev/loop0')
 	
-	if @equipment['dut'].is_timeout
+	if @equipment['dut'].timeout?
 		send_linux_command('mknod /dev/loop0 b 7 0')
-		raise "Error 2:  Unable to create loop device for read only partition" if @equipment['dut'].is_timeout
+		raise "Error 2:  Unable to create loop device for read only partition" if @equipment['dut'].timeout?
 	end
 
 	puts "--------------- usb_slave_msc - create_loop_device ---606b---------------"
@@ -592,11 +592,11 @@ def prepare_read_only_file_partitions(partitions_array)
 			if @test_params.params_chan.host_os[0].downcase.include?('win')
 				begin
 					@equipment['dut'].send_cmd('fdisk -lu '+partitions_array[idx],/#{partitions_array[idx]}\s*p\d+\s*\d+\s*\d+\s*\d+\s*\w+\s*\w+.*/im)
-					raise "Problems found while obtaining partiton information" if @equipment['dut'].is_timeout
+					raise "Problems found while obtaining partiton information" if @equipment['dut'].timeout?
 					partition_offset = @equipment['dut'].response.scan(/#{partitions_array[idx]}\s*p\s*\d+\s*(\d+)\s*\d+\s*\d+\s*\w+\s*\w+.*/)[0][0].to_i * 512
 					send_linux_command('losetup -o '+partition_offset.to_s+' /dev/loop0 '+partitions_array[idx])
 					send_linux_command('ls /mnt/loop',2)
-					send_linux_command('mkdir /mnt/loop') if @equipment['dut'].is_timeout
+					send_linux_command('mkdir /mnt/loop') if @equipment['dut'].timeout?
 					send_linux_command('mount -t vfat /dev/loop0 /mnt/loop')
 					send_linux_command('rm -rf /mnt/loop/*')
 					send_linux_command('mkdir /mnt/loop'+USB_DEV_TEST_DIR)
@@ -614,7 +614,7 @@ end
 
 def send_create_partition_cmd(command,expected_reg_ex,timeout=10)
 	@equipment['dut'].send_cmd(command, expected_reg_ex, timeout)
-	raise 'Problem creating partition in backing file' if @equipment['dut'].is_timeout
+	raise 'Problem creating partition in backing file' if @equipment['dut'].timeout?
 end
 
 def get_string_diff(first_string, second_string)
@@ -885,15 +885,15 @@ def check_module_info
     result = ''
 	modules_dir = './'
 	@equipment['dut'].send_cmd("cat /proc/modules",/g_file_storage\s*\d+\s*\d+.*Live.*/im)
-	result += "cat /proc/modules failed\n" if @equipment['dut'].is_timeout
+	result += "cat /proc/modules failed\n" if @equipment['dut'].timeout?
 	@equipment['dut'].send_cmd("modinfo -d #{modules_dir}g_file_storage.ko",/File-backed\s*Storage\s*Gadget.*/im)
-	result += "modinfo -d failed\n" if @equipment['dut'].is_timeout
+	result += "modinfo -d failed\n" if @equipment['dut'].timeout?
 	@equipment['dut'].send_cmd("modinfo -l #{modules_dir}g_file_storage.ko",/Dual\s*BSD\/GPL.*/im)
-	result += "modinfo -l failed\n" if @equipment['dut'].is_timeout
+	result += "modinfo -l failed\n" if @equipment['dut'].timeout?
 	@equipment['dut'].send_cmd("modinfo -a #{modules_dir}g_file_storage.ko",/Alan\s*Stern.*/im)
-	result += "modinfo -a failed\n" if @equipment['dut'].is_timeout
+	result += "modinfo -a failed\n" if @equipment['dut'].timeout?
 	@equipment['dut'].send_cmd("modinfo -p #{modules_dir}g_file_storage.ko",/buflen:.+release:.+product:.+vendor:.+transport:.+stall:.+removable:.+luns:.+ro:.+file:.+\#/im)
-	result += "modinfo -p failed\n" if @equipment['dut'].is_timeout
+	result += "modinfo -p failed\n" if @equipment['dut'].timeout?
 	result
 end
 

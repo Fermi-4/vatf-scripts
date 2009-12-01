@@ -1,5 +1,7 @@
 # -*- coding: ISO-8859-1 -*-
 # This module does 'mount'if not mounted. Also, can be used for stress tests.
+require File.dirname(__FILE__)+'/default_test_module'
+
 module LspFSTestScript
   include LspTestScript
 

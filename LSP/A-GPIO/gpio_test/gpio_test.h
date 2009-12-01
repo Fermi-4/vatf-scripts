@@ -46,16 +46,20 @@
 #include <linux/init.h>
 #include <linux/errno.h>
 #include <linux/interrupt.h>
+#include <linux/ioport.h>
 #include <linux/irq.h>
-#include <asm/io.h>
-#include <asm/irq.h>
-#include <asm/arch/cpu.h>
-#include <asm/arch/io.h>
-#include <asm/arch/gpio.h>
-#include <asm/arch/hardware.h>
-//#include <asm/mach-types.h>
-//#include <asm/mach/arch.h>
-//#include <asm/mach/map.h>
+#include <linux/gpio.h>
+#include <mach/cputype.h>
+#include <mach/io.h>
+//#include <mach/gpio.h>
+#include <mach/hardware.h>
+//#include <asm-generic/gpio.h>
+// #include <asm/io.h>
+// #include <asm/irq.h>
+// #include <asm/arch/cpu.h>
+// #include <asm/arch/io.h>
+// #include <asm/arch/gpio.h>
+// #include <asm/arch/hardware.h>
 
 // copy from asm-arm/irq.h
 #if 0
@@ -78,16 +82,17 @@
 #define GPIO_DIR_OUT 0
 #define GPIO_DIR_IN 1
 
-#define REG_PINMUX0     __REG(PINMUX0)
-#define REG_PINMUX1     __REG(PINMUX1)
-#define REG_PINMUX2     __REG(PINMUX2)
-#define REG_PINMUX3     __REG(PINMUX3)
-#define REG_PINMUX4     __REG(PINMUX4)
+#define REG(addr)   (*(volatile unsigned int *)IO_ADDRESS(addr))
 //#define PINMUX0     __REG(0x01c40000)
 //#define PINMUX1     __REG(0x01c40004)
 //#define PINMUX2     __REG(0x01c40008)
 //#define PINMUX3     __REG(0x01c4000c)
 //#define PINMUX4     __REG(0x01c40010)
+#define REG_PINMUX0     REG(0x01c40000)
+#define REG_PINMUX1     REG(0x01c40004)
+#define REG_PINMUX2     REG(0x01c40008)
+#define REG_PINMUX3     REG(0x01c4000c)
+#define REG_PINMUX4     REG(0x01c40010)
 
 struct gpio_attrs
 {
@@ -106,7 +111,8 @@ void gpio_get_dir_reg_info(int gio);
 void gpio_write(void);
 void gpio_unregister_irq(int irq_num);
 void gpio_request_irq(int irq_num);
-static irqreturn_t gpio_irq_handler(int irq, void *dev_id, struct pt_regs *regs);
+//static irqreturn_t gpio_irq_handler(int irq, void *dev_id, struct pt_regs *regs);
+static irqreturn_t gpio_irq_handler(int irq, void *dev_id);
 void gpio_get_binten_reg_info(void);
 void gpio_demux_pins(void);
 

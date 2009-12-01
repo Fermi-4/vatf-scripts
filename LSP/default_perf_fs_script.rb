@@ -1,5 +1,5 @@
 # -*- coding: ISO-8859-1 -*-
-
+require File.dirname(__FILE__)+'/default_perf_module'
 # Default Server-Side Test script implementation for LSP releases
 include LspReadWritePerfScript
 
@@ -35,7 +35,7 @@ def run_perf_test(is_read, mnt_point, buffer_size, file_size, counter)
     @equipment['dut1'].send_cmd("pspTest ThruPut #{action_cmd} #{mnt_point}/test#{counter} #{buffer_size} #{file_size}",
                                 /#{parse_txt}:\s+percentage\s+cpu\s+load:\s+[\d|\.]+%/,
                                 900) #orignal is 5400. too long. 900 should be enough. if 0.2MB/S for 100MB, it only need 500s.
-    if @equipment['dut1'].is_timeout
+    if @equipment['dut1'].timeout?
         result = 1
         return result
     end

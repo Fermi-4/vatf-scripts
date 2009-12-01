@@ -45,7 +45,7 @@ class V4l2_capture_run_params < Video_run_params
 
         @test_cmd  		= "pspTest ThruPut FRv4l2capture #{dev_node} #{buffers} #{frames} #{mode} #{input} #{options}"  
     	@test_regex 	= /Capture\s*frame\s*rate:\s*([\d|\.]+).*percentage\s*cpu\s*load:\s*([\d|\.]+)/mi
-    	@test_timeout 	= 2+(frames.to_i/5)   # Assumes that the DUT is doing at least 5 frames per second
+    	@test_timeout 	= 20+(frames.to_i/5)   # Assumes that the DUT is doing at least 5 frames per second
     end
 end
 
@@ -130,7 +130,7 @@ def run
 	@equipment['dut1'].send_cmd(pretest_cmd) if pretest_cmd
   sleep 1
     @equipment['dut1'].send_cmd(test_cmd, test_regex, test_timeout) 
-   	result = 1 if @equipment['dut1'].is_timeout
+   	result = 1 if @equipment['dut1'].timeout?
    
 	if result == 0 
 	  test_values = test_regex.match(@equipment['dut1'].response).captures

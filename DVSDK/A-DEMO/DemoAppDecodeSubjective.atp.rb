@@ -21,10 +21,17 @@ class DemoAppDecodeSubjectiveTestPlan < TestPlan
         '720p60' => [1280,720],        
         '1080i50' => [1920,1080],
         '1080i60' => [1920,1080],
+        '1080p50' => [1920,1080],
+        '1080p60' => [1920,1080],
+        '1080p25' => [1920,1080],
+        '1080p30' => [1920,1080],  
 	  }
-  	@h264_prof_regex = "_(BP|MP)\\w*"
-    @mpeg4_prof_regex =  "_(ASP|SP)\\w*"
-    @mpeg2_prof_regex =  "_(SP|MP)\\w*"
+    media_extension = {'mpeg2' => 'm2v',
+                       'mpeg4' => 'mpeg4',
+                       'h264' => '264' }
+    @prof_regex = {'mpeg2' => "_(SP|MPp)\\w*",
+                       'mpeg4' => "_(ASP|SP)\\w*",
+                       'h264' => "_(BP|MP)\\w*" }
     @aac_file_format = "_(RAW|ADIF|ADTF)\\w*" #should be ADTS not ADTF but too much work to change file name in repository
     params = {
         'enable_osd'				=> ['yes', 'no'],
@@ -34,95 +41,79 @@ class DemoAppDecodeSubjectiveTestPlan < TestPlan
         'time'							=> ['20'],
         # Video-Related
         'video_type'					=> ['off',  'mpeg2', 'mpeg4', 'h264'],
-        'video_resolution'		=> ['176x120', '352x240', '720x480', '176x144', '352x288', '720x576',   '128x96', '320x240', '640x480', '704x288', '704x480', '704x576', '800x600', '1024x768', '1280x720', '1280x960', '1920x1080'],
-        'video_bit_rate'	    => [64000, 96000, 128000, 192000, 256000, 350000, 384000, 500000, 512000, 768000, 786000, 800000,1000000, 1100000, 1500000, 2000000, 2500000, 3000000, 4000000, 5000000, 6000000, 8000000, 10000000],
         'video_signal_format' => ['525', '625', '1080i50', '1080i59', '1080i60', '720p50', '720p59', '720p60', '1080p23', '1080p24', '1080p25', '1080p29', '1080p30', '1080p50', '1080p59', '1080p60', 'dummy'],
         'display_out'					=> ['composite', 'component', 'svideo'],
         #Speech-Related
         'speech_type' 			=> ['off', 'g711'],
         'speech_companding'	=> ['ulaw', 'alaw'],
         # Audio-Related
-        'audio_type' 					=> ['off', 'aac', 'mp3', 'mp2', 'mp1'],
-        'audio_sampling_rate' => [8000, 11000, 12000, 16000, 22000, 24000, 32000, 44000, 48000, 88000],
-				'audio_bit_rate' 			=> [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000, 'vbr'],
-		
+        'audio_type' 					=> ['off', 'aac', 'mp3', 'mp2', 'mp1'],		
     }
-      file_sampling_rate = Array.new
-	  params['audio_sampling_rate'].each{|sampling_rate| file_sampling_rate << sampling_rate/1000}
-	  file_bit_rate = Array.new
-	  params['audio_bit_rate'].each do |bit_rate| 
-		if bit_rate.to_s.strip.downcase != 'vbr'
-			file_bit_rate << (bit_rate/1000).to_s+"kbps"
-		else
-			file_bit_rate << bit_rate
-		end
-	  end
-	  @aac_audio_source_hash = get_source_files_hash("\\w+_",file_sampling_rate,"kHz\\w*_",file_bit_rate,"\\w*",@aac_file_format,"aac")
-	
-      @mpx_audio_source_hash = Hash.new
-      params['audio_type'].each do |mp_type|
-          @mpx_audio_source_hash[mp_type] = get_source_files_hash("\\w+_",file_sampling_rate,"kHz\\w*_",file_bit_rate,"\\w*",mp_type) if /mp\d/.match(mp_type)
-      end
+    
 	  audio_sampling_rate_and_bit_rate =	[{
             'audio_sampling_rate' => [8000],
-            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000],
+            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000, 'vbr'],
       },
       {
             'audio_sampling_rate' => [11000],
-            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000],
+            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000, 'vbr'],
       },
       {
             'audio_sampling_rate' => [12000],
-            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000],
+            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000, 'vbr'],
       },
       {
             'audio_sampling_rate' => [16000],
-            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000],
+            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000, 'vbr'],
       },
       {
             'audio_sampling_rate' => [22000],
-            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000],
+            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000, 'vbr'],
       },
       {
             'audio_sampling_rate' => [24000],
-            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000],
+            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000, 'vbr'],
       },
       {
             'audio_sampling_rate' => [32000],
-            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000],
+            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000, 'vbr'],
       },
       {
             'audio_sampling_rate' => [44000],
-            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000],
+            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000, 'vbr'],
       },
       {
             'audio_sampling_rate' => [48000],
-            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000],
+            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000, 'vbr'],
       },
       {
             'audio_sampling_rate' => [88000],
-            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000],
+            'audio_bit_rate' => [8000, 16000, 32000, 48000, 64000, 96000, 128000, 160000, 192000, 224000, 236000, 288000, 'vbr'],
       },
        ]
-	  combine_sampling_rate_and_bit_rate(params, audio_sampling_rate_and_bit_rate)
-	 
-	  file_bit_rate = Array.new
-    params['video_bit_rate'].each do |bit_rate| 
-    if bit_rate/1000 >= 1000
-       file_bit_rate << ((bit_rate.to_f/1000000).to_s+"Mbps").gsub(".0Mbps","Mbps")
-       file_bit_rate << ((bit_rate.to_f/1000).to_s+"kbps").gsub(".0kbps","kbps")
-    else
-       file_bit_rate << ((bit_rate.to_f/1000).to_s+"kbps").gsub(".0kbps","kbps") 
-    end 
+    
+    audio_sampling_rates = []
+    audio_bitrates = []
+    audio_sampling_rate_and_bit_rate.each do |samp_br| 
+      audio_sampling_rates = audio_sampling_rates | samp_br['audio_sampling_rate']
+      audio_bitrates = audio_bitrates | samp_br['audio_bit_rate']
     end
-    @h264_video_source_hash = get_source_files_hash("\\w+",params['video_resolution'],"_","\\w*",params['video_bit_rate'],"bps","264")
-    @h264_video_source_hash.merge!(get_source_files_hash("\\w+",params['video_resolution'],@h264_prof_regex,file_bit_rate,"[\\w\.]*","264"))
-    @mpeg4_video_source_hash = get_source_files_hash("\\w+",params['video_resolution'],"_","\\w*",params['video_bit_rate'],"bps","mpeg4")
-    @mpeg4_video_source_hash.merge!(get_source_files_hash("\\w+",params['video_resolution'],@mpeg4_prof_regex,file_bit_rate,"[\\w\.]*","mpeg4"))
-    @mpeg2_video_source_hash = get_source_files_hash("\\w+",params['video_resolution'],"_","\\w*",params['video_bit_rate'],"bps","m2v")
-    @mpeg2_video_source_hash.merge!(get_source_files_hash("\\w+",params['video_resolution'],@mpeg2_prof_regex,file_bit_rate,"[\\w\.]*","m2v"))
+    file_bit_rate = []
+    audio_bitrates.each do |audio_br|
+      if audio_br.to_s.downcase.strip == 'vbr'
+        file_bit_rate << 'vbr'
+      else
+        file_bit_rate << ((audio_br.to_f/1000).to_s+"kbps").gsub(/\.0kbps$/,"kbps")
+      end
+    end
+    @mpx_audio_source_hash = {}
+    @aac_audio_source_hash = get_source_files_hash("\\w+_",audio_sampling_rates,"kHz\\w*_",file_bit_rate,"\\w*",@aac_file_format,"aac")
+    params['audio_type'].each do |mp_type|
+      @mpx_audio_source_hash[mp_type] = get_source_files_hash("\\w+_",audio_sampling_rates,"kHz\\w*_",file_bit_rate,"\\w*",mp_type) if /mp\d/.match(mp_type)
+    end
+	  combine_sampling_rate_and_bit_rate(params, audio_sampling_rate_and_bit_rate)
     @ulaw_speech_source_hash = get_source_files_hash("\\w+","u")
-	@alaw_speech_source_hash = get_source_files_hash("\\w+","a")
+    @alaw_speech_source_hash = get_source_files_hash("\\w+","a")
 		video_res_and_bit_rates = [
     {'video_resolution' => ["128x96"],
            'video_bit_rate' =>  [64000],	
@@ -170,6 +161,26 @@ class DemoAppDecodeSubjectiveTestPlan < TestPlan
 		       'video_bit_rate' =>  [1000000,2000000,4000000,5000000,10000000,11000000,12000000,14000000,15000000]		
 	         },
     ]
+    
+    video_resolutions = []
+    video_bitrates = []
+    video_res_and_bit_rates.each do |res_br| 
+      video_resolutions = video_resolutions | res_br['video_resolution']
+      video_bitrates = video_bitrates | res_br['video_bit_rate']
+    end
+    file_bit_rate = []
+    video_bitrates.each do |video_br|
+      if video_br.to_f/1000 >= 1000
+        file_bit_rate << ((video_br.to_f/1000000).to_s+"Mbps").gsub(/\.0Mbps$/,"Mbps")
+        file_bit_rate << ((video_br.to_f/1000).to_s+"kbps").gsub(".0kbps","kbps")
+      else
+        file_bit_rate << ((video_br.to_f/1000).to_s+"kbps").gsub(/\.0kbps$/,"kbps")
+      end
+    end
+    @video_source_hash = {}
+    params['video_type'].each do |vtype|
+      @video_source_hash[vtype] = get_source_files_hash("\\w*",video_resolutions,"\\w*",@prof_regex[vtype],"\\w*",file_bit_rate,"\\w*frames",media_extension[vtype])
+    end    
     @res_params = combine_res_and_bit_rate(params,video_res_and_bit_rates)
   end
   # END_USR_CFG get_params
@@ -222,8 +233,8 @@ class DemoAppDecodeSubjectiveTestPlan < TestPlan
 		   'bestFinal' 	=> true,
 		   'reg'       	=> true,
 		   'auto'			=> true,
-		   'script'		=> 'Common\A-DEMO\demo_app_decode_subjective.rb',
-		   'configID' 	=> '..\Config\demo_app_subjective.ini',
+		   'script'    =>  'DVSDK/A-DEMO/demo_app_decode_subjective.rb',
+		   'configID' 	=> '../Config/demo_app_subjective.ini',
 		   'paramsChan' 	=> {
           'time'								=> params['time'],
           'enable_osd'					=> params['enable_osd'],
@@ -255,21 +266,18 @@ class DemoAppDecodeSubjectiveTestPlan < TestPlan
   def get_video_source(params)
     return 'none' if params['video_type'] == 'off'
     video_resolution = get_video_resolution(params)
-    video_bit_rate = get_video_bit_rate(params)
-    if video_bit_rate.to_f/1000 >= 1000
-      file_bit_rate = ((video_bit_rate.to_f/1000000).to_s+"Mbps").gsub(".0Mbps","Mbps")
-      file_bit_rate2 = ((video_bit_rate.to_f/1000).to_s+"kbps").gsub(".0kbps","kbps")
+    video_br = get_video_bit_rate(params)
+    if video_br.to_f/1000 >= 1000
+      file_bit_rate = ((video_br.to_f/1000000).to_s+"Mbps").gsub(/\.0Mbps$/,"Mbps")
+      file_bit_rate2 = ((video_br.to_f/1000).to_s+"kbps").gsub(".0kbps","kbps")
     else
-    	file_bit_rate = ((video_bit_rate.to_f/1000).to_s+"kbps").gsub(".0kbps","kbps") 
-    end 
-    video_source_hash = self.instance_variable_get("@#{params['video_type']}_video_source_hash")
-    video_prof_regex  = self.instance_variable_get("@#{params['video_type']}_prof_regex")
-    video_source = video_source_hash["\\w+"+video_resolution+"_"+"\\w*"+video_bit_rate+"bps"]
-    video_source += ";" if video_source && video_source_hash["\\w+"+video_resolution+video_prof_regex+file_bit_rate+"[\\w\.]*"]
-    video_source = video_source.to_s + video_source_hash["\\w+"+video_resolution+video_prof_regex+file_bit_rate+"[\\w\.]*"].to_s
-    video_source += ";" if video_source.to_s.strip != '' && file_bit_rate2 && video_source_hash["\\w+"+video_resolution+video_prof_regex+file_bit_rate2+"[\\w\.]*"] 
-    video_source = video_source.to_s + video_source_hash["\\w+"+video_resolution+video_prof_regex+file_bit_rate2+"[\\w\.]*"].to_s if file_bit_rate2
-    video_source
+      file_bit_rate = ((video_br.to_f/1000).to_s+"kbps").gsub(/\.0kbps$/,"kbps")
+    end
+    result = ''
+    result = @video_source_hash[params['video_type']]["\\w*"+video_resolution+"\\w*"+@prof_regex[params['video_type']]+"\\w*"+file_bit_rate2+"\\w*frames"].to_s if file_bit_rate2
+    result += ';' if result != ''
+    result += @video_source_hash[params['video_type']]["\\w*"+video_resolution+"\\w*"+@prof_regex[params['video_type']]+"\\w*"+file_bit_rate+"\\w*frames"].to_s
+    result
   end
   
   def get_speech_source(params)

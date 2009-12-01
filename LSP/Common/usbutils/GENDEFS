@@ -39,14 +39,15 @@
 #  Define all the paths. Change these according to the release or installation
 #  of TOOLCHAIN
 ###############################################################################
-TOOLCHAIN = /apps/cmdevtools/mv_pro_5.0/arm_v5t_le/0/montavista/pro/devkit/arm/v5t_le
+#TOOLCHAIN = /apps/cmdevtools/mv_pro_5.0/arm_v5t_le/0/montavista/pro/devkit/arm/v5t_le
 #TOOLCHAIN = /opt/montavista/pro/devkit/arm/v5t_le
  
 
 ###############################################################################
 #  Define the different executables
 ###############################################################################
-CC=$(TOOLCHAIN)/bin/arm_v5t_le-gcc
+#CC=arm_v5t_le-gcc
+CC=arm-none-linux-gnueabi-gcc
 RM=rm
 MV=mv
 CP=cp
