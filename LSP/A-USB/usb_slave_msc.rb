@@ -8,7 +8,7 @@ USB_DEV_TEST_DIR = '/usb_slave_msc_test_dir/'
 
 def setup
    host = get_current_host
-   modules_dir = './'
+   modules_dir = '/bin/'
    dst_folder = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['server1'].samba_root_path}\\#{@tester}\\#{@test_params.target}\\#{@test_params.platform}"
    boot_params = {'dut' => @equipment['dut'], 'platform' => @test_params.platform, 'image_path' => @test_params.image_path['kernel'], 'tftp_path' => @equipment['server1'].tftp_path, 'tftp_ip' => @equipment['server1'].telnet_ip,  'samba_path' =>  dst_folder}
    boot_params["bootargs"] = @test_params.params_chan.bootargs[0].strip if @test_params.params_chan.instance_variable_defined?(:@bootargs)
@@ -531,7 +531,7 @@ def mount_device(check_partition=true)
 end
 
 def prepare_read_only_device_partitions(partitioned_device)
-	modules_dir = './'
+	modules_dir = ''
 	device_file_name = 'usb_slave_msc_'+@test_params.params_chan.file_size[0].upcase.strip+'_test.dat'
 	
 	if (@test_params.params_chan.usb_dev_read_only[0] == 'true')
@@ -558,7 +558,7 @@ def create_loop_device
 	puts " "
 	puts "--------------- usb_slave_msc - create_loop_device ---588a---------------"
 
-	modules_dir = './'
+	modules_dir = ''
 	send_linux_command('modinfo loop')
 	
 	if @equipment['dut'].timeout?
@@ -583,7 +583,7 @@ def prepare_read_only_file_partitions(partitions_array)
 
 	@equipment['dut'].send_cmd("cd /#{@tester}/#{@test_params.target.downcase}/#{@test_params.platform.downcase}/bin/\n", /#{@equipment['dut'].prompt}/, 10)
 
-  modules_dir = './'
+  modules_dir = ''
 	device_file_name = 'usb_slave_msc_'+@test_params.params_chan.file_size[0].upcase.strip+'_test.dat'
 	partitions_array.each_index do |idx|
 		
@@ -883,7 +883,7 @@ end
 
 def check_module_info
     result = ''
-	modules_dir = './'
+	modules_dir = ''
 	@equipment['dut'].send_cmd("cat /proc/modules",/g_file_storage\s*\d+\s*\d+.*Live.*/im)
 	result += "cat /proc/modules failed\n" if @equipment['dut'].timeout?
 	@equipment['dut'].send_cmd("modinfo -d #{modules_dir}g_file_storage.ko",/File-backed\s*Storage\s*Gadget.*/im)

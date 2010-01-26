@@ -60,14 +60,14 @@ class Uart_perfTestPlan < TestPlan
         'description'  =>  "Verify read performance is upto mark for 104856 bytes",
         'testcaseID'   => 'uart_perofrmance_read',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './psp_test_bench FnTest UART`++exit`;uart_read_perf_interrupt `++(?i:PASS Performance value is in acceptable range)--(?i:fail)`' 
+          'cmd' => 'psp_test_bench FnTest UART`++exit`;uart_read_perf_interrupt `++(?i:PASS Performance value is in acceptable range)--(?i:fail)`' 
         }),
       },
       {
         'description'  =>  "Verify write performance is upto mark for 104856 bytes",
         'testcaseID'   => 'uart_perofrmance_write',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './psp_test_bench FnTest UART`++exit`;uart_write_perf_interrupt `++(?i:PASS Performance value is in acceptable range)--(?i:fail)`' 
+          'cmd' => 'psp_test_bench FnTest UART`++exit`;uart_write_perf_interrupt `++(?i:PASS Performance value is in acceptable range)--(?i:fail)`' 
         }),
       },      
      ]

@@ -57,70 +57,70 @@ class Video_cap_func_bufTestPlan < TestPlan
                                       "unmapping the buffer",
         'testcaseID'   => 'video_func_buf_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 0 `++Success\\s+BUF--Failed\\s+BUF`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 0 `++Success\\s+BUF--Failed\\s+BUF`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the REQ_BUF with a Invalid device type(20) value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_002',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 1 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 1 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the REQ_BUF with a Invalid memory type(20) value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_003',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 1 -i 0 -s 1`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 1 -i 0 -s 1`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the QUERY_BUF with a Invalid device type(20) value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_004',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 2 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 2 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the QUERY_BUF with a Invalid memory type(20) value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_005',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 2 -i 0 -s 1`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 2 -i 0 -s 1`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the QBUF with a Invalid device type(20) value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_006',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 3 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 3 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the QBUF with a Invalid memory type(20) value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_007',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 3 -i 0 -s 1`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 3 -i 0 -s 1`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the DQBUF with a Invalid memory type(20) value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_008',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 4 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 4 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the STREAMON with a Invalid memory type(20) value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_009',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 5 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 5 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the STREAMOFF with a Invalid memory type(20) value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_010',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 6 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -p 0 -c 0 -n 6 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
         }),
       }
     ]
@@ -150,7 +150,7 @@ class Video_cap_func_bufTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

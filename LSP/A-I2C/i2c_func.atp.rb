@@ -143,13 +143,13 @@ class I2c_funcTestPlan < TestPlan
     pass_string = '(?i:done)'
     fail_string = '(?i:fail)|(?i:not\\s+found)'
     cmd = case slave_device
-    when 'led' then "[dut_timeout\\=60];\./st_parser i2c update config 2 open ioctl 1 led exit exit`++#{pass_string}--(?i:fail)|(?i:not\\s+found)`"
-    when 'ir' then "[dut_timeout\\=60];\./st_parser i2c update config 4 open ioctl 1 ir_a exit exit `++#{pass_string}--(?i:fail)|(?i:not\\s+found)`"
-    when 'rtc' then "[dut_timeout\\=60];\./st_parser i2c update config 5 open ioctl 1 rtc_w 08 20 11 20 03 50 00 rtc_r exit exit`++#{pass_string}--(?i:fail)|(?i:not\\s+found)`"
-    #cmd = './st_parser i2c update config 3 open ioctl 1 codec_oneshot 1 <codec_reg_num> <value> 2 1 codec_oneshot 0 <codec_reg_num> 1 1 1 exit exit' when 'aicxx'
-    when 'aicxx' then "[dut_timeout\\=60];\./st_parser i2c update config 3 open ioctl 1 codec_oneshot 1 2 19 2 1 codec_oneshot 0 2 1 1 1 exit exit`++#{pass_string}--(?i:fail)|(?i:not\\s+found)`" 
-    when 'eeprom' then "[dut_timeout\\=60];\./st_parser i2c update config 1 open ioctl 1 write exit exit `++#{pass_string}--(?i:fail)|(?i:not\\s+found)`;\./st_parser i2c update config 1 open ioctl 1 read exit exit `++#{pass_string}--(?i:fail)|(?i:not\\s+found)`"
-    when 'mxp430' then "[dut_timeout\\=60];\./st_parser i2c update config 4 open ioctl 1 test_mxp430 exit exit`++(?i:done)--(?i:fail)|(?i:not\s+found)`"
+    when 'led' then "[dut_timeout\\=60];st_parser i2c update config 2 open ioctl 1 led exit exit`++#{pass_string}--(?i:fail)|(?i:not\\s+found)`"
+    when 'ir' then "[dut_timeout\\=60];st_parser i2c update config 4 open ioctl 1 ir_a exit exit `++#{pass_string}--(?i:fail)|(?i:not\\s+found)`"
+    when 'rtc' then "[dut_timeout\\=60];st_parser i2c update config 5 open ioctl 1 rtc_w 08 20 11 20 03 50 00 rtc_r exit exit`++#{pass_string}--(?i:fail)|(?i:not\\s+found)`"
+    #cmd = 'st_parser i2c update config 3 open ioctl 1 codec_oneshot 1 <codec_reg_num> <value> 2 1 codec_oneshot 0 <codec_reg_num> 1 1 1 exit exit' when 'aicxx'
+    when 'aicxx' then "[dut_timeout\\=60];st_parser i2c update config 3 open ioctl 1 codec_oneshot 1 2 19 2 1 codec_oneshot 0 2 1 1 1 exit exit`++#{pass_string}--(?i:fail)|(?i:not\\s+found)`" 
+    when 'eeprom' then "[dut_timeout\\=60];st_parser i2c update config 1 open ioctl 1 write exit exit `++#{pass_string}--(?i:fail)|(?i:not\\s+found)`;st_parser i2c update config 1 open ioctl 1 read exit exit `++#{pass_string}--(?i:fail)|(?i:not\\s+found)`"
+    when 'mxp430' then "[dut_timeout\\=60];st_parser i2c update config 4 open ioctl 1 test_mxp430 exit exit`++(?i:done)--(?i:fail)|(?i:not\s+found)`"
     end
     return cmd
   end

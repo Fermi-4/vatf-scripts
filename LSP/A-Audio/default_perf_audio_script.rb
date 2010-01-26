@@ -3,6 +3,7 @@ require 'rubygems'
 require 'facets'
 
 # Default Server-Side Test script implementation for LSP releases
+require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 
 class Audio_run_params

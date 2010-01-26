@@ -51,28 +51,28 @@ class Audio_funcTestPlan < TestPlan
         'description'  =>  "Verify that the audio device can be opened in blocking mode",
         'testcaseID'   => 'audio_func_gen_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser audio open 2 1`++Success::\\s+Open--Failed::\\s+Open`' 
+          'cmd' => 'st_parser audio open 2 1`++Success::\\s+Open--Failed::\\s+Open`' 
         }),
       },
       {
         'description'  =>  "Verify that the audio device opened in blocking mode can be closed",
         'testcaseID'   => 'audio_func_gen_0002',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser audio close`++Success::\\s+AUDIO--Failed::\\s+AUDIO`' 
+          'cmd' => 'st_parser audio close`++Success::\\s+AUDIO--Failed::\\s+AUDIO`' 
         }),
       },
       {
         'description'  =>  "Verify that the audio device can be opened in non-blocking mode",
         'testcaseID'   => 'audio_func_gen_0003',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser audio open 2 0`++Success::\\s+Open--Failed::\\s+Open`' 
+          'cmd' => 'st_parser audio open 2 0`++Success::\\s+Open--Failed::\\s+Open`' 
         }),
       },
       {
         'description'  =>  "Verify that the audio device opened in non-blocking mode can be closed",
         'testcaseID'   => 'audio_func_0004',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser audio close`++Success::\\s+AUDIO--Failed::\\s+AUDIO`'
+          'cmd' => 'st_parser audio close`++Success::\\s+AUDIO--Failed::\\s+AUDIO`'
         }),
       }
      ]
@@ -102,7 +102,7 @@ class Audio_funcTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

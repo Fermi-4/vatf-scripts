@@ -101,8 +101,8 @@ class Nor_func_premTestPlan < TestPlan
   private 
   def get_cmd(test_type, file_size, buffer_size, test_file)
     rtn = case test_type
-      when 'write-read':  "\./st_parser fsapi buffsize #{buffer_size} fwrite #{test_file} #{file_size}`--(?i:fail)`" +
-                          ";\./st_parser fsapi fread {test_file}`--(?i:fail)`"
+      when 'write-read':  "st_parser fsapi buffsize #{buffer_size} fwrite #{test_file} #{file_size}`--(?i:fail)`" +
+                          ";st_parser fsapi fread {test_file}`--(?i:fail)`"
     end
   end
   

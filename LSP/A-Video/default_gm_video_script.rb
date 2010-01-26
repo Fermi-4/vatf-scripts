@@ -3,6 +3,7 @@ require 'rubygems'
 require 'facets'
 
 # Default Server-Side Test script implementation for LSP releases
+require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 
 class Video_run_params
@@ -42,7 +43,8 @@ class V4l2_capture_run_params < Video_run_params
         mode   			= params.params_chan.mode[0] 
         input   			= params.params_chan.input[0] 
         options   			= params.params_chan.options[0] 
-
+		
+        @pretest_cmd	= "insmod /bin/cmemk.ko phys_start=0x86c00000 phys_end=0x88000000 pools=4x4149248"
         @test_cmd  		= "pspTest ThruPut FRv4l2capture #{dev_node} #{buffers} #{frames} #{mode} #{input} #{options}"  
     	@test_regex 	= /Capture\s*frame\s*rate:\s*([\d|\.]+).*percentage\s*cpu\s*load:\s*([\d|\.]+)/mi
     	@test_timeout 	= 20+(frames.to_i/5)   # Assumes that the DUT is doing at least 5 frames per second
@@ -128,7 +130,7 @@ def run
     test_timeout	= run_params.get_test_timeout(test_type)
     
 	@equipment['dut1'].send_cmd(pretest_cmd) if pretest_cmd
-  sleep 1
+    sleep 5
     @equipment['dut1'].send_cmd(test_cmd, test_regex, test_timeout) 
    	result = 1 if @equipment['dut1'].timeout?
    

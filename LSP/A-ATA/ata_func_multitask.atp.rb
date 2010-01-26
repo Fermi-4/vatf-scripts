@@ -63,8 +63,8 @@ class Ata_func_multitaskTestPlan < Ata_func_premTestPlan
     buffer_size = params['buffer_size']
     mnt_point = params['mnt_point']
     file_size = params['file_size']
-    rtn = "\./st_parser atahdd setbuffsize #{buffer_size} Multi_Process 2 #{file_size} 5 #{mnt_point}`++(?i:success)--(?i:fail)`" +
-          ";\./st_parser atahdd Multi_thread 2 #{file_size} 5 #{mnt_point}`++(?i:success)--(?i:fail)|(?i:corruption)`"
+    rtn = "st_parser atahdd setbuffsize #{buffer_size} Multi_Process 2 #{file_size} 5 #{mnt_point}`++(?i:success)--(?i:fail)`" +
+          ";st_parser atahdd Multi_thread 2 #{file_size} 5 #{mnt_point}`++(?i:success)--(?i:fail)|(?i:corruption)`"
   end
     
 end #END_CLASS

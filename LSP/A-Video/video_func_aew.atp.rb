@@ -53,14 +53,14 @@ class Video_func_aewTestPlan < TestPlan
         'description'  =>  "Verify that the AEW device can be opend and closed successfully" ,
         'testcaseID'   => 'video_func_aew_io_0001',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './aew_test_app -t f -c 2 -n 5`++Success\\s+IO--Failed\\s+IO`' 
+        'cmd' => 'aew_test_app -t f -c 2 -n 5`++Success\\s+IO--Failed\\s+IO`' 
         }),
       },
       {
         'description'  =>  "Verify that the AEW device can be opend and closed successfully 10 times" ,
         'testcaseID'   => 'video_func_aew_io_0002',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './aew_test_app -t f -c 2 -n 6`++Success\\s+IO--Failed\\s+IO`' 
+        'cmd' => 'aew_test_app -t f -c 2 -n 6`++Success\\s+IO--Failed\\s+IO`' 
         }),
       },
       {
@@ -69,35 +69,35 @@ class Video_func_aewTestPlan < TestPlan
                                      "\r\n horizontal and vertical count and horizontal and vertical line increment",
         'testcaseID'   => 'video_func_aew_io_0003',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './aew_test_app -t f -c 2 -n 1`++Success\\s+S_PARAM--Failed\\s+S_PARAM`' 
+        'cmd' => 'aew_test_app -t f -c 2 -n 1`++Success\\s+S_PARAM--Failed\\s+S_PARAM`' 
         }),
       },
       {
         'description'  =>  "Verify that the AEW G_PARAM ioctl behavior" ,
         'testcaseID'   => 'video_func_aew_io_0004',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './aew_test_app -t f -c 2 -n 2`++Success\\s+G_PARAM--Failed\\s+G_PARAM`' 
+        'cmd' => 'aew_test_app -t f -c 2 -n 2`++Success\\s+G_PARAM--Failed\\s+G_PARAM`' 
         }),
       },
       {
         'description'  =>  "Verify that the AEW_ENABLE ioctl behavior" ,
         'testcaseID'   => 'video_func_aew_io_0005',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './aew_test_app -t f -c 2 -n 3`++Success\\s+AEW_ENABLE--Failed\\s+AEW_ENABLE`' 
+        'cmd' => 'aew_test_app -t f -c 2 -n 3`++Success\\s+AEW_ENABLE--Failed\\s+AEW_ENABLE`' 
         }),
       },
       {
         'description'  =>  "Verify that the AEW_DISABLE ioctl behavior" ,
         'testcaseID'   => 'video_func_aew_io_0006',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './aew_test_app -t f -c 2 -n 4`++Success\\s+AEW_DISABLE--Failed\\s+AEW_DISABLE`' 
+        'cmd' => 'aew_test_app -t f -c 2 -n 4`++Success\\s+AEW_DISABLE--Failed\\s+AEW_DISABLE`' 
         }),
       },
       {
         'description'  =>  "Verify that the AEW S_PARAM ioctl handles invalid parameter as expected" ,
         'testcaseID'   => 'video_func_aew_io_0007',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './aew_test_app -t f -c 3 -n 1`++Success\\s+Negative\\s+Tests--Failed\\s+Negative\\s+Tests`' 
+        'cmd' => 'aew_test_app -t f -c 3 -n 1`++Success\\s+Negative\\s+Tests--Failed\\s+Negative\\s+Tests`' 
         }),
       },
       {
@@ -106,7 +106,7 @@ class Video_func_aewTestPlan < TestPlan
         'testcaseID'   => 'video_func_aew_io_0008',
         'script'      => 'LSP\video_aew.rb',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './aew_test_app -t f -c 4 -n 1`++Success\\s+AEW--Failed\\s+AEW`' 
+        'cmd' => 'aew_test_app -t f -c 4 -n 1`++Success\\s+AEW--Failed\\s+AEW`' 
         }),
       }
     ]
@@ -136,7 +136,7 @@ class Video_func_aewTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

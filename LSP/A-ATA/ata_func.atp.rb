@@ -262,7 +262,7 @@ class Ata_funcTestPlan < TestPlan
         'script'       => 'LSP\A-ATA\ata.rb',
         'paramsChan'  => common_paramsChan.merge({
           'cmd'       => get_power_mode_cmd(mode) + 
-                        ";\./st_parser fsapi fwrite /mnt/ata/test_file 1024 fread /mnt/ata/test_file`--(?i:fail)`"
+                        ";st_parser fsapi fwrite /mnt/ata/test_file 1024 fread /mnt/ata/test_file`--(?i:fail)`"
         }),
       }
     }
@@ -345,11 +345,11 @@ class Ata_funcTestPlan < TestPlan
   
   def get_cmd(test_type, file_size, buffer_size, append_size, test_file)
     rtn = case test_type
-      when 'write-read':  "\./st_parser fsapi buffsize #{buffer_size} fwrite #{test_file} #{file_size}`--(?i:fail|fatal)`" +
-                          ";\./st_parser fsapi fread {test_file}`--(?i:fail)`"
-      when 'write-append':"\./st_parser fsapi buffsize #{buffer_size} fwrite #{test_file} #{file_size}--(?i:fail|fatal)`" +
-                          ";\./st_parser fsapi fappend #{test_file} #{append_size}--(?i:fail)`"
-      when 'read':  "\./st_parser fsapi buffsize #{buffer_size} fread #{test_file}`--(?i:fail)`"
+      when 'write-read':  "st_parser fsapi buffsize #{buffer_size} fwrite #{test_file} #{file_size}`--(?i:fail|fatal)`" +
+                          ";st_parser fsapi fread {test_file}`--(?i:fail)`"
+      when 'write-append':"st_parser fsapi buffsize #{buffer_size} fwrite #{test_file} #{file_size}--(?i:fail|fatal)`" +
+                          ";st_parser fsapi fappend #{test_file} #{append_size}--(?i:fail)`"
+      when 'read':  "st_parser fsapi buffsize #{buffer_size} fread #{test_file}`--(?i:fail)`"
       else  "echo no cmd for #{test_type}`--no\\s+cmd`"
     end
   end

@@ -64,7 +64,7 @@ class Video_cap_func_stdTestPlan < TestPlan
                                       "printout the standard name by enumerating the standard" ,
         'testcaseID'   => 'video_func_querystd_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2`++Success\\s+STD--Failed\\s+STD`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2`++Success\\s+STD--Failed\\s+STD`' 
         }),
       },
       {
@@ -75,7 +75,7 @@ class Video_cap_func_stdTestPlan < TestPlan
                                       "printout the standard name by enumerating the standard" ,
         'testcaseID'   => 'video_func_querystd_0002',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2`++Success\\s+STD--Failed\\s+STD`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2`++Success\\s+STD--Failed\\s+STD`' 
         }),
       },
       {
@@ -86,7 +86,7 @@ class Video_cap_func_stdTestPlan < TestPlan
                                       "printout the standard name by enumerating the standard" ,
         'testcaseID'   => 'video_func_querystd_0003',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2`++Success\\s+STD--Failed\\s+STD`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2`++Success\\s+STD--Failed\\s+STD`' 
         }),
       },
       {
@@ -97,7 +97,7 @@ class Video_cap_func_stdTestPlan < TestPlan
                                       "printout the standard name by enumerating the standard",
         'testcaseID'   => 'video_func_querystd_0004',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2`++Success\\s+STD--Failed\\s+STD`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2`++Success\\s+STD--Failed\\s+STD`' 
         }),
       },
       {
@@ -108,7 +108,7 @@ class Video_cap_func_stdTestPlan < TestPlan
                                       "printout the standard name by enumerating the standard",
         'testcaseID'   => 'video_func_querystd_0005',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2`++Success\\s+STD--Failed\\s+STD`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2`++Success\\s+STD--Failed\\s+STD`' 
         }),
       },
 =begin
@@ -119,7 +119,7 @@ class Video_cap_func_stdTestPlan < TestPlan
                                       "printout the standard name by enumerating the standard" ,
         'testcaseID'   => 'video_func_querystd_0006',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2 -i 6`++Success\\s+STD--Failed\\s+STD`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2 -i 6`++Success\\s+STD--Failed\\s+STD`' 
         }),
       },
 =end
@@ -131,7 +131,7 @@ class Video_cap_func_stdTestPlan < TestPlan
                                       "printout the standard name by enumerating the standard",
         'testcaseID'   => 'video_func_querystd_0006',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2`++Success\\s+STD--Failed\\s+STD`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2`++Success\\s+STD--Failed\\s+STD`' 
         }),
       },
       {
@@ -142,70 +142,70 @@ class Video_cap_func_stdTestPlan < TestPlan
                                       "printout the standard name by enumerating the standard" ,
         'testcaseID'   => 'video_func_querystd_0007',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2`++Success\\s+INPUT--Failed\\s+INPUT`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2`++Success\\s+INPUT--Failed\\s+INPUT`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the G_STD with a NULL parameter.(Negative Test)",
         'testcaseID'   => 'video_func_querystd_0008',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2 -i 1 -c 0``++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2 -i 1 -c 0``++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the ENUM_STD with a NULL parameter.(Negative Test)",
         'testcaseID'   => 'video_func_querystd_0009',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2 -i 2 -c 0``++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2 -i 2 -c 0``++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the SET_STD with a NULL parameter.(Negative Test)",
         'testcaseID'   => 'video_func_querystd_0010',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2 -i 3 -c 0``++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2 -i 3 -c 0``++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the ENUM_STD with a invalid parameter -1.(Negative Test)",
         'testcaseID'   => 'video_func_querystd_0011',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2 -i 2 -c 1`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2 -i 2 -c 1`++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the ENUM_STD with a invalid parameter 0.(Negative Test)",
         'testcaseID'   => 'video_func_querystd_0012',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2 -i 2 -c 2`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2 -i 2 -c 2`++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the SET_STD with a invalid parameter -1.(Negative Test)",
         'testcaseID'   => 'video_func_querystd_0013',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2 -i 3 -c 1`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2 -i 3 -c 1`++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the SET_STD with a invalid parameter 0.(Negative Test)",
         'testcaseID'   => 'video_func_querystd_0014',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2 -i 3 -c 2`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2 -i 3 -c 2`++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the GET_STD with a invalid parameter -1.(Negative Test)",
         'testcaseID'   => 'video_func_querystd_0015',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2 -i 1 -c 1`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2 -i 1 -c 1`++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the GET_STD with a invalid parameter 0.(Negative Test)",
         'testcaseID'   => 'video_func_querystd_0016',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2 -i 1 -c 2`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2 -i 1 -c 2`++Failed\\s+errno=EINVAL`' 
         }),
       }
     ]
@@ -236,7 +236,7 @@ class Video_cap_func_stdTestPlan < TestPlan
         'ioctl_list' => param['ioctl_list'],
         'std_list' => param['std_list']
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

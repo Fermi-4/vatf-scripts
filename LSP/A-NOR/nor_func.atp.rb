@@ -164,7 +164,7 @@ def get_ioctl_test_cmd(params)
   # @ioctls = ['MEMGETREGIONCOUNT', 'MEMGETINFO', 'MEMERASE', 'MEMWRITEOOB'] +
               # ['MEMREADOOB', 'MEMLOCK', 'MEMUNLOCK', 'MEMGETOOBSEL']
   rtn = case params['ioctls']
-    when 'MEMGETINFO': "\./st_parser nor nor_ioctl #{params['device_node']} mtd_info`--(?i:fail)`"
+    when 'MEMGETINFO': "st_parser nor nor_ioctl #{params['device_node']} mtd_info`--(?i:fail)`"
     else               "echo fail (not supported yet)`--(?i:fail)`"
   end
 end

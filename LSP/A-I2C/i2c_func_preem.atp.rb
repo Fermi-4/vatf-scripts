@@ -64,7 +64,7 @@ class I2c_func_preemTestPlan < TestPlan
         'description'  => "Verify that the I2C Driver can write/read the desired number of bytes to/from specified Slave device: MSP430-LED using IOCTL commands.", 
         'testcaseID'   => 'i2c_func_led',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd'       => '[dut_timeout\=60];./st_parser i2c update config 2 open ioctl 1 led exit exit`++(?i:done)--(?i:fail)|(?i:not\\s+found)`'
+          'cmd'       => '[dut_timeout\=60];st_parser i2c update config 2 open ioctl 1 led exit exit`++(?i:done)--(?i:fail)|(?i:not\\s+found)`'
         }),
       },
 =begin

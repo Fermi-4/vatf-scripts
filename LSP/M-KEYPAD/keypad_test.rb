@@ -1,5 +1,5 @@
 # -*- coding: ISO-8859-1 -*-
-# require 'C:\views\Snapshot\vatf_lsp120_a0850405_laptop_view\gtsystst_tp\TestPlans\LSP\default_lsp_script'
+require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 
 def setup
@@ -8,7 +8,7 @@ end
 
 def run
   begin
-    @equipment['dut1'].send_cmd("\./keypad_test &", @equipment['dut1'].prompt, 20)
+    @equipment['dut1'].send_cmd("keypad_test &", @equipment['dut1'].prompt, 20)
     file_res_form = ResultForm.new("Keypad Test Result Form")
     file_res_form.show_result_form
   end until file_res_form.test_result != FrameworkConstants::Result[:nry]

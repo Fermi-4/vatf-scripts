@@ -54,7 +54,7 @@ class Video_disp_fbdev_ioTestPlan < TestPlan
         'testcaseID'   => 'video_disp_fbdev_io_0001',
         'script'  => 'LSP\default_test_script.rb',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './fbdev_io -l 1`++FbDev_IO\\s+Passed--FbDev_IO\\s+Failed`' ,
+        'cmd' => 'fbdev_io -l 1`++FbDev_IO\\s+Passed--FbDev_IO\\s+Failed`' ,
         }),
       },
       {
@@ -62,28 +62,28 @@ class Video_disp_fbdev_ioTestPlan < TestPlan
         'testcaseID'   => 'video_disp_fbdev_io_0002',
         'script'  => 'LSP\default_test_script.rb',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './fbdev_io -l 20`++FbDev_IO\\s+Passed--FbDev_IO\\s+Failed`' ,
+        'cmd' => 'fbdev_io -l 20`++FbDev_IO\\s+Passed--FbDev_IO\\s+Failed`' ,
         }),
       },
       {
         'description'  =>  "Verify that the all FBDev devices can be successfully opened and closed multiple times",
         'testcaseID'   => 'video_disp_fbdev_io_0002',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './fbdev_io -o 1',#`++Passed\\s+fbdev\\s+io--Failed\\s+fbdev\\s+io`' 
+        'cmd' => 'fbdev_io -o 1',#`++Passed\\s+fbdev\\s+io--Failed\\s+fbdev\\s+io`' 
         }),
       },
       {
         'description'  =>  "Verify that the all FBDev devices can be successfully opened and closed in Non-blocking mode",
         'testcaseID'   => 'video_disp_fbdev_io_0003',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './fbdev_io -l 1 -b 0`++FbDev_IO\\s+Passed--FbDev_IO\\s+Failed`' ,
+        'cmd' => 'fbdev_io -l 1 -b 0`++FbDev_IO\\s+Passed--FbDev_IO\\s+Failed`' ,
         }),
       },
       {
         'description'  =>  "Verify that the all FBDev devices can be successfully opened and closed in Non-Blocking mode multiple times",
         'testcaseID'   => 'video_disp_fbdev_io_0004',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './fbdev_io -l 20 -b 0`++FbDev_IO\\s+Passed--FbDev_IO\\s+Failed`' ,
+        'cmd' => 'fbdev_io -l 20 -b 0`++FbDev_IO\\s+Passed--FbDev_IO\\s+Failed`' ,
         }),
       }
     ]
@@ -113,7 +113,7 @@ class Video_disp_fbdev_ioTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

@@ -65,7 +65,7 @@ class I2c_func_multitaskTestPlan < TestPlan
         'description'  => "Verify that the I2C Driver can simultaneously handle Write and Read operations to the LED slave devices on the bus with default speed",
         'testcaseID'   => 'i2c_multitask_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd'       => "./st_parser i2c update config 2 open ioctl 1 m_thread 2 2 2 10 5 exit exit`#{expect_str}`",
+          'cmd'       => "st_parser i2c update config 2 open ioctl 1 m_thread 2 2 2 10 5 exit exit`#{expect_str}`",
           'bootargs'    => get_bootargs(400),
         }),
       },
@@ -73,7 +73,7 @@ class I2c_func_multitaskTestPlan < TestPlan
         'description'  => "Verify that the I2C Driver can simultaneously handle Write and Read operations to the LED slave devices on the bus with another speed.",
         'testcaseID'   => 'i2c_multitask_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd'       => "./st_parser i2c update config 2 open ioctl 1 m_thread 1 2 2 10 5 exit exit`#{expect_str}`",
+          'cmd'       => "st_parser i2c update config 2 open ioctl 1 m_thread 1 2 2 10 5 exit exit`#{expect_str}`",
           'bootargs'    => get_bootargs(100),
         }),
       },
@@ -81,7 +81,7 @@ class I2c_func_multitaskTestPlan < TestPlan
         'description'  => "Verify that the I2C Driver can simultaneously handle Write and Read operations to the LED slave devices on the bus with default speed",
         'testcaseID'   => 'i2c_multitask_0002',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd'       => "./st_parser i2c update config 2 open ioctl 1 m_proc 2 2 10 5 exit exit`#{expect_str}`",
+          'cmd'       => "st_parser i2c update config 2 open ioctl 1 m_proc 2 2 10 5 exit exit`#{expect_str}`",
           'bootargs'    => get_bootargs(400),
         }),
       },
@@ -89,7 +89,7 @@ class I2c_func_multitaskTestPlan < TestPlan
         'description'  => "Verify that the I2C Driver can simultaneously handle Write and Read operations to the LED slave devices on the bus with another speed.",
         'testcaseID'   => 'i2c_multitask_0002',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd'       => "./st_parser i2c update config 2 open ioctl 1 m_proc 1 2 10 5 exit exit`#{expect_str}`",
+          'cmd'       => "st_parser i2c update config 2 open ioctl 1 m_proc 1 2 10 5 exit exit`#{expect_str}`",
           'bootargs'    => get_bootargs(100),
         }),
       },

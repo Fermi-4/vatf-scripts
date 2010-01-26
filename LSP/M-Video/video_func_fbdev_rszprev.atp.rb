@@ -135,7 +135,7 @@ class Video_func_fbdev_rszprevTestPlan < TestPlan
             'ipipe_fmt'	=> "#{params['ipipe_fmt']}",
             #'vid_plane'	=> "#{params['Vid_plane']}",
             'target_sources' => 'LSP\M-Video\Video\rszprev',
-            'cmd'	=> "./#{get_cmd_name(params['rsz_mode'])} -i #{get_input(params['input'])} -s 0 -p 0 -f #{get_pix_fmt(params['ipipe_fmt'])} -r #{get_output(params['output'])}",
+            'cmd'	=> "#{get_cmd_name(params['rsz_mode'])} -i #{get_input(params['input'])} -s 0 -p 0 -f #{get_pix_fmt(params['ipipe_fmt'])} -r #{get_output(params['output'])}",
         },
         'paramsEquip'  => {},
         'paramsControl'=> {},

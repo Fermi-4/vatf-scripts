@@ -1,6 +1,6 @@
 =begin
     printf("Usage:\n"
-            "./pwm_tests <options>\n\n"
+            "pwm_tests <options>\n\n"
             "-d       --devicenode     Device node on which test is to be run\n"
             "\t\t\t\tPossible value-/dev/davinci_pwm0 etc based on platform\n"
             "-T       --testname        Name of the special test\n"
@@ -93,7 +93,7 @@ class Pwm_func_preemTestPlan < TestPlan
             'description'  => "#{dev_node}: " +  "Verify the PWM output for default mode, period and pulse width",
             'testcaseID'   => 'pwm_func_api_0002',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
@@ -102,8 +102,8 @@ class Pwm_func_preemTestPlan < TestPlan
             'paramsChan'  => common_paramsChan.merge({
               #'cmd' => "#{pwm_open} st_parser pwm set_mode 1#{pwm_pass_fail} st_parser pwm set_period 2#{pwm_pass_fail}" \
               #  "st_parser pwm set_pw 2#{pwm_pass_fail} st_parser pwm set_rpt_cnt 2#{pwm_pass_fail} #{pwm_start}",
-              #'cmd' => "./pwm_tests -d {instance} -m {mode} -I {period} -i {pw} -r {rpt_cnt} -s {idle_state} -p {1st_phase} -n {count} -T {test_type}"
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 200 -i 150 -r 20 -s 1 -p 0 -n 1 -T api"
+              #'cmd' => "pwm_tests -d {instance} -m {mode} -I {period} -i {pw} -r {rpt_cnt} -s {idle_state} -p {1st_phase} -n {count} -T {test_type}"
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 200 -i 150 -r 20 -s 1 -p 0 -n 1 -T api"
             }),
         },
       ]

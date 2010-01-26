@@ -42,7 +42,8 @@ def run
     target_reduced_fs_tarball_name = File.basename(target_reduced_fs_tarball)
     # copy this fs to target
     test_folder = "/test/#{@tester}/#{@test_params.target.downcase}/#{@test_params.platform.downcase}"
-    dst_folder = "#{LspTestScript.nfs_root_path}#{test_folder}"
+    #dst_folder = "#{LspTestScript.nfs_root_path}#{test_folder}"
+	dst_folder = "#{LspTestScript.samba_root_path}#{test_folder.gsub('/',"\\")}"
     #dst_folder = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}\\#{@tester}\\#{@test_params.target.downcase}"
     puts "dst_folder is #{dst_folder}"
     BuildClient.copy(target_reduced_fs_tarball, dst_folder+"\\"+File.basename(target_reduced_fs_tarball))
@@ -58,10 +59,10 @@ def run
                     Time.now.min.to_s.rjust(2, '0') + Time.now.year.to_s.rjust(4, '0')
     @equipment['dut1'].send_cmd("cd #{mnt_point}", @equipment['dut1'].prompt, 20)
     @equipment['dut1'].send_cmd("date #{current_time}", @equipment['dut1'].prompt, 20)
-    @equipment['dut1'].send_cmd("tar #{untar_option} /#{test_folder}/#{target_reduced_fs_tarball_name}", @equipment['dut1'].prompt, 120)
+    @equipment['dut1'].send_cmd("tar #{untar_option} #{test_folder}/#{target_reduced_fs_tarball_name}", @equipment['dut1'].prompt, 120)
     # catch the tar error if any
-    if /error/i =~ @equipment['dut1'].response then
-      raise "tar #{untar_option} /#{test_folder}/#{target_reduced_fs_tarball_name} had error!"
+    if /(fail)|(no\s+such\s+file)/i =~ @equipment['dut1'].response then
+      raise "tar #{untar_option} #{test_folder}/#{target_reduced_fs_tarball_name} had error!"
     end
        
     @equipment['dut1'].send_cmd("ls #{mnt_point}", @equipment['dut1'].prompt, 20)
@@ -89,7 +90,8 @@ def run
   params = {}
   params['dut']    = @equipment['dut1'] 
   params['apc']    = @equipment['apc1']
-  boot_to_bootloader(params)
+  #boot_to_bootloader(params)
+  @equipment['dut1'].boot_to_bootloader
 
   # set bootargs to this fs and boot
   bootargs_mtd = @test_params.params_chan.bootargs_mtd[0]
@@ -163,7 +165,8 @@ def clean
   dut = @equipment['dut1']
   boot_args = SiteInfo::Bootargs[@test_params.platform.downcase.strip]
 
-  boot_to_bootloader(params)
+  #boot_to_bootloader(params)
+  @equipment['dut1'].boot_to_bootloader
   dut.send_cmd("setenv nfs_root_path #{LspTestScript.nfs_root_path()}",/setenv.+#{dut.boot_prompt}/im, 30)
   raise 'Unable to set nfs root path' if dut.timeout?
   dut.send_cmd("setenv bootargs #{boot_args}",/setenv.+#{dut.boot_prompt}/im, 30)

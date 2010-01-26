@@ -1,6 +1,6 @@
 =begin
     printf("Usage:\n"
-            "./pwm_tests <options>\n\n"
+            "pwm_tests <options>\n\n"
             "-d       --devicenode     Device node on which test is to be run\n"
             "\t\t\t\tPossible value-/dev/davinci_pwm0 etc based on platform\n"
             "-T       --testname        Name of the special test\n"
@@ -93,14 +93,14 @@ class Pwm_func_stabilityTestPlan < TestPlan
             'description'  => "#{dev_node}: " +  "Verify the stability of the PWM driver in Continuous mode using different period, pulse and repeat counts by configuring -> starting -> stopping the PWM for each period, pulse and repeat count",
             'testcaseID'   => 'pwm_func_api_0070',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 31 -r 10 -s 0 -p 1 -n 1 -T api ; ./pwm_tests -d #{dev_node} -m 1 -I 50 -i 50 -r 1 -s 0 -p 1 -n 1 -T api ; ./pwm_tests -d #{dev_node} -m 1 -I 25 -i 25 -r 1 -s 0 -p 1 -n 1 -T api ; ./pwm_tests -d #{dev_node} -m 1 -I 10 -i 10 -r 1 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 31 -r 10 -s 0 -p 1 -n 1 -T api ; ./pwm_tests -d #{dev_node} -m 1 -I 50 -i 50 -r 1 -s 0 -p 1 -n 1 -T api ; ./pwm_tests -d #{dev_node} -m 1 -I 25 -i 25 -r 1 -s 0 -p 1 -n 1 -T api ; ./pwm_tests -d #{dev_node} -m 1 -I 10 -i 10 -r 1 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the stability of the PWM driver in One-Shot mode using different period, pulse and repeat counts by configuring -> starting -> stopping the PWM for each period, pulse and repeat count",
             'testcaseID'   => 'pwm_func_api_0071',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 0 -I 100 -i 31 -r 10 -s 0 -p 1 -n 1 -T api ; ./pwm_tests -d #{dev_node} -m 0 -I 50 -i 50 -r 1 -s 0 -p 1 -n 1 -T api ; ./pwm_tests -d #{dev_node} -m 0 -I 25 -i 25 -r 1 -s 0 -p 1 -n 1 -T api ; ./pwm_tests -d #{dev_node} -m 0 -I 10 -i 10 -r 1 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 0 -I 100 -i 31 -r 10 -s 0 -p 1 -n 1 -T api ; ./pwm_tests -d #{dev_node} -m 0 -I 50 -i 50 -r 1 -s 0 -p 1 -n 1 -T api ; ./pwm_tests -d #{dev_node} -m 0 -I 25 -i 25 -r 1 -s 0 -p 1 -n 1 -T api ; ./pwm_tests -d #{dev_node} -m 0 -I 10 -i 10 -r 1 -s 0 -p 1 -n 1 -T api",
             }),
         },
       ]

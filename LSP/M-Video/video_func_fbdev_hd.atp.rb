@@ -125,7 +125,7 @@ class Video_func_fbdev_hdTestPlan < TestPlan
             'Out_Fmt'	=> "#{params['Out_Fmt']}",
             #'vid_plane'	=> "#{params['Vid_plane']}",
             'target_sources' => 'LSP\M-Video\Video\hd',
-            'cmd'	=>'', # "./v4l2_loop_hd -f #{params['Out_Fmt']} -i #{params['Input_vid']} -o #{params['Output']}",
+            'cmd'	=>'', # "v4l2_loop_hd -f #{params['Out_Fmt']} -i #{params['Input_vid']} -o #{params['Output']}",
         },
         'paramsEquip'  => {},
         'paramsControl'=> {},

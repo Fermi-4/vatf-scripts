@@ -105,7 +105,7 @@ class Audio_func_alsa_staticTestPlan < TestPlan
             'frame_sz'	=> "#{params['frame_sz']}",
             #'vid_plane'	=> "#{params['Vid_plane']}",
             'target_sources' => 'LSP/M-Audio/alsa/',
-            'cmd'	=> "./psp_test_bench FnTest ALSA",
+            'cmd'	=> "psp_test_bench FnTest ALSA",
         },
         'paramsEquip'  => {},
         'paramsControl'=> {},

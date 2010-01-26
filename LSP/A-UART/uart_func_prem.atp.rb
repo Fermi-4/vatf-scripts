@@ -61,14 +61,14 @@ class Uart_func_premTestPlan < TestPlan
         'description'  =>  "Verify write 1-104856 bytes",
         'testcaseID'   => 'uart_basic_write1',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => "./psp_test_bench FnTest UART `++exit`; uart_basic_write_interrupt `++(?i:UART_BASIC_WRITE_PASS)--#{fail_str}`;sleep 1;exit" 
+          'cmd' => "psp_test_bench FnTest UART `++exit`; uart_basic_write_interrupt `++(?i:UART_BASIC_WRITE_PASS)--#{fail_str}`;sleep 1;exit" 
         }),
       },
       {
         'description'  =>  "Verify read with from 1-1048576 bytes",
         'testcaseID'   => 'uart_basic_read',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => "./psp_test_bench FnTest UART`++exit`;uart_basic_read_interrupt `++(?i:UART_BASIC_READ_PASS)--#{fail_str}`;exit" 
+          'cmd' => "psp_test_bench FnTest UART`++exit`;uart_basic_read_interrupt `++(?i:UART_BASIC_READ_PASS)--#{fail_str}`;exit" 
         }),
       },
     ]

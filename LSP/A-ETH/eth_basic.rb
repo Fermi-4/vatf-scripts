@@ -1,6 +1,7 @@
 # -*- coding: ISO-8859-1 -*-
 
 # Default Server-Side Test script implementation for LSP releases
+require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 
 def setup
@@ -79,11 +80,11 @@ private
     
     # send traffic from DUT client
     if proto == 'tcp' 
-    	@equipment['dut1'].send_cmd("./iperf -c #{dest_ip} -w #{packet_size}k -t #{duration}",
+    	@equipment['dut1'].send_cmd("iperf -c #{dest_ip} -w #{packet_size}k -t #{duration}",
                                                /Mbits/,
                                                duration.to_i + 30)
     else
-        @equipment['dut1'].send_cmd("./iperf -u -c #{dest_ip} -w #{packet_size}k -t #{duration}",
+        @equipment['dut1'].send_cmd("iperf -u -c #{dest_ip} -w #{packet_size}k -t #{duration}",
                                                /\d+\s+ms/,
                                                duration.to_i + 30)
     end

@@ -65,7 +65,7 @@ class Wdt_funcTestPlan < TestPlan
         'script'      => 'LSP\A-WDT\wdt_default_test.rb',
         'paramsChan'  => common_paramsChan.merge({
           'wdt_alive_period'  => common_paramsChan['wdt_timeout'].to_i,
-          'cmd'   => "[dut_timeout\\=#{common_paramsChan['wdt_timeout'].to_i+15}];\./st_parser WDT open #{common_paramsChan['device_node']} 2 1 exit exit`#{expect_string}`",
+          'cmd'   => "[dut_timeout\\=#{common_paramsChan['wdt_timeout'].to_i+15}];st_parser WDT open #{common_paramsChan['device_node']} 2 1 exit exit`#{expect_string}`",
         }),
       },
       {
@@ -74,7 +74,7 @@ class Wdt_funcTestPlan < TestPlan
         'script'      => 'LSP\A-WDT\wdt_tests.rb',
         'paramsChan'  => common_paramsChan.merge({
           'wdt_alive_period'  => common_paramsChan['wdt_timeout'].to_i,
-          'cmd'   => "[dut_timeout\\=#{common_paramsChan['wdt_timeout'].to_i+15}];\./st_parser WDT open #{common_paramsChan['device_node']} 2 1 exit exit`#{expect_string}`",
+          'cmd'   => "[dut_timeout\\=#{common_paramsChan['wdt_timeout'].to_i+15}];st_parser WDT open #{common_paramsChan['device_node']} 2 1 exit exit`#{expect_string}`",
         }),
       },
       {
@@ -83,7 +83,7 @@ class Wdt_funcTestPlan < TestPlan
         'script'      => 'LSP\A-WDT\wdt_tests.rb',
         'paramsChan'  => common_paramsChan.merge({
           'wdt_alive_period'  => 2*common_paramsChan['wdt_timeout'].to_i-30,
-          'cmd'   => "[dut_timeout\\=100];\./st_parser WDT open #{common_paramsChan['device_node']} 2 1 WDT_Alive 30 exit exit`#{expect_string}`",
+          'cmd'   => "[dut_timeout\\=100];st_parser WDT open #{common_paramsChan['device_node']} 2 1 WDT_Alive 30 exit exit`#{expect_string}`",
         }),
       },
       {
@@ -92,7 +92,7 @@ class Wdt_funcTestPlan < TestPlan
         'script'      => 'LSP\A-WDT\wdt_default_test.rb',
         'paramsChan'  => common_paramsChan.merge({
           'wdt_alive_period'  => common_paramsChan['wdt_timeout'].to_i,
-          'cmd'   => "[dut_timeout\\=#{common_paramsChan['wdt_timeout'].to_i+15}];\./st_parser WDT open #{common_paramsChan['device_node']} 2 1 close exit exit`#{expect_string}`"
+          'cmd'   => "[dut_timeout\\=#{common_paramsChan['wdt_timeout'].to_i+15}];st_parser WDT open #{common_paramsChan['device_node']} 2 1 close exit exit`#{expect_string}`"
         }),
       },
       {
@@ -101,7 +101,7 @@ class Wdt_funcTestPlan < TestPlan
         'script'      => 'LSP\A-WDT\wdt_keep_alive.rb',
         'paramsChan'  => common_paramsChan.merge({
           'wdt_alive_period'  => 600, # how long I want keep dut alive. during this period, the dut should not boot. 
-          'cmd'   => "[dut_timeout\\=#{common_paramsChan['wdt_timeout'].to_i+15}];\./st_parser WDT open #{common_paramsChan['device_node']} 2 1 ping_WDT 0 30`--(?i:fail)`",
+          'cmd'   => "[dut_timeout\\=#{common_paramsChan['wdt_timeout'].to_i+15}];st_parser WDT open #{common_paramsChan['device_node']} 2 1 ping_WDT 0 30`--(?i:fail)`",
         }),
       },
       {
@@ -110,7 +110,7 @@ class Wdt_funcTestPlan < TestPlan
         'script'      => 'LSP\A-WDT\wdt_keep_alive.rb',
         'paramsChan'  => common_paramsChan.merge({
           'wdt_alive_period'  => 600, # how long I want keep dut alive. during this period, the dut should not boot. 
-          'cmd'   => "[dut_timeout\\=#{common_paramsChan['wdt_timeout'].to_i+15}];\./st_parser WDT open #{common_paramsChan['device_node']} 2 1 ping_WDT 1 30`--(?i:fail)`",
+          'cmd'   => "[dut_timeout\\=#{common_paramsChan['wdt_timeout'].to_i+15}];st_parser WDT open #{common_paramsChan['device_node']} 2 1 ping_WDT 1 30`--(?i:fail)`",
         }),
       },
     ]

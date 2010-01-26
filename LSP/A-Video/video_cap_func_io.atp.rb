@@ -51,28 +51,28 @@ class Video_cap_func_ioTestPlan < TestPlan
         'description'  =>  "Verify that the video capture device can be opened/closed",
         'testcaseID'   => 'video_func_io_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_io -i 1 -c 1`++Success\\s+Open\/Close--Failed\\s+Open\/Close`' 
+          'cmd' => 'v4l2_cap_io -i 1 -c 1`++Success\\s+Open\/Close--Failed\\s+Open\/Close`' 
         }),
       },
       {
         'description'  =>  "Verify that the video capture device can be opened/closed multiple times",
         'testcaseID'   => 'video_func_io_0002',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_io -i 10 -c 1`++Success\\s+Open\/Close--Failed\\s+Open\/Close`' 
+          'cmd' => 'v4l2_cap_io -i 10 -c 1`++Success\\s+Open\/Close--Failed\\s+Open\/Close`' 
         }),
       },
       {
         'description'  =>  "Verify that the video capture device can be opened/closed for multiple instances (more than one channels",
         'testcaseID'   => 'video_func_io_0003',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_io -i 1 -c 2`++Success\\s+Open\/Close--Failed\\s+Open\/Close`' 
+          'cmd' => 'v4l2_cap_io -i 1 -c 2`++Success\\s+Open\/Close--Failed\\s+Open\/Close`' 
         }),
       },
       {
         'description'  =>  "Verify that the video capture device can be opened/closed for multiple instances multiple times(more than one channels",
         'testcaseID'   => 'video_func_io_0004',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_io -i 10 -c 2`++Success\\s+Open\/Close--Failed\\s+Open\/Close`' 
+          'cmd' => 'v4l2_cap_io -i 10 -c 2`++Success\\s+Open\/Close--Failed\\s+Open\/Close`' 
         }),
       }
      ]
@@ -103,7 +103,7 @@ class Video_cap_func_ioTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

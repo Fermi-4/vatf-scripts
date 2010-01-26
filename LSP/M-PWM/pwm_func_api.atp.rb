@@ -1,6 +1,6 @@
 =begin
     printf("Usage:\n"
-            "./pwm_tests <options>\n\n"
+            "pwm_tests <options>\n\n"
             "-d       --devicenode     Device node on which test is to be run\n"
             "\t\t\t\tPossible value-/dev/davinci_pwm0 etc based on platform\n"
             "-T       --testname        Name of the special test\n"
@@ -102,8 +102,8 @@ class Pwm_func_apiTestPlan < TestPlan
             'paramsChan'  => common_paramsChan.merge({
               #'cmd' => "#{pwm_open} st_parser pwm set_mode 1#{pwm_pass_fail} st_parser pwm set_period 2#{pwm_pass_fail}" \
               #  "st_parser pwm set_pw 2#{pwm_pass_fail} st_parser pwm set_rpt_cnt 2#{pwm_pass_fail} #{pwm_start}",
-              #'cmd' => "./pwm_tests -d {instance} -m {mode} -I {period} -i {pw} -r {rpt_cnt} -s {idle_state} -p {1st_phase} -n {count} -T {test_type}"
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api"
+              #'cmd' => "pwm_tests -d {instance} -m {mode} -I {period} -i {pw} -r {rpt_cnt} -s {idle_state} -p {1st_phase} -n {count} -T {test_type}"
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api"
             }),
         },
         {
@@ -131,14 +131,14 @@ class Pwm_func_apiTestPlan < TestPlan
             'description'  => "#{dev_node}: " +  "Verify the PWM module can be controlled for stopping (call the ioctl to stop the PWM module)",
             'testcaseID'   => 'pwm_func_api_0007',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -T api -m 0 -r 1",
+              'cmd' => "pwm_tests -d #{dev_node} -T api -m 0 -r 1",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM module can be controlled for free running (call the ioctl to run the PWM module)",
             'testcaseID'   => 'pwm_func_api_0008',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
@@ -152,7 +152,7 @@ class Pwm_func_apiTestPlan < TestPlan
             'description'  => "#{dev_node}: " +  "Verify that the inactive output level can be configured to HIGH and LOW",
             'testcaseID'   => 'pwm_func_api_0010',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -s 1 -T api ; ./pwm_tests -d #{dev_node} -m 1 -s 0 -T api"
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -s 1 -T api ; ./pwm_tests -d #{dev_node} -m 1 -s 0 -T api"
             }),
         },
         {
@@ -166,14 +166,14 @@ class Pwm_func_apiTestPlan < TestPlan
             'description'  => "#{dev_node}: " +  "Verify that the event level trigger can be Disabled",
             'testcaseID'   => 'pwm_func_api_0012',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 0 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 0 -n 1 -T api",
               }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the event level trigger can be set to Positive",
             'testcaseID'   => 'pwm_func_api_0013',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
               }),
         },
         {
@@ -201,14 +201,14 @@ class Pwm_func_apiTestPlan < TestPlan
             'description'  => "#{dev_node}: " +  "Verify that the output mode can be set to One-Shot",
             'testcaseID'   => 'pwm_func_api_0017',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 0 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 0 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the output mode can be set to Continuous",
             'testcaseID'   => 'pwm_func_api_0018',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
@@ -222,119 +222,119 @@ class Pwm_func_apiTestPlan < TestPlan
             'description'  => "#{dev_node}: " +  "Verify that the pulse repeat count can be set to 1",
             'testcaseID'   => 'pwm_func_api_0020',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 1 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 1 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the pulse repeat count can be set to 2",
             'testcaseID'   => 'pwm_func_api_0021',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 2 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 2 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the pulse repeat count can be set to 15",
             'testcaseID'   => 'pwm_func_api_0022',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 15 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 15 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the pulse repeat count can be set to 31",
             'testcaseID'   => 'pwm_func_api_0023',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 31 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 31 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the pulse repeat count can be set to its maximum value",
             'testcaseID'   => 'pwm_func_api_0024',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 50 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 50 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the output period register value can be set to 1 (output period = (period count + 1) * clock cycles)",
             'testcaseID'   => 'pwm_func_api_0025',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 1 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 1 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the output period register value can be set to 2 (output period = (period count + 1) * clock cycles)",
             'testcaseID'   => 'pwm_func_api_0026',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 2 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 2 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the output period register value can be set to 15 (output period = (period count + 1) * clock cycles)",
             'testcaseID'   => 'pwm_func_api_0027',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 15 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 15 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the output period register value can be set to 31 (output period = (period count + 1) * clock cycles)",
             'testcaseID'   => 'pwm_func_api_0028',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 31 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 31 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the output period register value can be set to its maximum value (output period = (period count + 1) * clock cycles)",
             'testcaseID'   => 'pwm_func_api_0029',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 300 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 300 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the pulse width count register can be set to 1",
             'testcaseID'   => 'pwm_func_api_0030',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 1 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 1 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the pulse width count register can be set to 2",
             'testcaseID'   => 'pwm_func_api_0031',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 2 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 2 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the pulse width count register can be set to 15",
             'testcaseID'   => 'pwm_func_api_0032',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 15 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 15 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the pulse width count register can be set to 31",
             'testcaseID'   => 'pwm_func_api_0033',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 31 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 31 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify that the pulse width count register can be set to its maximum value",
             'testcaseID'   => 'pwm_func_api_0034',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the HIGH PWM output for first phase output state by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0035',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -s 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -s 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the LOW PWM output for first phase output state by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0036',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -s 0 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -s 0 -T api",
             }),
         },
         {
@@ -376,14 +376,14 @@ class Pwm_func_apiTestPlan < TestPlan
             'description'  => "#{dev_node}: " +  "Verify the PWM output for One-Shot output mode by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0042',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 0 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 0 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for Continuous output mode by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0043',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
@@ -404,112 +404,112 @@ class Pwm_func_apiTestPlan < TestPlan
             'description'  => "#{dev_node}: " +  "Verify the PWM output for a pulse repeat count of 1 by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0046',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 1 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 1 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for a pulse repeat count of 2 by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0047',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 2 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 2 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for a pulse repeat count of 15 by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0048',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 15 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 15 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for a pulse repeat count of 31 by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0049',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 31 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 31 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for the maximum pulse repeat count by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0050',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 50 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 50 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for a output period of 1 by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0051',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 1 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 1 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for a output period of 2 by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0052',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 2 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 2 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for a output period of 15 by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0053',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 15 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 15 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for a output period of 31 by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0054',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 31 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 31 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for the maximum output period by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0055',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for a pulse width count register value of 1 by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0056',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 1 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 1 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for a pulse width count register value of 2 by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0057',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 2 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 2 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for a pulse width count register value of 15 by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0058',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 15 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 15 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for a pulse width count register value of 31 by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0059',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 31 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 31 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM output for the maximum pulse width count register value by observing waveforms on the CRO",
             'testcaseID'   => 'pwm_func_api_0060',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
+              'cmd' => "pwm_tests -d #{dev_node} -m 1 -I 100 -i 50 -r 10 -s 0 -p 1 -n 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM status during idle mode",
             'testcaseID'   => 'pwm_func_api_0061',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -s 0 -T api",
+              'cmd' => "pwm_tests -s 0 -T api",
             }),
         },
         {
@@ -523,14 +523,14 @@ class Pwm_func_apiTestPlan < TestPlan
             'description'  => "#{dev_node}: " +  "Verify the PWM HIGH output status",
             'testcaseID'   => 'pwm_func_api_0063',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -s 1 -T api",
+              'cmd' => "pwm_tests -s 1 -T api",
             }),
         },
         {
             'description'  => "#{dev_node}: " +  "Verify the PWM LOW output status",
             'testcaseID'   => 'pwm_func_api_0064',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests -s 0 -T api",
+              'cmd' => "pwm_tests -s 0 -T api",
             }),
         },
         {
@@ -583,7 +583,7 @@ class Pwm_func_apiTestPlan < TestPlan
             'description'  => "Verify the PWM Software version",
             'testcaseID'   => 'pwm_func_api_0073',
             'paramsChan'  => common_paramsChan.merge({
-              'cmd' => "./pwm_tests --version",
+              'cmd' => "pwm_tests --version",
             }),
         }
     ]

@@ -51,84 +51,84 @@ class I2c_func_apiTestPlan < TestPlan
         'description'  =>  "Verify Open() with mode R/W",
         'testcaseID'   => 'i2c_func_api_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser i2c update iomode 2 open exit exit`++(?i:Open Success)--(?i:fail)|(?i:not\\s+found)`' 
+          'cmd' => 'st_parser i2c update iomode 2 open exit exit`++(?i:Open Success)--(?i:fail)|(?i:not\\s+found)`' 
         }),
       },
       {
         'description'  =>  "Verify Open() with mode Write only",
         'testcaseID'   => 'i2c_func_api_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser i2c update iomode 1 open exit exit`++(?i:Open Success)--(?i:fail)|(?i:not\\s+found)`' 
+          'cmd' => 'st_parser i2c update iomode 1 open exit exit`++(?i:Open Success)--(?i:fail)|(?i:not\\s+found)`' 
         }),
       },
       {
         'description'  =>  "Verify Open() with mode Read only",
         'testcaseID'   => 'i2c_func_api_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser i2c update iomode 0 open exit exit`++(?i:Open Success)--(?i:fail)|(?i:not\\s+found)`' 
+          'cmd' => 'st_parser i2c update iomode 0 open exit exit`++(?i:Open Success)--(?i:fail)|(?i:not\\s+found)`' 
         }),
       },
       {
         'description'  =>  "Verify IOCTL: I2C_SLAVE",
         'testcaseID'   => 'i2c_func_api_0004',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser i2c open ioctl 1 exit exit`--(?i:fail)|(?i:not\\s+found)`'
+          'cmd' => 'st_parser i2c open ioctl 1 exit exit`--(?i:fail)|(?i:not\\s+found)`'
         }),
       },
       {
         'description'  =>  "Verify IOCTL: I2C_TENBIT",
         'testcaseID'   => 'i2c_func_api_0005',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser i2c open ioctl 0 exit exit`--(?i:fail)|(?i:not\\s+found)`'
+          'cmd' => 'st_parser i2c open ioctl 0 exit exit`--(?i:fail)|(?i:not\\s+found)`'
         }),
       },        
       {
         'description'  =>  "Verify IOCTL: I2C_TIMEOUT",
         'testcaseID'   => 'i2c_func_api_0006',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser i2c open ioctl 2 exit exit`--(?i:fail)|(?i:not\\s+found)`'
+          'cmd' => 'st_parser i2c open ioctl 2 exit exit`--(?i:fail)|(?i:not\\s+found)`'
         }),
       },
       {
         'description'  =>  "Verify IOCTL: I2C_FUNCS",
         'testcaseID'   => 'i2c_func_api_0007',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser i2c open ioctl 3 exit exit`--(?i:fail)|(?i:not\\s+found)`'
+          'cmd' => 'st_parser i2c open ioctl 3 exit exit`--(?i:fail)|(?i:not\\s+found)`'
         }),
       },
       {
         'description'  =>  "Verify IOCTL: I2C_RETRIES",
         'testcaseID'   => 'i2c_func_api_0008',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser i2c open ioctl 4 exit exit`--(?i:fail)|(?i:not\\s+found)`'
+          'cmd' => 'st_parser i2c open ioctl 4 exit exit`--(?i:fail)|(?i:not\\s+found)`'
         }),
       },       
       {
         'description'  =>  "Verify IOCTL: I2C_RDWR",
         'testcaseID'   => 'i2c_func_api_0009',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser i2c open update config 3 ioctl 1 codec_oneshot exit exit`--(?i:fail)|(?i:not\\s+found)`'
+          'cmd' => 'st_parser i2c open update config 3 ioctl 1 codec_oneshot exit exit`--(?i:fail)|(?i:not\\s+found)`'
         }),
       },
       {
         'description'  =>  "Verify Write() works",
         'testcaseID'   => 'i2c_func_api_0010',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => '[dut_timeout\=60];./st_parser i2c open update config 2 ioctl 1 led exit exit`--(?i:fail)|(?i:not\\s+found)`'
+          'cmd' => '[dut_timeout\=60];st_parser i2c open update config 2 ioctl 1 led exit exit`--(?i:fail)|(?i:not\\s+found)`'
         }),
       },
       {
         'description'  =>  "Verify Read() works",
         'testcaseID'   => 'i2c_func_api_0011',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => '[dut_timeout\=60];./st_parser i2c open update config 2 ioctl 1 led exit exit`--(?i:fail)|(?i:not\\s+found)`'
+          'cmd' => '[dut_timeout\=60];st_parser i2c open update config 2 ioctl 1 led exit exit`--(?i:fail)|(?i:not\\s+found)`'
         }),
       },
       {
         'description'  =>  "Verify Close() works",
         'testcaseID'   => 'i2c_func_api_0012',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser i2c open close exit exit`--(?i:fail)|(?i:not\\s+found)`'
+          'cmd' => 'st_parser i2c open close exit exit`--(?i:fail)|(?i:not\\s+found)`'
         }),
       }
     ]

@@ -51,7 +51,7 @@ class Video_cap_func_inputTestPlan < TestPlan
                                       "and verifying the input that is set" ,
         'testcaseID'   => 'video_func_queryinput_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 1 -i 0 -c 0 -p 0`++Success\\s+INPUT--Failed\\s+INPUT`' 
+          'cmd' => 'v4l2_cap_ioctl -o 1 -i 0 -c 0 -p 0`++Success\\s+INPUT--Failed\\s+INPUT`' 
         }),
       },
       {
@@ -60,7 +60,7 @@ class Video_cap_func_inputTestPlan < TestPlan
                                       "and verifying the input that is set",
         'testcaseID'   => 'video_func_queryinput_0002',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 1 -i 1 -c 0 -p 0`++Success\\s+INPUT--Failed\\s+INPUT`' 
+          'cmd' => 'v4l2_cap_ioctl -o 1 -i 1 -c 0 -p 0`++Success\\s+INPUT--Failed\\s+INPUT`' 
         }),
       },
       {
@@ -69,7 +69,7 @@ class Video_cap_func_inputTestPlan < TestPlan
                                       "and verifying the input that is set" ,
         'testcaseID'   => 'video_func_queryinput_0003',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 1 -i 1 -c 0 -p 3`++Success\\s+INPUT--Failed\\s+INPUT`' 
+          'cmd' => 'v4l2_cap_ioctl -o 1 -i 1 -c 0 -p 3`++Success\\s+INPUT--Failed\\s+INPUT`' 
         }),
       }
     ]
@@ -99,7 +99,7 @@ class Video_cap_func_inputTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

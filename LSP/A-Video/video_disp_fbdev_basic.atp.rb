@@ -57,28 +57,28 @@ class Video_disp_fbdev_basicTestPlan < TestPlan
         'paramsChan'  => common_paramsChan.merge({
         'cmd' => "fbset -fb /dev/fb/0 -xres 0;fbset -fb /dev/fb/2 -xres 0;fbset -fb /dev/fb/3 -xres 0;" +
                       "fbset -fb /dev/fb/1 -xres 360 -yres 240 -vxres 360 -vyres 736 -depth 16 -laced 1;" +
-                      "./mmapvid VID0 encode_ntsc.yuv 10" ,
+                      "mmapvid VID0 encode_ntsc.yuv 10" ,
         }),
       },
       {
         'description'  =>  "Verify that an image can be move using the ioctl FBIO_SETPOSX.(Contiue from video_disp_fbdev_basic_0001)",
         'testcaseID'   => 'video_disp_fbdev_basic_0002',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./setposx VID0 100" ,
+        'cmd' => "setposx VID0 100" ,
         }),
       },
       {
         'description'  =>  "Verify that an image can be move using the ioctl FBIO_SETPOSY.(Contiue from video_disp_fbdev_basic_0001)",
         'testcaseID'   => 'video_disp_fbdev_basic_0003',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./setposy VID0 100" ,
+        'cmd' => "setposy VID0 100" ,
         }),
       },
       {
         'description'  =>  "Verify that an image can be zoomed using the ioctl FBIO_SETZOOM.(Contiue from video_disp_fbdev_basic_0001)",
         'testcaseID'   => 'video_disp_fbdev_basic_0004',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./setzoom VID0 2 2" ,
+        'cmd' => "setzoom VID0 2 2" ,
         }),
       },
       {
@@ -86,7 +86,7 @@ class Video_disp_fbdev_basicTestPlan < TestPlan
         'testcaseID'   => 'video_disp_fbdev_basic_0005',
         'paramsChan'  => common_paramsChan.merge({
         'cmd' => "fbset -fb /dev/fb/0 -xres 360 -yres 240 -vxres 360 -vyres 480 -depth 16 -laced 1;" +
-                      "./rgbwrite OSD0",
+                      "rgbwrite OSD0",
         }),
       },
       {
@@ -100,70 +100,70 @@ class Video_disp_fbdev_basicTestPlan < TestPlan
         'description'  =>  "Verify that OSD1 in attribute mode can set the blend to 1",
         'testcaseID'   => 'video_disp_fbdev_basic_0007',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./blend 1",
+        'cmd' => "blend 1",
         }),
       },
       {
         'description'  =>  "Verify that OSD1 in attribute mode can set the blend to 2",
         'testcaseID'   => 'video_disp_fbdev_basic_0008',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./blend 2",
+        'cmd' => "blend 2",
         }),
       },
       {
         'description'  =>  "Verify that OSD1 in attribute mode can set the blend to 3",
         'testcaseID'   => 'video_disp_fbdev_basic_0009',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./blend 3",
+        'cmd' => "blend 3",
         }),
       },
       {
         'description'  =>  "Verify that OSD1 in attribute mode can set the blend to 4",
         'testcaseID'   => 'video_disp_fbdev_basic_0010',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./blend 4",
+        'cmd' => "blend 4",
         }),
       },
       {
         'description'  =>  "Verify that OSD1 in attribute mode can set the blend to 5",
         'testcaseID'   => 'video_disp_fbdev_basic_0011',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./blend 5",
+        'cmd' => "blend 5",
         }),
       },
       {
         'description'  =>  "Verify that OSD1 in attribute mode can set the blend to 6",
         'testcaseID'   => 'video_disp_fbdev_basic_0012',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./blend 6",
+        'cmd' => "blend 6",
         }),
       },
       {
         'description'  =>  "Verify that OSD1 in attribute mode can set the blend to 7",
         'testcaseID'   => 'video_disp_fbdev_basic_0013',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./blend 7",
+        'cmd' => "blend 7",
         }),
       },
       {
         'description'  =>  "Verify that an image cannot be moved using the ioctl FBIO_SETPOSX with invalid value.(Contiue from video_disp_fbdev_basic_0001)",
         'testcaseID'   => 'video_disp_fbdev_basic_00014',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./setposx VID0 1000",#`++Sucess\\s+Negative\\s+Test\\s+Passed--Failed\\s+Negative\\s+Test\\s+Failed`" ,
+        'cmd' => "setposx VID0 1000",#`++Sucess\\s+Negative\\s+Test\\s+Passed--Failed\\s+Negative\\s+Test\\s+Failed`" ,
         }),
       },
       {
         'description'  =>  "Verify that an image cannot be moved using the ioctl FBIO_SETPOSY with invalid value.(Contiue from video_disp_fbdev_basic_0001)",
         'testcaseID'   => 'video_disp_fbdev_basic_00015',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./setposy VID0 1000`",#++Sucess\\s+Negative\\s+Test\\s+Passed--Failed\\s+Negative\\s+Test\\s+Failed`" ,
+        'cmd' => "setposy VID0 1000`",#++Sucess\\s+Negative\\s+Test\\s+Passed--Failed\\s+Negative\\s+Test\\s+Failed`" ,
         }),
       },
       {
         'description'  =>  "Verify that OSD1 in attribute mode cannot set the blend to invalid value",
         'testcaseID'   => 'video_disp_fbdev_basic_0016',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./blend 8",#`++Sucess\\s+Negative\\s+Test\\s+Passed--Failed\\s+Negative\\s+Test\\s+Failed`",
+        'cmd' => "blend 8",#`++Sucess\\s+Negative\\s+Test\\s+Passed--Failed\\s+Negative\\s+Test\\s+Failed`",
         }),
       }
     ]
@@ -193,7 +193,7 @@ class Video_disp_fbdev_basicTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

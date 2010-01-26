@@ -51,28 +51,28 @@ class Audio_func_hwTestPlan < TestPlan
         'description'  =>  "Verify that the audio device can be opened in an asynchronous mode and record and playback using Line-in input",
         'testcaseID'   => 'audio_func_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './audiolb -s 44.1 -f 8192' 
+          'cmd' => 'audiolb -s 44.1 -f 8192' 
         }),
       },
       {
         'description'  =>  "Verify that the audio device can be opened in synchronous mode and record and playback using Mic input",
         'testcaseID'   => 'audio_func_0002',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser i2c update iomode 1 open exit exit`++done--fail|not\s+found`' 
+          'cmd' => 'st_parser i2c update iomode 1 open exit exit`++done--fail|not\s+found`' 
         }),
       },
       {
         'description'  =>  "Verify that the audio device can be opened in synchronous mode and record and playback using Line-in input",
         'testcaseID'   => 'audio_func_0003',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser i2c update iomode 0 open exit exit`--fail|not\s+found`' 
+          'cmd' => 'st_parser i2c update iomode 0 open exit exit`--fail|not\s+found`' 
         }),
       },
       {
         'description'  =>  "Verify that the audio device can be opened in synchronous mode and record and playback using Mic input",
         'testcaseID'   => 'audio_func_0004',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './st_parser i2c open ioctl 1 exit exit`--fail|not\s+found`'
+          'cmd' => 'st_parser i2c open ioctl 1 exit exit`--fail|not\s+found`'
         }),
       }
      ]
@@ -105,7 +105,7 @@ class Audio_func_hwTestPlan < TestPlan
        # 'block_desc' => get_block_desc("#{params['block']}"),
        # 'mic_desc' => get_mic_desc("#{params['mic']}"),
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

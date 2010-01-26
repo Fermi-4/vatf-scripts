@@ -75,7 +75,7 @@ class Ata_func_premTestPlan < TestPlan
         'cmd'     => "#{get_power_mode_cmd(params['power_mode'])};[dut_timeout\\=30]" +
                   ";#{set_opmode(params['op_mode'])};[dut_timeout\\=30]" +
                   ";#{get_cmd(params)}" +
-                  ";\./st_parser fsapi fremove #{params['test_file']}`--(?i:fail)`",
+                  ";st_parser fsapi fremove #{params['test_file']}`--(?i:fail)`",
         'ensure'  => "[dut_timeout\\=30];rm #{params['test_file']}"
       },
       
@@ -106,9 +106,9 @@ class Ata_func_premTestPlan < TestPlan
     buffer_size = params['buffer_size']
     test_file = params['test_file']
     rtn = case test_type
-      when 'write-read':  "\./st_parser fsapi buffsize #{buffer_size} fwrite #{test_file} #{file_size}`--(?i:fail|fatal)`" +
-                          ";\./st_parser fsapi fread #{test_file}`--(?i:fail|fatal)`"
-      when 'read':  "\./st_parser fsapi fread #{test_file}`--(?i:fail|fatal)`"
+      when 'write-read':  "st_parser fsapi buffsize #{buffer_size} fwrite #{test_file} #{file_size}`--(?i:fail|fatal)`" +
+                          ";st_parser fsapi fread #{test_file}`--(?i:fail|fatal)`"
+      when 'read':  "st_parser fsapi fread #{test_file}`--(?i:fail|fatal)`"
       else  "echo no cmd for #{test_type}`--no\\s+cmd`"
     end
   end

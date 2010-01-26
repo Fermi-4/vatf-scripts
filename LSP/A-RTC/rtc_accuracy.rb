@@ -1,3 +1,4 @@
+require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 def setup
   self.as(LspTestScript).setup

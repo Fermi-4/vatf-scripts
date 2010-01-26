@@ -1,5 +1,6 @@
 # -*- coding: ISO-8859-1 -*-
 require 'rubyclr'
+require File.dirname(__FILE__)+'/../default_test_module'
 
 include System::Windows::Forms
 include LspTestScript

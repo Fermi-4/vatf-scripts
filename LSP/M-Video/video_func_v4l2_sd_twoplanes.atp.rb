@@ -93,7 +93,7 @@ class Video_func_v4l2_sd_twoplanesTestPlan < TestPlan
             'vid_plane'	=> "#{params['Vid_plane']}",
             'blend_val'	=> "#{params['blend_value']}",
             'target_sources' => '',#LSP\M-Video\video\sd',
-            'cmd'	=> '',#"./v4l2_loop_sd -f #{params['Out_Fmt']} -i #{params['Input_vid']} -o #{params['Output']} -v #{params['Vid_plane']}",
+            'cmd'	=> '',#"v4l2_loop_sd -f #{params['Out_Fmt']} -i #{params['Input_vid']} -o #{params['Output']} -v #{params['Vid_plane']}",
         },
         'paramsEquip'  => {},
         'paramsControl'=> {},

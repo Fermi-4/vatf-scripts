@@ -3,18 +3,19 @@ require 'rubygems'
 require 'facets'
 
 # Default Server-Side Test script implementation for LSP releases
+require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 
 class Edma_run_params
     def initialize(params)
-        #@test_cmd  		= "insmod ./kStTimer.ko ; insmod ./#{params.params_chan.test_module[0]} performance=1 ; rmmod ./#{params.params_chan.test_module[0]} ; rmmod ./kStTimer.ko"
+        #@test_cmd  		= "insmod /bin/kStTimer.ko ; insmod /bin/#{params.params_chan.test_module[0]} performance=1 ; rmmod ./#{params.params_chan.test_module[0]} ; rmmod ./kStTimer.ko"
     	@test_regex 	= /TEST\s+END\|\s+test_dma/
     	@test_timeout 	= 60
     end
     
     def get_test_cmd(test_type, params, abc_sizes)
         abc_size = abc_sizes.split('_')
-        @test_cmd = "insmod ./kStTimer.ko ; insmod ./#{params.params_chan.test_module[0]} performance=1 numTCs=1 acnt=#{abc_size[0]} bcnt=#{abc_size[1]} ccnt=#{abc_size[2]} #{params.params_chan.edma_mode[0]}=1; rmmod ./#{params.params_chan.test_module[0]}"
+        @test_cmd = "insmod /bin/kStTimer.ko ; insmod /bin/#{params.params_chan.test_module[0]} performance=1 numTCs=1 acnt=#{abc_size[0]} bcnt=#{abc_size[1]} ccnt=#{abc_size[2]} #{params.params_chan.edma_mode[0]}=1; rmmod ./#{params.params_chan.test_module[0]}"
         #@test_cmd = "insmod #{params.params_chan.test_module[0]} performance=1 numTCs=1 acnt=#{abc_size[0]} bcnt=#{abc_size[1]} ccnt=#{abc_size[2]} #{params.params_chan.edma_mode[0]}=1; rmmod ./#{params.params_chan.test_module[0]}"
     end
     

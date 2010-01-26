@@ -64,11 +64,11 @@ class Uart_funcTestPlan < TestPlan
         'description'  =>  "Verify write 1-1048576 bytes",
         'testcaseID'   => 'uart_basic_write_0001',
         'paramsChan'  => common_paramsChan.merge({
-          #'cmd' => "#{mknods};\./psp_test_bench FnTest UART `++exit`; uart_basic_write_interrupt `++(?i:UART_BASIC_WRITE_PASS)--#{fail_str}`;exit" 
-          'cmd' => "#{mknods};\./st_parser uart open 1 2 1 io write_sync 1`++Write Success--(?i:fail)`" +
-                      ";\./st_parser uart open 1 2 1 io write_sync 10`++Write Success--(?i:fail)`" +
-                      ";\./st_parser uart open 1 2 1 io write_sync 512000`++Write Success--(?i:fail)`" +
-                      ";\./st_parser uart open 1 2 1 io write_sync 1048576`++Write Success--(?i:fail)`",
+          #'cmd' => "#{mknods};psp_test_bench FnTest UART `++exit`; uart_basic_write_interrupt `++(?i:UART_BASIC_WRITE_PASS)--#{fail_str}`;exit" 
+          'cmd' => "#{mknods};st_parser uart open 1 2 1 io write_sync 1`++Write Success--(?i:fail)`" +
+                      ";st_parser uart open 1 2 1 io write_sync 10`++Write Success--(?i:fail)`" +
+                      ";st_parser uart open 1 2 1 io write_sync 512000`++Write Success--(?i:fail)`" +
+                      ";st_parser uart open 1 2 1 io write_sync 1048576`++Write Success--(?i:fail)`",
         }),
       },
       {
@@ -76,28 +76,28 @@ class Uart_funcTestPlan < TestPlan
         'testcaseID'   => 'uart_basic_read_0001',
         'auto'        => false,
         'paramsChan'  => common_paramsChan.merge({
-          #'cmd' => "#{mknods};\./psp_test_bench FnTest UART`++exit`;uart_basic_read_interrupt `++(?i:UART_BASIC_READ_PASS)--#{fail_str}`;exit" 
+          #'cmd' => "#{mknods};psp_test_bench FnTest UART`++exit`;uart_basic_read_interrupt `++(?i:UART_BASIC_READ_PASS)--#{fail_str}`;exit" 
         }),
       },
       {
         'description'  =>  "Verify uart0 write",
         'testcaseID'   => 'uart_basic',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => "#{mknods};\./st_parser uart open 1 2 1 io write_sync 10`++Write Success--(?i:fail)`;stty sane 115200 raw -echo crtscts < /dev/ttyS0;stty -a < /dev/ttyS0;echo \"this is test\" > /dev/ttyS0;cat /proc/tty/driver/serial`++1: uart:16550A mmio:0x01C20400 irq:41 tx:[1-9]+\\s+rx`",
+          'cmd' => "#{mknods};st_parser uart open 1 2 1 io write_sync 10`++Write Success--(?i:fail)`;stty sane 115200 raw -echo crtscts < /dev/ttyS0;stty -a < /dev/ttyS0;echo \"this is test\" > /dev/ttyS0;cat /proc/tty/driver/serial`++1: uart:16550A mmio:0x01C20400 irq:41 tx:[1-9]+\\s+rx`",
         }),
       },
       {
         'description'  =>  "Verify uart1 write",
         'testcaseID'   => 'uart_basic',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => "#{mknods};\./st_parser uart update instance 1 open 1 2 1 io write_sync 10`++Write Success--(?i:fail)`;stty sane 115200 raw -echo crtscts < /dev/ttyS1;stty -a < /dev/ttyS1;echo \"this is test\" > /dev/ttyS1;cat /proc/tty/driver/serial`++1: uart:16550A mmio:0x01C20400 irq:41 tx:[1-9]+\\s+rx`",
+          'cmd' => "#{mknods};st_parser uart update instance 1 open 1 2 1 io write_sync 10`++Write Success--(?i:fail)`;stty sane 115200 raw -echo crtscts < /dev/ttyS1;stty -a < /dev/ttyS1;echo \"this is test\" > /dev/ttyS1;cat /proc/tty/driver/serial`++1: uart:16550A mmio:0x01C20400 irq:41 tx:[1-9]+\\s+rx`",
         }),
       },
       {
         'description'  =>  "Verify uart2 write",
         'testcaseID'   => 'uart_basic',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => "#{mknods};\./st_parser uart update instande 2 open 1 2 1 io write_sync 10`++Write Success--(?i:fail)`;stty sane 115200 raw -echo crtscts < /dev/ttyS2;stty -a < /dev/ttyS2;echo \"this is test\" > /dev/ttyS2;cat /proc/tty/driver/serial`++2: uart:16550A mmio:0x01E06000 irq:14 tx:[1-9]+\\s+rx`",
+          'cmd' => "#{mknods};st_parser uart update instande 2 open 1 2 1 io write_sync 10`++Write Success--(?i:fail)`;stty sane 115200 raw -echo crtscts < /dev/ttyS2;stty -a < /dev/ttyS2;echo \"this is test\" > /dev/ttyS2;cat /proc/tty/driver/serial`++2: uart:16550A mmio:0x01E06000 irq:14 tx:[1-9]+\\s+rx`",
         }),
       },
     ]

@@ -77,7 +77,7 @@ class Video_func_v4l2_displayTestPlan < TestPlan
         'testcaseID'   => 'v4l2_func_api_test_0001',
         'paramsChan'  => common_paramsChan.merge({
         	'cmd'       => '[dut_timeout\=60];'+
-        				   './v4l2DisplayTests -T api -t apitests`++\|TEST\s*RESULT\|PASS\|\s*apitests--\|TEST\s*RESULT\|FAIL\|\s*apitests`'
+        				   'v4l2DisplayTests -T api -t apitests`++\|TEST\s*RESULT\|PASS\|\s*apitests--\|TEST\s*RESULT\|FAIL\|\s*apitests`'
         }),
       },
       {
@@ -85,7 +85,7 @@ class Video_func_v4l2_displayTestPlan < TestPlan
         'testcaseID'   => 'v4l2_func_stability_test_0001',
         'paramsChan'  => common_paramsChan.merge({
           'cmd'       => '[dut_timeout\=3600];'+
-                         './v4l2DisplayTests -T stability -t stabilitytests`++\|TEST\s*RESULT\|PASS\|\s*stabilitytests--\|TEST\s*RESULT\|FAIL\|\s*stabilitytests`'
+                         'v4l2DisplayTests -T stability -t stabilitytests`++\|TEST\s*RESULT\|PASS\|\s*stabilitytests--\|TEST\s*RESULT\|FAIL\|\s*stabilitytests`'
         }),
       },
     ]

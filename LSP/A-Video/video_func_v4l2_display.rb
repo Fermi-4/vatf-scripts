@@ -1,5 +1,5 @@
 # -*- coding: ISO-8859-1 -*-
-# require 'C:\views\Snapshot\vatf_lsp120_a0850405_laptop_view\gtsystst_tp\TestPlans\LSP\default_lsp_script'
+require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 
 def setup
@@ -30,8 +30,8 @@ def run
 	width 			=  @test_params.params_chan.width[0]
 	filename		=  @test_params.params_chan.filename[0]
 	
-	@equipment['dut1'].send_cmd("./v4l2DisplayTests -d #{dev_node} -s #{standard} -i #{interface} -c #{num_of_buffers} -n #{num_of_frames} -h #{height} -w #{width} -f #{filename}",/(\|TEST\s*RESULT\|PASS\|)|(\|TEST\s*RESULT\|FAIL\|)/, (num_of_frames.to_i/25)+5)
-  	result = 1 if @equipment['dut1'].is_timeout 
+	@equipment['dut1'].send_cmd("v4l2DisplayTests -d #{dev_node} -s #{standard} -i #{interface} -c #{num_of_buffers} -n #{num_of_frames} -h #{height} -w #{width} -f #{filename}",/(\|TEST\s*RESULT\|PASS\|)|(\|TEST\s*RESULT\|FAIL\|)/, (num_of_frames.to_i/25)+5)
+  	result = 1 if @equipment['dut1'].timeout? 
   	result = 2 if /\|TEST\s*RESULT\|FAIL\|/.match(@equipment['dut1'].response)
   	if @test_params.params_chan.manual_pass_fail[0] == '1'  # Subjectively Pass/Fail tests
         begin

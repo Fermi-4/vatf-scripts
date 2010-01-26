@@ -3,6 +3,7 @@ require 'rubygems'
 require 'facets'
 
 # Default Server-Side Test script implementation for LSP releases
+require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 
 class Video_run_params
@@ -126,7 +127,7 @@ def run
 	@equipment['dut1'].send_cmd(pretest_cmd) if pretest_cmd
   sleep 1
     @equipment['dut1'].send_cmd(test_cmd, test_regex, test_timeout) 
-   	result = 1 if @equipment['dut1'].is_timeout
+   	result = 1 if @equipment['dut1'].timeout?
    
 	if result == 0 
 	  test_values = test_regex.match(@equipment['dut1'].response).captures

@@ -57,7 +57,7 @@ class Video_cap_func_fmtTestPlan < TestPlan
                                       "enumerating the format" ,
         'testcaseID'   => 'video_func_fmt_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 3 -p 0 -c 0 -n 0 -i 0 -s 0`++Success\\s+FMT--Failed\\s+FMT`' 
+          'cmd' => 'v4l2_cap_ioctl -o 3 -p 0 -c 0 -n 0 -i 0 -s 0`++Success\\s+FMT--Failed\\s+FMT`' 
         }),
       },
       {
@@ -67,42 +67,42 @@ class Video_cap_func_fmtTestPlan < TestPlan
                                       "enumerating the format" ,
         'testcaseID'   => 'video_func_fmt_0002',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 3 -p 0 -c 0 -n 0 -i 0 -s 1`++Success\\s+FMT--Failed\\s+FMT`' 
+          'cmd' => 'v4l2_cap_ioctl -o 3 -p 0 -c 0 -n 0 -i 0 -s 1`++Success\\s+FMT--Failed\\s+FMT`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the GET_FMT with a NULL.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_003',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 3 -p 0 -c 0 -n 1 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 3 -p 0 -c 0 -n 1 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the SET_FMT with a NULL.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_004',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 3 -p 0 -c 0 -n 2 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 3 -p 0 -c 0 -n 2 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the ENUM_FMT with a NULL.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_005',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2 -p 0 -c 0 -n 3 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2 -p 0 -c 0 -n 3 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the TRY_FMT with a NULL.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_006',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2 -p 0 -c 0 -n 4 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2 -p 0 -c 0 -n 4 -i 0 -s 0`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the ENUM_FMT with a invalid value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_007',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 2 -p 0 -c 0 -n 3 -i 0 -s 1`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 2 -p 0 -c 0 -n 3 -i 0 -s 1`++Passed\\s+Negative\\s+Test`' 
         }),
       }
     ]
@@ -132,7 +132,7 @@ class Video_cap_func_fmtTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

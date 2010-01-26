@@ -1,5 +1,5 @@
 # -*- coding: ISO-8859-1 -*-
-# require 'C:\views\Snapshot\vatf_lsp120_a0850405_laptop_view\gtsystst_tp\TestPlans\LSP\default_lsp_script'
+require File.dirname(__FILE__)+'/../default_test_module'
 include System::Windows::Forms
 include LspTestScript
 

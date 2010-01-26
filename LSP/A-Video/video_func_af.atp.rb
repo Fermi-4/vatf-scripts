@@ -53,14 +53,14 @@ class Video_func_afTestPlan < TestPlan
         'description'  =>  "Verify that the AF device can be opend and closed successfully" ,
         'testcaseID'   => 'video_func_af_0001',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './af_test_app -t f -c 2 -n 5`++Success\\s+IO--Failed\\s+IO`' 
+        'cmd' => 'af_test_app -t f -c 2 -n 5`++Success\\s+IO--Failed\\s+IO`' 
         }),
       },
       {
         'description'  =>  "Verify that the AF device can be opend and closed successfully 10 times" ,
         'testcaseID'   => 'video_func_af_0002',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './af_test_app -t f -c 2 -n 6`++Success\\s+IO--Failed\\s+IO`' 
+        'cmd' => 'af_test_app -t f -c 2 -n 6`++Success\\s+IO--Failed\\s+IO`' 
         }),
       },
       {
@@ -70,7 +70,7 @@ class Video_func_afTestPlan < TestPlan
                                      "\r\n with GR_BG_BAYER as RGB position.",
         'testcaseID'   => 'video_func_af_0003',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './af_test_app -t f -c 2 -n 1`++Success\\s+S_PARAM--Failed\\s+S_PARAM`' 
+        'cmd' => 'af_test_app -t f -c 2 -n 1`++Success\\s+S_PARAM--Failed\\s+S_PARAM`' 
         }),
       },
       {
@@ -79,7 +79,7 @@ class Video_func_afTestPlan < TestPlan
                                      "\r\n with RG_GB_BAYER as RGB position." ,
         'testcaseID'   => 'video_func_af_0004',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './af_test_app -t f -c 2 -n 2`++Success\\s+G_PARAM--Failed\\s+G_PARAM`' 
+        'cmd' => 'af_test_app -t f -c 2 -n 2`++Success\\s+G_PARAM--Failed\\s+G_PARAM`' 
         }),
       },
       {
@@ -87,21 +87,21 @@ class Video_func_afTestPlan < TestPlan
                                       "\r\n with GR_GB_BAYER as RGB position. and AF mode set to Accumulator PEAK" ,
         'testcaseID'   => 'video_func_af_0005',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './af_test_app -t f -c 2 -n 3`++Success\\s+AEW_ENABLE--Failed\\s+AEW_ENABLE`' 
+        'cmd' => 'af_test_app -t f -c 2 -n 3`++Success\\s+AEW_ENABLE--Failed\\s+AEW_ENABLE`' 
         }),
       },
       {
         'description'  =>  "Verify that the AF_DISABLE ioctl behavior" ,
         'testcaseID'   => 'video_func_af_io_0006',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './af_test_app -t f -c 2 -n 4`++Success\\s+AEW_DISABLE--Failed\\s+AEW_DISABLE`' 
+        'cmd' => 'af_test_app -t f -c 2 -n 4`++Success\\s+AEW_DISABLE--Failed\\s+AEW_DISABLE`' 
         }),
       },
       {
         'description'  =>  "Verify that the AF S_PARAM ioctl handles invalid parameter as expected" ,
         'testcaseID'   => 'video_func_af_io_0007',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './af_test_app -t f -c 3 -n 1`++Success\\s+Negative\\s+Tests--Failed\\s+Negative\\s+Tests`' 
+        'cmd' => 'af_test_app -t f -c 3 -n 1`++Success\\s+Negative\\s+Tests--Failed\\s+Negative\\s+Tests`' 
         }),
       },
       {
@@ -109,7 +109,7 @@ class Video_func_afTestPlan < TestPlan
                                       "as RGB position and in Accumulator PEAK mode.",
         'testcaseID'   => 'video_func_af_0008',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './af_test_app -t f -c 2 -n 7`++Success\\s+S_PARAM--Failed\\s+S_PARAM`' 
+        'cmd' => 'af_test_app -t f -c 2 -n 7`++Success\\s+S_PARAM--Failed\\s+S_PARAM`' 
         }),
       },
       {
@@ -119,7 +119,7 @@ class Video_func_afTestPlan < TestPlan
         'testcaseID'   => 'video_func_af_io_0009',
         'script'      => 'LSP\video_h3a.rb',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './af_test_app -t f -c 4 -n 1`++Success\\s+AF--Failed\\s+AF`' 
+        'cmd' => 'af_test_app -t f -c 4 -n 1`++Success\\s+AF--Failed\\s+AF`' 
         }),
       },
       {
@@ -129,7 +129,7 @@ class Video_func_afTestPlan < TestPlan
         'testcaseID'   => 'video_func_af_io_0010',
         'script'      => 'LSP\video_h3a.rb',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './af_test_app -t f -c 4 -n 2`++Success\\s+AEW--Failed\\s+AEW`' 
+        'cmd' => 'af_test_app -t f -c 4 -n 2`++Success\\s+AEW--Failed\\s+AEW`' 
         }),
       }
     ]
@@ -159,7 +159,7 @@ class Video_func_afTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

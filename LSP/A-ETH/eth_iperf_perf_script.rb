@@ -1,6 +1,7 @@
 # -*- coding: ISO-8859-1 -*-
 
 # Default Server-Side Test script implementation for LSP releases
+require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 			
 def setup
@@ -193,13 +194,13 @@ private
     # *********************** setup the iperf server side PC/DUT ***********************
 		if proto == 'tcp'
 			puts "eth_iperf_perf_script-7a - Starting Iperf Server TCP on Linux PC."
-			@equipment['pc1'].send_cmd("./iperf -s &> perf.log", /\]\s+\d+/)
+			@equipment['pc1'].send_cmd("iperf -s &> perf.log", /\]\s+\d+/)
 		elsif proto == 'mlti'
 			puts "eth_iperf_perf_script-7b - Starting Iperf Multicast TCP on Linux PC."
-			@equipment['pc1'].send_cmd("./iperf -s -u -B 224.0.36.36 &> perf.log", /\]\s+\d+/)
+			@equipment['pc1'].send_cmd("iperf -s -u -B 224.0.36.36 &> perf.log", /\]\s+\d+/)
 		else
 			puts "eth_iperf_perf_script-7c - Starting Iperf Server UDP on Linux PC."
-			@equipment['pc1'].send_cmd("./iperf -u -s &> perf.log", /\]\s+\d+/)
+			@equipment['pc1'].send_cmd("iperf -u -s &> perf.log", /\]\s+\d+/)
 		end
 				
 		response = @equipment['pc1'].response
@@ -222,13 +223,13 @@ private
 			
     if proto == 'tcp'
       puts "eth_iperf_perf_script-8a - Transferring iperf TCP data to and from PC."
-			@equipment['dut1'].send_cmd("./iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -d  >perf.log", /@/, duration.to_i + 60)
+			@equipment['dut1'].send_cmd("iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -d  >perf.log", /@/, duration.to_i + 60)
     elsif proto == 'mlti'
       puts "eth_iperf_perf_script-8b - Transferring iperf Client Multicast CDC UDP data from Linux PC."
-			@equipment['dut1'].send_cmd("./iperf -c 224.0.36.36 -u -w #{packet_size}k -t #{duration} -b 30M >perf.log", /@/, duration.to_i + 60)
+			@equipment['dut1'].send_cmd("iperf -c 224.0.36.36 -u -w #{packet_size}k -t #{duration} -b 30M >perf.log", /@/, duration.to_i + 60)
     else
       puts "eth_iperf_perf_script-8c - Transferring iperf CDC UDP data from DUT."
-			@equipment['dut1'].send_cmd("./iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -u -b #{bw_size}m >perf.log", /@/, duration.to_i + 60)
+			@equipment['dut1'].send_cmd("iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -u -b #{bw_size}m >perf.log", /@/, duration.to_i + 60)
     end
 			
 			# *********************** check for errors ***********************

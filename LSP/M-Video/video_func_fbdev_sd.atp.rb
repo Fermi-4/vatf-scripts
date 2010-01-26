@@ -150,7 +150,7 @@ class Video_func_fbdev_sdTestPlan < TestPlan
             'Out_Fmt'	=> "#{params['Out_Fmt']}",
             'vid_plane'	=> "#{params['Vid_plane']}",
             'target_sources' => 'LSP\M-Video\video\sd',
-            'cmd'	=> '', #"./v4l2_loop_sd -f #{params['Out_Fmt']} -i #{params['Input_vid']} -o #{params['Output']} -v #{params['Vid_plane']}",
+            'cmd'	=> '', #"v4l2_loop_sd -f #{params['Out_Fmt']} -i #{params['Input_vid']} -o #{params['Output']} -v #{params['Vid_plane']}",
         },
         'paramsEquip'  => {},
         'paramsControl'=> {},

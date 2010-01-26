@@ -1,6 +1,7 @@
 # -*- coding: ISO-8859-1 -*-
 
 # Default Server-Side Test script implementation for LSP releases
+require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 			
 def setup
@@ -347,13 +348,13 @@ private
     if @test_params.params_chan.comm_mode[0] == 'cdc'
 				if proto == 'tcp'
 					puts "usb_cdc_perf_iperf_script-7a - Starting Iperf Server TCP on DUT."
-					@equipment['dut1'].send_cmd("./iperf -s &> perf.log", /\]\s+\d+/)
+					@equipment['dut1'].send_cmd("iperf -s &> perf.log", /\]\s+\d+/)
 				elsif proto == 'mlti'
 					puts "usb_cdc_perf_iperf_script-7b - Starting Iperf Multicast TCP on DUT."
-					@equipment['dut1'].send_cmd("./iperf -s -u -B 224.0.36.36 &> perf.log", /\]\s+\d+/)
+					@equipment['dut1'].send_cmd("iperf -s -u -B 224.0.36.36 &> perf.log", /\]\s+\d+/)
 				else
 					puts "usb_cdc_perf_iperf_script-7c - Starting Iperf Server UDP on DUT."
-					@equipment['dut1'].send_cmd("./iperf -u -s &> perf.log", /\]\s+\d+/)
+					@equipment['dut1'].send_cmd("iperf -u -s &> perf.log", /\]\s+\d+/)
 				end
     else
 				if proto == 'tcp'
@@ -361,7 +362,7 @@ private
 					@equipment['pc2'].send_cmd("iperf.exe -D -s", /.*/)
 				elsif proto == 'mlti'
 					puts "usb_cdc_perf_iperf_script-7e - Starting Iperf Multicast Server TCP on DUT."
-					@equipment['dut1'].send_cmd("./iperf -s -u -B 224.0.36.36 &> perf.log", /\]\s+\d+/)
+					@equipment['dut1'].send_cmd("iperf -s -u -B 224.0.36.36 &> perf.log", /\]\s+\d+/)
 				else
 					puts "usb_cdc_perf_iperf_script-7f - Starting Iperf Server in WinXP UDP mode."
 					@equipment['pc2'].send_cmd("iperf.exe -D -u -s", /.*/)
@@ -382,26 +383,26 @@ private
     if @test_params.params_chan.comm_mode[0] == 'cdc'
       if proto == 'tcp'
         puts "usb_cdc_perf_iperf_script-8a - Transferring iperf CDC TCP data to and from DUT."
-				@equipment['pc1'].send_cmd("./iperf -c #{dut_ip} -w #{packet_size}k -t #{duration} -d  >perf.log", /@/, duration.to_i + 60)
+				@equipment['pc1'].send_cmd("iperf -c #{dut_ip} -w #{packet_size}k -t #{duration} -d  >perf.log", /@/, duration.to_i + 60)
       elsif proto == 'mlti'
         puts "usb_cdc_perf_iperf_script-8b - Transferring iperf Client Multicast CDC UDP data from Linux PC."
-				@equipment['pc1'].send_cmd("./iperf -c 224.0.36.36 -u -w #{packet_size}k -t #{duration} -b 30M >perf.log", /@/, duration.to_i + 60)
+				@equipment['pc1'].send_cmd("iperf -c 224.0.36.36 -u -w #{packet_size}k -t #{duration} -b 30M >perf.log", /@/, duration.to_i + 60)
       else
         puts "usb_cdc_perf_iperf_script-8c - Transferring iperf CDC UDP data from DUT."
-				@equipment['pc1'].send_cmd("./iperf -c #{dut_ip} -w #{packet_size}k -t #{duration} -u -b #{bw_size}m >perf.log", /@/, duration.to_i + 60)
+				@equipment['pc1'].send_cmd("iperf -c #{dut_ip} -w #{packet_size}k -t #{duration} -u -b #{bw_size}m >perf.log", /@/, duration.to_i + 60)
       end
     else
       if proto == 'tcp'
         puts "usb_cdc_perf_iperf_script-8d - Sending iperf RNDIS TCP traffic from DUT."
 				#pc_ip = get_pc_ipadd ('usb0', 'pc2')
 				pc_ip = @equipment['pc2'].usb_ip
-        @equipment['dut1'].send_cmd("./iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -d > perf.log", /#/, duration.to_i + 60)
+        @equipment['dut1'].send_cmd("iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -d > perf.log", /#/, duration.to_i + 60)
       elsif proto == 'mlti'
         puts "usb_cdc_perf_iperf_script-8e - Sending iperf Multicast CDC UDP traffic from WinXP PC."
 				@equipment['pc2'].send_cmd("iperf -c -B 224.0.36.36 -u -w #{packet_size}k -t #{duration} -T 5 -b 30M &> perf.log", /#/, duration.to_i + 60)
 			else
         puts "usb_cdc_perf_iperf_script-8f - Sending iperf RNDIS UDP traffic from DUT."
-				@equipment['dut1'].send_cmd("./iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -u -b #{bw_size}m > perf.log", /\d+\s+ms/, duration.to_i + 60)
+				@equipment['dut1'].send_cmd("iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -u -b #{bw_size}m > perf.log", /\d+\s+ms/, duration.to_i + 60)
       end
     end
 			

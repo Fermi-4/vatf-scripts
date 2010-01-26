@@ -1,5 +1,5 @@
 # -*- coding: ISO-8859-1 -*-
-# require 'C:\views\Snapshot\vatf_lsp120_a0850405_laptop_view\gtsystst_tp\TestPlans\LSP\default_lsp_script'
+require File.dirname(__FILE__)+'/../default_test_module'
 require '../TestPlans/LSP/M-Video/v4l2_func_common'
 include LspTestScript
 include V4l2_rszprev_common

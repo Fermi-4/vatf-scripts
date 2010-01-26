@@ -63,28 +63,28 @@ class Uart_func_multitaskTestPlan < TestPlan
         'description'  =>  "Verify multiple write processes ",
         'testcaseID'   => 'uart_basic_write1',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => "#{mknods};\./st_parser uart #{open_str} io multi_process 0 10 5`--#{fail_str}`" 
+          'cmd' => "#{mknods};st_parser uart #{open_str} io multi_process 0 10 5`--#{fail_str}`" 
         }),
       },
       {
         'description'  =>  "Verify multiple read processes ",
         'testcaseID'   => 'uart_basic_read',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => "#{mknods};\./st_parser uart #{open_str} io multi_process 1 10 5`--#{fail_str}`" 
+          'cmd' => "#{mknods};st_parser uart #{open_str} io multi_process 1 10 5`--#{fail_str}`" 
         }),
       },
       {
         'description'  =>  "Verify multiple write and read processes ",
         'testcaseID'   => 'uart_basic_write1',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => "#{mknods};\./st_parser uart #{open_str} io multi_process 2 10 5`--#{fail_str}`" 
+          'cmd' => "#{mknods};st_parser uart #{open_str} io multi_process 2 10 5`--#{fail_str}`" 
         }),
       },
       {
         'description'  =>  "Verify multiple instances working together",
         'testcaseID'   => 'uart_multi_instance',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => "#{mknods};\./st_parser uart update instance 0 #{open_str} io write_sync 10 exit update instance 1 #{open_str} io write_sync 10`--(?i:fail)`" 
+          'cmd' => "#{mknods};st_parser uart update instance 0 #{open_str} io write_sync 10 exit update instance 1 #{open_str} io write_sync 10`--(?i:fail)`" 
         }),
       },
     ]

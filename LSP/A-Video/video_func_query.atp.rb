@@ -51,49 +51,49 @@ class Video_func_queryTestPlan < TestPlan
         'description'  =>  "Verify that the video capture's supports V4L2_CAP_VIDEO_CAPTURE capability",
         'testcaseID'   => 'video_func_querycap_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 0 -i 1`++Success\\s+QUERYCAP--Failed\\s+QUERYCAP`' 
+          'cmd' => 'v4l2_cap_ioctl -o 0 -i 1`++Success\\s+QUERYCAP--Failed\\s+QUERYCAP`' 
         }),
       },
       {
         'description'  =>  "Verify that the video capture's supports V4L2_CAP_VBI_CAPTURE capability",
         'testcaseID'   => 'video_func_querycap_0002',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 0 -i 2`++Success\\s+QUERYCAP--Failed\\s+QUERYCAP`' 
+          'cmd' => 'v4l2_cap_ioctl -o 0 -i 2`++Success\\s+QUERYCAP--Failed\\s+QUERYCAP`' 
         }),
       },
       {
         'description'  =>  "Verify that the video capture's supports V4L2_CAP_SLICED_VBI_CAPTURE capability",
         'testcaseID'   => 'video_func_querycap_0003',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_io -o 0 -i 3`++Success\\s+QUERYCAP--Failed\\s+QUERYCAP`' 
+          'cmd' => 'v4l2_cap_io -o 0 -i 3`++Success\\s+QUERYCAP--Failed\\s+QUERYCAP`' 
         }),
       },
       {
         'description'  =>  "Verify that the video capture's supports V4L2_CAP_HBI_CAPTURE capability",
         'testcaseID'   => 'video_func_querycap_0004',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_io -o 0 -i 4`++Success\\s+QUERYCAP--Failed\\s+QUERYCAP`' 
+          'cmd' => 'v4l2_cap_io -o 0 -i 4`++Success\\s+QUERYCAP--Failed\\s+QUERYCAP`' 
         }),
       },
       {
         'description'  =>  "Verify that the video capture's supports V4L2_CAP_RDS_CAPTURE capability",
         'testcaseID'   => 'video_func_querycap_0005',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_io -o 0 -i 5`++Success\\s+QUERYCAP--Failed\\s+QUERYCAP`' 
+          'cmd' => 'v4l2_cap_io -o 0 -i 5`++Success\\s+QUERYCAP--Failed\\s+QUERYCAP`' 
         }),
       },
       {
         'description'  =>  "Verify that the video capture's supports V4L2_CAP_AUDIO capability",
         'testcaseID'   => 'video_func_querycap_0006',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_io -o 0 -i 6`++Success\\s+QUERYCAP--Failed\\s+QUERYCAP`' 
+          'cmd' => 'v4l2_cap_io -o 0 -i 6`++Success\\s+QUERYCAP--Failed\\s+QUERYCAP`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of video capture device when qureied for NULL capture capability",
         'testcaseID'   => 'video_func_querycap_0007',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_io -o 0 -i 7`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_io -o 0 -i 7`++Failed\\s+errno=EINVAL`' 
         }),
       }
     ]
@@ -123,7 +123,7 @@ class Video_func_queryTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

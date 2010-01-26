@@ -46,11 +46,11 @@ class Uart_func_configTestPlan < TestPlan
     fail_str = '(?i:fail|Not support)'
     open_str = 'open 2'
     stty_str = 'stty -a < /dev/ttyS0'
-    write_str = "./st_parser uart #{open_str} io write_sync 6"
+    write_str = "st_parser uart #{open_str} io write_sync 6"
     
     common_paramsChan = {
       'target_sources'  => 'LSP\st_parser',
-      'ensure'  => './st_parser uart ioctl set_baud 115200 set_stopbit 1 set_parity 0 set_data 8 set_flowctl 0 exit exit'
+      'ensure'  => 'st_parser uart ioctl set_baud 115200 set_stopbit 1 set_parity 0 set_data 8 set_flowctl 0 exit exit'
     }
     common_vars = {
       'configID'        => '..\Config\lsp_generic.ini', 
@@ -76,7 +76,7 @@ class Uart_func_configTestPlan < TestPlan
         #'script'    => 'LSP\A-UART\uart_semiauto.rb',
         'paramsChan'  => common_paramsChan.merge({
           'baud_rate' => baud_rate,
-          'cmd' => "\./st_parser uart #{open_str} ioctl set_baud #{baud_rate}`++#{baud_rate}--#{fail_str}`;#{stty_str}`++speed\\s+#{baud_rate}\\s+baud;`;#{write_str}" 
+          'cmd' => "st_parser uart #{open_str} ioctl set_baud #{baud_rate}`++#{baud_rate}--#{fail_str}`;#{stty_str}`++speed\\s+#{baud_rate}\\s+baud;`;#{write_str}" 
         }),
       }]
     }
@@ -86,7 +86,7 @@ class Uart_func_configTestPlan < TestPlan
         'testcaseID'   => 'uart_config',
         'paramsChan'  => common_paramsChan.merge({
           'stop_bit' => stop_bit,
-          'cmd' => "\./st_parser uart #{open_str} ioctl set_stopbit #{stop_bit}`++to\\s+#{stop_bit}--#{fail_str}`;#{stty_str}`++#{get_stty_stopbit(stop_bit)}`;#{write_str}" 
+          'cmd' => "st_parser uart #{open_str} ioctl set_stopbit #{stop_bit}`++to\\s+#{stop_bit}--#{fail_str}`;#{stty_str}`++#{get_stty_stopbit(stop_bit)}`;#{write_str}" 
         }),
       }]
     }
@@ -97,7 +97,7 @@ class Uart_func_configTestPlan < TestPlan
         #'script'    => 'LSP\A-UART\uart_semiauto.rb',
         'paramsChan'  => common_paramsChan.merge({
           'parity' => parity,
-          'cmd' => "\./st_parser uart #{open_str} ioctl set_parity #{translate_parity(parity)}`++#{translate_parity(parity)}--#{fail_str}`;#{write_str}" 
+          'cmd' => "st_parser uart #{open_str} ioctl set_parity #{translate_parity(parity)}`++#{translate_parity(parity)}--#{fail_str}`;#{write_str}" 
         }),
       }]
     }
@@ -108,7 +108,7 @@ class Uart_func_configTestPlan < TestPlan
         #'script'    => 'LSP\A-UART\uart_semiauto.rb',
         'paramsChan'  => common_paramsChan.merge({
           'data' => data,
-          'cmd' => "\./st_parser uart #{open_str} ioctl set_data #{data}`++#{data}--#{fail_str}`;#{stty_str}`++cs#{data}`;#{write_str}" 
+          'cmd' => "st_parser uart #{open_str} ioctl set_data #{data}`++#{data}--#{fail_str}`;#{stty_str}`++cs#{data}`;#{write_str}" 
         }),
       }]
     }
@@ -118,7 +118,7 @@ class Uart_func_configTestPlan < TestPlan
         'testcaseID'   => 'uart_config',
         'paramsChan'  => common_paramsChan.merge({
           'flowctl' => flowctl,
-          'cmd' => "\./st_parser uart #{open_str} ioctl set_flowctl #{translate_flowctl(flowctl)}`++to\\s+#{translate_flowctl(flowctl)}--#{fail_str}`;#{write_str}" 
+          'cmd' => "st_parser uart #{open_str} ioctl set_flowctl #{translate_flowctl(flowctl)}`++to\\s+#{translate_flowctl(flowctl)}--#{fail_str}`;#{write_str}" 
         }),
       }]
     }
@@ -126,7 +126,7 @@ class Uart_func_configTestPlan < TestPlan
         'description'  =>  "Get current config",
         'testcaseID'   => 'uart_config',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => "\./st_parser uart #{open_str} ioctl get_config`++over`--#{fail_str}" 
+          'cmd' => "st_parser uart #{open_str} ioctl get_config`++over`--#{fail_str}" 
         }),
     }]
 

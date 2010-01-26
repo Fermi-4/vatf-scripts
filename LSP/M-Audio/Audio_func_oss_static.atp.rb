@@ -104,7 +104,7 @@ class Audio_func_oss_staticTestPlan < TestPlan
             'frame_sz'	=> "#{params['frame_sz']}",
             #'vid_plane'	=> "#{params['Vid_plane']}",
             'target_sources' => 'LSP\M-Audio\oss',
-            'cmd'	=> "./audiolb_oss -s #{params['srate']} -f #{params['frame_sz']}",
+            'cmd'	=> "audiolb_oss -s #{params['srate']} -f #{params['frame_sz']}",
         },
         'paramsEquip'  => {},
         'paramsControl'=> {},

@@ -53,7 +53,7 @@ class Video_func_capTestPlan < TestPlan
                                       "queuing the buffer and then dequeuing the buffer and unmapping the buffer",
         'testcaseID'   => 'video_func_buf_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -i 1 -p1`++Success\\s+BUF--Failed\\s+BUF`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -i 1 -p1`++Success\\s+BUF--Failed\\s+BUF`' 
         }),
       },
       {
@@ -62,7 +62,7 @@ class Video_func_capTestPlan < TestPlan
                                       "queuing the buffer and then dequeuing the buffer and unmapping the buffer",
         'testcaseID'   => 'video_func_buf_0002',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -i 1 -p10`++Success\\s+BUF--Failed\\s+BUF`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -i 1 -p10`++Success\\s+BUF--Failed\\s+BUF`' 
         }),
       },
       {
@@ -71,7 +71,7 @@ class Video_func_capTestPlan < TestPlan
                                       "queuing the buffer and then dequeuing the buffer",
         'testcaseID'   => 'video_func_buf_0003',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -i 2 -p1`++Success\\s+BUF--Failed\\s+BUF`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -i 2 -p1`++Success\\s+BUF--Failed\\s+BUF`' 
         }),
       },
       {
@@ -80,63 +80,63 @@ class Video_func_capTestPlan < TestPlan
                                       "queuing the buffer and then dequeuing the buffer",
         'testcaseID'   => 'video_func_buf_0004',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -i 2 -p10`++Success\\s+BUF--Failed\\s+BUF`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -i 2 -p10`++Success\\s+BUF--Failed\\s+BUF`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the REQ_BUF with a NULL type value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_005',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -i 3`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -i 3`++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the QUERY_BUF with a NULL type value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_006',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -i 4`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -i 4`++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the QBUF with a NULL type value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_007',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -i 5`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -i 5`++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the DQBUF with a NULL type value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_008',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -i 6`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -i 6`++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the REQ_BUF with a invalid type value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_009',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -i 7`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -i 7`++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the QUERY_BUF with a invalid type value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_010',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -i 8`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -i 8`++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the QBUF with a invalid type value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_011',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -i 9`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -i 9`++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the DQBUF with a invalid type value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_012',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -i 10`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -i 10`++Failed\\s+errno=EINVAL`' 
         }),
       },
       {
@@ -145,7 +145,7 @@ class Video_func_capTestPlan < TestPlan
                                       "Then close the device. Repeat the process overnite",
         'testcaseID'   => 'video_func_fmt_012',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 5 -i 10`++Failed\\s+errno=EINVAL`' 
+          'cmd' => 'v4l2_cap_ioctl -o 5 -i 10`++Failed\\s+errno=EINVAL`' 
         }),
       }
     ]
@@ -175,7 +175,7 @@ class Video_func_capTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

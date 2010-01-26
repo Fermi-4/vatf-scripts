@@ -56,7 +56,7 @@ class Video_func_rszTestPlan < TestPlan
         'testcaseID'   => 'video_func_rsz_0001',
         'script'      => 'LSP\A-Video\video_prev_rsz.rb',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './PlanarResize -o 0'#`++Passed\\s+Resizer--Failed\\s+Resize`' 
+        'cmd' => 'PlanarResize -o 0'#`++Passed\\s+Resizer--Failed\\s+Resize`' 
         }),
       },
       {
@@ -64,28 +64,28 @@ class Video_func_rszTestPlan < TestPlan
         'testcaseID'   => 'video_func_rsz_0002',
         'script'      => 'LSP\A-Video\video_prev_rsz.rb',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './YUVMultiPassResize'#`++Passed\\s+Resizer--Failed\\s+Resizer`' 
+        'cmd' => 'YUVMultiPassResize'#`++Passed\\s+Resizer--Failed\\s+Resizer`' 
         }),
       },
       {
         'description'  =>  "Verify that the functionality of RSZ_REQBUFS with Null value(Negative test)" ,
         'testcaseID'   => 'video_func_rsz_0003',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './PlanarResize -o 1`++Passed\\s+Negative\\s+Tests--Failed\\s+Negative\\s+Tests`' 
+        'cmd' => 'PlanarResize -o 1`++Passed\\s+Negative\\s+Tests--Failed\\s+Negative\\s+Tests`' 
         }),
       },
       {
         'description'  =>  "Verify that the functionality of PREV_QUERYBUFS with Null value(Negative test)" ,
         'testcaseID'   => 'video_func_rsz_0004',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './PlanarResize -o 2`++Passed\\s+Negative\\s+Tests--Failed\\s+Negative\\s+Tests`' 
+        'cmd' => 'PlanarResize -o 2`++Passed\\s+Negative\\s+Tests--Failed\\s+Negative\\s+Tests`' 
         }),
       },
       {
         'description'  =>  "Verify that the functionality of RSZ_S_PARAMS with Null value(Negative test)" ,
         'testcaseID'   => 'video_func_prev_0004',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './PlanarResize -o 3`++Passed\\s+Negative\\s+Tests--Failed\\s+Negative\\s+Tests`' 
+        'cmd' => 'PlanarResize -o 3`++Passed\\s+Negative\\s+Tests--Failed\\s+Negative\\s+Tests`' 
         }),
       }
     ]
@@ -115,7 +115,7 @@ class Video_func_rszTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

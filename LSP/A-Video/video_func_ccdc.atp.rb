@@ -56,7 +56,7 @@ class Video_func_ccdcTestPlan < TestPlan
         'testcaseID'   => 'video_func_ccdc_0001',
         'script'      => 'LSP\A-Video\video_ccdc.rb',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './ccdc_cap -o 0'#`++Passed\\s+Resizer--Failed\\s+Resize`' 
+        'cmd' => 'ccdc_cap -o 0'#`++Passed\\s+Resizer--Failed\\s+Resize`' 
         }),
       },
       {
@@ -66,7 +66,7 @@ class Video_func_ccdcTestPlan < TestPlan
         'testcaseID'   => 'video_func_ccdc_0002',
         'script'      => 'LSP\A-Video\video_ccdc.rb',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './ccdc_cap -o 1'#`++Passed\\s+Resizer--Failed\\s+Resize`' 
+        'cmd' => 'ccdc_cap -o 1'#`++Passed\\s+Resizer--Failed\\s+Resize`' 
         }),
       },
       {
@@ -76,7 +76,7 @@ class Video_func_ccdcTestPlan < TestPlan
         'testcaseID'   => 'video_func_ccdc_0003',
         'script'      => 'LSP\A-Video\video_ccdc.rb',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => './ccdc_cap -o 3'#`++Passed\\s+Resizer--Failed\\s+Resize`' 
+        'cmd' => 'ccdc_cap -o 3'#`++Passed\\s+Resizer--Failed\\s+Resize`' 
         }),
       }
     ]
@@ -106,7 +106,7 @@ class Video_func_ccdcTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

@@ -53,105 +53,105 @@ class Video_disp_fbdev_loopTestPlan < TestPlan
         'description'  =>  " Verify that the loopback for the composite output and composite input in NTSC format",
         'testcaseID'   => 'video_disp_fbdev_loop_0001',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./fbloop_comp" ,
+        'cmd' => "fbloop_comp" ,
         }),
       },
       {
         'description'  =>  " Verify that the loopback for the composite output and composite input in PAL format",
         'testcaseID'   => 'video_disp_fbdev_loop_0002',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./fbloop_comp" ,
+        'cmd' => "fbloop_comp" ,
         }),
       },
       {
         'description'  =>  " Verify that the loopback for the composite output and SVideo input in NTSC format",
         'testcaseID'   => 'video_disp_fbdev_loop_0003',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./fbloop_comp -s" ,
+        'cmd' => "fbloop_comp -s" ,
         }),
       },
       {
         'description'  =>  " Verify that the loopback for the composite output and SVideo input in PAL format",
         'testcaseID'   => 'video_disp_fbdev_loop_0004',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./fbloop_comp -s" ,
+        'cmd' => "fbloop_comp -s" ,
         }),
       },
       {
         'description'  =>  " Verify that the loopback for the SVideo output and composite input in NTSC format",
         'testcaseID'   => 'video_disp_fbdev_loop_0005',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./fbloop_comp" ,
+        'cmd' => "fbloop_comp" ,
         }),
       },
       {
         'description'  =>  " Verify that the loopback for the SVideo output and composite input in PAL format",
         'testcaseID'   => 'video_disp_fbdev_loop_0006',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./fbloop_comp" ,
+        'cmd' => "fbloop_comp" ,
         }),
       },
       {
         'description'  =>  " Verify that the loopback for the SVideo output and SVideo input in NTSC format",
         'testcaseID'   => 'video_disp_fbdev_loop_0007',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./fbloop_comp -s" ,
+        'cmd' => "fbloop_comp -s" ,
         }),
       },
       {
         'description'  =>  " Verify that the loopback for the SVideo output and SVideo input in PAL format",
         'testcaseID'   => 'video_disp_fbdev_loop_0008',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./fbloop_comp -s" ,
+        'cmd' => "fbloop_comp -s" ,
         }),
       },
       {
         'description'  =>  " Verify that the loopback for the COMPONENT output and composite input in 480P format",
         'testcaseID'   => 'video_disp_fbdev_loop_0009',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./fbloop_comp" ,
+        'cmd' => "fbloop_comp" ,
         }),
       },
       {
         'description'  =>  " Verify that the loopback for the COMPONENT output and composite input in 576P format",
         'testcaseID'   => 'video_disp_fbdev_loop_0010',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./fbloop_comp" ,
+        'cmd' => "fbloop_comp" ,
         }),
       },
       {
         'description'  =>  " Verify that the loopback for the LCD(640x480) output and composite input in NTSC format",
         'testcaseID'   => 'video_disp_fbdev_loop_0011',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./dlcd_example" ,
+        'cmd' => "dlcd_example" ,
         }),
       },
       {
         'description'  =>  " Verify that the loopback for the LCD(640x400) output and composite input in NTSC format",
         'testcaseID'   => 'video_disp_fbdev_loop_0012',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./dlcd_example_400" ,
+        'cmd' => "dlcd_example_400" ,
         }),
       },
       {
         'description'  =>  " Verify that the loopback for the LCD(640x350) output and composite input in NTSC format",
         'testcaseID'   => 'video_disp_fbdev_loop_0013',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./dlcd_example_350" ,
+        'cmd' => "dlcd_example_350" ,
         }),
       },
       {
         'description'  =>  " Verify that the image can be displayed in 720P format",
         'testcaseID'   => 'video_disp_fbdev_loop_0014',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./fbloop_hd" ,
+        'cmd' => "fbloop_hd" ,
         }),
       },
       {
         'description'  =>  " Verify that the image can be displayed in 1080I format",
         'testcaseID'   => 'video_disp_fbdev_loop_0015',
         'paramsChan'  => common_paramsChan.merge({
-        'cmd' => "./fbloop_hd" ,
+        'cmd' => "fbloop_hd" ,
         }),
       }
     ]
@@ -181,7 +181,7 @@ class Video_disp_fbdev_loopTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

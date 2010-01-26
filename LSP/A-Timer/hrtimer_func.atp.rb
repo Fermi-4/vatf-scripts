@@ -130,7 +130,7 @@ class HRTimer_funcTestPlan < TestPlan
         'script'  => 'LSP\A-Timer\hr_clock_test.rb',
         'paramsChan'  => common_paramsChan.merge({ 
           'target_sources' => 'LSP\A-Timer\timer_tests',
-          'cmd' => "\./clock_test`++Gettimeofday`",
+          'cmd' => "clock_test`++Gettimeofday`",
           'interval'  => i,   # in seconds. can be float number. the time between sending two cmds.
           'boundary'  => 1,   # in seconds. can be float number. the dif between timer and ruby sleep.(need high resolution sleep).
         }),
@@ -149,7 +149,7 @@ class HRTimer_funcTestPlan < TestPlan
         'script'  => 'LSP\default_test_script.rb',
         'paramsChan'  => common_paramsChan.merge({ 
           'target_sources' => 'LSP\A-Timer\timer_tests',
-          'cmd' => "[dut_timeout\=60];\./itimer_test",
+          'cmd' => "[dut_timeout\=60];itimer_test",
         }),
       },
       {
@@ -170,7 +170,7 @@ class HRTimer_funcTestPlan < TestPlan
             # CLOCK_MONOTONIC_HR,
             # CLOCK_REALTIME_HR -> 3
           # };
-          'cmd' => "\./cyclictest -n -p 80 -i 500 -l 5000 -c 1",  # pass clock_id to clock_nanosleep() and clock_getres() functions.
+          'cmd' => "cyclictest -n -p 80 -i 500 -l 5000 -c 1",  # pass clock_id to clock_nanosleep() and clock_getres() functions.
           'expected_resolution' => "1",  # in ns
           'time_to_finish'  => "5",   # the program should get over in this time. otherwise, it is not hr.
         }),

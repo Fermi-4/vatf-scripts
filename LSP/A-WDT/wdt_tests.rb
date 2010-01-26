@@ -3,7 +3,6 @@ require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 
 def setup
-  login_uut
   self.as(LspTestScript).setup
 end
 
@@ -41,11 +40,11 @@ def clean
   start_time = Time.now.to_i
   sleep 30 # to avoid going to boot prompt
   @equipment['dut1'].send_cmd("boot", "", 10) # dm6467uboot does not autoboot
-  while time_passed < 600
+  while time_passed < 180
     if is_uut_up?
       break
     else
-      sleep 30
+      sleep 60
       login_uut
     end
     time_passed = Time.now.to_i - start_time

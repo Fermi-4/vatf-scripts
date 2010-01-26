@@ -90,11 +90,11 @@ class I2c_stressTestPlan < TestPlan
   # 'slave_device'  => ['led', 'rtc', 'ir', 'aicxx'],
     pass_string = '(?i:done)'
     cmd = case slave_device
-    when 'led' then "\./st_parser i2c update config 2 open ioctl 1 stress exit exit `++#{pass_string}--(?i:fail)|(?i:not\\s+found)`"
-    when 'rtc' then "\./st_parser i2c update config 5 open ioctl 1 rtc_w rtc_r exit exit`++#{pass_string}--(?i:fail)|(?i:not\\s+found)`" 
-    when 'ir' then "\./st_parser i2c update config 4 open ioctl 1 ir_a exit exit `++#{pass_string}--(?i:fail)|(?i:not\\s+found)`" 
-    #cmd = './st_parser i2c update config 3 open ioctl 1 codec_oneshot 1 <codec_reg_num> <value> 2 <loop_cnt> codec_oneshot 0 <codec_reg_num> 1 1 <loop_cnt> exit exit' when 'aicxx'
-    when 'aicxx' then "\./st_parser i2c update config 3 open ioctl 1 codec_oneshot 1 2 19 2 1000 codec_oneshot 0 2 1 1 1000 exit exit`++#{pass_string}--(?i:fail)|(?i:not\\s+found)`" 
+    when 'led' then "st_parser i2c update config 2 open ioctl 1 stress exit exit `++#{pass_string}--(?i:fail)|(?i:not\\s+found)`"
+    when 'rtc' then "st_parser i2c update config 5 open ioctl 1 rtc_w rtc_r exit exit`++#{pass_string}--(?i:fail)|(?i:not\\s+found)`" 
+    when 'ir' then "st_parser i2c update config 4 open ioctl 1 ir_a exit exit `++#{pass_string}--(?i:fail)|(?i:not\\s+found)`" 
+    #cmd = 'st_parser i2c update config 3 open ioctl 1 codec_oneshot 1 <codec_reg_num> <value> 2 <loop_cnt> codec_oneshot 0 <codec_reg_num> 1 1 <loop_cnt> exit exit' when 'aicxx'
+    when 'aicxx' then "st_parser i2c update config 3 open ioctl 1 codec_oneshot 1 2 19 2 1000 codec_oneshot 0 2 1 1 1000 exit exit`++#{pass_string}--(?i:fail)|(?i:not\\s+found)`" 
     end
     return cmd
   end

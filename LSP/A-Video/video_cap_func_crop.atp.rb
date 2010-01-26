@@ -56,28 +56,28 @@ class Video_cap_func_cropTestPlan < TestPlan
                                       "verifying the width and height" ,
         'testcaseID'   => 'video_func_crop_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 4 -p 0 -c 0 -n 0 -i 0`++Success\\s+CROP--Failed\\s+CROP`' 
+          'cmd' => 'v4l2_cap_ioctl -o 4 -p 0 -c 0 -n 0 -i 0`++Success\\s+CROP--Failed\\s+CROP`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the G_CAP with a NULL type value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_004',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 4 -p 0 -c 0 -n 1 -i 0`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 4 -p 0 -c 0 -n 1 -i 0`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the S_CAP with a NULL type value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_005',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 4 -p 0 -c 0 -n 2 -i 0`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 4 -p 0 -c 0 -n 2 -i 0`++Passed\\s+Negative\\s+Test`' 
         }),
       },
       {
         'description'  =>  "Verify the behavior of the CROPCAP with a NULL type value.(Negative Test)",
         'testcaseID'   => 'video_func_fmt_006',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './v4l2_cap_ioctl -o 4 -p 0 -c 0 -n 3 -i 0`++Passed\\s+Negative\\s+Test`' 
+          'cmd' => 'v4l2_cap_ioctl -o 4 -p 0 -c 0 -n 3 -i 0`++Passed\\s+Negative\\s+Test`' 
         }),
       }
     ]
@@ -107,7 +107,7 @@ class Video_cap_func_cropTestPlan < TestPlan
         'frate'    => params['frate'],
         'fsize'    => params['fsize'],
         #'bootargs_ext'    => "i2c-davinci\.i2c_davinci_busFreq\\=#{params['bus_speed']}",
-        #'cmd'             => "\./audiolb -s #{params['frate']} -f #{params['fsize']} -b",
+        #'cmd'             => "audiolb -s #{params['frate']} -f #{params['fsize']} -b",
         #'target_sources'  => 'LSP\A-Audio\audiolb'
         #'ensure'  => ''
       },

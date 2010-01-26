@@ -1,5 +1,5 @@
 # -*- coding: ISO-8859-1 -*-
-#require 'C:\views\Snapshot\vatf_lsp120_a0850405_laptop_view\gtsystst_tp\TestPlans\LSP\default_lsp_script'
+require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 
 def setup             # added on 01-12-2009 to bypass the normal setup routines.  The original routine was causing the board to hang at various times.
@@ -12,7 +12,7 @@ def run
   commands = parse_cmd('cmd') 
   ensure_commands = parse_cmd('ensure') if @test_params.params_chan.instance_variable_defined?(:@ensure) 
   
-  boot_to_bootloader
+  @equipment['dut1'].boot_to_bootloader
   
   result, cmd = execute_cmd(commands)
 	

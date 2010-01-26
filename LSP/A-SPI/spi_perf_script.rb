@@ -1,5 +1,5 @@
 # -*- coding: ISO-8859-1 -*-
-
+require File.dirname(__FILE__)+'/../default_perf_module'
 # Default Server-Side Test script implementation for LSP releases
 include LspReadWritePerfScript
 

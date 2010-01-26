@@ -108,9 +108,9 @@ private
     
     # send traffic from DUT client
     if proto == 'tcp' 
-    	@equipment['dut1'].send_cmd("./iperf -c #{dest_ip} -w #{packet_size}k -t #{duration} -d", /Mbits/, duration.to_i + 30)
+    	@equipment['dut1'].send_cmd("iperf -c #{dest_ip} -w #{packet_size}k -t #{duration} -d", /Mbits/, duration.to_i + 30)
     else
-      @equipment['dut1'].send_cmd("./iperf -u -c #{dest_ip} -w #{packet_size}k -t #{duration} -d", /\d+\s+ms/, duration.to_i + 30)
+      @equipment['dut1'].send_cmd("iperf -u -c #{dest_ip} -w #{packet_size}k -t #{duration} -d", /\d+\s+ms/, duration.to_i + 30)
     end
     
     # check for errors

@@ -60,21 +60,21 @@ class Uart_stabilityTestPlan < TestPlan
         'description'  =>  "Stability: Verify uart stability create open deleate close 1000 times ",
         'testcaseID'   => 'uart_stability',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './psp_test_bench FnTest UART`++exit`;uart_stability_interrupt `++(?i:UART_CREATE_OPEN_DELETE_CLOSE_PASS)--(?i:fail)`' 
+          'cmd' => 'psp_test_bench FnTest UART`++exit`;uart_stability_interrupt `++(?i:UART_CREATE_OPEN_DELETE_CLOSE_PASS)--(?i:fail)`' 
         }),
       },
       {
         'description'  =>  "Stress: Verify read data",
         'testcaseID'   => 'uart_func_write_0001',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './psp_test_bench FnTest UART`++exit`;uart_stress_read_interrupt `++(?i:UART_STRESS_READ_PASS)--(?i:fail)`' 
+          'cmd' => 'psp_test_bench FnTest UART`++exit`;uart_stress_read_interrupt `++(?i:UART_STRESS_READ_PASS)--(?i:fail)`' 
         }),
       },
       {
         'description'  =>  "Stress: Verify write data from 1-1048576 bytes",
         'testcaseID'   => 'uart_write_stress',
         'paramsChan'  => common_paramsChan.merge({
-          'cmd' => './psp_test_bench FnTest UART `++exit`;uart_stress_write_interrupt `++(?i:UART_STRESS_WRITE_PASS)--(?i:fail)`' 
+          'cmd' => 'psp_test_bench FnTest UART `++exit`;uart_stress_write_interrupt `++(?i:UART_STRESS_WRITE_PASS)--(?i:fail)`' 
         }),
       },      
      ]

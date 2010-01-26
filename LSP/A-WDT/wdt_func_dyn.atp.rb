@@ -98,7 +98,7 @@ class Wdt_func_dynTestPlan < TestPlan
           'wdt_alive_period'  => 2*common_paramsChan['wdt_timeout'].to_i-30,
           'cmd'   => "insmod {module_name} heartbeat\\={wdt_timeout}`--(?i:fail)`" +
                       ";[dut_timeout\\=100]" +
-                      ";\./st_parser WDT open #{common_paramsChan['device_node']} 2 1 WDT_Alive 30 exit`#{expect_string}`",
+                      ";st_parser WDT open #{common_paramsChan['device_node']} 2 1 WDT_Alive 30 exit`#{expect_string}`",
         }),
       },
       
@@ -132,7 +132,7 @@ class Wdt_func_dynTestPlan < TestPlan
         'wdt_alive_period'  => params['wdt_timeout'], # keep this one because it may be different from timeout in some tests.
         'cmd'   => "rmmod {module_name};insmod {module_name} heartbeat\\={wdt_timeout}`--(?i:fail)`" +
                   ";[dut_timeout\\=#{params['wdt_timeout'].to_i+10}]" +
-                  ";\./st_parser WDT open {device_node} 2 1 Get_Timeout exit exit`++(?i:booting)--(?i:Fail)`",
+                  ";st_parser WDT open {device_node} 2 1 Get_Timeout exit exit`++(?i:booting)--(?i:Fail)`",
       },
       
       'paramsControl'       => {

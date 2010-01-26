@@ -107,7 +107,7 @@ class Nand_func_yaffs_dynaTestPlan < TestPlan
                       ";mkdir #{mnt_point}"+
                       ";[dut_timeout\\=120];flash_eraseall /dev/mtd3" +
                       ";mount -t #{fs_type} #{device_node} #{mnt_point};mount`++#{mnt_point}`" +
-                      ";\./st_parser fsapi fwrite #{mnt_point}/test_file 1024 fread #{mnt_point}/test_file`--(?i:fail)`",
+                      ";st_parser fsapi fwrite #{mnt_point}/test_file 1024 fread #{mnt_point}/test_file`--(?i:fail)`",
           'ensure'  => "rm #{mnt_point}/test_file;umount #{device_node}",
         }),
       },
@@ -168,8 +168,8 @@ class Nand_func_yaffs_dynaTestPlan < TestPlan
   
   def get_cmd(test_type, file_size, buffer_size, test_file)
     rtn = case test_type
-      when 'write-read':  "\./st_parser fsapi buffsize #{buffer_size} fwrite #{test_file} #{file_size}`--(?i:fail)`" +
-                          ";\./st_parser fsapi fread {test_file}`--(?i:fail)`"
+      when 'write-read':  "st_parser fsapi buffsize #{buffer_size} fwrite #{test_file} #{file_size}`--(?i:fail)`" +
+                          ";st_parser fsapi fread {test_file}`--(?i:fail)`"
     end
   end
   

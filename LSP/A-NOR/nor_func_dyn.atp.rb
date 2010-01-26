@@ -102,7 +102,7 @@ class Nor_func_dynTestPlan < TestPlan
           # may use fwrite/fread to do IO.
           'cmd'   => "insmod #{module_name};lsmod`++#{module_basename}`;cat /proc/mtd`++mtd3`" +
                       ";mkdir #{mnt_point};mount -t #{fs_type} #{device_node} #{mnt_point};mount`++#{mnt_point}`" +
-                      ";\./st_parser fsapi fwrite #{mnt_point}/test_file 1024 fread #{mnt_point}/test_file`--(?i:fail)`",
+                      ";st_parser fsapi fwrite #{mnt_point}/test_file 1024 fread #{mnt_point}/test_file`--(?i:fail)`",
           'ensure'  => "rm #{mnt_point}/test_file;umount #{device_node}",
         }),
       },

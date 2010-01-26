@@ -64,7 +64,7 @@ class Rtc_func_ioctlTestPlan < TestPlan
         'description'  => "Verify the rtc IOCTL #{ioctl} works.", 
         'testcaseID'   => "rtc_func_ioctl_#{ioctl.downcase}",
         'paramsChan'  => common_paramsChan.merge({
-          'cmd'       => "\./rtc_test`++(?i:complete)--(?i:fail)`"
+          'cmd'       => "rtc_test`++(?i:complete)--(?i:fail)`"
         }),
       ]
     }

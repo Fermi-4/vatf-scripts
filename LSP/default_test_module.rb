@@ -31,14 +31,14 @@ module LspTestScript
       nandfs = @test_params.nandfs  if @test_params.instance_variable_defined?(:@nandfs)
       ramfs  = @test_params.ramfs   if @test_params.instance_variable_defined?(:@ramfs)
       
-      samba_root_path_temp = @equipment['dut1'].samba_root_path
+      samba_root_path_temp = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}"
       nfs_root_path_temp	= @equipment['dut1'].nfs_root_path
       
       if nfs or nandfs or ramfs
         fs = ([nfs, nandfs, ramfs].select {|f| f != nil})[0]
         fs.gsub!(/\\/,'/')
         build_id, build_name = /\/([^\/\\]+?)\/([\w\.\-]+?)$/.match("#{fs.strip}").captures
-        @equipment['server1'].send_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/autofs", @equipment['server1'].prompt, 10)  if !File.directory?("\\\\#{@equipment['server1'].telnet_ip}\\#{samba_root_path_temp}\\autofs")		
+        @equipment['server1'].send_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/autofs", @equipment['server1'].prompt, 10)  if !File.directory?("#{samba_root_path_temp}\\autofs")		
         samba_root_path_temp = samba_root_path_temp + "\\autofs\\#{build_id}"
         nfs_root_path_temp 	= nfs_root_path_temp + "/autofs/#{build_id}"
         # Copy  nfs filesystem to linux server and untar it if it doesn't exist
