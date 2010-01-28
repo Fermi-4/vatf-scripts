@@ -4,13 +4,12 @@ require File.dirname(__FILE__)+'/../common/codec_params.rb'
 require File.dirname(__FILE__)+'/../utils/eth_info.rb'
 include CodecParams
 include ETHInfo
-VGDK_SCRIPTS = File.join(File.expand_path(File.dirname(__FILE__)), "..","utils")
 INPUT_DIR = "\\\\gtsnowball\\System_Test\\Automation\\gtsystst\\video_files\\VGDK_logs\\input"
 OUTPUT_DIR = "\\\\10.218.100.242\\video_files\\VGDK_logs\\output"
-MPLAYER_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..", "..","..","Utils","Video_tools","MPlayer for Windows")
-VIDEO_TOOLS_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..", "..","..","Utils","Video_tools")
+MPLAYER_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..","utils","MPlayer for Windows")
+VIDEO_TOOLS_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..","utils")
 WIRESHARK_DIR = ("C:/Program Files/Wireshark")
-SCRIPT_EXTRACTOR = "\\\\gtsnowball\\System_Test\\Automation\\gtsystst\\video_files"
+
 
 class ChannelInfo
     def initialize(codec,dir,resolution,out_codec,in_codec,in_resolution)
@@ -433,7 +432,7 @@ def run
                                 if ((multislice == 1 && !File.size("#{INPUT_DIR}\\in\\#{res.resolution}\\#{codec}\\multislice\\#{clip_hash[clip].to_s}.cap")) || (multislice == 0 && !File.size("#{INPUT_DIR}\\in\\#{res.resolution}\\#{codec}\\#{clip_hash[clip].to_s}.cap")) )    
                                     raise "Error: ### Clip not found"
                                 end
-                                system("ruby #{VGDK_SCRIPTS}/genCodecCfg.rb #{codec} #{res.resolution} #{test_case_id} #{clip_hash[clip].to_s} #{multislice}") 
+                                system("ruby #{VIDEO_TOOLS_DIR}/genCodecCfg.rb #{codec} #{res.resolution} #{test_case_id} #{clip_hash[clip].to_s} #{multislice}") 
                                 system("#{VIDEO_TOOLS_DIR}\\desktop_vppu.exe #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.cfg > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt")         
                                 Dir.chdir("#{WIRESHARK_DIR}")
                                 if(multislice == 1)
@@ -442,7 +441,7 @@ def run
                                   system("capinfos.exe #{INPUT_DIR}\\in\\#{res.resolution}\\#{codec}\\#{clip_hash[clip].to_s}_rtpmarker.cap > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\capinfos_#{codec}_#{res.resolution}.txt")
                                 end
                                 pkt_to_pkt_delay = get_pkt_to_pkt_delay("#{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt","#{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\capinfos_#{codec}_#{res.resolution}.txt",wire_fps)
-                                system("ruby #{VGDK_SCRIPTS}/genPktHdrs.rb #{codec} #{res.resolution} #{key} #{i} #{pc_udp_port} #{append} #{test_case_id} #{clip_hash[clip].to_s} #{multislice} #{pkt_to_pkt_delay}") 
+                                system("ruby #{VIDEO_TOOLS_DIR}/genPktHdrs.rb #{codec} #{res.resolution} #{key} #{i} #{pc_udp_port} #{append} #{test_case_id} #{clip_hash[clip].to_s} #{multislice} #{pkt_to_pkt_delay}") 
                                 if(video_clarity == 1)
                                   begin
                                     if(multislice == 1)
@@ -482,7 +481,7 @@ def run
             core_info_hash[key].getLength().times { |i|  
                 if(core_info_hash[key][i].get_dir == "enc" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)
                     debug_puts "Generating SDP for #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port}"
-                    system("ruby #{VGDK_SCRIPTS}/genSDP.rb #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port} #{append} #{test_case_id} #{geom} #{multislice} #{iteration_id} #{c_iter}")
+                    system("ruby #{VIDEO_TOOLS_DIR}/genSDP.rb #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port} #{append} #{test_case_id} #{geom} #{multislice} #{iteration_id} #{c_iter}")
                     Dir.chdir("#{WIRESHARK_DIR}")
                     system("start tshark -f \"dst #{@platform_info.get_pc_ip} and udp dst port #{pc_udp_port}\" -i #{@platform_info.get_eth_dev} -w #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/#{pc_udp_port}_out_clipIter#{c_iter}.cap")
                     geom += 180                    
@@ -509,7 +508,7 @@ def run
                             debug_puts "get_transcoded_to_codec :#{core_info_hash[key][i].get_transcoded_to_codec}"
                             transcoded_codec = core_info_hash[key][i].get_transcoded_to_codec
                             if(c_iter == 0)
-                                system("#{VGDK_SCRIPTS}/etherealUtil.exe #{INPUT_DIR}\\config\\change_headers_#{codec}_#{res.resolution}.cfg #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\pktHeaders_#{codec}_#{res.resolution}.cfg #{INPUT_DIR}\\config\\autogenerated\\auto_generated_ConfigFile_#{codec}_#{res.resolution}_Iter#{iteration_id}.cfg #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\delays_#{codec}_#{res.resolution}.cfg")
+                                system("#{VIDEO_TOOLS_DIR}/etherealUtil.exe #{INPUT_DIR}\\config\\change_headers_#{codec}_#{res.resolution}.cfg #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\pktHeaders_#{codec}_#{res.resolution}.cfg #{INPUT_DIR}\\config\\autogenerated\\auto_generated_ConfigFile_#{codec}_#{res.resolution}_Iter#{iteration_id}.cfg #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\delays_#{codec}_#{res.resolution}.cfg")
                             end
                         end
                     }
@@ -517,7 +516,7 @@ def run
             }
         }
         if(c_iter == 0)
-        system("ruby #{VGDK_SCRIPTS}/genSendPkts.rb #{iteration_id}")
+        system("ruby #{VIDEO_TOOLS_DIR}/genSendPkts.rb #{iteration_id}")
         end
         if(subjective == 1)
         codec_hash.each_pair { |codec, res_arr|
@@ -535,7 +534,7 @@ def run
             }
         }
         end
-        system("#{VGDK_SCRIPTS}/sendPackets.exe #{INPUT_DIR}\\config\\autogenerated\\auto_generated_ConfigFile_4sendPkts_Iter#{iteration_id}.cfg #{@platform_info.get_eth_dev} 1 s")    
+        system("#{VIDEO_TOOLS_DIR}/sendPackets.exe #{INPUT_DIR}\\config\\autogenerated\\auto_generated_ConfigFile_4sendPkts_Iter#{iteration_id}.cfg #{@platform_info.get_eth_dev} 1 s")    
         sleep(num_chans*0.1)
         codec_hash.each_pair { |codec, res_arr| res_arr.each{|res| res.stream_sent = 0} }        
         system("taskkill /F /IM tshark.exe")
@@ -913,7 +912,7 @@ def clean
     system("taskkill /FI \"IMAGENAME eq mplayer.exe\"")
     remove_dir("#{INPUT_DIR}/out/")
     remove_dir("#{INPUT_DIR}/config/autogenerated/") 
-    system("ccperl #{SCRIPT_EXTRACTOR}//script_extractor.pl #{@files_dir}//dut1_1_log.txt > #{@files_dir}//dut1_1_log_config_script.txt")
+    system("ccperl #{VIDEO_TOOLS_DIR}//script_extractor.pl #{@files_dir}//dut1_1_log.txt > #{@files_dir}//dut1_1_log_config_script.txt")
 end
 
 def cleanup_and_exit()
