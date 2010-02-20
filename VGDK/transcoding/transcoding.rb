@@ -2,6 +2,8 @@
 require 'FileUtils'
 require File.dirname(__FILE__)+'/../common/codec_params.rb'
 require File.dirname(__FILE__)+'/../utils/eth_info.rb'
+require File.dirname(__FILE__)+'/../boot_scripts/boot.rb'
+include BootScripts
 include CodecParams
 include ETHInfo
 INPUT_DIR = "\\\\gtsnowball\\System_Test\\Automation\\gtsystst\\video_files\\VGDK_logs\\input"
@@ -9,6 +11,7 @@ OUTPUT_DIR = "\\\\10.218.100.242\\video_files\\VGDK_logs\\output"
 MPLAYER_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..","utils","MPlayer for Windows")
 VIDEO_TOOLS_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..","utils")
 WIRESHARK_DIR = ("C:/Program Files/Wireshark")
+
 
 
 class ChannelInfo
@@ -66,8 +69,17 @@ CodecInfo = Struct.new(:codec_type, :resolution, :stream_sent, :subjective_on)
 #attr :default_params
 def setup
     dut = @equipment['dut1']
+    server = defined?(@equipment['server1']) ? @equipment['server1'] : nil
     dut.set_api("vgdk")
     dut.send_cmd("wait 10000", /OK/, 2)
+    if(@test_params.instance_variable_defined?("@dsp") and @test_params.instance_variable_defined?("@app"))
+      dsp = @test_params.dsp
+      app = @test_params.app
+    else
+      dsp = nil
+      app = nil
+    end
+    boot(dut,server,dsp,app)  
     dut.send_cmd("cc ver", /OK/, 2)
     dut.send_cmd("dspi show", /OK/, 2)   
     #dut.send_cmd("spy dim 2", /OK/, 2) 
@@ -433,7 +445,7 @@ def run
                                     raise "Error: ### Clip not found"
                                 end
                                 system("ruby #{VIDEO_TOOLS_DIR}/genCodecCfg.rb #{codec} #{res.resolution} #{test_case_id} #{clip_hash[clip].to_s} #{multislice}") 
-                                system("#{VIDEO_TOOLS_DIR}\\desktop_vppu.exe #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.cfg > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt")         
+                                system("#{VIDEO_TOOLS_DIR}/desktop_vppu.exe #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.cfg > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt")         
                                 Dir.chdir("#{WIRESHARK_DIR}")
                                 if(multislice == 1)
                                   system("capinfos.exe #{INPUT_DIR}\\in\\#{res.resolution}\\#{codec}\\multislice\\#{clip_hash[clip].to_s}_rtpmarker.cap > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\capinfos_#{codec}_#{res.resolution}.txt")
