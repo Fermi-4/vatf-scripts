@@ -10,17 +10,22 @@ include XDPVarSetTgtPC
 require File.dirname(__FILE__)+'/dsp_glob_cfg.rb'
 include DSPGlobConfig
 module BootScripts
-  def boot(dut,ftp_server,dsp,app)
-    if(dut.get_session_status == false)
-      if(dsp != nil and app != nil and ftp_server != nil)
-        download_app(dut,ftp_server,app)
-        download_dsp(dut,ftp_server,dsp)
-      else
-        puts " ======== No image download, using dimtestvi and DSP on platform"
-      end
-      send_board_config(dut)
-      dut.start_session
+  def boot(dut,ftp_server,boot_params)
+    dut.send_cmd("shell ps",/dimtestvi/,2)
+    processes = dut.response
+    processes.each { |line|
+    if(line.match(/dimtestvi/i))
+      dimtest = line.match(/\d+/)[0]
+      dut.send_cmd("shell kill -9 #{dimtest}",/.*/,2)
     end
+    }
+    if(boot_params != nil and ftp_server != nil)
+      download_app(dut,ftp_server,boot_params['app'])
+      download_dsp(dut,ftp_server,boot_params['dsp'])
+    else
+      puts " ======== No image download, using dimtestvi and DSP on platform"
+    end
+    send_board_config(dut)
   end
 
   def send_board_config(dut)
@@ -43,7 +48,7 @@ module BootScripts
       dut.send_cmd("cd /APP",/.*/,2)
       dut.send_cmd("cd dspi",/.*/,2)
       dut.send_cmd("wget ftp\://gguser\:gguser@#{ftp_server.telnet_ip}/home/#{ftp_server.tftp_path.gsub('\\','/')}/#{File.basename(dsp).split("_")[-1]}",/100%/,10)
-    if(dut.is_timeout)
+    if(dut.timeout?)
       raise "wget: dsp failed"
     end 
   end
@@ -59,7 +64,7 @@ module BootScripts
     end
       dut.send_cmd("cd /APP",/.*/,2)
       dut.send_cmd("wget ftp\://gguser\:gguser@#{ftp_server.telnet_ip}/home/#{ftp_server.tftp_path.gsub('\\','/')}/#{File.basename(app)}",/100%/,10)
-    if(dut.is_timeout)
+    if(dut.timeout?)
       raise "wget: dimtestvi failed"
     end 
       dut.send_cmd("chmod 777 dimtestvi",//,2)

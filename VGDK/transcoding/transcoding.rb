@@ -69,17 +69,10 @@ CodecInfo = Struct.new(:codec_type, :resolution, :stream_sent, :subjective_on)
 #attr :default_params
 def setup
     dut = @equipment['dut1']
-    server = defined?(@equipment['server1']) ? @equipment['server1'] : nil
     dut.set_api("vgdk")
-    dut.send_cmd("wait 10000", /OK/, 2)
-    if(@test_params.instance_variable_defined?("@dsp") and @test_params.instance_variable_defined?("@app"))
-      dsp = @test_params.dsp
-      app = @test_params.app
-    else
-      dsp = nil
-      app = nil
-    end
-    boot(dut,server,dsp,app)  
+    server = defined?(@equipment['server1']) ? @equipment['server1'] : nil
+    dut.connect({'type'=>'telnet'})
+    setup_boot(dut,server)
     dut.send_cmd("cc ver", /OK/, 2)
     dut.send_cmd("dspi show", /OK/, 2)   
     #dut.send_cmd("spy dim 2", /OK/, 2) 
@@ -343,7 +336,7 @@ def run
             elsif(core_info_hash[key][i].get_dir == "enc")
               dut.send_cmd("dimt video_mode #{tcid} alloc #{encoder_template}", /ACK DONE/,10)
             end
-            if(dut.is_timeout)
+            if(dut.timeout?)
               cleanup_and_exit()
               return
             end  
@@ -382,7 +375,7 @@ def run
         chan += 1
       end
     end
-    if(dut.is_timeout)
+    if(dut.timeout?)
       cleanup_and_exit()
       return
     end  
@@ -397,7 +390,7 @@ def run
         tcid += 1
       }
     }
-    if(dut.is_timeout)
+    if(dut.timeout?)
       cleanup_and_exit()
       return
     end  
@@ -932,5 +925,47 @@ def cleanup_and_exit()
   test_comment = "No ACK DONE received from DSP, exiting"
   set_result(test_done_result,test_comment)
   clean()
+end
+
+def setup_boot(dut,ftp_server)
+  # Boot DUT if app and dsp image was specified in the test parameters
+
+  if (@test_params.instance_variable_defined?(:@dsp) and @test_params.instance_variable_defined?(:@app))
+    puts "Tomahawk VGDK transcoding::setup_boot: dsp and app image specified. Proceeding to boot DUT"
+    boot_params = {'dsp'=> @test_params.dsp, 'app' => @test_params.app}
+    @new_keys = get_keys()
+  else
+    boot_params = nil
+    @new_keys = nil
+  end
+  
+  if boot_required?(@old_keys, @new_keys) # call bootscript if required
+    boot(dut,ftp_server,boot_params)
+  else
+    puts "Tomahawk VGDK transcoding::setup_boot: dsp and app image NOT specified. Will skip booting process"
+  end
+end
+
+private
+def get_keys
+  keys = @test_params.dsp.to_s + @test_params.app.to_s
+  keys
+end
+
+def boot_required?(old_params, new_params)
+  old_test_string = get_test_string(old_params)
+  new_test_string = get_test_string(new_params)
+  old_test_string != new_test_string
+end
+
+def get_test_string(params)
+  test_string = ''
+  if(params == nil)
+    return nil
+  end
+  params.each {|element|
+  test_string += element.strip
+  }
+  test_string
 end
 

@@ -138,32 +138,27 @@ def send_evm_start(dut)
     dut.send_cmd("dspi load \/APP\/dspi\/tv01\.ld", /OK/, 2)
 
     dut.send_cmd("cc dnld 0 0 40",/Download done/, 100)
-    if(dut.is_timeout)
+    if(dut.timeout?)
       raise "DSP 0 download failed"
     end  
-    dut.send_cmd("wait 10", /OK/, 2)
     dut.send_cmd("cc dnld 1 0 40", /Download done/, 100)
-    if(dut.is_timeout)
+    if(dut.timeout?)
       raise "DSP 1 download failed"
     end
-    dut.send_cmd("wait 10", /OK/, 2)
     dut.send_cmd("cc dnld 2 0 40", /Download done/, 100)
-    if(dut.is_timeout)
+    if(dut.timeout?)
       raise "DSP 2 download failed"
     end  
-    dut.send_cmd("wait 10", /OK/, 2)
     dut.send_cmd("cc dnld 3 0 40", /Download done/, 100)
-    if(dut.is_timeout)
+    if(dut.timeout?)
       raise "DSP 3 download failed"
     end 
-    dut.send_cmd("wait 10", /OK/, 2)
     dut.send_cmd("cc dnld 4 0 40", /Download done/, 100)
-    if(dut.is_timeout)
+    if(dut.timeout?)
       raise "DSP 4 download failed"
     end
-    dut.send_cmd("wait 10", /OK/, 2)
     dut.send_cmd("cc dnld 5 0 40", /Download done/, 100)
-    if(dut.is_timeout)
+    if(dut.timeout?)
       raise "DSP 5 download failed"
     end   
 end
