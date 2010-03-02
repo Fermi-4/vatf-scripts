@@ -63,7 +63,7 @@ module BootScripts
       raise
     end
       dut.send_cmd("cd /APP",/.*/,2)
-      dut.send_cmd("wget ftp\://gguser\:gguser@#{ftp_server.telnet_ip}/home/#{ftp_server.tftp_path.gsub('\\','/')}/#{File.basename(app)}",/100%/,10)
+      dut.send_cmd("wget ftp\://gguser\:gguser@#{ftp_server.telnet_ip}/home/#{ftp_server.tftp_path.gsub('\\','/')}/#{File.basename(app).split("_")[-1]}",/100%/,10)
     if(dut.timeout?)
       raise "wget: dimtestvi failed"
     end 
