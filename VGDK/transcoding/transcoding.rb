@@ -331,11 +331,11 @@ def run
             dut.send_cmd("cc xdp_set #{tcid} udp loc_port #{loc_port}", /OK/, 2) 
             dut.send_cmd("cc xdp_set #{tcid} udp rem_port #{rem_port}", /OK/, 2) 
             dut.send_cmd("cc xdp_cli_set_state #{tcid} tx_enable rx_enable", /OK/, 2)
-            # if(core_info_hash[key][i].get_dir == "dec")
-              # dut.send_cmd("dimt video_mode #{tcid} alloc #{decoder_template}", /ACK DONE/, 10)
-            # elsif(core_info_hash[key][i].get_dir == "enc")
-              # dut.send_cmd("dimt video_mode #{tcid} alloc #{encoder_template}", /ACK DONE/,10)
-            # end
+            if(core_info_hash[key][i].get_dir == "dec")
+              dut.send_cmd("dimt video_mode #{tcid} alloc #{decoder_template}", /ACK DONE/, 10)
+            elsif(core_info_hash[key][i].get_dir == "enc")
+              dut.send_cmd("dimt video_mode #{tcid} alloc #{encoder_template}", /ACK DONE/,10)
+            end
             if(dut.timeout?)
               cleanup_and_exit()
               return
@@ -370,8 +370,8 @@ def run
         dut.send_cmd("dimt chan_config #{chan} alloc 6", /ACK DONE/, 2)
         chan += 1
       else
-        # dut.send_cmd("dimt set template 15 conn_req elem 0 req_type add ld_pkt_pkt src #{chan} dst #{chan+i}", /OK/, 2)
-        # dut.send_cmd("dimt conn_req #{chan} alloc 15", /ACK DONE/, 10)
+        dut.send_cmd("dimt set template 15 conn_req elem 0 req_type add ld_pkt_pkt src #{chan} dst #{chan+i}", /OK/, 2)
+        dut.send_cmd("dimt conn_req #{chan} alloc 15", /ACK DONE/, 10)
         chan += 1
       end
     end
