@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test_session>
+   <testplan_id/>
+   <!-- Test Case 0 -->
+   <testcase>
+      <id><![CDATA[1]]></id>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/osbench/osbench_test.bat,test_id=0,num_samples=100,test_libs=osbench.exe;osbench_dll.dll
+]]></params_chan>
+      <params_control><![CDATA[wait_time=30
+]]></params_control>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <scripts><![CDATA[BSP/osbench/osbench_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omapl138</platform>
+      <target>bsp_v1</target>
+      <description><![CDATA[OSBENCH: CriticalSections Test]]></description>
+   </testcase>
+   <!-- Test Case 1 -->
+   <testcase>
+      <id><![CDATA[2]]></id>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/osbench/osbench_test.bat,test_id=1,num_samples=100,test_libs=osbench.exe;osbench_dll.dll
+]]></params_chan>
+      <params_control><![CDATA[wait_time=40
+]]></params_control>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <scripts><![CDATA[BSP/osbench/osbench_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omapl138</platform>
+      <target>bsp_v1</target>
+      <description><![CDATA[OSBENCH: Event set-wakeup Test]]></description>
+   </testcase>
+   <!-- Test Case 2 -->
+   <testcase>
+      <id><![CDATA[3]]></id>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/osbench/osbench_test.bat,test_id=2,num_samples=100,test_libs=osbench.exe;osbench_dll.dll
+]]></params_chan>
+      <params_control><![CDATA[wait_time=60
+]]></params_control>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <scripts><![CDATA[BSP/osbench/osbench_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omapl138</platform>
+      <target>bsp_v1</target>
+      <description><![CDATA[OSBENCH: Semaphore release-acquire Test]]></description>
+   </testcase>
+   <!-- Test Case 3 -->
+   <testcase>
+      <id><![CDATA[4]]></id>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/osbench/osbench_test.bat,test_id=3,num_samples=100,test_libs=osbench.exe;osbench_dll.dll
+]]></params_chan>
+      <params_control><![CDATA[wait_time=40
+]]></params_control>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <scripts><![CDATA[BSP/osbench/osbench_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omapl138</platform>
+      <target>bsp_v1</target>
+      <description><![CDATA[OSBENCH: Mutex Test]]></description>
+   </testcase>
+   <!-- Test Case 4 -->
+   <testcase>
+      <id><![CDATA[5]]></id>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/osbench/osbench_test.bat,test_id=4,num_samples=100,test_libs=osbench.exe;osbench_dll.dll
+]]></params_chan>
+      <params_control><![CDATA[wait_time=40
+]]></params_control>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <scripts><![CDATA[BSP/osbench/osbench_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omapl138</platform>
+      <target>bsp_v1</target>
+      <description><![CDATA[OSBENCH: Voluntary yield Test]]></description>
+   </testcase>
+   <!-- Test Case 5 -->
+   <testcase>
+      <id><![CDATA[6]]></id>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/osbench/osbench_test.bat,test_id=5,num_samples=100,test_libs=osbench.exe;osbench_dll.dll
+]]></params_chan>
+      <params_control><![CDATA[wait_time=150
+]]></params_control>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <scripts><![CDATA[BSP/osbench/osbench_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omapl138</platform>
+      <target>bsp_v1</target>
+      <description><![CDATA[OSBENCH: PSL API call overhead Test]]></description>
+   </testcase>
+   <!-- Test Case 6 -->
+   <testcase>
+      <id><![CDATA[7]]></id>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/osbench/osbench_test.bat,test_id=6,num_samples=100,test_libs=osbench.exe;osbench_dll.dll
+]]></params_chan>
+      <params_control><![CDATA[wait_time=20
+]]></params_control>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <scripts><![CDATA[BSP/osbench/osbench_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omapl138</platform>
+      <target>bsp_v1</target>
+      <description><![CDATA[OSBENCH: Interlocked API's Test]]></description>
+   </testcase>
+</test_session>

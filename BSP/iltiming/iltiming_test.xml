@@ -5,21 +5,21 @@
       <id><![CDATA[12345]]></id>
       <tee><![CDATA[vatf
 ]]></tee>
-      <params_chan><![CDATA[shell_script=BSP/helloworld/hello_world.bat,test_dir=\NAND Flash
+      <params_chan><![CDATA[shell_script=BSP/iltiming/iltiming_test.bat,idle_thread_type=0,priority=0,interval=5,num_interrupts=10,test_libs=iltiming.exe;iltiming_dll.dll
 ]]></params_chan>
       <params_control><![CDATA[
 ]]></params_control>
       <params_equip><![CDATA[
 ]]></params_equip>
-      <scripts><![CDATA[BSP/helloworld/hello_world.rb
+      <scripts><![CDATA[BSP/iltiming/iltiming_test.rb
 ]]></scripts>
       <hw_assets_config><![CDATA[dut1 = ["<platform>",wince]
 ]]></hw_assets_config>
       <approver><![CDATA[
 ]]></approver>
       <auto>1</auto>
-      <platform>omapl138</platform>
-      <target>bsp_omapl138_v04</target>
-      <description><![CDATA[Sample BSP Test]]></description>
+      <platform>omapl137</platform>
+      <target>bsp_v1</target>
+      <description><![CDATA[ILTiming: Default Test]]></description>
    </testcase>
 </test_session>

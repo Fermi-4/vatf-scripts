@@ -1,5 +1,8 @@
 @ECHO OFF
-
+ECHO "Error Value set to:" %ERRORVALUE%
+if ERRORLEVEL 0 ECHO "Error Level is set to: 0"
+if ERRORLEVEL 1 ECHO "Error Level is set to: 1"
+IF %ERRORVALUE% == 1
 IF %ERRORVALUE% == 1 GOTO ERROR
 ECHO "TEST PASSED"
 GOTO END
