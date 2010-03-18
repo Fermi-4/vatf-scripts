@@ -2,17 +2,16 @@
 require 'FileUtils'
 require File.dirname(__FILE__)+'/../common/codec_params.rb'
 require File.dirname(__FILE__)+'/../utils/eth_info.rb'
-require File.dirname(__FILE__)+'/../boot_scripts/boot.rb'
-include BootScripts
 include CodecParams
 include ETHInfo
+require File.dirname(__FILE__)+'/../boot_scripts/boot.rb'
+include BootScripts
 INPUT_DIR = "\\\\gtsnowball\\System_Test\\Automation\\gtsystst\\video_files\\VGDK_logs\\input"
 OUTPUT_DIR = "\\\\10.218.100.242\\video_files\\VGDK_logs\\output"
 MPLAYER_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..","utils","MPlayer for Windows")
 VIDEO_TOOLS_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..","utils")
 WIRESHARK_DIR = ("C:/Program Files/Wireshark")
-
-
+SCRIPT_EXTRACTOR = "\\\\gtsnowball\\System_Test\\Automation\\gtsystst\\video_files"
 
 class ChannelInfo
     def initialize(codec,dir,resolution,out_codec,in_codec,in_resolution)
@@ -73,6 +72,7 @@ def setup
     server = defined?(@equipment['server1']) ? @equipment['server1'] : nil
     dut.connect({'type'=>'serial'})
     setup_boot(dut,server)
+    dut.send_cmd("wait 10000", /OK/, 2)
     dut.send_cmd("cc ver", /OK/, 2)
     dut.send_cmd("dspi show", /OK/, 2)   
     #dut.send_cmd("spy dim 2", /OK/, 2) 
@@ -100,10 +100,6 @@ def run
     test_case_id = @test_params.caseID
     num_frames = @test_params.params_chan.num_frames[0].to_i
     save_clips = @test_params.params_chan.saveclips[0].to_s
-    neu_rout = "false"
-    if(@test_params.params_chan.instance_variable_defined?("@neu_rout"))    
-      neu_rout = @test_params.params_chan.neu_rout[0].to_s
-    end
     video_clarity = 0
     if(@test_params.params_chan.instance_variable_defined?("@video_clarity"))
       video_clarity = @test_params.params_chan.video_clarity[0].to_i
@@ -124,7 +120,10 @@ def run
     else
       wire_fps = 30
     end
-    
+    video_clarity = 0
+    if(@test_params.params_chan.instance_variable_defined?("@video_clarity"))
+      video_clarity = @test_params.params_chan.video_clarity[0].to_i
+    end
     debug_puts "Close any channels that may be open"
     dut.send_cmd("dim tcids", /OK/, 2)
     tcids_state = dut.response
@@ -233,8 +232,8 @@ def run
       res_arr.each { |res| 
        if ((res.resolution == "d1ntsc" || res.resolution == "d1pal") && res_class_sent == false)
          dut.send_cmd("dimt reset template 20",/OK/,2) 
-         dut.send_cmd("dimt set template 20 dsp_glob_config video_sw_cfg res_class 2",/OK/,10) 
-         dut.send_cmd("dimt dsp_glob_config 0 alloc 20",/ACK DONE/,2) 
+         dut.send_cmd("dimt set template 20 dsp_glob_config video_sw_cfg res_class 2",/OK/,2) 
+         dut.send_cmd("dimt dsp_glob_config 0 alloc 20",/OK/,2) 
          dut.send_cmd("wait 3000",/OK/,2) 
          res_class_sent = true
        end
@@ -242,23 +241,23 @@ def run
      }
      if (res_class_sent == false) 
       dut.send_cmd("dimt reset template 20",/OK/,2) 
-      dut.send_cmd("dimt set template 20 dsp_glob_config video_sw_cfg res_class 1",/OK/,10) 
-      dut.send_cmd("dimt dsp_glob_config 0 alloc 20",/ACK DONE/,2) 
+      dut.send_cmd("dimt set template 20 dsp_glob_config video_sw_cfg res_class 1",/OK/,2) 
+      dut.send_cmd("dimt dsp_glob_config 0 alloc 20",/OK/,2) 
       dut.send_cmd("wait 3000",/OK/,2) 
      end
     (codec_hash).each_pair{|codec,res_arr| 
       res_arr.each { |res|
-        decoder_template = codec_template_hash[codec]
-        encoder_template = decoder_template + 2
         if(res.codec_type == "dec")
           set_xdp_vars(dut,codec,"dec_dyn",default_params)
           set_xdp_vars(dut,codec,"dec_st",default_params)
-          dut.send_cmd("dimt reset template #{decoder_template}",/OK/,2)
         elsif (res.codec_type == "enc")
           set_xdp_vars(dut,codec,"enc_dyn",default_params)
           set_xdp_vars(dut,codec,"enc_st",default_params)
-          dut.send_cmd("dimt reset template #{encoder_template}",/OK/,2)
         end
+        decoder_template = codec_template_hash[codec]
+        encoder_template = decoder_template + 2
+        dut.send_cmd("dimt reset template #{decoder_template}",/OK/,2)
+        dut.send_cmd("dimt reset template #{encoder_template}",/OK/,2)
         if (res.codec_type == "enc")
           default_params.each_pair do |var,value|
             if(/#{codec}v_enc/).match(var) 
@@ -278,14 +277,8 @@ def run
           end
         end
       #CONF-CONNECT TEMPLATE
-        if neu_rout == "true"
-          dut.send_cmd("dimt reset template 15", /OK/, 2)
-          dut.send_cmd("dimt reset template 6", /OK/, 2)
-          dut.send_cmd("dimt set template 15 conn_req nelem 1", /OK/, 2)
-        else
-          dut.send_cmd("dimt reset template 15", /OK/, 2)
-          dut.send_cmd("dimt set template 15 conn_req nelem 1", /OK/, 2)
-        end
+        dut.send_cmd("dimt reset template 15", /OK/, 2)
+        dut.send_cmd("dimt set template 15 conn_req nelem 1", /OK/, 2)
         case res.codec_type
         when "dec"
           set_codec_cfg(dut,codec,nil,multislice,"dec_st",decoder_template,"default",default_params)
@@ -318,7 +311,7 @@ def run
         core_info_hash.keys.sort.each { |key|
           core_info_hash[key].getLength().times { |i|
           if(core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution && core_info_hash[key][i].get_dir == res.codec_type)
-            dut.send_cmd("dimt open #{tcid} alloc 11 chan encapcfg rtp txssrc #{ssrc} rxssrc #{ssrc}", /ACK DONE/, 10)
+            dut.send_cmd("dimt open #{tcid} alloc 11 chan encapcfg rtp txssrc #{ssrc} rxssrc #{ssrc}", /DONE/, 2)
             dut.send_cmd("wait 10", //, 2)
             dut.send_cmd("cc xdp_cli_set_prot #{tcid} ether ipv4 udp", /OK/, 2)
             dut.send_cmd("cc xdp_set #{tcid} phy phy_id 24", /OK/, 2) 
@@ -332,14 +325,10 @@ def run
             dut.send_cmd("cc xdp_set #{tcid} udp rem_port #{rem_port}", /OK/, 2) 
             dut.send_cmd("cc xdp_cli_set_state #{tcid} tx_enable rx_enable", /OK/, 2)
             if(core_info_hash[key][i].get_dir == "dec")
-              dut.send_cmd("dimt video_mode #{tcid} alloc #{decoder_template}", /ACK DONE/, 10)
+              dut.send_cmd("dimt video_mode #{tcid} alloc #{decoder_template}", /DONE/, 2)
             elsif(core_info_hash[key][i].get_dir == "enc")
-              dut.send_cmd("dimt video_mode #{tcid} alloc #{encoder_template}", /ACK DONE/,10)
+              dut.send_cmd("dimt video_mode #{tcid} alloc #{encoder_template}", /DONE/, 2)
             end
-            if(dut.timeout?)
-              cleanup_and_exit()
-              return
-            end  
           end
           ssrc += 1
           loc_port += 2
@@ -361,28 +350,13 @@ def run
         raise " #### Error receive and send channel config error ####"
     end
     (i).times do 
-      if neu_rout == "true"
-        dut.send_cmd("dimt set template 15 conn_req elem 0 req_type add td_pkt_pkt src #{chan} dst #{chan+i}", /OK/, 2)
-        dut.send_cmd("dimt conn_req #{chan} alloc 15", /ACK DONE/, 10)
-        dut.send_cmd("dimt set template 6 chan chan_state p2tmask user app alarm cas rtcp tone p2tval user", /OK/, 10)
-        #dimt set template 6 chan chan_state p2tmask user app alarm cas rtcp tone p2tval user
-        #dimt chan_config 0 alloc 8
-        dut.send_cmd("dimt chan_config #{chan} alloc 6", /ACK DONE/, 2)
-        chan += 1
-      else
-        dut.send_cmd("dimt set template 15 conn_req elem 0 req_type add ld_pkt_pkt src #{chan} dst #{chan+i}", /OK/, 2)
-        dut.send_cmd("dimt conn_req #{chan} alloc 15", /ACK DONE/, 10)
-        chan += 1
-      end
+      dut.send_cmd("dimt set template 15 conn_req elem 0 req_type add ld_pkt_pkt src #{chan} dst #{chan+i}", /OK/, 2)
+      dut.send_cmd("dimt conn_req #{chan} alloc 15", /OK/, 2)
+      chan += 1
     end
-    if(dut.timeout?)
-      cleanup_and_exit()
-      return
-    end  
     k += 2
     chan += i 
     end
-
     tcid = 0
     core_info_hash.keys.sort.each { |key|
       core_info_hash[key].getLength().times {
@@ -390,10 +364,6 @@ def run
         tcid += 1
       }
     }
-    if(dut.timeout?)
-      cleanup_and_exit()
-      return
-    end  
     num_chans = tcid
 
     append = 0
@@ -438,7 +408,7 @@ def run
                                     raise "Error: ### Clip not found"
                                 end
                                 system("ruby #{VIDEO_TOOLS_DIR}/genCodecCfg.rb #{codec} #{res.resolution} #{test_case_id} #{clip_hash[clip].to_s} #{multislice}") 
-                                system("#{VIDEO_TOOLS_DIR}/desktop_vppu.exe #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.cfg > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt")         
+                                system("#{VIDEO_TOOLS_DIR}\\desktop_vppu.exe #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.cfg > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt")         
                                 Dir.chdir("#{WIRESHARK_DIR}")
                                 if(multislice == 1)
                                   system("capinfos.exe #{INPUT_DIR}\\in\\#{res.resolution}\\#{codec}\\multislice\\#{clip_hash[clip].to_s}_rtpmarker.cap > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\capinfos_#{codec}_#{res.resolution}.txt")
@@ -470,7 +440,7 @@ def run
                     end
                     pc_udp_port += 2
                 }
-            } 
+            }
             pc_udp_port = 32768
             append = 0
         }
@@ -485,12 +455,12 @@ def run
         core_info_hash.keys.sort.each { |key|
             core_info_hash[key].getLength().times { |i|  
                 if(core_info_hash[key][i].get_dir == "enc" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)
-                    debug_puts "Generating SDP for #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port}"
-                    system("ruby #{VIDEO_TOOLS_DIR}/genSDP.rb #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port} #{append} #{test_case_id} #{geom} #{multislice} #{iteration_id} #{c_iter}")
-                    Dir.chdir("#{WIRESHARK_DIR}")
-                    system("start tshark -f \"dst #{@platform_info.get_pc_ip} and udp dst port #{pc_udp_port}\" -i #{@platform_info.get_eth_dev} -w #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/#{pc_udp_port}_out_clipIter#{c_iter}.cap")
-                    geom += 180                    
-                    append = 1
+                  debug_puts "Generating SDP for #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port} #{core_info_hash[key][i].get_dir}"
+                  system("ruby #{VIDEO_TOOLS_DIR}/genSDP.rb #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port} #{append} #{test_case_id} #{geom} #{multislice} #{iteration_id} #{c_iter}")
+                  Dir.chdir("#{WIRESHARK_DIR}")
+                  system("start tshark -f \"dst #{@platform_info.get_pc_ip} and udp dst port #{pc_udp_port}\" -i #{@platform_info.get_eth_dev} -w #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/#{pc_udp_port}_out_clipIter#{c_iter}.cap")
+                  geom += 180
+                  append = 1
                 end
                 pc_udp_port += 2  
             }
@@ -501,7 +471,7 @@ def run
         }
         }
         #Dir.chdir("#{WIRESHARK_DIR}")
-        #system("start tshark -f \"dst #{@platform_info.get_pc_ip} \" -i #{@platform_info.get_eth_dev} -w #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/Iter#{iteration_id}_clipIter#{c_iter}.cap")
+        #system("start tshark -f \"dst #{@platform_info.get_pc_ip} and udp dst port #{pc_udp_port}\" -i #{@platform_info.get_eth_dev} -w #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/Iter#{iteration_id}_clipIter#{c_iter}.cap")
         i = 0
         pkt_to_pkt_delay = -1
         codec_hash.each_pair { |codec, res_arr|
@@ -544,6 +514,21 @@ def run
         codec_hash.each_pair { |codec, res_arr| res_arr.each{|res| res.stream_sent = 0} }        
         system("taskkill /F /IM tshark.exe")
         system("taskkill /FI \"IMAGENAME eq mplayer.exe\"")
+              
+        # pc_udp_port = 32768
+        # codec_hash.each_pair { |codec, res_arr|
+        # res_arr.each {|res|
+        # core_info_hash.keys.sort.each { |key|
+          # core_info_hash[key].getLength().times { |i|  
+            # if(core_info_hash[key][i].get_dir == "enc" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)               
+              # system("tshark -r #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/Iter#{iteration_id}_clipIter#{c_iter}.cap -R \"udp.port == #{pc_udp_port}\" -w #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/#{pc_udp_port}_out_clipIter#{c_iter}.cap")
+            # end
+            # pc_udp_port += 2  
+          # }
+        # }
+        # pc_udp_port = 32768
+        # }
+        # }
     }
     pc_udp_port = 32768
     local_ref_file = nil
@@ -577,25 +562,26 @@ def run
                         # sleep(5)
                         # system("sendPackets.exe #{Pathname.new("#{OUTPUT_DIR}").realpath}\\TC#{test_case_id}\\#{codec}_#{res.resolution}\\auto_generated_ConfigFile4sendPkts_#{pc_udp_port}.cfg #{ETH_DEV} 1 s")  
                         begin
-                          system("#{VIDEO_TOOLS_DIR}\\desktop_vppu.exe #{Pathname.new("#{OUTPUT_DIR}").realpath}\\TC#{test_case_id}\\Iter#{iteration_id}\\#{codec}_#{res.resolution}\\clipIter#{c_iter}\\#{pc_udp_port}_codec_dump.cfg")         
-                          if File.size?("#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name}")
-                            if(video_clarity == 1)
-                              system("#{VIDEO_TOOLS_DIR}\\ffmpeg.exe -i #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name} -f rawvideo #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.yuv") if File.size?("#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name}")
+                            system("#{VIDEO_TOOLS_DIR}\\desktop_vppu.exe #{Pathname.new("#{OUTPUT_DIR}").realpath}\\TC#{test_case_id}\\Iter#{iteration_id}\\#{codec}_#{res.resolution}\\clipIter#{c_iter}\\#{pc_udp_port}_codec_dump.cfg")         
+                            if File.size?("#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name}")
+                              if(video_clarity == 1)
+                                system("#{VIDEO_TOOLS_DIR}\\ffmpeg.exe -i #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name} -f rawvideo #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.yuv") if File.size?("#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name}")
+                              end
+                            else
+                              test_done_result = FrameworkConstants::Result[:fail]
+                              test_comment = "Test completed: No transcoding. Output clips directory #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}"
                             end
-                          else
-                            test_done_result = FrameworkConstants::Result[:fail]
-                            test_comment = "Test completed: No transcoding. Output clips directory #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}"
-                          end
-                          if(video_clarity == 1)
-                          test_file = "#{Pathname.new("#{OUTPUT_DIR}").realpath}/TC#{test_case_id}/Iter#{iteration_id}/trans_#{codec}_#{res.resolution}_cap/clipIter#{c_iter}/trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.yuv"
-                          local_ref_file = "#{Pathname.new("#{OUTPUT_DIR}").realpath}/TC#{test_case_id}/Iter#{iteration_id}/VideoClarityRefs/#{core_info_hash[key][i].get_transcoded_from_codec}_#{core_info_hash[key][i].get_transized_from_resolution}.yuv" 
-                          FileUtils.chmod(0755,local_ref_file)
-                          FileUtils.chmod(0755,test_file)
-                          end
+                            if(video_clarity == 1)
+                              test_file = "#{Pathname.new("#{OUTPUT_DIR}").realpath}/TC#{test_case_id}/Iter#{iteration_id}/trans_#{codec}_#{res.resolution}_cap/clipIter#{c_iter}/trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.yuv"
+                              local_ref_file = "#{Pathname.new("#{OUTPUT_DIR}").realpath}/TC#{test_case_id}/Iter#{iteration_id}/VideoClarityRefs/#{core_info_hash[key][i].get_transcoded_from_codec}_#{core_info_hash[key][i].get_transized_from_resolution}.yuv" 
+                              FileUtils.chmod(0755,local_ref_file)
+                              FileUtils.chmod(0755,test_file)
+                            end
                         rescue SystemCallError
-                          test_done_result = FrameworkConstants::Result[:fail]
-                          test_comment = "File IO failed - no Video Clarity scores will be generated. Output clips directory #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}" 
-                          $stderr.print "File IO failed" + $!
+                            test_done_result = FrameworkConstants::Result[:fail]
+                            test_comment = "File IO failed - no Video Clarity scores will be generated. Output clips directory #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}" 
+                            $stderr.print "File IO failed" + $!
+                            #raise
                         end
                         if(video_clarity == 1)
                           if (File.size?(test_file) != nil && File.size?(local_ref_file) != nil)
@@ -656,9 +642,6 @@ def run
         tcid = line.match(/\d+/)[0]
         channel_reset(dut,tcid)
         close_channel(dut,tcid)
-    # else
-        # test_done_result = FrameworkConstants::Result[:fail] 
-        # test_comment = "Test completed: Unknown TCID state"
     end
     }
     if (test_done_result != FrameworkConstants::Result[:fail])
@@ -703,113 +686,125 @@ end
 
 
 def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params = nil)
-  i = 0
-  puts "#{var_type} parameters for #{codec} #{res}"
-  params_hash = Hash.new
-  if(type == "dec_dyn")
-    paramtype = "dyn" 
-    codectype = "DEC"
-    config = "dynamic"
-  elsif (type == "dec_st")
-    paramtype = "st" 
-    codectype = "DEC"
-    config = "static"
-  elsif (type == "enc_st")
-    paramtype = "st" 
-    codectype = "ENC"
-    config = "static"
-  elsif (type == "enc_dyn")
-    paramtype = "dyn" 
-    codectype = "ENC"
-    config = "dynamic"
-  end    
-  if(var_type == "test")
-    @test_params.params_chan.instance_variables.each do |curr_var|
-      if /#{codec}v#{type}/.match(curr_var)
+    i = 0
+    puts "#{var_type} parameters for #{codec} #{res}"
+    params_hash = Hash.new
+    if(type == "dec_dyn")
+        paramtype = "dyn" 
+        codectype = "DEC"
+        config = "dynamic"
+    elsif (type == "dec_st")
+        paramtype = "st" 
+        codectype = "DEC"
+        config = "static"
+    elsif (type == "enc_st")
+        paramtype = "st" 
+        codectype = "ENC"
+         config = "static"
+    elsif (type == "enc_dyn")
+        paramtype = "dyn" 
+        codectype = "ENC"
+        config = "dynamic"
+    end    
+    
+    if(var_type == "test")
+        @test_params.params_chan.instance_variables.each do |curr_var|
+        if /#{codec}v#{type}/.match(curr_var)
         param_msb = curr_var.gsub("@#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")
         param_lsb = curr_var.gsub("@#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")
         param_msb << "_msb"
         param_lsb << "_lsb" 
         params_hash[param_lsb] = @test_params.params_chan.instance_variable_get(curr_var)[0].to_i & 0xffff
         params_hash[param_msb] = (@test_params.params_chan.instance_variable_get(curr_var)[0].to_i & 0xffff0000) >> 16
-      # bit rate is the only test_param sent in HEX - EL: 06/15/09
+        # bit rate is the only test_param sent in HEX - EL: 06/15/09
         if(/bitrate/.match(curr_var))
-          params_hash[param_lsb] = sprintf("0x%04x", params_hash[param_lsb])
-          params_hash[param_msb] = sprintf("0x%04x", params_hash[param_msb])
+            params_hash[param_lsb] = sprintf("0x%04x", params_hash[param_lsb])
+            params_hash[param_msb] = sprintf("0x%04x", params_hash[param_msb])
         end
-      end
-      if((/#{codec}v_#{codectype.downcase}/).match(curr_var) && type == "enc_st")
-        if(/#{codec}v_#{codectype.downcase}_ovly_type/).match(curr_var) 
-          dut.send_cmd("dimt set template #{template} video video_ovly_cfg #{curr_var.gsub("@#{codec}v_enc_", "")} #{@test_params.params_chan.instance_variable_get(curr_var)}",/OK/,2) 
-        else
-          dut.send_cmd("dimt set template #{template} video video_mode #{curr_var.gsub("@#{codec}v_enc_", "")} #{@test_params.params_chan.instance_variable_get(curr_var)}",/OK/,2) 
         end
-      end
-    end
-    if(@test_params.params_chan.instance_variable_defined?("@enc_framerate") && type == "enc_dyn")
-      params_hash["#{codec.upcase}_ENC_tgtfrrate_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff
-      params_hash["#{codec.upcase}_ENC_tgtfrrate_msb"] = (@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff0000) >> 16
-    end
-    if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_dyn")
-      params_hash["#{codec.upcase}_ENC_tgtbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
-      params_hash["#{codec.upcase}_ENC_tgtbitrate_msb"] = sprintf("0x%04x", (@test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff0000) >> 16)
-    end
-    if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_st")
-      params_hash["#{codec.upcase}_ENC_maxbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
-      params_hash["#{codec.upcase}_ENC_maxbitrate_msb"] = sprintf("0x%04x", (@test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff0000) >> 16)
-    end
-  else #default
-    default_params.each_pair do |var,value|
-    if /#{codec}v#{type}/.match(var)
-    params_hash[var.gsub("#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")] = value
-    end
-    end
-  end
-  arr = Array.new
-  arr = params_hash.sort
-  arr.each do |elem|
-    dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str #{elem[0].gsub(/_[0-9]+/, "")} #{elem[1]} ",/OK/,2)
-  end
-  if(var_type == "default")
-    dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg num_words #{arr.length} ",/OK/,2)
-  end
+        if(/#{codec}v_#{codectype.downcase}_ovly_type/.match(curr_var) && type == "enc_st")
+            dut.send_cmd("dimt set template  #{template} video video_ovly_cfg ovly_type #{@test_params.params_chan.instance_variable_get(curr_var)}",/OK/,2)
+        end
+        end
+        if(@test_params.params_chan.instance_variable_defined?("@enc_framerate") && type == "enc_dyn")
+            params_hash["#{codec.upcase}_ENC_tgtfrrate_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff
+            params_hash["#{codec.upcase}_ENC_tgtfrrate_msb"] = (@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff0000) >> 16
+        end
+        if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_dyn")
+            params_hash["#{codec.upcase}_ENC_tgtbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
+            params_hash["#{codec.upcase}_ENC_tgtbitrate_msb"] = sprintf("0x%04x", (@test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff0000) >> 16)
+        end
+        if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_st")
+            params_hash["#{codec.upcase}_ENC_maxbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
+            params_hash["#{codec.upcase}_ENC_maxbitrate_msb"] = sprintf("0x%04x", (@test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff0000) >> 16)
+        end
 
-  if(res != nil ) 
-    case res
-      when "qcif"
-        height = 144
-        width = 176
-      when "cif"
-        height = 288
-        width = 352
-      when "d1ntsc"
-        height = 480
-        width = 720
-      when "d1pal"
-        height = 576
-        width = 720
-      else
-        raise " #### Error :no recognized resolution"
+    else #default
+        default_params.each_pair do |var,value|
+        if /#{codec}v#{type}/.match(var)
+        params_hash[var.gsub("#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")] = value
+        end
+        end
     end
-    case(type)
-    when "dec_st" 
-      dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_maxheight_lsb #{height} ",/OK/,2)
-      dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_maxwidth_lsb #{width} ",/OK/,2)
-      dut.send_cmd("dimt set template  #{template} video video_mode img_width #{width}",/OK/,2)
-      dut.send_cmd("dimt set template #{template} video video_mode img_height #{height}",/OK/,2)
-      if(multislice == 1 && codec == "h264bp")
-        dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str #{codec.upcase}_#{codectype}_ipstrformat_lsb 1",/OK/,2)       
-      end
-    when "enc_st"
-      dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_maxheight_lsb #{height} ",/OK/,2)
-      dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_maxwidth_lsb #{width} ",/OK/,2)
-      dut.send_cmd("dimt set template  #{template} video video_mode img_width #{width}",/OK/,2)
-      dut.send_cmd("dimt set template #{template} video video_mode img_height #{height}",/OK/,2)
-    when "enc_dyn"
-      dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputht_lsb #{height} ",/OK/,2)
-      dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputwdth_lsb #{width} ",/OK/,2)
+    arr = Array.new
+    arr = params_hash.sort
+    arr.each do |elem|
+    dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str #{elem[0].gsub(/_[0-9]+/, "")} #{elem[1]} ",/OK/,2)
     end
-  end    
+
+    if(var_type == "default")
+        dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg num_words #{arr.length} ",/OK/,2)
+    end
+
+    if(res != nil ) 
+    bitrate = 0
+    bitrate_lsb = 0
+    bitrate_msb = 0
+        case res
+            when "qcif"
+                height = 144
+                width = 176
+                bitrate = 384000
+            when "cif"
+                height = 288
+                width = 352
+                bitrate = 512000
+            when "d1ntsc"
+                height = 480
+                width = 720
+                bitrate = 1500000
+            when "d1pal"
+                height = 576
+                width = 720
+                bitrate = 1500000
+            else
+                raise " #### Error :no recognized resolution"
+        end
+        bitrate_lsb = sprintf("0x%04x", bitrate & 0xffff)
+        bitrate_msb = sprintf("0x%04x", (bitrate & 0xffff0000) >> 16)
+        case(type)
+        when "dec_st" 
+            dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_maxheight_lsb #{height} ",/OK/,2)
+            dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_maxwidth_lsb #{width} ",/OK/,2)
+            dut.send_cmd("dimt set template  #{template} video video_mode img_width #{width}",/OK/,2)
+            dut.send_cmd("dimt set template #{template} video video_mode img_height #{height}",/OK/,2)
+            if(multislice == 1 && codec == "h264bp")
+                dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str #{codec.upcase}_#{codectype}_ipstrformat_lsb 1",/OK/,2)       
+            end
+        when "enc_st"
+            dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_maxheight_lsb #{height} ",/OK/,2)
+            dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_maxwidth_lsb #{width} ",/OK/,2)
+            dut.send_cmd("dimt set template  #{template} video video_mode img_width #{width}",/OK/,2)
+            dut.send_cmd("dimt set template #{template} video video_mode img_height #{height}",/OK/,2)
+            dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_maxbitrate_lsb #{bitrate_lsb} ",/OK/,2)
+            dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_maxbitrate_msb #{bitrate_msb} ",/OK/,2)
+        when "enc_dyn"
+            dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputht_lsb #{height} ",/OK/,2)
+            dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputwdth_lsb #{width} ",/OK/,2)
+            dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_tgtbitrate_lsb #{bitrate_lsb} ",/OK/,2)
+            dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_tgtbitrate_msb #{bitrate_msb} ",/OK/,2)
+        end
+    end    
 end
 
 def get_results(video_file)
@@ -860,7 +855,7 @@ def close_channel(dut,tcid)
 end
 
 def print_stats(dut,tcid)
-    dut.send_cmd("dimt req_stat #{tcid} alloc vppu vtk frc err yuv rtcp_to_pkt", /ACK DONE/, 10)
+    dut.send_cmd("dimt req_stat #{tcid} alloc vppu vtk frc", /OK/, 2)
     puts dut.response
 end
 
@@ -913,18 +908,9 @@ def get_pkt_to_pkt_delay(vppu_stats_file,capinfos_file,wFps)
 end
 
 def clean
-    system("taskkill /F /IM tshark.exe")
-    system("taskkill /FI \"IMAGENAME eq mplayer.exe\"")
     remove_dir("#{INPUT_DIR}/out/")
     remove_dir("#{INPUT_DIR}/config/autogenerated/") 
-    system("ccperl #{VIDEO_TOOLS_DIR}//script_extractor.pl #{@files_dir}//dut1_1_log.txt > #{@files_dir}//dut1_1_log_config_script.txt")
-end
-
-def cleanup_and_exit()
-  test_done_result = FrameworkConstants::Result[:fail]
-  test_comment = "No ACK DONE received from DSP, exiting"
-  set_result(test_done_result,test_comment)
-  clean()
+    system("ccperl #{SCRIPT_EXTRACTOR}//script_extractor.pl #{@files_dir}//dut1_1_log.txt > #{@files_dir}//dut1_1_log_config_script.txt")
 end
 
 def setup_boot(dut,ftp_server)
@@ -942,7 +928,7 @@ def setup_boot(dut,ftp_server)
   if boot_required?(@old_keys, @new_keys) # call bootscript if required
     boot(dut,ftp_server,boot_params)
   else
-    puts "Tomahawk VGDK transcoding::setup_boot: dsp and app image NOT specified. Will skip booting process"
+    puts "Tomahawk VGDK transcoding:: skip booting process"
   end
 end
 

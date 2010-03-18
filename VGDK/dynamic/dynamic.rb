@@ -68,8 +68,8 @@ CodecInfo = Struct.new(:codec_type, :resolution, :stream_sent, :subjective_on)
 def setup
     dut = @equipment['dut1']
     dut.set_api("vgdk")
-    server = defined?(@equipment['server1']) ? @equipment['server1'] : nil
-    dut.connect({'type'=>'telnet'})
+    server = defined?(@equipment['server']) ? @equipment['server'] : nil
+    dut.connect({'type'=>'serial'})
     setup_boot(dut,server)
     dut.send_cmd("wait 10000", /OK/, 2)
     dut.send_cmd("cc ver", /OK/, 2)
