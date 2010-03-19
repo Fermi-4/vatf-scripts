@@ -12,6 +12,7 @@ module LspReadWritePerfScript
   def run
       # Initialize DUT to run file-based performance test
       result = 0 	#0=pass, 1=timeout, 2=fail message detected
+      perfData = []
       ensure_commands = parse_cmd('ensure') if @test_params.params_chan.instance_variable_defined?(:@ensure)
       if @test_params.params_chan.instance_variable_defined?(:@init_cmds)
           commands = parse_cmd('init_cmds')
@@ -50,12 +51,15 @@ module LspReadWritePerfScript
           file_sizes.each {|file_size|
               buffer_sizes.each {|buffer_size|
                   (type=='Read') ? (is_read=true) : (is_read=false)
-                  result, dur, bw, cpu = run_perf_test(is_read, mnt_point, buffer_size, file_size, i)
+                  result, dur, bw, cpu, name = run_perf_test(is_read, mnt_point, buffer_size, file_size, i)
                   raise "Error executing #{mnt_point} performance test" if result > 0
   
                   table_row = get_table_row(type, fs, buffer_size, file_size, dur, bw, cpu)
                   @results_html_file.add_row_to_table(res_table, table_row)
                   #@results_html_file.add_row_to_table(res_table,["#{type}, fs=#{fs}",(buffer_size.to_i/1024).to_s, (file_size.to_i/1048576).to_s, (dur.to_i/1000000).to_s, bw])
+                  
+                  perfData << {'name' => "#{name.to_s}_BW", 'value' => table_row[4], 'units' => get_res_table_header()[4]}
+                  perfData << {'name' => "#{name.to_s}_CPU", 'value' => table_row[5] , 'units' => '%'}
                   i+=1	        
               }
           }
@@ -80,7 +84,11 @@ module LspReadWritePerfScript
       end
       
       if result == 0 
-          set_result(FrameworkConstants::Result[:pass], "Test Pass.")
+          if perfData.size > 0
+            set_result(FrameworkConstants::Result[:pass], "Test Pass.", perfData)
+          else
+            set_result(FrameworkConstants::Result[:pass], "Test Pass.")
+          end  
       elsif result == 1
           set_result(FrameworkConstants::Result[:fail], "Timeout executing performance test")
       elsif result == 2

@@ -38,7 +38,8 @@ def run_perf_test(is_read, mnt_point, buffer_size, file_size, counter)
     duration = /#{parse_txt}:.*in\s+uSec:\s+(\d+)/.match(@equipment['dut1'].response)[1]
     bw       = /#{parse_txt}:\s+Kbits\/Sec:\s+([\d|\.]+)/.match(@equipment['dut1'].response)[1]
     cpu      = /#{parse_txt}:\s+percentage\s+cpu\s+load:\s+([\d|\.]+%)/.match(@equipment['dut1'].response)[1]
-    [result, duration, bw, cpu] 
+    name     = "I2C_#{parse_txt}_BS:#{buffer_size}"
+    [result, duration, bw, cpu, name] 
 end
 
 def get_table_row(type, fs, buffer_size, file_size, dur, bw, cpu)
