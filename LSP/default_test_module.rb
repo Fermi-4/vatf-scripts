@@ -21,8 +21,6 @@ module LspTestScript
     
     def setup
       @equipment['dut1'].set_api('psp')
-      #test_led_vars()
-      # Initialize some test variables       
       tester_from_cli  = @tester.downcase
       target_from_db   = @test_params.target.downcase
       platform_from_db = @test_params.platform.downcase
@@ -33,6 +31,12 @@ module LspTestScript
       
       samba_root_path_temp = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}"
       nfs_root_path_temp	= @equipment['dut1'].nfs_root_path
+      
+      if @equipment['server1'].telnet_port.to_s.strip != '' and !@equipment['server1'].target.telnet
+        @equipment['server1'].connect({'type'=>'telnet'})
+      elsif !@equipment['server1'].target.telnet 
+        raise "You need Telnet  connectivity to the Linux Server. Please check your bench file" 
+      end
       
       if nfs or nandfs or ramfs
         fs = ([nfs, nandfs, ramfs].select {|f| f != nil})[0]
