@@ -5,11 +5,11 @@
       <id><![CDATA[12345]]></id>
       <tee><![CDATA[vatf
 ]]></tee>
-      <params_chan><![CDATA[shell_script=BSP/helloworld/hello_world.bat,test_dir=\NAND Flash
+      <params_chan><![CDATA[shell_script=BSP/helloworld/hello_world.bat,sample_param=1
 ]]></params_chan>
-      <params_control><![CDATA[
+      <params_control><![CDATA[sample_param=2
 ]]></params_control>
-      <params_equip><![CDATA[
+      <params_equip><![CDATA[sample_param=3
 ]]></params_equip>
       <scripts><![CDATA[BSP/helloworld/hello_world.rb
 ]]></scripts>

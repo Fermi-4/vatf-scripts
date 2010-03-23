@@ -6,6 +6,7 @@ module WinceTestScript
   # Connects Test Equipment to DUT(s) and Boot DUT(s)
   def setup
     puts "\n WinceTestScript::setup"
+    delete_temp_files()
     @equipment['dut1'].set_api('bsp')
     setup_connect_equipment()
     setup_boot()
@@ -36,16 +37,27 @@ module WinceTestScript
   # Boot DUT if kernel image was specified in the test parameters
   def setup_boot
     puts "\n WinceTestScript::setup_boot"
-    @equipment['dut1'].connect({'type'=>'serial'})
-    if @test_params.instance_variable_defined?(:@kernel)
-      puts "WinceTestScript::setup_boot: kernel image specified. Proceeding to boot DUT"
-      boot_params = {'power_handler'=> @power_handler, 'test_params' => @test_params}
-      @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
-      @equipment['dut1'].boot(boot_params) if boot_required?(@old_keys, @new_keys) # call bootscript if required
+    boot_params = {'power_handler'=> @power_handler, 'test_params' => @test_params}
+    @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
+    if boot_required?(@old_keys, @new_keys)   # call bootscript if required
+      puts " WinceTestScript::setup_boot: kernel image specified. Proceeding to boot DUT"
+      if @equipment['dut1'].serial_port.to_s.strip != ''
+        @equipment['dut1'].connect({'type'=>'serial'})
+      elsif @equipment['dut1'].serial_server_port.to_s.strip != ''
+        @equipment['dut1'].connect({'type'=>'telnet'})
+      else
+        raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
+      end
+      @equipment['dut1'].boot(boot_params) 
       puts "Waiting 10 seconds for kernel to boot...."
       sleep 10
-    else
-      puts "WinceTestScript::boot \t kernel image NOT specified. Will skip booting process"
+    end
+    if (@equipment['dut1'].telnet_port.to_s.strip != '' or @equipment['dut1'].serial_server_port.to_s.strip != '') and !@equipment['dut1'].target.telnet
+      @equipment['dut1'].connect({'type'=>'telnet'})
+    elsif @equipment['dut1'].serial_port.to_s.strip != '' and !@equipment['dut1'].target.serial
+      @equipment['dut1'].connect({'type'=>'serial'})
+    elsif !@equipment['dut1'].target.telnet and !@equipment['dut1'].target.serial
+      raise "You need Telnet or Serial port connectivity to the board. Please check your bench file" 
     end
   end
   
@@ -68,7 +80,7 @@ module WinceTestScript
   def run_transfer_script()
     puts "\n WinceTestScript::run_transfer_script"
     put_file({'filename'=>'test.bat'})
-    if @test_params.params_chan.instance_variable_defined?(:@test_libs) and false  ###### TODO TODO MUST REMOVE 'and false', Added to work around problem in Primus 
+    if @test_params.params_chan.instance_variable_defined?(:@test_libs) #and false  ###### TODO TODO MUST REMOVE 'and false', Added to work around problem in Primus 
       src_dir = @test_params.test_libs_root
       puts "libs source dir set to #{src_dir}"
       @test_params.params_chan.test_libs.each {|lib_file|
@@ -81,7 +93,6 @@ module WinceTestScript
   # Calls shell script (test.bat)
   def run_call_script
     puts "\n WinceTestScript::run_call_script"
-    @equipment['dut1'].connect({'type'=>'telnet'})
     dst_dir = @test_params.params_chan.instance_variable_defined?(:@test_dir) ? @test_params.params_chan.test_dir[0] : '\Temp'
     @equipment['dut1'].send_cmd("cd #{dst_dir}",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("call test.bat 2> stderr.log > stdout.log",@equipment['dut1'].prompt)
@@ -230,6 +241,7 @@ module WinceTestScript
   end
   
   def boot_required?(old_params, new_params)
+    return false if !@test_params.instance_variable_defined?(:@kernel)
     old_test_string = get_test_string(old_params)
     new_test_string = get_test_string(new_params)
     old_test_string != new_test_string
@@ -241,6 +253,15 @@ module WinceTestScript
       test_string += element.strip
     }
     test_string
+  end
+  
+  def delete_temp_files
+    Dir.foreach(SiteInfo::WINCE_TEMP_FOLDER) do |f|
+      filepath = File.join(SiteInfo::WINCE_TEMP_FOLDER,f)
+      if f == '.' or f == '..' or File.directory?(filepath) then next
+      else FileUtils.rm(filepath, {:verbose => true})
+      end
+    end
   end
   
 end

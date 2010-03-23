@@ -60,7 +60,25 @@ module LspTestScript
       boot_params = {'power_handler'=> @power_handler, 'platform' => platform_from_db, 'tester' => tester_from_cli, 'target' => target_from_db ,'image_path' => @test_params.kernel, 'server' => @equipment['server1'],  'samba_path' => samba_path, 'nfs_root' => nfs_root_path_temp, 'nfs_path' => "#{nfs_root_path_temp}#{nfs_path}"}
       boot_params['bootargs'] = @test_params.params_chan.bootargs[0] if @test_params.params_chan.instance_variable_defined?(:@bootargs)
       @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
-      @equipment['dut1'].boot(boot_params) if Boot::boot_required?(@old_keys, @new_keys) # call bootscript if required
+      
+      if Boot::boot_required?(@old_keys, @new_keys) # call bootscript if required
+        if @equipment['dut1'].serial_port.to_s.strip != ''
+          @equipment['dut1'].connect({'type'=>'serial'})
+        elsif @equipment['dut1'].serial_server_port.to_s.strip != ''
+          @equipment['dut1'].connect({'type'=>'telnet'})
+        else
+          raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
+        end
+        @equipment['dut1'].boot(boot_params) 
+      end
+      if (@equipment['dut1'].telnet_port.to_s.strip != '' or @equipment['dut1'].serial_server_port.to_s.strip != '') and !@equipment['dut1'].target.telnet
+        @equipment['dut1'].connect({'type'=>'telnet'})
+      elsif @equipment['dut1'].serial_port.to_s.strip != '' and !@equipment['dut1'].target.serial
+        @equipment['dut1'].connect({'type'=>'serial'})
+      elsif !@equipment['dut1'].target.telnet and !@equipment['dut1'].target.serial
+        raise "You need Telnet or Serial port connectivity to the board. Please check your bench file" 
+      end
+      
       # by now, the dut should already login and is up; if not, dut may hang.
       raise "UUT may be hanging!" if !is_uut_up?
       
