@@ -7,7 +7,7 @@ include DvsdkTestScript
 def setup
   @equipment['dut1'].set_api('dvtb')
   boot_dut() # method implemented in DvsdkTestScript module
-  
+  @equipment['dut1'].connect({'type'=>'telnet'})
   # Set DUT Max number of sockets
   @equipment['dut1'].set_max_number_of_sockets(@test_params.params_control.picture_num_channels[0].to_i,0)
     

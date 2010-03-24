@@ -7,6 +7,7 @@ include DvsdkTestScript
 def setup
     @equipment['dut1'].set_api('demo')
     #boot_dut() # method implemented in DvsdkTestScript module
+    @equipment['dut1'].connect({'type'=>'telnet'})
 end
 
 def run
@@ -248,6 +249,7 @@ def get_decode_params(vid_source, speech_source)
         'display_out'			=> @test_params.params_chan.display_out[0],
         'time'					=> get_video_time(vid_source).to_s,
         'enable_osd'			=> @test_params.params_chan.enable_osd[0],
+        'location'      => @test_params.params_control.respond_to?(:location) ? @test_params.params_control.location[0] : nil,
     }
     h.merge!({'speech_file' => nil}) if @test_params.params_chan.speech_file[0] == 'none'
     h
@@ -277,9 +279,9 @@ def run_audio_process()
                       "channels" => 1,
                       "samples_per_sec" => 8000,
                       "avg_bytes_per_sec" => 16000,
-					  "device_type" => 'analog',
-					  "device_id" => 0,
-                      }
+                      "device_type" => 'analog',
+                      "device_id" => 0,
+                  }
 	audio_input_handle = 0
 	audio_output_handle = 0
 	audio_input_handle = @equipment['audio_player'].open_wave_in_audio_device(audio_params)

@@ -1,14 +1,26 @@
 #dvtb_aac_dec_file.rb This test script is used to test AAC decode from file. This script will configure the dut decode the .aac files and store the decoded files for analysis.
 
-include DvsdkTestScript
+# include DvsdkTestScript
 
 def setup
   @equipment['dut1'].set_api('dvtb')
   #boot_dut() #method implemented in DvsdkTestScript module
   @equipment['dut1'].connect({'type'=>'telnet'})
-  @equipment["dut1"].set_param({"Class" => "engine", "Param" => "name", "Value" => "encdec"})
-  @equipment["dut1"].set_param({"Class" => "auddec", "Param" => "codec", "Value" => "aacdec"})
-  @equipment["dut1"].set_param({"Class" => "auddec", "Param" => "desiredChannelMode", "Value" => @test_params.params_chan.audio_type[0]})
+  set_codec_param("codec", "audio_codec")
+  set_codec_param("outputPCMWidth","audio_output_pcm_width")
+  set_codec_param("pcmFormat","audio_pcm_format")
+  set_codec_param("dataEndianness","audio_data_endianness")
+  set_codec_param("desiredChannelMode","audio_type")
+  set_codec_param("downSampleSbrFlag","audio_downsample_sbr_flag")
+  set_codec_param("sixChannelMode","audio_six_channel_mode")
+  set_codec_param("enablePS","audio_enable_ps")
+  set_codec_param("ulSamplingRateIdx","audio_sampling_rate")
+  set_codec_param("nProfile","audio_profile")
+  set_codec_param("bRawFormat","audio_raw_format")
+  set_codec_param("pseudoSurroundEnableFlag","audio_pseudo_surround_enable_flag")
+  set_codec_param("enableARIBDownmix","audio_enable_arib_downmix")
+  set_codec_param("inbufsize","audio_inbufsize")
+  set_codec_param("outbufsize","audio_outbufsize")
 end
 
 def run
@@ -29,7 +41,7 @@ def run
 				system("explorer #{local_ref_file.gsub("/","\\")}")
 			end
 			file_format = /\w+_(\w+IS)\w*/i.match(audio_file).captures[0]
-			@equipment["dut1"].audio_decoding({"Source" => local_ref_file, "Target" => local_ref_file.gsub(".aac","_test.pcm")})
+			@equipment["dut1"].aacext_decoding({"Source" => local_ref_file, "Target" => local_ref_file.gsub(".aac","_test.pcm")})
 			@equipment["dut1"].wait_for_threads
 			file_res_form.add_link(audio_file.gsub(".aac","_test.pcm")) do
 				system("explorer #{local_ref_file.gsub(".aac","_test.pcm").gsub("/","\\")}")
@@ -57,12 +69,10 @@ def clean
 	
 end
 
-def get_file_format(file_format)
-	if file_format.strip.downcase.eql?("yis")
-		return 1.to_s
-	elsif file_format.strip.downcase.eql?("nis")
-		return 0.to_s
-	else
-		raise "Unsopported file format #{file_format}"
-	end
+def set_codec_param(param_name, param_value)
+  if param_value.kind_of?(String)
+    @equipment['dut1'].set_param({"Class" => "aacextdec", "Param" => param_name, "Value" => @test_params.params_chan.instance_variable_get('@'+param_value)[0]}) if @test_params.params_chan.instance_variable_defined?('@'+param_value)
+  else
+    @equipment['dut1'].set_param({"Class" => "aacextdec", "Param" => param_name, "Value" => param_value.to_s})
+  end
 end

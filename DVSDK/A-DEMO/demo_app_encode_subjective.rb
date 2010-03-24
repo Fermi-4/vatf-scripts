@@ -5,6 +5,7 @@ include DvsdkTestScript
 def setup
     @equipment['dut1'].set_api('demo')
    # boot_dut() # method implemented in DvsdkTestScript module
+   @equipment['dut1'].connect({'type'=>'telnet'})
 end
 
 def run

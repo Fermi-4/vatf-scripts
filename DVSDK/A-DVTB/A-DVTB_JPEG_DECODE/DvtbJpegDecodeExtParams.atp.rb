@@ -18,29 +18,25 @@ class DvtbJpegDecodeExtParamsTestPlan < TestPlan
   # This function returns a hash table defining test generating parameters and their value sets. 
   # The hash key is the name of the parameter and the hash value is an array of values for that parameter.
   def get_params()
-   @signal_format_max_res = {
-         '525' => [720,480],
-         '625' => [720,576], 
-         '720p50' => [1280,720],
-         '720p59' => [1280,720],
-         '720p60' => [1280,720],          
-   }
    @res_params =  {
-    'picture_resolution'		  => ['88x72','176x120', '176x144','192x144','352x240', '720x480', '176x144', '352x288', '720x576', '320x240', '640x480','704x576', '1280x720', '2048x3172'],
-    'picture_input_chroma_format'  => ['411p','420p','422i','422p','444p','gray', '420sp'],
-	'picture_output_chroma_format' => ['default', '422i'], #Only these output formats have been confirmed to be supported
+  'picture_resolution'		  => ['88x72','176x120', '176x144','192x144','352x240', '720x480', '176x144', '352x288', '720x576', '320x240', '640x480','704x576', '1280x720', '2048x3172'],
+  'picture_input_chroma_format'  => ['411p','420p','422i','422p','444p','gray', '420sp'],
+	'picture_output_chroma_format' => ['default', '422i', 'rgb'], #Only these output formats have been confirmed to be supported
 	'picture_num_scans' => [0,1,3,10],
 	'picture_data_endianness' => ['byte', 'le_16', 'le_32', 'le_64', 'be_16', 'be_32', 'be_64'],
 	'picture_num_ticks' => [3500],
-	'picture_display' => ['on','off'],
-    'picture_num_channels'	=> [1],
-	'picture_output_scale_factor' => [1,2,3,4,5,6,7,8], # valid values are 1 to 8, decoded image is scaled by a factor of picture_output_scale_factor/8, i.e if picture_output_scale_factor = 1 then decoded image is scaled by 1/8 
-	'picture_signal_format' => ['525', '625', '1080i50', '1080i59', '1080i60', '720p50', '720p59', '720p60', '1080p23', '1080p24', '1080p25', '1080p29', '1080p30', '1080p50', '1080p59', '1080p60'],
-	'picture_iface_type' => ['vga', 'component', 'composite', 'svideo', 'hdmi', 'dvi', 'sdi', 'scart'],
+	'picture_num_channels'	=> [1],
+	'picture_output_scale_factor' => [0,1,2,3,4,5,6,7,8], 
 	'picture_rotation' => [0,90,180,270],
 	'picture_subregion' => ['less', 'equal'],
 	'picture_disable_eoi' => [0,1],
-    }
+  'picture_progerssive_dec_flag' => [0,1], # Set flag value 1 if progressive decoding is required in addition to baseline sequential mode.
+  'picture_prog_display' => [0,1], # Set the display option for progressive mode: 1 - Output buffer contains the partially (progressively) decoded image after each scan is decoded. 0 - Output buffer contains the decoded image only after all the scans are decoded.
+  'picture_rgb_format' => ['bgr24', 'bgr32', 'rgb16'], # Set the output RGB format. 0 - BGR24. 1 - BGR32. 2 - RGB16
+  'picture_num_mcu_row' => [0, -1], # Number of rows of access units to decode. Setting this field to XDM_DEFAULT decodes the complete frame. Any value other than XDM_DEFAULT will decode that many number of rows.Set numMCU_row to any integer value other then zero for sectional decoding
+  'picture_alpha_rgb' => [0,127,255], # Alpha value to fill rgb32. Default value: 0
+  'picture_out_img_res' => ['actual', 'even'], # Set the output image resolution. 0 - Always Even Image resolution. 1 - Outputs Actual Image resolution
+  }
 	@picture_source_hash = get_source_files_hash("\\w+",@res_params['picture_resolution'],"_",@res_params['picture_input_chroma_format'],"\\w{0,1}\.{0,1}","jpg")	
 	@res_params
   end
@@ -51,32 +47,16 @@ class DvtbJpegDecodeExtParamsTestPlan < TestPlan
   # This function returns an array of constraints. The constraints are to eliminate some invalid combinations of input parameters.
   # The constraints are written in PICT constraint language.
   def get_constraints()
-    const_hash = {}
-     const_hash.default = []
-     @res_params['picture_resolution'].each do |res|
-	     resolution = res.split(/x/i)
-         @res_params['picture_signal_format'].each do |format|
-             if @signal_format_max_res[format] && (@signal_format_max_res[format][0] < resolution[0].to_i || @signal_format_max_res[format][1] < resolution[1].to_i)
-                 const_hash[format] = const_hash[format]|[res]
-             end
-         end
-     end
-     format_constraints = Array.new
-     const_hash.each do |format,res|
-         current_group ='"'+res[0]+'"'
-         1.upto(res.length-1){|i| current_group+=', "'+res[i]+'"'}
-         format_constraints << 'IF [picture_signal_format] = "'+ format + '" THEN [picture_resolution] NOT IN {'+ current_group +'};'
-     end
-	format_constraints | [
-		'IF [picture_output_chroma_format] <> "422i" THEN [picture_display] = "off";',
+  res = [
 		'IF [picture_input_chroma_format] = "444p" THEN [picture_resolution] NOT IN {"192x144","640x480","704x480"};',
 		'IF [picture_input_chroma_format] = "gray" THEN [picture_resolution] NOT IN {"640x480","704x480","192x144"};',
 		'IF [picture_input_chroma_format] = "411p" THEN [picture_resolution] NOT IN {"1280x720","320x240","640x480","704x480","704x576","352x240","720x576","352x288"};',
 		'IF [picture_input_chroma_format] = "420p" THEN [picture_resolution] NOT IN {"320x240","640x480","704x480","192x144"};',
 		'IF [picture_input_chroma_format] = "422p" THEN [picture_resolution] NOT IN {"192x144","704x480"};',
-		'IF [picture_iface_type] IN {"composite","svideo","scart"} AND [picture_display] <> "off" THEN [picture_signal_format] IN {"525","625"};',
-		'IF [picture_iface_type] IN {"vga","hdmi","dvi","sdi"} AND [picture_display] <> "off" THEN [picture_signal_format] IN {"1080i50", "1080i59", "1080i60", "720p50", "720p59", "720p60", "1080p23", "1080p24", "1080p25", "1080p29", "1080p30", "1080p50", "1080p59", "1080p60"};',
-	]
+  ]
+  res << 'IF [picture_output_scale_factor] <> 0 THEN [picture_num_mcu_row] = 0;' if @res_params['picture_output_scale_factor'] && @res_params['picture_num_mcu_row'] && @res_params['picture_num_mcu_row'][0].strip.downcase != 'nsup'
+  res << 'IF [picture_output_chroma_format] <> "rgb" THEN [picture_rgb_format] = "' + @res_params['picture_rgb_format'][0] + '";' if @res_params['picture_output_chroma_format'] && @res_params['picture_rgb_format'] && @res_params['picture_rgb_format'][0].strip.downcase != 'nsup'
+  res
   end
   # END_USR_CFG get_constraints
 
@@ -97,25 +77,10 @@ class DvtbJpegDecodeExtParamsTestPlan < TestPlan
     'reg'                        => false,
     'auto'                       => true,
     'bestFinal'                  => false,
-    'script'    =>  'DVSDK/A-DVTB_JPEG_DECODE/dvtb_jpeg_dec_ext_params.rb',
+    'script'    =>  'vatf-scripts/DVSDK/A-DVTB/A-DVTB_JPEG_DECODE/dvtb_jpeg_dec_ext_params.rb',
 
     # channel parameters
-    'paramsChan'                 => {
-		'picture_width'		  => get_picture_width(params['picture_resolution']),
-		'picture_height'	  => get_picture_height(params['picture_resolution']),
-		'picture_input_chroma_format' => params['picture_input_chroma_format'],
-		'picture_output_chroma_format' => params['picture_output_chroma_format'],
-		'picture_source'		      => get_picture_source(params),
-		'picture_data_endianness' => params['picture_data_endianness'],
-		'picture_num_scans' => params['picture_num_scans'],
-		'picture_num_ticks' => params['picture_num_ticks'],
-		'picture_signal_format' => params['picture_signal_format'],
-		'picture_display' => params['picture_display'],
-		'picture_output_scale_factor' => params['picture_output_scale_factor'],
-		'picture_iface_type' => params['picture_iface_type'],
-		'picture_rotation' => params['picture_rotation'],
-		'picture_disable_eoi' => params['picture_disable_eoi'],
-    }.merge(get_subregion(params)),
+    'paramsChan'                 => get_params_chan(params),
     
     
     'paramsEquip'     => {
@@ -123,38 +88,62 @@ class DvtbJpegDecodeExtParamsTestPlan < TestPlan
     'paramsControl'     => {
 		'picture_num_channels'				=> params['picture_num_channels'],
     },
-    'configID'      => '../Config/dvtb_jpeg_dec.ini',
+    'configID'      => 'Config/dvtb_jpeg_dec.ini',
  #   'last'            => true, commented out to comply with new db schema
    }
   end
   # END_USR_CFG get_outputs
-
+  
+  def get_params_chan(params)
+      result = {}
+      result['test_type'] = 'decode'
+      params.each {|k,v| result[k] = v if v.strip.downcase != 'nsup'}
+      result['picture_width']	= get_picture_width(params) if params['picture_resolution'] && params['picture_resolution'].strip.downcase != 'nsup'
+      result['picture_height'] = get_picture_height(params) if params['picture_resolution'] && params['picture_resolution'].strip.downcase != 'nsup'
+      result['picture_source'] = get_picture_source(params)
+      result['picture_num_mcu_row'] = get_num_mcu_row(params) if params['picture_num_mcu_row'] && params['picture_num_mcu_row'].strip.downcase != 'nsup'
+      result = result.merge(get_subregion(params)) if params['picture_subregion'] && params['picture_subregion'].strip.downcase != 'nsup'
+      result.delete('picture_num_channels')
+      result.delete('picture_subregion')
+      result
+   end
+  
   def get_picture_source(params)
 	@picture_source_hash["\\w+"+params['picture_resolution']+"_"+params['picture_input_chroma_format']+"\\w{0,1}\.{0,1}"]
   end
   private
-  def get_picture_height(resolution)
+  def get_picture_height(params)
 	  pat = /(\d+)[x|X](\d+)/i
-    res = pat.match(resolution)
+    res = pat.match(params['picture_resolution'])
 		res[2]
   end
   
-  def get_picture_width(resolution)
+  def get_picture_width(params)
 	  pat = /(\d+)[x|X](\d+)/i
-    res = pat.match(resolution)
+    res = pat.match(params['picture_resolution'])
 		res[1]
+  end
+  
+  def get_num_mcu_row(params)
+    if params['picture_num_mcu_row'].to_i < 0
+      (get_picture_height(params).to_i/2).to_s
+    else
+      params['picture_num_mcu_row']
+    end
   end
   
   def get_subregion(params)
       result = Hash.new
-      width = get_picture_width(params['picture_resolution']).to_i
-      height = get_picture_height(params['picture_resolution']).to_i
+      width = get_picture_width(params).to_i
+      height = get_picture_height(params).to_i
       case params['picture_subregion'].downcase.strip
       	when 'less'
-            result['picture_subregion_upper_leftx'] = rand((width/16).ceil)*16
-            result['picture_subregion_upper_lefty'] = rand((height/16).ceil)*16
-            result['picture_subregion_down_rightx'] = result['picture_subregion_upper_leftx'] + rand(((width - result['picture_subregion_upper_leftx'])/16).floor) * 16 + 16 
-            result['picture_subregion_down_righty'] = result['picture_subregion_upper_lefty'] + rand(((height - result['picture_subregion_upper_lefty'])/16).floor) * 16 + 16
+            result['picture_subregion_upper_leftx'] = rand((width/32).ceil)*32
+            result['picture_subregion_upper_lefty'] = rand((height/32).ceil)*32
+            result['picture_subregion_x_length'] = rand(((width - result['picture_subregion_upper_leftx'])/32).floor) * 32 + 32
+            result['picture_subregion_y_length'] = rand(((height - result['picture_subregion_upper_lefty'])/32).floor) * 32 + 32
+            result['picture_subregion_down_rightx'] = result['picture_subregion_upper_leftx'] + result['picture_subregion_x_length']  
+            result['picture_subregion_down_righty'] = result['picture_subregion_upper_lefty'] + result['picture_subregion_y_length']
         else
             result['picture_subregion_upper_leftx'] = 0
             result['picture_subregion_upper_lefty'] = 0

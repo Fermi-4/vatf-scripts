@@ -2,12 +2,12 @@
 
 
 
-include DvsdkTestScript
+# include DvsdkTestScript
 
 def setup
   @equipment['dut1'].set_api('dvtb')
-  boot_dut() # method implemented in DvsdkTestScript module
-  
+  # boot_dut() # method implemented in DvsdkTestScript module
+  @equipment['dut1'].connect({'type'=>'telnet'})
   # Set DUT Max number of sockets
   @equipment['dut1'].set_max_number_of_sockets(@test_params.params_control.picture_num_channels[0].to_i,0)
     
@@ -19,32 +19,29 @@ def setup
   #Setting the picture decodercoder and vpbe
   #Setting the picture encoder
   @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "codec", "Value" => "jpegdec"})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "maxHeight", "Value" => @test_params.params_chan.picture_height[0]})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "maxWidth", "Value" => @test_params.params_chan.picture_width[0]})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "maxScans", "Value" => @test_params.params_chan.picture_num_scans[0]})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "dataEndianness", "Value" => @test_params.params_chan.picture_data_endianness[0]})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "forceChromaFormat", "Value" => @test_params.params_chan.picture_output_chroma_format[0]})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "displayWidth", "Value" => '0'})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "numticks", "Value" => @test_params.params_chan.picture_num_ticks[0]})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "progressiveDecFlag", "Value" => "1"})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "progDisplay", "Value" => "0"})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "dynParamsDisableEOI", "Value" => @test_params.params_chan.picture_disable_eoi[0]})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "dynParamsResizeOption", "Value" => @test_params.params_chan.picture_output_scale_factor[0]})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "dynParamsSubRegUpLeftX", "Value" => @test_params.params_chan.picture_subregion_upper_leftx[0]})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "dynParamsSubRegUpLeftY", "Value" => @test_params.params_chan.picture_subregion_upper_lefty[0]})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "dynParamsSubRegDownRightX", "Value" => @test_params.params_chan.picture_subregion_down_rightx[0]})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "dynParamssubRegDownRightY", "Value" => @test_params.params_chan.picture_subregion_down_righty[0]})
-  @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => "dynParamsRotation", "Value" => @test_params.params_chan.picture_rotation[0]})
+  set_codec_param("maxHeight", (@test_params.params_chan.picture_height[0].to_i/16).ceil * 16)
+  set_codec_param("maxWidth", (@test_params.params_chan.picture_width[0].to_i/32).ceil * 32)
+  set_codec_param("maxScans", "picture_num_scans")
+  set_codec_param("dataEndianness", "picture_data_endianness")
+  set_codec_param("forceChromaFormat", "picture_output_chroma_format")
+  set_codec_param("displayWidth", 0)
+  set_codec_param("numticks", "picture_num_ticks")
+  set_codec_param("progressiveDecFlag", "picture_progressive_dec_flag")
+  set_codec_param("progDisplay", "picture_prog_display")
+  set_codec_param("dynParamsDisableEOI", "picture_disable_eoi")
+  set_codec_param("dynParamsResizeOption", "picture_output_scale_factor")
+  set_codec_param("dynParamsSubRegUpLeftX", "picture_subregion_upper_leftx")
+  set_codec_param("dynParamsSubRegUpLeftY", "picture_subregion_upper_lefty")
+  set_codec_param("dynParamsSubRegDownRightX", "picture_subregion_down_rightx")
+  set_codec_param("dynParamssubRegDownRightY", "picture_subregion_down_righty")
+  set_codec_param("x_length", "picture_subregion_x_length")
+  set_codec_param("y_length", "picture_subregion_y_length")
+  set_codec_param("dynParamsRotation", "picture_rotation")
+  set_codec_param("RGB_Format", "picture_rgb_format")
+  set_codec_param("numMCU_row", "picture_num_mcu_row")
+  set_codec_param("alpha_rgb", "picture_alpha_rgb")
+  set_codec_param("outImgRes", "picture_out_img_res")
     
-  #Making the picture connection
-  if @test_params.params_chan.picture_display[0].eql?('on')
-    @connection_handler.make_video_connection({@equipment["dut1"]=> 0},{@equipment["tv1"] => 0}, @test_params.params_chan.picture_iface_type[0])
-    @equipment['dut1'].set_param({"Class" => "vpbe", "Param" => "height", "Value" => @test_params.params_chan.picture_height[0]})
-    @equipment['dut1'].set_param({"Class" => "vpbe", "Param" => "width", "Value" => @test_params.params_chan.picture_width[0]})
-    @equipment['dut1'].set_param({"Class" => "vpbe", "Param" => "standard", "Value" => @test_params.params_chan.picture_signal_format[0]})
-    @equipment['dut1'].set_param({"Class" => "vpbe", "Param" => "format", "Value" => @test_params.params_chan.picture_output_chroma_format[0]})
-    @equipment['dut1'].set_param({"Class" => "vpbe", "Param" => "output", "Value" => @test_params.params_chan.picture_iface_type[0]})
-  end
 end
 
 
@@ -59,16 +56,11 @@ def run
         puts "Decoding #{File.basename(local_ref_file)} ....."
         file_res_form.add_link(File.basename(local_ref_file)){system("explorer #{local_ref_file.gsub("/","\\")}")}
         # Start decoding function
-        if @test_params.params_chan.picture_display[0].eql?('on')
-          @equipment['dut1'].set_param({"Class" => "vpfe", "Param" => "chanNumber", "Value" => "0"})
-          @equipment['dut1'].jpegext_decoding({"Source" => local_ref_file, "threadId" => 'jpegdec'})
-        else
-          test_file = local_ref_file.gsub(".jpg","_as_"+@test_params.params_chan.picture_output_chroma_format[0]+"_"+@test_params.params_chan.picture_subregion_upper_leftx[0]+
-                                                @test_params.params_chan.picture_subregion_upper_leftx[0]+@test_params.params_chan.picture_subregion_down_rightx[0]+@test_params.params_chan.picture_subregion_down_righty[0]+"_subregion_scaledby"+@test_params.params_chan.picture_output_scale_factor[0]+"over8_test.yuv")
-          File.delete(test_file) if File.exists?(test_file)
-          @equipment['dut1'].jpegext_decoding({"Source" => local_ref_file, "Target" => test_file, "threadId" => 'jpegdec'})
-          file_res_form.add_link(File.basename(test_file)){system("explorer #{test_file.gsub("/","\\")}")}
-        end
+        test_file = local_ref_file.gsub(".jpg","_as_"+@test_params.params_chan.picture_output_chroma_format[0]+"_"+@test_params.params_chan.picture_subregion_upper_leftx[0]+
+                                              @test_params.params_chan.picture_subregion_upper_leftx[0]+@test_params.params_chan.picture_subregion_down_rightx[0]+@test_params.params_chan.picture_subregion_down_righty[0]+"_subregion_resize_val"+@test_params.params_chan.picture_output_scale_factor[0]+"_test.yuv")
+        File.delete(test_file) if File.exists?(test_file)
+        @equipment['dut1'].jpegext_decoding({"Source" => local_ref_file, "Target" => test_file, "threadId" => 'jpegdec'})
+        file_res_form.add_link(File.basename(test_file)){system("explorer #{test_file.gsub("/","\\")}")}
         @equipment['dut1'].wait_for_threads
       end
     end
@@ -76,7 +68,6 @@ def run
   end until file_res_form.test_result != FrameworkConstants::Result[:nry]
   if file_res_form.test_result == FrameworkConstants::Result[:fail]
     @equipment['dut1'].get_param({"Class" => "jpegextdec", "Param" => ""})
-    @equipment['dut1'].get_param({"Class" => "vpbe", "Param" => ""})
   end
   set_result(file_res_form.test_result,file_res_form.comment_text)
 
@@ -111,9 +102,10 @@ def get_ref_file(file_name)
   end
 end
 
-def get_keys
-  @test_params.target.to_s + @test_params.dsp.to_s + @test_params.micro.to_s + 
-  @test_params.platform.to_s + @test_params.os.to_s + @test_params.custom.to_s + 
-  @test_params.microType.to_s + @test_params.configID.to_s 
+def set_codec_param(param_name, param_value)
+  if param_value.kind_of?(String)
+    @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => param_name, "Value" => @test_params.params_chan.instance_variable_get('@'+param_value)[0]}) if @test_params.params_chan.instance_variable_defined?('@'+param_value)
+  else
+    @equipment['dut1'].set_param({"Class" => "jpegextdec", "Param" => param_name, "Value" => param_value.to_s})
+  end
 end
-

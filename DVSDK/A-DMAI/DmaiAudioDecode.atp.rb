@@ -29,6 +29,7 @@ class DmaiAudioDecodeTestPlan < TestPlan
     'test_type' => ['objective','subjective'],
     'output_type' => ['mini35mm', 'file'],
     'speech_quality_metric' => [3],
+    'max_num_files'     => [1],
     }
 	
 		audio_sampling_rate_and_bit_rate = [
@@ -145,7 +146,7 @@ class DmaiAudioDecodeTestPlan < TestPlan
 		 'ext' => false,
 		 'bestFinal' => false,
 		 'script'    =>  'DVSDK/A-DMAI/dmai_app.rb',
-		 'configID' 	=> '../Config/dmai_examples.ini',
+		 'configID' 	=> 'Config/dmai_examples.ini',
 		 'reg'                       => true,
 		 'auto'                     => true,
 		 'paramsChan'     => {
@@ -164,7 +165,8 @@ class DmaiAudioDecodeTestPlan < TestPlan
 		 'paramsEquip' => {
 			},
 		 'paramsControl' => {
-        'test_type' => params['test_type']
+        'test_type' => params['test_type'],
+        'max_num_files' => params['max_num_files']
 			},
      }
    end

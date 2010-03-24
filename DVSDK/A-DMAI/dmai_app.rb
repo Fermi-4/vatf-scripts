@@ -7,18 +7,21 @@ def setup
   @equipment['dut1'].set_api('dmai')
   if @test_params.params_chan.command_name[0].include?("video_display") 
     @connection_handler.make_video_connection({@equipment["dut1"] => {@test_params.params_chan.display_out[0] => 0}},{@equipment['tv1'] => {@test_params.params_chan.display_out[0] => 0}}) if @equipment.include?('tv1')
-  elsif @test_params.params_chan.command_name[0].include?("video_loopback")
+  elsif @test_params.params_chan.command_name[0].strip.downcase == "video_loopback" || @test_params.params_chan.command_name[0].strip.downcase == "video_loopback_copy"
+    @equipment['video_tester'].set_output_format({'format' => @test_params.params_chan.video_signal_format[0]})
     @connection_handler.make_video_connection({@equipment["video_tester"] => {"sdi" => 0}}, {@equipment["#{@test_params.params_chan.video_input[0]}_converter"] => {"sdi" => 0}})
     @connection_handler.make_video_connection({@equipment["#{@test_params.params_chan.display_out[0]}_converter"] => {"sdi" => 0}}, {@equipment["video_tester"] => {"sdi" => 0}})	
     @connection_handler.make_video_connection({@equipment["#{@test_params.params_chan.video_input[0]}_converter"] => {@test_params.params_chan.video_input[0] => 0}}, {@equipment["dut1"] => {@test_params.params_chan.video_input[0] => 0}}) 
     @connection_handler.make_video_connection({@equipment["#{@test_params.params_chan.video_input[0]}_converter"] => {@test_params.params_chan.video_input[0] => 0}}, {@equipment["tv0"] => {@test_params.params_chan.video_input[0] => 0}}) if @equipment.include?('tv0')
     @connection_handler.make_video_connection({@equipment["dut1"] => {@test_params.params_chan.display_out[0] =>0}}, {@equipment['tv1'] => {@test_params.params_chan.display_out[0] =>0}}) if @equipment.include?('tv1')
+    sleep 3
   end
 end
 
 def run
   test_result = FrameworkConstants::Result[:nry]
   test_comment = ''
+  audio_input_handle, audio_output_handle = nil
   begin
     file_res_form = nil
     file_res_form = ScrollableResultForm.new("DMAI Test Result Form") if !@test_params.params_control.respond_to?(:test_type) || @test_params.params_control.test_type[0].strip == 'subjective'
@@ -98,7 +101,13 @@ def run
     elsif @test_params.params_chan.command_name[0].include?("audio_decode")
       run_dmai_test("Audio/Decoder", file_res_form) do |media_file|
         auddec_params = get_audio_decode_params(media_file)
-        @equipment['dut1'].audio_decode(auddec_params)
+        if @test_params.params_chan.output_type[0].strip.downcase == 'file'
+          @equipment['dut1'].audio_decode(auddec_params)
+        else
+          make_audio_output_connections
+          auddec_params['output_file'] = nil
+          @equipment['dut1'].audio_decode1(auddec_params)
+        end
         auddec_params
       end  
     elsif @test_params.params_chan.command_name[0].include?("image_decode")
@@ -110,7 +119,16 @@ def run
     elsif @test_params.params_chan.command_name[0].include?("speech_decode")
       run_dmai_test(["Speech/Decoder"], file_res_form) do |media_file|
         sph_dec_params = get_speech_decode_params(media_file)
-        @equipment['dut1'].speech_decode(sph_dec_params)
+        if @test_params.params_chan.output_type[0].strip.downcase == 'file'
+          @equipment['dut1'].speech_decode(sph_dec_params)
+        else
+          make_audio_output_connections
+          sleep 1
+          sph_dec_params['output_file'] = nil
+          audio_ref_file, audio_test_file, audio_input_handle, audio_output_handle = run_audio_process() 
+          @equipment['dut1'].speech_decode1(sph_dec_params)
+          bytes_rec, audio_input_handle, audio_output_handle = stop_audio_process(audio_input_handle, audio_output_handle)
+        end
         if @test_params.params_control.test_type[0].strip != 'subjective'
           local_ref_file = get_ref_file('Speech/Encoder', @test_params.params_chan.input_file[0].sub(/\..*$/,".pcm"))
           test_res, test_cmnt = get_speech_results(local_ref_file, sph_dec_params['output_file'])
@@ -122,7 +140,18 @@ def run
     elsif @test_params.params_chan.command_name[0].include?("speech_encode")
       run_dmai_test(["Speech/Encoder","Audio/Encoder"], file_res_form) do |media_file|
         sph_enc_params = get_speech_encode_params(media_file)
-        @equipment['dut1'].speech_encode(sph_enc_params)
+        if @test_params.params_chan.input_type[0].strip.downcase == 'file'
+          @equipment['dut1'].speech_encode(sph_enc_params)
+        else
+          make_audio_input_connections()
+          sleep 1
+          sph_enc_params['input_file'] = nil
+          sph_enc_params['num_of_frames'] = (File.size(media_file)/200).ceil 
+          @equipment['dut1'].speech_encode1(sph_enc_params)
+          audio_ref_file, audio_test_file, audio_input_handle, audio_output_handle = run_audio_process()
+          @equipment['dut1'].wait_for_threads(sph_enc_params['timeout'].to_i)
+          bytes_rec, audio_input_handle, audio_output_handle = stop_audio_process(audio_input_handle, audio_output_handle)
+        end
         if @test_params.params_control.test_type[0].strip != 'subjective'
           local_ref_file = get_ref_file('Speech/Decoder', @test_params.params_chan.input_file[0].sub(/\..*$/,"."+@test_params.params_chan.speech_companding[0].gsub(/-*law/,'')))
           test_res, test_cmnt = get_speech_results(local_ref_file, sph_enc_params['output_file'])
@@ -134,6 +163,18 @@ def run
     elsif @test_params.params_chan.command_name[0].include?("video_display")
         vid_dis_params = get_video_display_params
         @equipment['dut1'].video_display(vid_dis_params)
+    elsif @test_params.params_chan.command_name[0].include?("video_loopback_blend")
+        make_subjective_connections
+        vid_loop_blend_params = get_video_loopback_blend_params
+        @equipment['dut1'].video_loopback_blend(vid_loop_blend_params)
+    elsif @test_params.params_chan.command_name[0].include?("video_loopback_convert")
+        make_subjective_connections
+        vid_loop_convert_params = get_video_loopback_convert_params
+        @equipment['dut1'].video_loopback_convert(vid_loop_convert_params)
+    elsif @test_params.params_chan.command_name[0].include?("video_loopback_resize")
+        make_subjective_connections
+        vid_loop_res_params = get_video_loopback_resize_params
+        @equipment['dut1'].video_loopback_resize(vid_loop_res_params)
     elsif @test_params.params_chan.command_name[0].include?("video_loopback_copy")
       run_dmai_test("Video/Encoder", file_res_form) do |media_file|
         vid_loopback_cp_params = get_video_loopback_copy_params(media_file)
@@ -179,7 +220,12 @@ def run
     test_result = file_res_form.test_result
     test_comment = file_res_form.comment_text
   end
-  set_result(test_result,test_comment)
+  rescue Exception => e
+    test_comment += e.to_s
+		stop_audio_process(audio_input_handle, audio_output_handle) if audio_input_handle || audio_output_handle
+    raise 
+	ensure
+    set_result(test_result,test_comment)
 end
 
 def clean
@@ -188,6 +234,99 @@ end
 
 
 private
+
+def get_video_loopback_blend_params
+  {
+    'display_output' => @test_params.params_chan.display_out[0],
+    'in_place' => @test_params.params_chan.in_place[0],
+    'output_position' => @test_params.params_chan.output_position[0],
+    'resolution'      => @test_params.params_chan.resolution[0],
+    'input_position' => @test_params.params_chan.input_position[0],
+    'num_of_frames' => @test_params.params_control.display_time[0].to_i*30,
+    'bitmap_position' => @test_params.params_chan.bitmap_position[0],
+    'bitmap_resolution' => @test_params.params_chan.bitmap_resolution[0],
+    'timeout' => @test_params.params_control.display_time[0].to_i*5
+  }
+end
+
+def get_video_loopback_resize_params
+  {
+    'display_standard' => @test_params.params_chan.video_signal_format[0], 
+    'display_output' => @test_params.params_chan.display_out[0],
+    'capture_ualloc' => @test_params.params_chan.capture_ualloc[0],
+    'display_ualloc' => @test_params.params_chan.display_ualloc[0],
+    'output_position' => @test_params.params_chan.output_position[0],
+    'output_resolution' => @test_params.params_chan.output_resolution[0],
+    'input_position' => @test_params.params_chan.input_position[0],
+    'input_resolution' => @test_params.params_chan.input_resolution[0],
+    'crop' => @test_params.params_chan.crop[0],
+    'num_of_frames' => @test_params.params_control.display_time[0].to_i*30,
+    'timeout' => @test_params.params_control.display_time[0].to_i*3
+  }
+end
+
+def get_video_loopback_convert_params
+  {
+    'display_output' => @test_params.params_chan.display_out[0],
+    'capture_ualloc' => @test_params.params_chan.capture_ualloc[0],
+    'display_ualloc' => @test_params.params_chan.display_ualloc[0],
+    'output_position' => @test_params.params_chan.output_position[0],
+    'input_position' => @test_params.params_chan.input_position[0],
+    'resolution' => @test_params.params_chan.resolution[0],
+    'num_of_frames' => @test_params.params_control.display_time[0].to_i*30,
+    'input_accel' => @test_params.params_chan.input_accel[0],
+    'output_accel' => @test_params.params_chan.output_accel[0],
+    'timeout' => @test_params.params_control.display_time[0].to_i*8
+  }
+end
+
+
+def run_audio_process()
+  local_ref_file = ""
+	audio_params = {  "alignment" => 2,
+                      "bits_per_sample" => 16,
+                      "channels" => 1,
+                      "samples_per_sec" => 8000,
+                      "avg_bytes_per_sec" => 16000,
+                      "device_type" => 'analog',
+                      "device_id" => 0,
+                  }
+	audio_input_handle = 0
+	audio_output_handle = 0
+	audio_input_handle = @equipment['audio_player'].open_wave_in_audio_device(audio_params)
+	audio_output_handle = @equipment['audio_player'].open_wave_out_audio_device(audio_params)
+	if @test_params.params_chan.command_name[0].include?("encode") && @test_params.params_chan.command_name[0].include?("decode")
+		local_ref_file = get_ref_file('Speech/Encoder/',@test_params.params_chan.input_file[0])
+		test_file = SiteInfo::LOCAL_FILES_FOLDER+@test_params.params_chan.input_file[0]+"_test.pcm"
+		@equipment['audio_player'].record_wave_audio(audio_input_handle, test_file)
+		@equipment['audio_player'].play_wave_audio(audio_output_handle, local_ref_file)
+  elsif @test_params.params_chan.command_name[0].include?("encode")  
+		test_file = SiteInfo::LOCAL_FILES_FOLDER+@test_params.params_chan.input_file[0]+"_test"+get_audio_ext()
+		pcm_local_ref_file = get_ref_file('Speech/Encoder/', @test_params.params_chan.input_file[0])
+		ref_file, local_ref_file = get_ref_file('Speech/Decoder/', @test_params.params_chan.input_file[0].gsub(/\..*$/,'.')+get_audio_ext)
+		@equipment['audio_player'].play_wave_audio(audio_output_handle, pcm_local_ref_file)
+	elsif @test_params.params_chan.command_name[0].include?("decode")
+	  test_file = SiteInfo::LOCAL_FILES_FOLDER+@test_params.params_chan.input_file[0].gsub(/\..*$/,"_test.pcm")
+		local_ref_file = get_ref_file('Speech/Encoder/', @test_params.params_chan.input_file[0].gsub(/\..*$/,".pcm"))
+		@equipment['audio_player'].record_wave_audio(audio_input_handle, test_file)
+	end
+	[local_ref_file,test_file,audio_input_handle, audio_output_handle]
+  rescue Exception => e
+    stop_audio_process(audio_input_handle, audio_output_handle) if audio_input_handle || audio_output_handle
+end
+
+def stop_audio_process(audio_input_handle, audio_output_handle)
+   while audio_output_handle && !@equipment['audio_player'].wave_audio_play_done(audio_output_handle)
+		sleep(1)
+   end
+   sleep(1)
+   bytes_recorded = nil
+   bytes_recorded = @equipment['audio_player'].stop_wave_audio_record(audio_input_handle) if audio_input_handle && @test_params.params_chan.command_name[0].include?("decode")
+   @equipment['audio_player'].stop_wave_audio_play(audio_output_handle) if audio_output_handle && @test_params.params_chan.command_name[0].include?("encode")
+   @equipment['audio_player'].close_wave_in_device(audio_input_handle) if audio_input_handle
+   @equipment['audio_player'].close_wave_out_device(audio_output_handle) if audio_output_handle
+   [bytes_recorded, nil, nil]   
+end
 
 def run_dmai_test(ref_dir, file_res_form)
   max_num_files = @test_params.params_chan.input_file.length - 1
@@ -210,6 +349,27 @@ def run_dmai_test(ref_dir, file_res_form)
       end
     end
   end
+end
+
+def get_audio_ext
+  @test_params.params_chan.speech_companding[0].gsub(/law/,'')
+end
+
+def make_subjective_connections()
+  @connection_handler.make_video_connection({@test_params.params_chan.video_source[0] => {@test_params.params_chan.video_input[0] => 0}}, {@equipment["dut1"] => {@test_params.params_chan.video_input[0] => 0}})
+  @connection_handler.make_video_connection({@test_params.params_chan.video_source[0] => {@test_params.params_chan.video_input[0] => 0}}, {@equipment["tv0"] => {@test_params.params_chan.video_input[0] => 0}}) if @equipment.include?('tv0')
+  @connection_handler.make_video_connection({@equipment["dut1"] => {@test_params.params_chan.display_out[0] =>0}}, {@equipment['tv1'] => {@test_params.params_chan.display_out[0] =>0}}) if @equipment.include?('tv1')
+  puts "Processing #{@test_params.params_chan.video_source[0]} signal"
+end
+
+def make_audio_input_connections()
+  @connection_handler.make_audio_connection({@equipment['audio_player'] => {@test_params.params_chan.input_type[0] => 0}}, {@equipment["dut1"] => {@test_params.params_chan.input_type[0] => 0}})
+  @connection_handler.make_audio_connection({@equipment['audio_player'] => {@test_params.params_chan.input_type[0] => 0}}, {@equipment["tv0"] => {@test_params.params_chan.input_type[0] => 0}}) if @equipment.include?('tv0')
+end
+
+def make_audio_output_connections()
+  @connection_handler.make_audio_connection({@equipment["dut1"] => {@test_params.params_chan.output_type[0] => 0}}, {@equipment['audio_player'] => {@test_params.params_chan.output_type[0] => 0}}) if @equipment['audio_player']
+  @connection_handler.make_audio_connection({@equipment["dut1"] => {@test_params.params_chan.output_type[0] => 0}}, {@equipment["tv1"] => {@test_params.params_chan.output_type[0] => 0}}) if @equipment.include?('tv1')
 end
 
 def get_video_encode_params(vid_source)
@@ -267,7 +427,8 @@ def get_video_decode_params(vid_source)
       'num_of_frames'   => get_video_num_frames(vid_source),
       'output_file'		  => vid_source.sub(/\.\w+$/,"_decode_test.yuv"),
       'media_location'  => @test_params.params_chan.media_location[0],
-      'timeout'         => get_video_num_frames(vid_source)*get_vid_timeout_mult(@test_params.params_chan.resolution[0])
+      'timeout'         => get_video_num_frames(vid_source)*get_vid_timeout_mult(@test_params.params_chan.resolution[0]),
+      'resolution'      => @test_params.params_chan.resolution[0]
   }
 end
 
@@ -287,7 +448,7 @@ def get_speech_decode_params(speech_source)
   {
       'input_file' 			=> speech_source,
       'codec'           => @test_params.params_chan.audio_codec[0],
-      'num_of_frames'   => File.size(speech_source),
+      'num_of_frames'   => File.size(speech_source)*2,
       'output_file'		  => speech_source.sub(/\.\w+$/,"_decode_test.pcm"),
       'companding'		 	  => @test_params.params_chan.speech_companding[0],
       'start_frame'  => @test_params.params_chan.start_frame[0],

@@ -106,10 +106,14 @@ class DemoAppDecodeSubjectiveTestPlan < TestPlan
         file_bit_rate << ((audio_br.to_f/1000).to_s+"kbps").gsub(/\.0kbps$/,"kbps")
       end
     end
+    file_sampling_rates = []
+    audio_sampling_rates.each do |audio_br|
+      file_sampling_rates << (audio_br.to_f/1000).to_s.gsub(/\.0$/,"")
+    end
     @mpx_audio_source_hash = {}
-    @aac_audio_source_hash = get_source_files_hash("\\w+_",audio_sampling_rates,"kHz\\w*_",file_bit_rate,"\\w*",@aac_file_format,"aac")
+    @aac_audio_source_hash = get_source_files_hash("\\w+_",file_sampling_rates,"kHz\\w*_",file_bit_rate,"\\w*",@aac_file_format,"aac")
     params['audio_type'].each do |mp_type|
-      @mpx_audio_source_hash[mp_type] = get_source_files_hash("\\w+_",audio_sampling_rates,"kHz\\w*_",file_bit_rate,"\\w*",mp_type) if /mp\d/.match(mp_type)
+      @mpx_audio_source_hash[mp_type] = get_source_files_hash("\\w+_",file_sampling_rates,"kHz\\w*_",file_bit_rate,"\\w*",mp_type) if /mp\d/.match(mp_type)
     end
 	  combine_sampling_rate_and_bit_rate(params, audio_sampling_rate_and_bit_rate)
     @ulaw_speech_source_hash = get_source_files_hash("\\w+","u")
@@ -233,8 +237,8 @@ class DemoAppDecodeSubjectiveTestPlan < TestPlan
 		   'bestFinal' 	=> true,
 		   'reg'       	=> true,
 		   'auto'			=> true,
-		   'script'    =>  'DVSDK/A-DEMO/demo_app_decode_subjective.rb',
-		   'configID' 	=> '../Config/demo_app_subjective.ini',
+		   'script'    =>  'vatf-scripts/DVSDK/A-DEMO/demo_app_decode_subjective.rb',
+		   'configID' 	=> 'Config/demo_app_subjective.ini',
 		   'paramsChan' 	=> {
           'time'								=> params['time'],
           'enable_osd'					=> params['enable_osd'],

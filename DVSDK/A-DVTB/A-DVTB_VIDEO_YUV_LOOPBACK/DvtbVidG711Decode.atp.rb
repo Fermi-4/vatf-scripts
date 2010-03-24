@@ -1,10 +1,8 @@
-require '../../TestPlans/Common/A-DVTB_H264/DvtbH264Loopback.atp'
-require '../../TestPlans/Common/A-DVTB_G711/DvtbG711Loopback.atp'
+require '../media_filer_utils'
 
-class DvtbH264G711DecodeTestPlan < TestPlan
-	@@g711_test_plan = DvtbG711LoopbackTestPlan.new
-	@@h264_test_plan = DvtbH264LoopbackTestPlan.new
-	@@base_params = @@h264_test_plan.get_params().merge(@@g711_test_plan.get_params())
+include MediaFilerUtils
+
+class DvtbVidG711DecodeTestPlan < TestPlan
 	# BEG_USR_CFG setup
   # General setup:
   def setup()
@@ -99,14 +97,12 @@ class DvtbH264G711DecodeTestPlan < TestPlan
     params['video_type'].each do |vtype|
       @video_source_hash[vtype] = get_source_files_hash("\\w*",video_resolutions,"\\w*",@prof_regex[vtype],"\\w*",file_bit_rate,"\\w*frames",media_extension[vtype])
     end    
-    @res_params = combine_res_and_bit_rate(params,video_res_and_bit_rates)
-    #@@g711_test_plan.get_params().merge(@res_params)      
+    @res_params = combine_res_and_bit_rate(params,video_res_and_bit_rates)   
   end
   # END_USR_CFG get_params
 
   # BEG_USR_CFG get_constraints
   def get_constraints()
-     #['{ audio_companding, audio_source, audio_sampling_rate, audio_num_channels } @ 2'] | @@g711_test_plan.get_constraints 
      []
   end
   # END_USR_CFG get_constraints
@@ -122,50 +118,49 @@ class DvtbH264G711DecodeTestPlan < TestPlan
 		 'basic' => true,
 		 'ext' => false,
 		 'bestFinal' => false,
-		 'script'    =>  'DVSDK/A-DVTB_H264_G711_YUV_LOOPBACK/dvtb_h264_g711.rb',
-		 'configID' => '../Config/dvtb_h264_g711_loopback.ini',
+		 'script'    =>  'vatf-scripts/DVSDK/A-DVTB/A-DVTB_VIDEO_YUV_LOOPBACK/dvtb_video_g711.rb',
+		 'configID' => 'Config/dvtb_video_g711_loopback.ini',
 		 'reg'                       => true,
 		 'auto'                     => true,
-		 'paramsChan'     => get_test_params('paramsChan',params).merge!({
-                                                                          'operation' => params['operation'],
-                                                                          'video_bit_rate' => get_video_bit_rate(params),
-                                                                          'video_output_chroma_format' => params['video_output_chroma_format'],
-                                                                          'video_height' => get_video_height(get_video_resolution(params)),
-                                                                          'video_width' => get_video_width(get_video_resolution(params)),
-                                                                          'video_source' => get_video_source(params),
-                                                                          'video_quality_metric' => params['video_quality_metric']}),
-		 'paramsEquip'	 => get_test_params('paramsEquip',params),
-		 'paramsControl' => get_test_params('paramsControl',params).merge!({
-                                                                           'video_num_channels' => params['video_num_channels'],
-                                                                           'ti_logo_resolution' => params['ti_logo_resolution'],
-                                                                           'codec_class'	  	=> get_codec_class(params['video_type']),
-                                                                           'max_num_files'    => params['max_num_files']}),
+		 'paramsChan'     => get_test_params(params),
+		 'paramsEquip'	 => {},
+		 'paramsControl' => {
+                         'video_num_channels' => params['video_num_channels'],
+                         'ti_logo_resolution' => params['ti_logo_resolution'],
+                         'codec_class'	  	=> get_codec_class(params['video_type']),
+                         'max_num_files'    => params['max_num_files']},
      }
    end
   # END_USR_CFG get_outputs
   
   private
   
-  def get_test_params(type,params)
+  def get_test_params(params)
 		result = {}
-		# if @@g711_test_plan.get_outputs(params)[type]
-			# result.merge!(@@g711_test_plan.get_outputs(params)[type])
-		# end
-		# if @@h264_test_plan.get_outputs(params)[type]
-			# result.merge!(@@h264_test_plan.get_outputs(params)[type])
-		# end
-		result
+    params.each {|k,v| result[k] = v if v.strip.downcase != 'nsup'}
+    result['video_bit_rate'] = get_video_bit_rate(params) if params['video_resolution_and_bit_rate'] && params['video_resolution_and_bit_rate'].strip.downcase != 'nsup'
+    result['video_height'] = get_video_height(params) if params['video_resolution_and_bit_rate'] && params['video_resolution_and_bit_rate'].strip.downcase != 'nsup'
+    result['video_width'] = get_video_width(params) if params['video_resolution_and_bit_rate'] && params['video_resolution_and_bit_rate'].strip.downcase != 'nsup'
+    result['video_source'] = get_video_source(params)
+    
+    result.delete('video_resolution_and_bit_rate')
+    result.delete('ti_logo_resolution')
+    result.delete('codec_class')
+    result.delete('max_num_files')
+    result
 	end
   
   def get_codec_class(type)
     type.upcase
   end
   
-  def get_video_height(resolution)
+  def get_video_height(params)
+    resolution = get_video_resolution(params)
 		resolution.split("x")[1].strip
   end
    
-  def get_video_width(resolution)
+  def get_video_width(params)
+    resolution = get_video_resolution(params)
     resolution.split("x")[0].strip
   end
    

@@ -1,81 +1,48 @@
-#=============================================================================================================
-# Test Script for DvtbH264Loopback.atp.rb test recipe
-# History:
-#   0.1: [CH, 7/6/7] First Draft
-#   0.2: [AH, 9/20/07]
-#=============================================================================================================
 
-
-
-
-include DvsdkTestScript
-
-class H264Params
-    attr_reader :codec_name, :enc_codec_name, :enc_thread_name, :dec_codec_name, :dec_thread_name
-    def initialize
-        @codec_name 		= 'H264'
-        @enc_codec_name 	= 'h264enc'
-        @enc_thread_name 	= 'h264enc'
-        @dec_codec_name 	= 'h264dec'
-        @dec_thread_name 	= 'h264dec'
-    end
-end
-
-class MPEG4Params
-    attr_reader :codec_name, :enc_codec_name, :enc_thread_name, :dec_codec_name, :dec_thread_name
-    def initialize
-        @codec_name 		= 'MPEG4'
-        @enc_codec_name 	= 'mpeg4enc'
-        @enc_thread_name 	= 'mpeg4enc'
-        @dec_codec_name 	= 'mpeg4dec'
-        @dec_thread_name 	= 'mpeg4dec'
-    end
-end
+#include DvsdkTestScript
 
 def setup
   @equipment['dut1'].set_api('dvtb')
   #boot_dut() #method implemented in DvsdkTestScript module
-  
-  codec_class = @test_params.params_control.codec_class[0]+"Params"
-  codec_object = Object.const_get(codec_class).new
-
-  @equipment["dut1"].set_max_number_of_sockets(@test_params.params_control.video_num_channels[0].to_i, 0)
+  @equipment['dut1'].connect({'type'=>'telnet'})
+  @equipment["dut1"].set_max_number_of_sockets(@test_params.params_chan.video_num_channels[0].to_i, 0)
   # Set engine params
   @equipment["dut1"].set_param({"Class" => "engine", "Param" => "name", "Value" => "encdec"})
   #@equipment["dut1"].set_param({"Class" => "engine", "Param" => "trace","Value" => "0"})
   if @test_params.params_chan.operation[0] =~ /encode/
     # Set encoder params
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "codec", "Value" => codec_object.enc_codec_name})
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "maxHeight", "Value" => @test_params.params_chan.video_height[0]})
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "maxWidth", "Value" => @test_params.params_chan.video_width[0]})
-    @equipment['dut1'].set_param({"Class" => "videnc", "Param" => "maxFrameRate", "Value" => '30000'})
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "inputChromaFormat", "Value" => @test_params.params_chan.video_input_chroma_format[0]}) 
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "reconChromaFormat", "Value" => @test_params.params_chan.video_input_chroma_format[0]})  
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "encodingPreset", "Value" => @test_params.params_chan.video_encoder_preset[0]}) 
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "rateControlPreset", "Value" => @test_params.params_chan.video_rate_control[0]})  
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "inputHeight", "Value" => @test_params.params_chan.video_height[0]})
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "inputWidth", "Value" => @test_params.params_chan.video_width[0]})
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "refFrameRate", "Value" => map_dut_frame_rate(@test_params.params_chan.video_frame_rate[0])}) 
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "targetFrameRate", "Value" => map_dut_frame_rate(@test_params.params_chan.video_frame_rate[0])}) 
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "targetBitRate", "Value" => @test_params.params_chan.video_bit_rate[0]}) 
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "maxBitRate", "Value" => (@test_params.params_chan.video_bit_rate[0].to_i*1.1).round.to_s})							   
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "intraFrameInterval", "Value" => @test_params.params_chan.video_gop[0]})  
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "generateHeader", "Value" => @test_params.params_chan.video_gen_header[0]})   
-    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "captureWidth", "Value" => @test_params.params_chan.video_width[0]})  
-    @equipment['dut1'].set_param({"Class" => "videnc", "Param" => "maxInterFrameInterval", "Value" => @test_params.params_chan.video_inter_frame_interval[0]})
-    @equipment['dut1'].set_param({"Class" => "videnc", "Param" => "interFrameInterval", "Value" => @test_params.params_chan.video_inter_frame_interval[0]})
-   # @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "forceIframe", "Value" => "#{@test_params.params_chan.video_force_iframe[0]}"})   
+    @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "codec", "Value" => @test_params.params_control.codec_class[0].strip.downcase + 'enc'})
+    set_codec_param("maxHeight", "video_height")
+    set_codec_param("maxWidth", "video_width")
+    set_codec_param("maxFrameRate", 30000)
+    set_codec_param("inputChromaFormat", "video_input_chroma_format") 
+    set_codec_param("reconChromaFormat", "video_input_chroma_format")  
+    set_codec_param("encodingPreset", "video_encoder_preset") 
+    set_codec_param("rateControlPreset", "video_rate_control")  
+    set_codec_param("inputHeight", "video_height")
+    set_codec_param("inputWidth", "video_width")
+    set_codec_param("refFrameRate", map_dut_frame_rate(@test_params.params_chan.video_frame_rate[0])) 
+    set_codec_param("targetFrameRate", map_dut_frame_rate(@test_params.params_chan.video_frame_rate[0])) 
+    set_codec_param("targetBitRate", "video_bit_rate") 
+    set_codec_param("maxBitRate", (@test_params.params_chan.video_bit_rate[0].to_i*1.1).round)							   
+    set_codec_param("intraFrameInterval", "video_gop")  
+    set_codec_param("generateHeader", "video_gen_header")   
+    set_codec_param("captureWidth", "video_width")  
+    set_codec_param("maxInterFrameInterval", "video_inter_frame_interval")
+    set_codec_param("interFrameInterval", "video_inter_frame_interval")
+    set_codec_param("forceFrame", "video_force_frame")  
+    set_codec_param("topFieldFirstFlag", "video_top_field_first_flag")
   end
   if @test_params.params_chan.operation[0] =~ /decode/  
     # Set decoder params
-    @equipment["dut1"].set_param({"Class" => "viddec", "Param" => "codec", "Value" => codec_object.dec_codec_name})
-    @equipment["dut1"].set_param({"Class" => "viddec", "Param" => "maxBitRate", "Value" => (@test_params.params_chan.video_bit_rate[0].to_i*1.1).round.to_s}) 
-    @equipment['dut1'].set_param({"Class" => "viddec", "Param" => "maxFrameRate", "Value" => '30000'})
-    @equipment["dut1"].set_param({"Class" => "viddec", "Param" => "maxHeight", "Value" => @test_params.params_chan.video_height[0]})
-    @equipment["dut1"].set_param({"Class" => "viddec", "Param" => "maxWidth", "Value" => @test_params.params_chan.video_width[0]})
+    @equipment["dut1"].set_param({"Class" => "viddec", "Param" => "codec", "Value" => @test_params.params_control.codec_class[0].strip.downcase + 'dec'})
+    set_codec_param("maxBitRate", (@test_params.params_chan.video_bit_rate[0].to_i*1.1).round, "viddec") 
+    set_codec_param("maxFrameRate", 30000, "viddec")
+    set_codec_param("maxHeight", "video_height", "viddec")
+    set_codec_param("maxWidth", "video_width", "viddec")
     data_format  = @test_params.params_chan.operation[0] =~ /encode/ ? @test_params.params_chan.video_input_chroma_format[0] : @test_params.params_chan.video_output_chroma_format[0]  # encode+decode only specifies input format, while decode only specifies  output format
-    @equipment["dut1"].set_param({"Class" => "viddec", "Param" => "forceChromaFormat", "Value" => data_format})    
-    @equipment['dut1'].set_param({"Class" => "viddec", "Param" => "displayWidth", "Value" => @test_params.params_chan.video_width[0]})
+    set_codec_param("forceChromaFormat", "data_format", "viddec")    
+    set_codec_param("displayWidth", "video_width", "viddec")
   end
 end
 
@@ -86,8 +53,6 @@ def run
   local_ref_files = Array.new
   num_frames = test_done_result = nil
   test_comment = ''
-  codec_class = @test_params.params_control.codec_class[0]+"Params"
-  codec_object = Object.const_get(codec_class).new
   
   max_num_files = @test_params.params_control.max_num_files[0].to_i 
   file_counter = 0  
@@ -98,17 +63,17 @@ def run
       ref_file = get_ref_file(ref_dir,vid_source)
       local_ref_files << ref_file
       num_frames = /_(\d+)frames/.match(ref_file).captures[0].to_i
-      @equipment["dut1"].set_param({"Class" => "videnc", "Param" => "numframes", "Value" => num_frames.to_s}) if @test_params.params_chan.operation[0] =~ /encode/
-      @equipment["dut1"].set_param({"Class" => "viddec", "Param" => "numframes", "Value" => num_frames.to_s}) if @test_params.params_chan.operation[0] =~ /decode/
+      set_codec_param("numframes", num_frames) if @test_params.params_chan.operation[0] =~ /encode/
+      set_codec_param("numframes", num_frames, "viddec") if @test_params.params_chan.operation[0] =~ /decode/
 
       # Start encoding and/or decoding function
       case @test_params.params_chan.operation[0]
       when /encode\+decode/ 
-        @equipment["dut1"].video_encoding_decoding({"Target" => ref_file.sub(/\.yuv/, "_out.yuv"), "Source" => ref_file, "threadId" => codec_object.dec_thread_name, "timeout" => num_frames*3})
+        @equipment["dut1"].video_encoding_decoding({"Target" => ref_file.sub(/\.yuv/, "_out.yuv"), "Source" => ref_file, "threadId" => @test_params.params_control.codec_class[0], "timeout" => num_frames*3})
       when /decode/         
-        @equipment["dut1"].video_decoding({"Target" => ref_file.sub(/#{get_video_file_extension(@test_params.params_control.codec_class[0])}/, "_out.yuv"), "Source" => ref_file, "threadId" => codec_object.dec_thread_name, "timeout" => num_frames*2})
+        @equipment["dut1"].video_decoding({"Target" => ref_file.sub(/#{get_video_file_extension(@test_params.params_control.codec_class[0])}/, "_out.yuv"), "threadId" => @test_params.params_control.codec_class[0]+'dec', "Source" => ref_file, "timeout" => num_frames*2})
       else
-        @equipment["dut1"].video_encoding({"Target" => ref_file.sub(/\.yuv/, "_test"+get_video_file_extension(@test_params.params_control.codec_class[0])), "Source" => ref_file, "threadId" => codec_object.enc_thread_name, "timeout" => num_frames*2})
+        @equipment["dut1"].video_encoding({"Target" => ref_file.sub(/\.yuv/, "_test"+get_video_file_extension(@test_params.params_control.codec_class[0])), "threadId" => @test_params.params_control.codec_class[0]+'enc', "Source" => ref_file, "timeout" => num_frames*2})
       end
       @equipment["dut1"].wait_for_threads(num_frames*3)
       file_counter += 1
@@ -180,7 +145,7 @@ def get_pixel_and_data_format
 end
 
 def map_dut_frame_rate(rate)
-  return (rate.to_i * 1000).to_s
+  return (rate.to_i * 1000)
 end
 
 def get_video_tester_format
@@ -191,7 +156,8 @@ def get_video_file_extension(format)
   case format
   when /H264/i   : '.264'
   when /MPEG4/i   : '.mpeg4'
-  else '.yuv'
+  when /mpeg2/i : '.m2v'
+  else format
   end
 end
 
@@ -259,8 +225,6 @@ def get_ref_file(strt_directory, file_name)
 end
 
 def get_results(video_file)
-    codec_class = @test_params.params_control.codec_class[0]+"Params"
-    codec_object = Object.const_get(codec_class).new
     test_done_result = FrameworkConstants::Result[:pass]
     @results_html_file.add_paragraph("")
     test_comment = " "
@@ -271,7 +235,7 @@ def get_results(video_file)
     res_table = @results_html_file.add_table([["Scores",{:bgcolor => "green", :colspan => "2"},{:color => "red"}]],{:border => "1",:width=>"20%"})
     pass_fail_criteria = @test_params.params_chan.video_quality_metric[0].strip.downcase.split(/\/*=/)
     
-    @results_html_file.add_row_to_table(res_table, [["#{codec_object.codec_name} Scores #{File.basename(video_file)}",{:bgcolor => "add8e6", :colspan => "2"},{:color => "blue"}]])
+    @results_html_file.add_row_to_table(res_table, [["#{@test_params.params_control.codec_class[0].upcase} Scores #{File.basename(video_file)}",{:bgcolor => "add8e6", :colspan => "2"},{:color => "blue"}]])
     if pass_fail_criteria[0] == 'jnd'
       if @equipment['video_tester'].get_jnd_scores({'component' => 'y'}).max > pass_fail_criteria[1].to_f || @equipment['video_tester'].get_jnd_scores({'component' => 'chroma'}).max > pass_fail_criteria[1].to_f
         test_done_result = FrameworkConstants::Result[:fail]
@@ -348,4 +312,10 @@ def get_video_quality_data
   }
 end
 
-
+def set_codec_param(param_name, param_value, op_class = 'videnc')
+  if param_value.kind_of?(String)
+    @equipment['dut1'].set_param({"Class" => op_class, "Param" => param_name, "Value" => @test_params.params_chan.instance_variable_get('@'+param_value)[0]}) if @test_params.params_chan.instance_variable_defined?('@'+param_value)
+  else
+    @equipment['dut1'].set_param({"Class" => op_class, "Param" => param_name, "Value" => param_value.to_s})
+  end
+end

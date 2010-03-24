@@ -97,8 +97,8 @@ class DmaiVideoEncodeTestPlan < TestPlan
 		   'bestFinal' 	=> true,
 		   'reg'       	=> true,
 		   'auto'			=> true,
-		   'script'    =>  'DVSDK/A-DMAI/dmai_app.rb',
-		   'configID' 	=> '../Config/dmai_examples.ini',
+		   'script'    =>  'vatf-scripts/DVSDK/A-DMAI/dmai_app.rb',
+		   'configID' 	=> 'Config/dmai_examples.ini',
 		   
        'paramsChan' 	=> {
 			

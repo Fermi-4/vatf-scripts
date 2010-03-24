@@ -26,6 +26,7 @@ class DmaiSpeechEncodeTestPlan < TestPlan
     'speech_companding' => ['ulaw', 'alaw'],
     'start_frame' => [0],
     'test_type' => ['objective','subjective'],
+    'input_type' => ['file', 'mini35mm'],
     'speech_quality_metric' => [3],
     }
 	  
@@ -61,8 +62,8 @@ class DmaiSpeechEncodeTestPlan < TestPlan
   # The output parameters are the parameters that drive the test application and they will be stored in the test matrix.
   def get_outputs(params)
      {
-	     'testcaseID'     => "dmai_speech_dec.#{@current_id}",
-	     'description'    => "#{params['audio_codec']} Decode Test, audio_sampling_rate = "+get_audio_sampling_rate(params)+', audio bit rate = '+get_audio_bit_rate(params), 
+	     'testcaseID'     => "dmai_speech_en.#{@current_id}",
+	     'description'    => "#{params['audio_codec']} Encode Test, audio_sampling_rate = "+get_audio_sampling_rate(params)+', audio bit rate = '+get_audio_bit_rate(params), 
 	     'ext' => false,
 		 'iter' => '1',
 		 'bft' => false,
@@ -70,7 +71,7 @@ class DmaiSpeechEncodeTestPlan < TestPlan
 		 'ext' => false,
 		 'bestFinal' => false,
 		 'script'    =>  'DVSDK/A-DMAI/dmai_app.rb',
-		 'configID' 	=> '../Config/dmai_examples.ini',
+		 'configID' 	=> 'Config/dmai_examples.ini',
 		 'reg'                       => true,
 		 'auto'                     => true,
 		 'paramsChan'     => {
@@ -83,6 +84,7 @@ class DmaiSpeechEncodeTestPlan < TestPlan
         'speech_companding' => params['speech_companding'],
         'start_frame' => params['start_frame'],
         'speech_quality_metric' => params['speech_quality_metric'],
+        'input_type'   => params['input_type']
 				},
 		 'paramsEquip' => {
 			},

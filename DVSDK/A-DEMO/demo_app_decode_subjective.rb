@@ -5,6 +5,7 @@ include DvsdkTestScript
 def setup
     @equipment['dut1'].set_api('demo')
     #boot_dut() # method implemented in DvsdkTestScript module
+    @equipment['dut1'].connect({'type'=>'telnet'})
 end
 
 def run
@@ -12,7 +13,7 @@ def run
 	test_comment = ''
 	#======================== Equipment Connections ====================================================
 	@connection_handler.make_video_connection({@equipment["dut1"] => {@test_params.params_chan.display_out[0] => 0}},{@equipment['tv1'] => {@test_params.params_chan.display_out[0] => 0}})
-  @connection_handler.make_audio_connection({@equipment["dut1"] => {'mini35mm' => 0},{@equipment['tv1'] => {'mini35mm' => 0}})
+  @connection_handler.make_audio_connection({@equipment["dut1"] => {'mini35mm' => 0}},{@equipment['tv1'] => {'mini35mm' => 0}})
   #======================== Start Decode Demo ====================================================
   if !@test_params.params_chan.instance_variable_defined?('@video_source') or @test_params.params_chan.video_source[0] == nil
     set_result(FrameworkConstants::Result[:np], "Video File not available in repository")
@@ -71,14 +72,6 @@ def prepare_vid_files(index, res_form = nil)
   {'video_file'	 => local_ref_file}
 end
 
-# def get_ref_file(start_directory, file_name)
-	# ref_file = Find.file(start_directory) { |f| File.basename(f) =~ /#{file_name}/}
-	# raise "File #{file_name} not found" if ref_file == "" || !ref_file
-	# local_ref_file = SiteInfo::LOCAL_FILES_FOLDER+"#{File.basename(ref_file)}"
-	# FileUtils.cp(ref_file, local_ref_file)
-	# local_ref_file
-#end
-
 def get_ref_file(start_directory, file_name)
   if file_name.strip.downcase == "from_encoder"
     start_directory = SiteInfo::LOCAL_FILES_FOLDER
@@ -101,6 +94,8 @@ def get_decode_params()
         'enable_frameskip'	=> @test_params.params_chan.enable_frameskip[0],
         'time'							=> @test_params.params_chan.time[0],
         'video_signal_format'	=> @test_params.params_chan.video_signal_format[0],
+        'location'          => @test_params.params_control.respond_to?(:location) ? @test_params.params_control.location[0] : nil,
+        'codec'            => @test_params.params_chan.video_type[0],
     }
     h
 end

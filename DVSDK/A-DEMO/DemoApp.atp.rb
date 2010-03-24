@@ -167,8 +167,8 @@ class DemoAppTestPlan < TestPlan
 		 'bestFinal' 	=> true,
 		 'reg'       	=> true,
 		 'auto'			=> true,
-		 'script'    =>  'DVSDK/A-DEMO/demo_app.rb',
-		 'configID' 	=> '../Config/demo_app.ini',
+		 'script'    =>  'vatf-scripts/DVSDK/A-DEMO/demo_app.rb',
+		 'configID' 	=> 'Config/demo_app.ini',
 		 'paramsChan' 	=> {
 			'command_name'			=> params['command_name'],
             'speech_file' 			=> get_speech_filename(params),
@@ -271,7 +271,7 @@ class DemoAppTestPlan < TestPlan
       else
         file_bit_rate = ((video_br.to_f/1000).to_s+"kbps").gsub(/\.0kbps$/,"kbps")
       end
-      video_source = ''
+      video_source = ''        
       video_source = @video_source_hash[params['video_type']]["\\w*"+video_resolution+"\\w*"+@prof_regex[params['video_type']]+"\\w*"+file_bit_rate2+"\\w*_\\d{3}frames"].to_s if file_bit_rate2
       video_source += ';' if video_source != ''
       video_source += @video_source_hash[params['video_type']]["\\w*"+video_resolution+"\\w*"+@prof_regex[params['video_type']]+"\\w*"+file_bit_rate+"\\w*_\\d{3}frames"].to_s

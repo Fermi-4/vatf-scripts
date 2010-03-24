@@ -119,7 +119,7 @@ class DmaiVideoDecodeTestPlan < TestPlan
 		   'reg'       	=> true,
 		   'auto'			=> true,
 		   'script'    =>  'DVSDK/A-DMAI/dmai_app.rb',
-		   'configID' 	=> '../Config/dmai_examples.ini',
+		   'configID' 	=> '/Config/dmai_examples.ini',
 		   
        'paramsChan' 	=> {
 			

@@ -141,8 +141,8 @@ class DemoAppEncodeSubjectiveTestPlan < TestPlan
 		 'bestFinal' 	=> true,
 		 'reg'       	=> true,
 		 'auto'			=> true,
-		 'script'    =>  'DVSDK/A-DEMO/demo_app_encode_subjective.rb',
-		 'configID' 	=> '../Config/demo_app_subjective.ini',
+		 'script'    =>  'vatf-scripts/DVSDK/A-DEMO/demo_app_encode_subjective.rb',
+		 'configID' 	=> 'Config/demo_app_subjective.ini',
 		 'paramsChan' 	=> {
 			'command_name'			=> params['command_name'],
 			'media_source'			=> get_source(params),
