@@ -41,9 +41,9 @@ module WinceTestScript
     @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
     if boot_required?(@old_keys, @new_keys)   # call bootscript if required
       puts " WinceTestScript::setup_boot: kernel image specified. Proceeding to boot DUT"
-      if @equipment['dut1'].respond_to?(:serial_port)
+      if @equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil
         @equipment['dut1'].connect({'type'=>'serial'})
-      elsif @equipment['dut1'].respond_to?(:serial_server_port)
+      elsif @equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil
         @equipment['dut1'].connect({'type'=>'serial'})
       else
         raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
@@ -52,11 +52,11 @@ module WinceTestScript
       puts "Waiting 10 seconds for kernel to boot...."
       sleep 10
     end
-    if @equipment['dut1'].respond_to?(:telnet_port)  and !@equipment['dut1'].target.telnet
+    if @equipment['dut1'].respond_to?(:telnet_port) && @equipment['dut1'].telnet_port != nil  && !@equipment['dut1'].target.telnet
       @equipment['dut1'].connect({'type'=>'telnet'})
-    elsif (@equipment['dut1'].respond_to?(:serial_port) or @equipment['dut1'].respond_to?(:serial_server_port)) and !@equipment['dut1'].target.serial
+    elsif ((@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) || (@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)) && !@equipment['dut1'].target.serial
       @equipment['dut1'].connect({'type'=>'serial'})
-    elsif !@equipment['dut1'].target.telnet and !@equipment['dut1'].target.serial
+    elsif !@equipment['dut1'].target.telnet && !@equipment['dut1'].target.serial
       raise "You need Telnet or Serial port connectivity to the board. Please check your bench file" 
     end
   end
