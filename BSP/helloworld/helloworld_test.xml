@@ -18,8 +18,8 @@
       <approver><![CDATA[
 ]]></approver>
       <auto>1</auto>
-      <platform>omapl138</platform>
-      <target>bsp_omapl138_v04</target>
+      <platform>am3517</platform>
+      <target>bsp_AM3517_v02</target>
       <description><![CDATA[Sample BSP Test]]></description>
    </testcase>
 </test_session>

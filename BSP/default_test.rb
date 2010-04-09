@@ -8,6 +8,7 @@ module WinceTestScript
     puts "\n WinceTestScript::setup"
     delete_temp_files()
     @equipment['dut1'].set_api('bsp')
+    @wince_dst_dir = @test_params.params_chan.instance_variable_defined?(:@test_dir) ? @test_params.params_chan.test_dir[0] : '\Windows'
     setup_connect_equipment()
     setup_boot()
   end
@@ -54,9 +55,11 @@ module WinceTestScript
     end
     if @equipment['dut1'].respond_to?(:telnet_port) && @equipment['dut1'].telnet_port != nil  && !@equipment['dut1'].target.telnet
       @equipment['dut1'].connect({'type'=>'telnet'})
-    elsif ((@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) || (@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)) && !@equipment['dut1'].target.serial
+    end
+    if ((@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) || (@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)) && !@equipment['dut1'].target.serial
       @equipment['dut1'].connect({'type'=>'serial'})
-    elsif !@equipment['dut1'].target.telnet && !@equipment['dut1'].target.serial
+    end
+    if !@equipment['dut1'].target.telnet && !@equipment['dut1'].target.serial
       raise "You need Telnet or Serial port connectivity to the board. Please check your bench file" 
     end
   end
@@ -80,7 +83,7 @@ module WinceTestScript
   def run_transfer_script()
     puts "\n WinceTestScript::run_transfer_script"
     put_file({'filename'=>'test.bat'})
-    if @test_params.params_chan.instance_variable_defined?(:@test_libs) #and false  ###### TODO TODO MUST REMOVE 'and false', Added to work around problem in Primus 
+    if @test_params.params_chan.instance_variable_defined?(:@test_libs) #and false  ###### TODO TODO MUST REMOVE 'and false', Added to work around filesystem storage limit error
       src_dir = @test_params.test_libs_root
       puts "libs source dir set to #{src_dir}"
       @test_params.params_chan.test_libs.each {|lib_file|
@@ -93,8 +96,7 @@ module WinceTestScript
   # Calls shell script (test.bat)
   def run_call_script
     puts "\n WinceTestScript::run_call_script"
-    dst_dir = @test_params.params_chan.instance_variable_defined?(:@test_dir) ? @test_params.params_chan.test_dir[0] : '\Temp'
-    @equipment['dut1'].send_cmd("cd #{dst_dir}",@equipment['dut1'].prompt)
+    @equipment['dut1'].send_cmd("cd #{@wince_dst_dir}",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("call test.bat 2> stderr.log > stdout.log",@equipment['dut1'].prompt)
   end
   
@@ -102,7 +104,7 @@ module WinceTestScript
   def run_get_script_output
     puts "\n WinceTestScript::run_get_script_output"
     wait_time = (@test_params.params_control.instance_variable_defined?(:@wait_time) ? @test_params.params_control.wait_time[0] : '10').to_i
-    keep_checking = true
+    keep_checking = @equipment['dut1'].target.serial ? true : false     # Do not try to get data from serial port of there is no serial port connection
     while keep_checking
       counter=0
       while check_serial_port()
@@ -138,8 +140,7 @@ module WinceTestScript
   def run_determine_test_outcome
     puts "\n WinceTestScript::run_determine_test_outcome"
     put_file({'filename'=>'check_default_result.bat', 'src_dir'=>File.dirname(__FILE__)})
-    dst_dir = @test_params.params_chan.instance_variable_defined?(:@test_dir) ? @test_params.params_chan.test_dir[0] : '\Temp'
-    @equipment['dut1'].send_cmd("cd #{dst_dir}",@equipment['dut1'].prompt)
+    @equipment['dut1'].send_cmd("cd #{@wince_dst_dir}",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("call check_default_result.bat 2> check_result.log > check_result.log",@equipment['dut1'].prompt)
     get_file({'filename'=>'check_result.log'})
     check_result_output = File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER,'check_result.log'),'r').read
@@ -154,14 +155,25 @@ module WinceTestScript
   def run_save_results
     puts "\n WinceTestScript::run_save_results"
     result,comment = run_determine_test_outcome
-    set_result(result,comment)
+    if File.exists?(File.join(SiteInfo::WINCE_TEMP_FOLDER,'perf.log'))
+      perfdata = []
+      data = File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER,'perf.log'),'r').readlines
+      data.each {|line|
+        if /(\S+)\s+([\.\d]+)\s+(\S+)/.match(line)
+          name,value,units = /(\S+)\s+([\.\d]+)\s+(\S+)/.match(line).captures 
+          perfdata << {'name' => name, 'value' => value, 'units' => units}
+        end
+      }  
+      set_result(result,comment,perfdata)
+    else
+      set_result(result,comment)
+    end
   end
   
   # Delete binary files (if any) transfered to the DUT
   def clean_delete_binary_files
     puts "\n WinceTestScript::clean_delete_binary_files"
-    dst_dir = @test_params.params_chan.instance_variable_defined?(:@test_dir) ? @test_params.params_chan.test_dir[0] : '\Temp'
-    @equipment['dut1'].send_cmd("cd #{dst_dir}",@equipment['dut1'].prompt)
+    @equipment['dut1'].send_cmd("cd #{@wince_dst_dir}",@equipment['dut1'].prompt)
     if @test_params.params_chan.instance_variable_defined?(:@test_libs)
       @test_params.params_chan.test_libs.each {|lib_file|
         @equipment['dut1'].send_cmd("del #{lib_file}",@equipment['dut1'].prompt)  
@@ -187,9 +199,8 @@ module WinceTestScript
   
   # transfer a file from PC to EVM. params keys are: filename (mandatory). dst_ip, dst_dir, src_dir, login and password (Optional)
   def put_file(params)
-    dst_dir = @test_params.params_chan.instance_variable_defined?(:@test_dir) ? @test_params.params_chan.test_dir[0] : '\Temp'
     p = {'dst_ip'   => @equipment['dut1'].telnet_ip,
-         'dst_dir'  => dst_dir, 
+         'dst_dir'  => @wince_dst_dir, 
          'src_dir'  => SiteInfo::WINCE_TEMP_FOLDER, 
          'login'    => 'anonymous',
          'password' => 'dut@ti.com',
@@ -207,9 +218,8 @@ module WinceTestScript
   
   # Get a file from EVM to PC. params keys are: filename (mandatory). src_ip, src_dir, dst_dir, login and password (Optional)
   def get_file(params)
-    src_dir = @test_params.params_chan.instance_variable_defined?(:@test_dir) ? @test_params.params_chan.test_dir[0] : '\Temp'
     p = {'src_ip'   => @equipment['dut1'].telnet_ip,
-         'src_dir'  => src_dir, 
+         'src_dir'  => @wince_dst_dir, 
          'dst_dir'  => SiteInfo::WINCE_TEMP_FOLDER, 
          'login'    => 'anonymous',
          'password' => 'dut@ti.com',
@@ -227,6 +237,7 @@ module WinceTestScript
   
   # Return true if there is no new data in serial port
   def check_serial_port
+    return true if !@equipment['dut1'].target.serial   # Return right away if there is no serial port connection
     temp = (@serial_port_data.to_s).dup
     @serial_port_data = @equipment['dut1'].update_response('serial').to_s.dup
     @serial_port_data == temp
@@ -236,7 +247,8 @@ module WinceTestScript
   
   private
   def get_keys
-    keys = @test_params.platform.to_s + @test_params.kernel.to_s
+    kernel = @test_params.instance_variable_defined?(:@kernel) ? @test_params.kernel.to_s : ''
+    keys = @test_params.platform.to_s + kernel
     keys
   end
   
