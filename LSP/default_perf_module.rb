@@ -43,7 +43,7 @@ module LspReadWritePerfScript
             # make sure mount ok
             @equipment['dut1'].send_cmd("mount", @equipment['dut1'].prompt, 10)
             if !m_regex.match(@equipment['dut1'].response) then
-              #raise "device mount failed!!"     # Disabling for now due to LspTargetController bug
+              raise "device mount failed!!"     # Disabling for now due to LspTargetController bug
             end
           end
         

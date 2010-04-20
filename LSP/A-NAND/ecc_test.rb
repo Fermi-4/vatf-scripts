@@ -38,7 +38,7 @@ def run
   @equipment['dut1'].send_cmd("flash_eraseall #{dev_node}", @equipment['dut1'].prompt, 60)
 
   @equipment['dut1'].send_cmd("nandwrite -n -o #{dev_node} #{bin_file_w_errbits}", @equipment['dut1'].prompt, 60)
-  if /error|no\s+such/.match(@equipment['dut1'].response)
+  if /error|no\s+such/i.match(@equipment['dut1'].response)
     set_result(FrameworkConstants::Result[:fail], "nandwrite did not success.")
     return
   end
