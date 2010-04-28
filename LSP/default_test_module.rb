@@ -73,7 +73,7 @@ module LspTestScript
         else
           raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
         end
-        #@equipment['dut1'].boot(boot_params) 
+        @equipment['dut1'].boot(boot_params) 
       end
       connect_to_equipment('dut1')
       
