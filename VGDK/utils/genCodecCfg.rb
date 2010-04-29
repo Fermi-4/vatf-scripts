@@ -1,11 +1,9 @@
 
-codec = ARGV[0]
-resolution = ARGV[1]
-test_case_id = ARGV[2]
-clip = ARGV[3]
-multislice = ARGV[4].to_i
-INPUT_DIR = "\\\\gtsnowball\\System_Test\\Automation\\gtsystst\\video_files\\VGDK_logs\\input"
+
+INPUT_DIR = SiteInfo::VGDK_INPUT_CLIPS
 WIRESHARK_DIR = ("C:/Program Files/Wireshark")
+module GenCodecCfg
+def genCodecCfg(codec,resolution,test_case_id,clip,multislice)
 begin
 if (!/yuv/.match(codec)) 
   ip_codec_dump_cfg = File.new("#{INPUT_DIR}/config/pktHdrs/TC#{test_case_id}/codec_dump_#{codec}_#{resolution}.cfg", "w")
@@ -68,4 +66,6 @@ rescue EOFError
     $stderr.print "File.open failed" + $!
     raise
 
+end
+end
 end

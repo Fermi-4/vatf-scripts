@@ -6,6 +6,7 @@ include ETHInfo
 module XDPVarSetSrcEVM
 def send_xdp_var_set_srm_evm(dut)
     platform_info = Eth_info.new()
+	platform_info.init_eth_info(dut)
     platform_mac = platform_info.get_platform_mac
     platform_ip = platform_info.get_platform_ip
     dut.send_cmd("cc xdp_var set dspMacVoiceSrc0_0 #{platform_mac["CORE_0"]}",/OK/,2)

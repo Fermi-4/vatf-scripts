@@ -3,15 +3,21 @@ require 'FileUtils'
 require File.dirname(__FILE__)+'/../common/codec_params.rb'
 require File.dirname(__FILE__)+'/../utils/eth_info.rb'
 require File.dirname(__FILE__)+'/../boot_scripts/boot.rb'
+require File.dirname(__FILE__)+'/../utils/genPktHdrs'
+require File.dirname(__FILE__)+'/../utils/genSDP'
+require File.dirname(__FILE__)+'/../utils/genCodecCfg'
+include GenCodecCfg
+include GenSDP
+include GenPktHdrs
 include BootScripts
 include CodecParams
 include ETHInfo
-INPUT_DIR = "\\\\gtsnowball\\System_Test\\Automation\\gtsystst\\video_files\\VGDK_logs\\input"
-OUTPUT_DIR = "\\\\10.218.100.242\\video_files\\VGDK_logs\\output"
+INPUT_DIR = SiteInfo::VGDK_INPUT_CLIPS
+OUTPUT_DIR = SiteInfo::VGDK_OUTPUT_CLIPS
 MPLAYER_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..","utils","MPlayer for Windows")
 VIDEO_TOOLS_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..","utils")
 WIRESHARK_DIR = ("C:/Program Files/Wireshark")
-SCRIPT_EXTRACTOR = "\\\\gtsnowball\\System_Test\\Automation\\gtsystst\\video_files"
+SCRIPT_EXTRACTOR = SiteInfo::VGDK_INPUT_CLIPS
 
 
 class ChannelInfo
@@ -72,7 +78,7 @@ def setup
     dut = @equipment['dut1']
     dut.set_api("vgdk")
     server = defined?(@equipment['server1']) ? @equipment['server1'] : nil
-    dut.connect({'type'=>'telnet'})
+    dut.connect({'type'=>'serial'})
     setup_boot(dut,server)
     dut.send_cmd("wait 10000", /OK/, 2)
     dut.send_cmd("cc ver", /OK/, 2)
@@ -363,7 +369,7 @@ def run
             elsif(core_info_hash[key][i].get_dir == "enc")
               dut.send_cmd("dimt video_mode #{tcid} alloc #{encoder_template}", /ACK DONE/, 2)
             end
-            if(dut.is_timeout)
+            if(dut.timeout?)
               cleanup_and_exit()
               return
             end  
@@ -396,7 +402,7 @@ def run
         #dut.send_cmd("wait 10", /OK/, 2)
         chan += 1
         end
-    if(dut.is_timeout)
+    if(dut.timeout?)
       cleanup_and_exit()
       return
     end  
@@ -410,7 +416,7 @@ def run
         tcid += 1
         }
     }
-    if(dut.is_timeout)
+    if(dut.timeout?)
       cleanup_and_exit()
       return
     end  
@@ -477,7 +483,7 @@ def run
                               end
                             end
                             if(!/yuv/.match(codec))
-                            system("ruby #{VIDEO_TOOLS_DIR}/genCodecCfg.rb #{codec} #{res.resolution} #{test_case_id} #{clip_hash[clip].to_s} #{multislice}") 
+                            genCodecCfg(codec,res.resolution,test_case_id,clip_hash[clip].to_s,multislice) 
                             system("#{VIDEO_TOOLS_DIR}\\desktop_vppu.exe #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.cfg > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt")         
                             Dir.chdir("#{WIRESHARK_DIR}")
                             if(multislice == 1)
@@ -487,7 +493,7 @@ def run
                             end
                             pkt_to_pkt_delay = get_pkt_to_pkt_delay("#{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt","#{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\capinfos_#{codec}_#{res.resolution}.txt",wire_fps)
                             end
-                            system("ruby #{VIDEO_TOOLS_DIR}/genPktHdrs.rb #{codec} #{res.resolution} #{key} #{i} #{pc_udp_port} #{append} #{test_case_id} #{clip_hash[clip].to_s} #{multislice} #{pkt_to_pkt_delay}") 
+                            genPktHdrs(codec,res.resolution,key,i,pc_udp_port,append,test_case_id,clip_hash[clip].to_s,multislice,pkt_to_pkt_delay) 
                             if(video_clarity == 1)
                               begin
                                 if (/yuv/.match(codec) && /yuv_#{res.resolution}/.match(clip))
@@ -536,7 +542,7 @@ def run
                 if(core_info_hash[key][i].get_dir == "enc" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)
                     if(core_info_hash[key][i].get_codec != "yuv")
                         debug_puts "Generating SDP for #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port}"
-                        system("ruby #{VIDEO_TOOLS_DIR}/genSDP.rb #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port} #{append} #{test_case_id} #{geom} #{multislice} #{iteration_id} #{c_iter}")
+                        genSDP(core_info_hash[key][i].get_codec,core_info_hash[key][i].get_resolution,key,pc_udp_port,append,test_case_id,geom,multislice,iteration_id,c_iter)
                     end
                     geom += 180
                     append = 1
@@ -723,7 +729,7 @@ def run
     elsif(line.match(/[\d+\s+]{3}\d+\s\/\s+\d+\s+\w[Idle|Video]/i))
         tcid = line.match(/\d+/)[0]
         channel_reset(dut,tcid)
-        if(dut.is_timeout)
+        if(dut.timeout?)
         cleanup_and_exit()
         return
         end  
@@ -741,6 +747,7 @@ def run
         test_comment = "Test completed: Output clips at #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}"
     end
     set_result(test_done_result,test_comment)
+	#dut.disconnect
 end
 
 def channel_reset(dut,tcid)

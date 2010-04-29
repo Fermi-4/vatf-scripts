@@ -2,16 +2,24 @@
 require 'FileUtils'
 require File.dirname(__FILE__)+'/../common/codec_params.rb'
 require File.dirname(__FILE__)+'/../utils/eth_info.rb'
+require File.dirname(__FILE__)+'/../utils/genPktHdrs'
+require File.dirname(__FILE__)+'/../utils/genPktHdrsOverlay'
+require File.dirname(__FILE__)+'/../utils/genSDP'
+require File.dirname(__FILE__)+'/../utils/genCodecCfg'
+include GenCodecCfg
+include GenSDP
+include GenPktHdrsOverlay
+include GenPktHdrs
 include CodecParams
 include ETHInfo
 require File.dirname(__FILE__)+'/../boot_scripts/boot.rb'
 include BootScripts
 VIDEO_TOOLS_DIR = File.join(File.expand_path(File.dirname(__FILE__)), "..","utils")
-INPUT_DIR = "\\\\gtsnowball\\System_Test\\Automation\\gtsystst\\video_files\\VGDK_logs\\input"
-OUTPUT_DIR = "\\\\10.218.100.242\\video_files\\VGDK_logs\\output"
-MPLAYER_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..", "..","..","Utils","Video_tools","MPlayer for Windows")
+INPUT_DIR = SiteInfo::VGDK_INPUT_CLIPS
+OUTPUT_DIR = SiteInfo::VGDK_OUTPUT_CLIPS
+MPLAYER_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..", "utils","MPlayer for Windows")
 WIRESHARK_DIR = ("C:/Program Files/Wireshark")
-SCRIPT_EXTRACTOR = "\\\\gtsnowball\\System_Test\\Automation\\gtsystst\\video_files"
+SCRIPT_EXTRACTOR = SiteInfo::VGDK_INPUT_CLIPS
 
 class ChannelInfo
     def initialize(codec,dir,resolution,out_codec,in_codec,in_resolution)
@@ -490,7 +498,7 @@ def run
                                 if ((multislice == 1 && !File.size("#{INPUT_DIR}\\in\\#{res.resolution}\\#{codec}\\multislice\\#{clip_hash[clip].to_s}.cap")) || (multislice == 0 && !File.size("#{INPUT_DIR}\\in\\#{res.resolution}\\#{codec}\\#{clip_hash[clip].to_s}.cap")) )    
                                     raise "Error: ### Clip not found"
                                 end
-                                system("ruby #{VIDEO_TOOLS_DIR}/genCodecCfg.rb #{codec} #{res.resolution} #{test_case_id} #{clip_hash[clip].to_s} #{multislice}") 
+                                genCodecCfg(codec,res.resolution,test_case_id,clip_hash[clip].to_s,multislice) 
                                 system("#{VIDEO_TOOLS_DIR}\\desktop_vppu.exe #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.cfg > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt")         
                                 Dir.chdir("#{WIRESHARK_DIR}")
                                 if(multislice == 1)
@@ -499,7 +507,7 @@ def run
                                   system("capinfos.exe #{INPUT_DIR}\\in\\#{res.resolution}\\#{codec}\\#{clip_hash[clip].to_s}_rtpmarker.cap > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\capinfos_#{codec}_#{res.resolution}.txt")
                                 end
                                 pkt_to_pkt_delay = get_pkt_to_pkt_delay("#{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt","#{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\capinfos_#{codec}_#{res.resolution}.txt",wire_fps)
-                                system("ruby #{VIDEO_TOOLS_DIR}/genPktHdrs.rb #{codec} #{res.resolution} #{key} #{i} #{pc_udp_port} #{append} #{test_case_id} #{clip_hash[clip].to_s} #{multislice} #{pkt_to_pkt_delay}") 
+                                genPktHdrs(codec,res.resolution,key,i,pc_udp_port,append,test_case_id,clip_hash[clip].to_s,multislice,pkt_to_pkt_delay) 
                                 append = 1  
                             end
                             }
@@ -514,7 +522,7 @@ def run
                                   if (!File.size("#{INPUT_DIR}\\in\\overlay\\#{codec}\\#{clip_hash[clip].to_s}.cap"))    
                                     raise "Error: ### Overlay clip not found"
                                   end
-                                    system("ruby #{VIDEO_TOOLS_DIR}/genPktHdrsOverlay.rb #{codec} #{key} #{i} #{pc_udp_port} #{append} #{test_case_id} #{clip_hash[clip].to_s}") 
+                                    genPktHdrsOverlay(codec,key,i,pc_udp_port,append,test_case_id,clip_hash[clip].to_s,multislice) 
                                     append = 1
                                  end
                         }   
@@ -540,7 +548,7 @@ def run
             core_info_hash[key].getLength().times { |i|  
                 if(core_info_hash[key][i].get_dir == "enc" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)
                     debug_puts "Generating SDP for #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port}"
-                    system("ruby #{VIDEO_TOOLS_DIR}/genSDP.rb #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port} #{append} #{test_case_id} #{geom} #{multislice} #{iteration_id} #{c_iter}")
+                    genSDP(core_info_hash[key][i].get_codec,core_info_hash[key][i].get_resolution,key,pc_udp_port,append,test_case_id,geom,multislice,iteration_id,c_iter)
                     Dir.chdir("#{WIRESHARK_DIR}")
                     system("start tshark -f \"dst #{@platform_info.get_pc_ip} and udp dst port #{pc_udp_port}\" -i #{@platform_info.get_eth_dev} -w #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/#{pc_udp_port}_out_clipIter#{c_iter}.cap")
                     geom += 180

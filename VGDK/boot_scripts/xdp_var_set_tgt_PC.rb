@@ -12,7 +12,7 @@ module XDPVarSetTgtPC
 
 def send_xdp_var_set_tgt_pc(dut)
 # Destination MAC of PC
-platform_info = Eth_info.new()
+platform_info = Eth_info.new(dut)
 pc_mac = platform_info.get_pc_mac
 pc_ip = platform_info.get_pc_ip
 dut.send_cmd("cc xdp_var set dspMacVoiceTgt0_0 #{pc_mac}",/OK/,2) 
