@@ -21,16 +21,20 @@ THK_UDP =
 
 }
 module GenPktHdrsOverlay
-def genPktHdrsOverlay(codec,core,channel_start,pc_udp,append,test_case_id,clip,multislice)
-thk_ip = {}
-thk_mac = {}
-platform_info = Eth_info.new()
-platform_info.get_platform_ip.each_pair { |key,value|
-thk_ip[key] = value.gsub(".",",")}
-platform_info.get_platform_mac.each_pair { |key,value| 
-thk_mac[key] = value.gsub(":",",")}
-pc_mac = platform_info.get_pc_mac.gsub(":",",")
-pc_ip = platform_info.get_pc_ip.gsub(".",",")
+def genPktHdrsOverlay(codec,core,channel_start,pc_udp,append,test_case_id,clip,multislice,platform_info)
+	thk_ip = {}
+	thk_mac = {}
+	pc_ip_addr = nil
+	pc_mac_addr = nil
+	# platform_info = Eth_info.new()
+	platform_info.get_platform_ip.each_pair { |key,value|
+	thk_ip[key] = value.gsub(".",",")}
+	platform_info.get_platform_mac.each_pair { |key,value| 
+	thk_mac[key] = value.gsub(":",",")}
+	pc_ip_addr = platform_info.get_pc_ip
+	pc_ip_addr = pc_ip_addr.gsub(".",",")
+	pc_mac_addr = platform_info.get_pc_mac
+	pc_mac_addr = pc_mac_addr.gsub(":",",")
 
     begin
     if (append == 1) 
@@ -47,7 +51,7 @@ pc_ip = platform_info.get_pc_ip.gsub(".",",")
     if(append == 0)
       pktHeaders.puts "-1   /* enforce minDiff (millisec) between packets in a stream; -1 for default Timestamps */ "
     end
-    pktHeaders.puts "header = #{thk_mac["CORE_#{core}"]},#{thk_ip["CORE_#{core}"]},#{THK_UDP[chan]},#{pc_mac},#{pc_ip},#{pc_udp}"
+    pktHeaders.puts "header = #{thk_mac["CORE_#{core}"]},#{thk_ip["CORE_#{core}"]},#{THK_UDP[chan]},#{pc_mac_addr},#{pc_ip_addr},#{pc_udp}"
     pktHeaders.puts "\n"
     pktHeaders.close   
 
