@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test_session>
+   <testplan_id/>
+   <testcase>
+      <id><![CDATA[12345]]></id>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=LSP/TARGET/helloworld/hello_world.sh,sample_param=1
+]]></params_chan>
+      <params_control><![CDATA[sample_param=2
+]]></params_control>
+      <params_equip><![CDATA[sample_param=3
+]]></params_equip>
+      <scripts><![CDATA[LSP/TARGET/helloworld/hello_world.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",linux]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>am37x</platform>
+      <target>006</target>
+      <description><![CDATA[Sample BSP Test]]></description>
+   </testcase>
+</test_session>
