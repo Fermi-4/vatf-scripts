@@ -7,8 +7,7 @@ MPLAYER_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"MPlayer for Wi
 OUTPUT_DIR = SiteInfo::VGDK_OUTPUT_CLIPS
 
 module GenSDP
-def genSDP(codec,res,core,pc_udp,append,test_case,geom,multislice,test_iteration,clip_iter)
-platform_info = Eth_info.new()
+def genSDP(codec,res,core,pc_udp,append,test_case,geom,multislice,test_iteration,clip_iter,platform_info)
 thk_ip = platform_info.get_platform_ip
 
 geom_x = geom%1080

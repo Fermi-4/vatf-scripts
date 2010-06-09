@@ -217,11 +217,14 @@ end
 # power cycle and then login to dut
 def reboot_dut(is_soft_reboot)
   if is_soft_reboot != 0 then
-    @equipment['dut1'].send_cmd('reboot', @equipment['dut1'].login_prompt, 180)
+    #@equipment['dut1'].send_cmd('reboot', @equipment['dut1'].login_prompt, 180)
+    @equipment['dut1'].send_cmd('reboot', @equipment['dut1'].boot_prompt, 180)
   else
     @equipment['apc1'].reset(@equipment['dut1'].power_port.to_s)
-    @equipment['dut1'].send_cmd('', @equipment['dut1'].login_prompt, 180)
+    #@equipment['dut1'].send_cmd('', @equipment['dut1'].login_prompt, 180)
+    @equipment['dut1'].send_cmd('', @equipment['dut1'].boot_prompt, 180)
   end
+  @equipment['dut1'].send_cmd('boot', @equipment['dut1'].login_prompt, 180)
   raise 'Unable to boot platform' if @equipment['dut1'].timeout?
   booting_log = @equipment['dut1'].response
   @equipment['dut1'].send_cmd(@equipment['dut1'].login, @equipment['dut1'].prompt, 20) # login to the unit

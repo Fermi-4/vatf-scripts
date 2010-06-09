@@ -6,6 +6,8 @@ require File.dirname(__FILE__)+'/../boot_scripts/boot.rb'
 require File.dirname(__FILE__)+'/../utils/genPktHdrs'
 require File.dirname(__FILE__)+'/../utils/genSDP'
 require File.dirname(__FILE__)+'/../utils/genCodecCfg'
+require File.dirname(__FILE__)+'/../utils/profileMips'
+include ProfileMips
 include GenCodecCfg
 include GenSDP
 include GenPktHdrs
@@ -94,20 +96,25 @@ def setup
     dut.send_cmd("dimt set template 11 chan encapcfg rtp rxssrc_ctrl drop",/OK/,2)
     dut.send_cmd("dimt set template 11 chan encapcfg rtp txfo 0x00",/OK/,2)
     dut.send_cmd("wait 10", /OK/, 2)
-    @platform_info = Eth_info.new()
+
 
 end
 
 def run
     @show_debug_messages = false
+    @perfData = nil
     subjective = @test_params.params_chan.issubjectivereqd[0].to_i
     multislice = @test_params.params_chan.multislice[0].to_i
     test_case_id = @test_params.caseID
     num_frames = @test_params.params_chan.num_frames[0].to_i
     save_clips = @test_params.params_chan.saveclips[0].to_s
     neu_rout = "false"
+    profilemips = nil
     if(@test_params.params_chan.instance_variable_defined?("@neu_rout"))    
       neu_rout = @test_params.params_chan.neu_rout[0].to_s
+    end
+    if(@test_params.params_chan.instance_variable_defined?("@profilemips"))    
+      profilemips = @test_params.params_chan.profilemips[0].split(":")
     end
     video_clarity = 0
     if(@test_params.params_chan.instance_variable_defined?("@video_clarity"))
@@ -117,6 +124,9 @@ def run
     iteration_id = iteration.strftime("%m_%d_%Y_%H_%M_%S")
     clip_iter = @test_params.params_chan.clip_iter[0].to_i
     dut = @equipment['dut1']
+    @platform_info = Eth_info.new()
+    @platform_info.init_eth_info(dut)
+
     template = 0
     clip_hash = Hash.new
     @test_params.params_chan.instance_variables.each do |curr_var|
@@ -142,7 +152,7 @@ def run
     }
 
     test_done_result = nil
-    test_comment = nil
+    test_comment = " "
     res_class_sent = false
     codec_hash = Hash.new
     codec_template_hash = Hash.new
@@ -416,7 +426,7 @@ def run
     FileUtils.mkdir("#{OUTPUT_DIR}/TC#{test_case_id}") if !File.exists?("#{OUTPUT_DIR}/TC#{test_case_id}")
     FileUtils.mkdir("#{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}")
     FileUtils.mkdir("#{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/VideoClarityRefs") 
-    
+
     file_ext_name = nil
     codec_hash.each_pair { |codec, res_arr|
         res_arr.each {|res|
@@ -451,7 +461,7 @@ def run
                                   system("capinfos.exe #{INPUT_DIR}\\in\\#{res.resolution}\\#{codec}\\#{clip_hash[clip].to_s}_rtpmarker.cap > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\capinfos_#{codec}_#{res.resolution}.txt")
                                 end
                                 pkt_to_pkt_delay = get_pkt_to_pkt_delay("#{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt","#{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\capinfos_#{codec}_#{res.resolution}.txt",wire_fps)
-                                genPktHdrs(codec,res.resolution,key,i,pc_udp_port,append,test_case_id,clip_hash[clip].to_s,multislice,pkt_to_pkt_delay) 
+                                genPktHdrs(codec,res.resolution,key,i,pc_udp_port,append,test_case_id,clip_hash[clip].to_s,multislice,pkt_to_pkt_delay,@platform_info) 
                                 if(video_clarity == 1)
                                   begin
                                     if(multislice == 1)
@@ -480,55 +490,59 @@ def run
             append = 0
         }
     }
-
+    if(profilemips)
+      FileUtils.mkdir("#{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling")
+      system("start #{VIDEO_TOOLS_DIR}/rcvUdpPackets.exe #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo.dat 32888")
+      core_info_hash.keys.sort.each { |key| start_profiling(dut,key)}
+    end
     clip_iter.times { |c_iter|
         pc_udp_port = 32768
         append = 0
         geom = 0
-        codec_hash.each_pair { |codec, res_arr|
-        res_arr.each {|res|
-        core_info_hash.keys.sort.each { |key|
-            core_info_hash[key].getLength().times { |i|  
-                if(core_info_hash[key][i].get_dir == "enc" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)
-                    debug_puts "Generating SDP for #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port}"
-                    genSDP(core_info_hash[key][i].get_codec,core_info_hash[key][i].get_resolution,key,pc_udp_port,append,test_case_id,geom,multislice,iteration_id,c_iter)
-                    Dir.chdir("#{WIRESHARK_DIR}")
-                    system("start tshark -f \"dst #{@platform_info.get_pc_ip} and udp dst port #{pc_udp_port}\" -i #{@platform_info.get_eth_dev} -w #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/#{pc_udp_port}_out_clipIter#{c_iter}.cap")
-                    geom += 180                    
-                    append = 1
-                end
-                pc_udp_port += 2  
-            }
-        }
-        pc_udp_port = 32768
-        append = 0
-        geom = 0
-        }
-        }
-        #Dir.chdir("#{WIRESHARK_DIR}")
-        #system("start tshark -f \"dst #{@platform_info.get_pc_ip} \" -i #{@platform_info.get_eth_dev} -w #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/Iter#{iteration_id}_clipIter#{c_iter}.cap")
-        i = 0
-        pkt_to_pkt_delay = -1
-        codec_hash.each_pair { |codec, res_arr|
-            res_arr.each{|res|
-                core_info_hash.keys.sort.each { |key|
-                    core_info_hash[key].getLength().times { |i|
-                        if(core_info_hash[key][i].get_dir == "dec" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution && res.stream_sent == 0)
-                            res.stream_sent = 1  
-                            debug_puts "get_transcoded_to_codec :#{core_info_hash[key][i].get_transcoded_to_codec}"
-                            transcoded_codec = core_info_hash[key][i].get_transcoded_to_codec
-                            if(c_iter == 0)
-                                system("#{VIDEO_TOOLS_DIR}/etherealUtil.exe #{INPUT_DIR}\\config\\change_headers_#{codec}_#{res.resolution}.cfg #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\pktHeaders_#{codec}_#{res.resolution}.cfg #{INPUT_DIR}\\config\\autogenerated\\auto_generated_ConfigFile_#{codec}_#{res.resolution}_Iter#{iteration_id}.cfg #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\delays_#{codec}_#{res.resolution}.cfg")
-                            end
-                        end
-                    }
-                }
-            }
-        }
+	if(!profilemips)
+		codec_hash.each_pair { |codec, res_arr|
+		res_arr.each {|res|
+		core_info_hash.keys.sort.each { |key|
+			core_info_hash[key].getLength().times { |i|  
+				if(core_info_hash[key][i].get_dir == "enc" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)
+				debug_puts "Generating SDP for #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port}"
+				genSDP(core_info_hash[key][i].get_codec,core_info_hash[key][i].get_resolution,key,pc_udp_port,append,test_case_id,geom,multislice,iteration_id,c_iter,@platform_info)
+				Dir.chdir("#{WIRESHARK_DIR}")
+				system("start tshark -f \"dst #{@platform_info.get_pc_ip} and udp dst port #{pc_udp_port}\" -i #{@platform_info.get_eth_dev} -w #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/#{pc_udp_port}_out_clipIter#{c_iter}.cap")
+				geom += 180                    
+				append = 1
+				end
+				pc_udp_port += 2  
+			}
+		}
+		pc_udp_port = 32768
+		append = 0
+		geom = 0
+		}
+		}
+	end
+	i = 0
+	pkt_to_pkt_delay = -1
+	codec_hash.each_pair { |codec, res_arr|
+		res_arr.each{|res|
+			core_info_hash.keys.sort.each { |key|
+				core_info_hash[key].getLength().times { |i|
+					if(core_info_hash[key][i].get_dir == "dec" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution && res.stream_sent == 0)
+						res.stream_sent = 1  
+						debug_puts "get_transcoded_to_codec :#{core_info_hash[key][i].get_transcoded_to_codec}"
+						transcoded_codec = core_info_hash[key][i].get_transcoded_to_codec
+						if(c_iter == 0)
+						  system("#{VIDEO_TOOLS_DIR}/etherealUtil.exe #{INPUT_DIR}\\config\\change_headers_#{codec}_#{res.resolution}.cfg #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\pktHeaders_#{codec}_#{res.resolution}.cfg #{INPUT_DIR}\\config\\autogenerated\\auto_generated_ConfigFile_#{codec}_#{res.resolution}_Iter#{iteration_id}.cfg #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\delays_#{codec}_#{res.resolution}.cfg")
+						end
+					end
+				}
+			}
+		}
+	}
         if(c_iter == 0)
         system("ruby #{VIDEO_TOOLS_DIR}/genSendPkts.rb #{iteration_id}")
         end
-        if(subjective == 1)
+        if(subjective == 1 && !profilemips)
         codec_hash.each_pair { |codec, res_arr|
             res_arr.each{|res|
                 core_info_hash.keys.sort.each { |key|
@@ -561,106 +575,118 @@ def run
         tcid += 1
         }
     }
-    
- clip_iter.times { |c_iter|
-    codec_hash.each_pair { |codec, res_arr|
-        res_arr.each{|res|
-            core_info_hash.keys.sort.each { |key|
-                core_info_hash[key].getLength().times { |i|
-                    if(core_info_hash[key][i].get_dir == "enc" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)
-                        debug_puts "codec: #{codec} res: #{res.resolution} port:#{pc_udp_port}"
-                        #system("etherealUtil.exe #{Pathname.new("#{OUTPUT_DIR}").realpath}\\TC#{test_case_id}\\#{codec}_#{res.resolution}\\#{pc_udp_port}.cfg #{OUTPUT_DIR}\\TC#{test_case_id}\\#{codec}_#{res.resolution}\\auto_generated_ConfigFile4sendPkts_#{pc_udp_port}.cfg")
-                        case(codec)
-                        when /h264/
-                            file_ext_name = "264"
-                        when "mpeg4"
-                            file_ext_name = "m4v"
-                        when "h263p"
-                            file_ext_name = "263"
-                        end
-                        # system("start /D \"#{MPLAYER_DIR}\" mplayer sdp://#{OUTPUT_DIR}\\TC#{test_case_id}\\#{codec}_#{res.resolution}\\t_rtp_#{pc_udp_port}.sdp -fps 15 -dumpvideo -dumpfile #{OUTPUT_DIR}\\TC#{test_case_id}\\trans_#{codec}_#{res.resolution}_cap\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name}")
-                        # sleep(5)
-                        # system("sendPackets.exe #{Pathname.new("#{OUTPUT_DIR}").realpath}\\TC#{test_case_id}\\#{codec}_#{res.resolution}\\auto_generated_ConfigFile4sendPkts_#{pc_udp_port}.cfg #{ETH_DEV} 1 s")  
-                        begin
-                          system("#{VIDEO_TOOLS_DIR}\\desktop_vppu.exe #{Pathname.new("#{OUTPUT_DIR}").realpath}\\TC#{test_case_id}\\Iter#{iteration_id}\\#{codec}_#{res.resolution}\\clipIter#{c_iter}\\#{pc_udp_port}_codec_dump.cfg")         
-                          if File.size?("#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name}")
-                            if(video_clarity == 1)
-                              system("#{VIDEO_TOOLS_DIR}\\ffmpeg.exe -i #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name} -f rawvideo #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.yuv") if File.size?("#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name}")
-                            end
-                          else
-                            test_done_result = FrameworkConstants::Result[:fail]
-                            test_comment = "Test completed: No transcoding. Output clips directory #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}"
-                          end
-                          if(video_clarity == 1)
-                          test_file = "#{Pathname.new("#{OUTPUT_DIR}").realpath}/TC#{test_case_id}/Iter#{iteration_id}/trans_#{codec}_#{res.resolution}_cap/clipIter#{c_iter}/trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.yuv"
-                          local_ref_file = "#{Pathname.new("#{OUTPUT_DIR}").realpath}/TC#{test_case_id}/Iter#{iteration_id}/VideoClarityRefs/#{core_info_hash[key][i].get_transcoded_from_codec}_#{core_info_hash[key][i].get_transized_from_resolution}.yuv" 
-                          FileUtils.chmod(0755,local_ref_file)
-                          FileUtils.chmod(0755,test_file)
-                          end
-                        rescue SystemCallError
-                          test_done_result = FrameworkConstants::Result[:fail]
-                          test_comment = "File IO failed - no Video Clarity scores will be generated. Output clips directory #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}" 
-                          $stderr.print "File IO failed" + $!
-                        end
-                        if(video_clarity == 1)
-                          if (File.size?(test_file) != nil && File.size?(local_ref_file) != nil)
-                              case(res.resolution)
-                              when "qcif"
-                                format = [176,144,30]
-                              when "cif"
-                                format = [352,288,30]
-                              when "d1ntsc"
-                                format = [720,480,30]
-                              when "d1pal"
-                                format = [720,576,30]
-                              else
-                                format = [176,144,30]
-                              end
-                              video_tester_result = @equipment['video_tester'].file_to_file_test({'ref_file' => local_ref_file, 
-                                                                                                  'test_file' => test_file,
-                                                                                                  #'data_format' => @test_params.params_chan.video_input_chroma_format[0],
-                                                                                                  'format' => format,
-                                                                                                  'video_height' => format[1],
-                                                                                                  'video_width' =>format[0],
-                                                                                                  'num_frames' => num_frames,
-                                                                                                  'frame_rate' => 30,
-                                                                                                  #'metric_window' => metric_window
-                                                                                                 })
-                              if  !video_tester_result
-                                  @results_html_file.add_paragraph("")
-                                  test_done_result = FrameworkConstants::Result[:fail]
-                                  test_comment += "Objective Video Quality could not be calculated. Video_Tester returned #{video_tester_result} for #{local_ref_file}\n"   
-                              else  
-                                  video_done_result, video_done_comment = get_results(test_file)
-                                  #test_comment += video_done_comment+"\n" if video_done_comment.strip.to_s == ''
-                                  test_done_result = video_done_result if test_done_result !=	 FrameworkConstants::Result[:fail]
-                              end
-                              set_result(test_done_result, test_comment)                            
-                          end
-                        end
-                    end
-                    pc_udp_port += 2 
-                }
-            }
-            pc_udp_port = 32768
-            if(c_iter > 0 && save_clips == "false")
-              FileUtils.remove_dir("#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}") if File.directory?"#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}"
-            end 
-        }
-    }
-    }
-    debug_puts "%%%%%%%%%% sending channel close %%%%%%%%%%%%%%%%"
+	if(profilemips)
+	  system("taskkill /F /IM rcvUdpPackets.exe")
+	  begin
+	    system("ccperl #{VIDEO_TOOLS_DIR}/parsemips.pl -b64xle #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo.dat #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo ")
+          rescue
+	    raise "ccperl error"
+	  end
+	  core_info_hash.keys.sort.each { |key| stop_profiling(dut,key)}
+	  test_comment,test_done_result,@perfData = profileMips("#{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo.csv",profilemips)
+	  test_comment += "MIPS Profiling data at #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/ \n"
+        else
+	 clip_iter.times { |c_iter|
+		codec_hash.each_pair { |codec, res_arr|
+			res_arr.each{|res|
+				core_info_hash.keys.sort.each { |key|
+					core_info_hash[key].getLength().times { |i|
+						if(core_info_hash[key][i].get_dir == "enc" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)
+							debug_puts "codec: #{codec} res: #{res.resolution} port:#{pc_udp_port}"
+							#system("etherealUtil.exe #{Pathname.new("#{OUTPUT_DIR}").realpath}\\TC#{test_case_id}\\#{codec}_#{res.resolution}\\#{pc_udp_port}.cfg #{OUTPUT_DIR}\\TC#{test_case_id}\\#{codec}_#{res.resolution}\\auto_generated_ConfigFile4sendPkts_#{pc_udp_port}.cfg")
+							case(codec)
+							when /h264/
+								file_ext_name = "264"
+							when "mpeg4"
+								file_ext_name = "m4v"
+							when "h263p"
+								file_ext_name = "263"
+							end
+							# system("start /D \"#{MPLAYER_DIR}\" mplayer sdp://#{OUTPUT_DIR}\\TC#{test_case_id}\\#{codec}_#{res.resolution}\\t_rtp_#{pc_udp_port}.sdp -fps 15 -dumpvideo -dumpfile #{OUTPUT_DIR}\\TC#{test_case_id}\\trans_#{codec}_#{res.resolution}_cap\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name}")
+							# sleep(5)
+							# system("sendPackets.exe #{Pathname.new("#{OUTPUT_DIR}").realpath}\\TC#{test_case_id}\\#{codec}_#{res.resolution}\\auto_generated_ConfigFile4sendPkts_#{pc_udp_port}.cfg #{ETH_DEV} 1 s")  
+							begin
+							  system("#{VIDEO_TOOLS_DIR}\\desktop_vppu.exe #{Pathname.new("#{OUTPUT_DIR}").realpath}\\TC#{test_case_id}\\Iter#{iteration_id}\\#{codec}_#{res.resolution}\\clipIter#{c_iter}\\#{pc_udp_port}_codec_dump.cfg")         
+							  if File.size?("#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name}")
+								if(video_clarity == 1)
+								  system("#{VIDEO_TOOLS_DIR}\\ffmpeg.exe -i #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name} -f rawvideo #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.yuv") if File.size?("#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}\\trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.#{file_ext_name}")
+								end
+							  else
+								test_done_result = FrameworkConstants::Result[:fail]
+								test_comment += "Test completed: No transcoding. Output clips directory #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}"
+							  end
+							  if(video_clarity == 1)
+							  test_file = "#{Pathname.new("#{OUTPUT_DIR}").realpath}/TC#{test_case_id}/Iter#{iteration_id}/trans_#{codec}_#{res.resolution}_cap/clipIter#{c_iter}/trans_#{codec}_#{res.resolution}_#{pc_udp_port}_cap.yuv"
+							  local_ref_file = "#{Pathname.new("#{OUTPUT_DIR}").realpath}/TC#{test_case_id}/Iter#{iteration_id}/VideoClarityRefs/#{core_info_hash[key][i].get_transcoded_from_codec}_#{core_info_hash[key][i].get_transized_from_resolution}.yuv" 
+							  FileUtils.chmod(0755,local_ref_file)
+							  FileUtils.chmod(0755,test_file)
+							  end
+							rescue SystemCallError
+							  test_done_result = FrameworkConstants::Result[:fail]
+							  test_comment = "File IO failed - no Video Clarity scores will be generated. Output clips directory #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}" 
+							  $stderr.print "File IO failed" + $!
+							end
+							if(video_clarity == 1)
+							  if (File.size?(test_file) != nil && File.size?(local_ref_file) != nil)
+								  case(res.resolution)
+								  when "qcif"
+									format = [176,144,30]
+								  when "cif"
+									format = [352,288,30]
+								  when "d1ntsc"
+									format = [720,480,30]
+								  when "d1pal"
+									format = [720,576,30]
+								  else
+									format = [176,144,30]
+								  end
+								  video_tester_result = @equipment['video_tester'].file_to_file_test({'ref_file' => local_ref_file, 
+																									  'test_file' => test_file,
+																									  #'data_format' => @test_params.params_chan.video_input_chroma_format[0],
+																									  'format' => format,
+																									  'video_height' => format[1],
+																									  'video_width' =>format[0],
+																									  'num_frames' => num_frames,
+																									  'frame_rate' => 30,
+																									  #'metric_window' => metric_window
+																									 })
+								  if  !video_tester_result
+									  @results_html_file.add_paragraph("")
+									  test_done_result = FrameworkConstants::Result[:fail]
+									  test_comment += "Objective Video Quality could not be calculated. Video_Tester returned #{video_tester_result} for #{local_ref_file}\n"   
+								  else  
+									  video_done_result, video_done_comment = get_results(test_file)									  
+									  #test_comment += video_done_comment+"\n" if video_done_comment.strip.to_s == ''
+									  test_done_result = video_done_result if test_done_result !=	 FrameworkConstants::Result[:fail]
+								  end
+								  set_result(test_done_result, test_comment)                            
+							  end
+							end
+						end
+						pc_udp_port += 2 
+					}
+				}
+				pc_udp_port = 32768
+				if(c_iter > 0 && save_clips == "false")
+				  FileUtils.remove_dir("#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}") if File.directory?"#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\trans_#{codec}_#{res.resolution}_cap\\clipIter#{c_iter}"
+				end 
+			}
+		}
+		}
+	end
+    debug_puts "%%%%%%%%%% sending channel close %%%%%%%%%%%%%%%%"	
+
     dut.send_cmd("dim tcids", /OK/, 2)
     tcids_state = dut.response
     tcids_state.each { |line|
     if(line.match(/Exception/i))
         test_done_result = FrameworkConstants::Result[:fail]
         test_comment = "Test completed: Channel Exception"
-        set_result(test_done_result,test_comment)
     elsif(line.match(/[\d+\s+]{3}\d+\s\/\s+\d+\s+\w[Idle|Video]/i))
         tcid = line.match(/\d+/)[0]
         channel_reset(dut,tcid)
         close_channel(dut,tcid)
+		
     # else
         # test_done_result = FrameworkConstants::Result[:fail] 
         # test_comment = "Test completed: Unknown TCID state"
@@ -668,10 +694,13 @@ def run
     }
     if (test_done_result != FrameworkConstants::Result[:fail])
         test_done_result = FrameworkConstants::Result[:pass] 
-        test_comment = "Test completed: Output clips at #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}"
+        test_comment += "\nTest completed"
+        if(!profilemips)
+          test_comment += "Output clips at #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}"
+        end
     end
-    set_result(test_done_result,test_comment)
-    # dut.disconnect
+    set_result(test_done_result,test_comment,@perfData)
+
 end
 
 def set_xdp_vars(dut,codec,type,params)
@@ -754,6 +783,10 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
     if(@test_params.params_chan.instance_variable_defined?("@enc_framerate") && type == "enc_dyn")
       params_hash["#{codec.upcase}_ENC_tgtfrrate_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff
       params_hash["#{codec.upcase}_ENC_tgtfrrate_msb"] = (@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff0000) >> 16
+      params_hash["#{codec.upcase}_ENC_intrafrint_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000 & 0xffff
+      params_hash["#{codec.upcase}_ENC_intrafrint_msb"] = ((@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000) & 0xffff0000) >> 16
+      params_hash["#{codec.upcase}_ENC_reffrrate_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff
+      params_hash["#{codec.upcase}_ENC_reffrrate_msb"] = (@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff0000) >> 16
     end
     if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_dyn")
       params_hash["#{codec.upcase}_ENC_tgtbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
@@ -974,3 +1007,11 @@ def get_test_string(params)
   test_string
 end
 
+def start_profiling(dut,core)
+  dut.send_cmd("cc write_mem2 #{core} 0 0x428E76 0",/OK/,2)
+  
+end
+
+def stop_profiling(dut,core)
+  dut.send_cmd("cc write_mem2 #{core} 0 0x428E76 0xFFFF",/OK/,2)
+end

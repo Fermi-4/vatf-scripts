@@ -30,6 +30,9 @@ dut.send_cmd("cc xdp_var set dspIpVoiceTgt3_0 #{pc_ip}",/OK/,2)
 dut.send_cmd("cc xdp_var set dspIpVoiceTgt4_0 #{pc_ip}",/OK/,2)
 dut.send_cmd("cc xdp_var set dspIpVoiceTgt5_0 #{pc_ip}",/OK/,2)
 
+dut.send_cmd("cc xdp_var set dspMacBlkTgt0 #{pc_mac}",/OK/,2) 
+dut.send_cmd("cc xdp_var set dspIpBlkTgt0  #{pc_ip}",/OK/,2)
+dut.send_cmd("cc xdp_var set dspUdpBlkTgt0 0x8078",/OK/,2)
 
 end
 end
