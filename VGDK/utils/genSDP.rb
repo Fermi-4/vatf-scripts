@@ -3,21 +3,11 @@ require 'FileUtils'
 require 'pathname'
 require File.dirname(__FILE__)+'/eth_info.rb'
 include ETHInfo
-MPLAYER_DIR = File.join(File.expand_path(File.dirname(__FILE__)), "..", "..","..","Utils","Video_tools","MPlayer for Windows")
-OUTPUT_DIR = "\\\\10.218.100.242\\video_files\\VGDK_logs\\output"
+MPLAYER_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"MPlayer for Windows")
+OUTPUT_DIR = SiteInfo::VGDK_OUTPUT_CLIPS
 
-
-codec = ARGV[0]
-res = ARGV[1]
-core = ARGV[2].to_i
-pc_udp   = ARGV[3].to_i
-append = ARGV[4].to_i
-test_case = ARGV[5].to_i
-geom = ARGV[6].to_i
-multislice = ARGV[7].to_i
-test_iteration = ARGV[8]
-clip_iter = ARGV[9].to_i
-platform_info = Eth_info.new()
+module GenSDP
+def genSDP(codec,res,core,pc_udp,append,test_case,geom,multislice,test_iteration,clip_iter,platform_info)
 thk_ip = platform_info.get_platform_ip
 
 geom_x = geom%1080
@@ -209,7 +199,9 @@ codec_dump_cfg_file.close
 rescue EOFError
     $stderr.print "File IO failed" + $!
     raise
-end        
+end   
+end
+end     
 
 
 

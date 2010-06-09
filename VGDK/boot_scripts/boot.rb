@@ -38,7 +38,9 @@ module BootScripts
   
   def download_dsp(dut,ftp_server,dsp)
     begin
-      File.copy(dsp,"\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}")
+	  File.delete("\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\#{File.basename(dsp).split("_")[-1]}") if File.exists?("\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\#{File.basename(dsp).split("_")[-1]}") 
+      File.copy(dsp,"\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\")
+	  sleep(2)
       Dir.chdir("\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\")
       File.rename("#{File.basename(dsp)}",File.basename(dsp).split("_")[-1])
     rescue SystemCallError
@@ -48,6 +50,7 @@ module BootScripts
       dut.send_cmd("cd /APP",/.*/,2)
       dut.send_cmd("cd dspi",/.*/,2)
       dut.send_cmd("wget ftp\://gguser\:gguser@#{ftp_server.telnet_ip}/home/#{ftp_server.tftp_path.gsub('\\','/')}/#{File.basename(dsp).split("_")[-1]}",/100%/,10)
+	  sleep(2)
     if(dut.timeout?)
       raise "wget: dsp failed"
     end 
@@ -55,7 +58,10 @@ module BootScripts
   
   def download_app(dut,ftp_server,app)
     begin
-      File.copy(app,"\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}")
+	puts "Deleting \\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\#{File.basename(app).split("_")[-1]}"
+	  File.delete("\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\#{File.basename(app).split("_")[-1]}") if File.exists?("\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\#{File.basename(app).split("_")[-1]}")
+      File.copy(app,"\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\")
+	  sleep(2)
       Dir.chdir("\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\")
       File.rename("#{File.basename(app)}",File.basename(app).split("_")[-1])
     rescue SystemCallError
@@ -64,6 +70,7 @@ module BootScripts
     end
       dut.send_cmd("cd /APP",/.*/,2)
       dut.send_cmd("wget ftp\://gguser\:gguser@#{ftp_server.telnet_ip}/home/#{ftp_server.tftp_path.gsub('\\','/')}/#{File.basename(app).split("_")[-1]}",/100%/,10)
+	  sleep(2)
     if(dut.timeout?)
       raise "wget: dimtestvi failed"
     end 

@@ -6,6 +6,7 @@ include ETHInfo
 module XDPVarSetSrcEVM
 def send_xdp_var_set_srm_evm(dut)
     platform_info = Eth_info.new()
+	platform_info.init_eth_info(dut)
     platform_mac = platform_info.get_platform_mac
     platform_ip = platform_info.get_platform_ip
     dut.send_cmd("cc xdp_var set dspMacVoiceSrc0_0 #{platform_mac["CORE_0"]}",/OK/,2)
@@ -21,10 +22,12 @@ def send_xdp_var_set_srm_evm(dut)
     dut.send_cmd("cc xdp_var set dspIpVoiceSrc3_0 #{platform_ip["CORE_3"]}",/OK/,2)
     dut.send_cmd("cc xdp_var set dspIpVoiceSrc4_0 #{platform_ip["CORE_4"]}",/OK/,2)
     dut.send_cmd("cc xdp_var set dspIpVoiceSrc5_0 #{platform_ip["CORE_5"]}",/OK/,2)
+	
+	dut.send_cmd("cc xdp_var set dspMacBlkSrc0  #{platform_mac["CORE_0"]}",/OK/,2)
+	dut.send_cmd("cc xdp_var set dspIpBlkSrc0  #{platform_ip["CORE_0"]}",/OK/,2)
+	dut.send_cmd("cc xdp_var set dspUdpBlkSrc0 0x8078",/OK/,2)
 
 end
 end
 # ; Blk Memory Configuration 
-# ;cc xdp_var set dspMacBlkSrc0 0A:00:28:2E:FE:F4
-# ;cc xdp_var set dspIpBlkSrc0  10.218.109.140
-# ;cc xdp_var set dspUdpBlkSrc0 0x7802
+

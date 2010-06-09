@@ -3,15 +3,21 @@ require 'FileUtils'
 require File.dirname(__FILE__)+'/../common/codec_params.rb'
 require File.dirname(__FILE__)+'/../utils/eth_info.rb'
 require File.dirname(__FILE__)+'/../boot_scripts/boot.rb'
+require File.dirname(__FILE__)+'/../utils/genPktHdrs'
+require File.dirname(__FILE__)+'/../utils/genSDP'
+require File.dirname(__FILE__)+'/../utils/genCodecCfg'
+include GenCodecCfg
+include GenSDP
+include GenPktHdrs
 include BootScripts
 include CodecParams
 include ETHInfo
-INPUT_DIR = "\\\\gtsnowball\\System_Test\\Automation\\gtsystst\\video_files\\VGDK_logs\\input"
-OUTPUT_DIR = "\\\\10.218.100.242\\video_files\\VGDK_logs\\output"
+INPUT_DIR = SiteInfo::VGDK_INPUT_CLIPS
+OUTPUT_DIR = SiteInfo::VGDK_OUTPUT_CLIPS
 MPLAYER_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..","utils","MPlayer for Windows")
 VIDEO_TOOLS_DIR = File.join(File.expand_path(File.dirname(__FILE__)),"..","utils")
 WIRESHARK_DIR = ("C:/Program Files/Wireshark")
-SCRIPT_EXTRACTOR = "\\\\gtsnowball\\System_Test\\Automation\\gtsystst\\video_files"
+SCRIPT_EXTRACTOR = SiteInfo::VGDK_INPUT_CLIPS
 
 
 class ChannelInfo
@@ -72,7 +78,7 @@ def setup
     dut = @equipment['dut1']
     dut.set_api("vgdk")
     server = defined?(@equipment['server1']) ? @equipment['server1'] : nil
-    dut.connect({'type'=>'telnet'})
+    dut.connect({'type'=>'serial'})
     setup_boot(dut,server)
     dut.send_cmd("wait 10000", /OK/, 2)
     dut.send_cmd("cc ver", /OK/, 2)
@@ -91,13 +97,14 @@ def setup
     dut.send_cmd("dimt set template 11 chan encapcfg rtp rxssrc_ctrl drop",/OK/,2)
     dut.send_cmd("dimt set template 11 chan encapcfg rtp txfo 0x00",/OK/,2)
     dut.send_cmd("wait 10", /OK/, 2)
-    @platform_info = Eth_info.new()
+
 end
 
 
 def run
     dut = @equipment['dut1']
-    puts " >>>>> target: #{@test_params.target}"
+    @platform_info = Eth_info.new()
+    @platform_info.init_eth_info(dut)
     subjective = @test_params.params_chan.issubjectivereqd[0].to_i
     multislice = @test_params.params_chan.multislice[0].to_i
     test_case_id = @test_params.caseID
@@ -122,7 +129,7 @@ def run
       wire_fps = 30
     end
     test_done_result = nil
-    test_comment = nil
+    test_comment = ''
     res_class_sent = false
     clip_iter = @test_params.params_chan.clip_iter[0].to_i
     codec_hash = Hash.new
@@ -363,7 +370,7 @@ def run
             elsif(core_info_hash[key][i].get_dir == "enc")
               dut.send_cmd("dimt video_mode #{tcid} alloc #{encoder_template}", /ACK DONE/, 2)
             end
-            if(dut.is_timeout)
+            if(dut.timeout?)
               cleanup_and_exit()
               return
             end  
@@ -396,7 +403,7 @@ def run
         #dut.send_cmd("wait 10", /OK/, 2)
         chan += 1
         end
-    if(dut.is_timeout)
+    if(dut.timeout?)
       cleanup_and_exit()
       return
     end  
@@ -410,7 +417,7 @@ def run
         tcid += 1
         }
     }
-    if(dut.is_timeout)
+    if(dut.timeout?)
       cleanup_and_exit()
       return
     end  
@@ -477,7 +484,7 @@ def run
                               end
                             end
                             if(!/yuv/.match(codec))
-                            system("ruby #{VIDEO_TOOLS_DIR}/genCodecCfg.rb #{codec} #{res.resolution} #{test_case_id} #{clip_hash[clip].to_s} #{multislice}") 
+                            genCodecCfg(codec,res.resolution,test_case_id,clip_hash[clip].to_s,multislice) 
                             system("#{VIDEO_TOOLS_DIR}\\desktop_vppu.exe #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.cfg > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt")         
                             Dir.chdir("#{WIRESHARK_DIR}")
                             if(multislice == 1)
@@ -487,14 +494,14 @@ def run
                             end
                             pkt_to_pkt_delay = get_pkt_to_pkt_delay("#{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt","#{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\capinfos_#{codec}_#{res.resolution}.txt",wire_fps)
                             end
-                            system("ruby #{VIDEO_TOOLS_DIR}/genPktHdrs.rb #{codec} #{res.resolution} #{key} #{i} #{pc_udp_port} #{append} #{test_case_id} #{clip_hash[clip].to_s} #{multislice} #{pkt_to_pkt_delay}") 
+                            genPktHdrs(codec,res.resolution,key,i,pc_udp_port,append,test_case_id,clip_hash[clip].to_s,multislice,pkt_to_pkt_delay,@platform_info) 
                             if(video_clarity == 1)
                               begin
                                 if (/yuv/.match(codec) && /yuv_#{res.resolution}/.match(clip))
                                   if(multislice == 1)
-                                    system("copy #{INPUT_DIR}\\in\\#{res.resolution}\\multislice\\#{clip_hash[clip].to_s}.#{file_ext_name} #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\VideoClarityRefs\\#{codec}_#{res.resolution}.yuv") if !File.exists?"#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\VideoClarityRefs\\#{codec}_#{res.resolution}.yuv"
+                                    FileUtils.copy_file("#{INPUT_DIR}\\in\\#{res.resolution}\\multislice\\#{clip_hash[clip].to_s}.#{file_ext_name} #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\VideoClarityRefs\\#{codec}_#{res.resolution}.yuv") if !File.exists?"#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\VideoClarityRefs\\#{codec}_#{res.resolution}.yuv"
                                   else
-                                    system("copy #{INPUT_DIR}\\in\\#{res.resolution}\\#{clip_hash[clip].to_s}.#{file_ext_name} #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\VideoClarityRefs\\#{codec}_#{res.resolution}.yuv") if !File.exists?"#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\VideoClarityRefs\\#{codec}_#{res.resolution}.yuv"
+                                    FileUtils.copy_file("#{INPUT_DIR}\\in\\#{res.resolution}\\#{clip_hash[clip].to_s}.#{file_ext_name}","#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\VideoClarityRefs\\#{codec}_#{res.resolution}.yuv") if !File.exists?"#{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\VideoClarityRefs\\#{codec}_#{res.resolution}.yuv"
                                   end
                                 else
                                   if(multislice == 1)
@@ -536,8 +543,10 @@ def run
                 if(core_info_hash[key][i].get_dir == "enc" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)
                     if(core_info_hash[key][i].get_codec != "yuv")
                         debug_puts "Generating SDP for #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port}"
-                        system("ruby #{VIDEO_TOOLS_DIR}/genSDP.rb #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port} #{append} #{test_case_id} #{geom} #{multislice} #{iteration_id} #{c_iter}")
-                    end
+                        genSDP(core_info_hash[key][i].get_codec,core_info_hash[key][i].get_resolution,key,pc_udp_port,append,test_case_id,geom,multislice,iteration_id,c_iter,@platform_info)
+		        Dir.chdir("#{WIRESHARK_DIR}")
+                        system("start tshark -f \"dst #{@platform_info.get_pc_ip} and udp dst port #{pc_udp_port}\"  -i #{@platform_info.get_eth_dev} -w #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/Iter#{iteration_id}_clipIter#{c_iter}.cap")
+					end
                     geom += 180
                     append = 1
                 end
@@ -549,8 +558,7 @@ def run
         geom = 0
         }
         }
-        Dir.chdir("#{WIRESHARK_DIR}")
-        system("start tshark -f \"dst #{@platform_info.get_pc_ip} \" -i #{@platform_info.get_eth_dev} -w #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/Iter#{iteration_id}_clipIter#{c_iter}.cap")
+      
         i = 0
         codec_hash.each_pair { |codec, res_arr|
             res_arr.each{|res|
@@ -723,7 +731,7 @@ def run
     elsif(line.match(/[\d+\s+]{3}\d+\s\/\s+\d+\s+\w[Idle|Video]/i))
         tcid = line.match(/\d+/)[0]
         channel_reset(dut,tcid)
-        if(dut.is_timeout)
+        if(dut.timeout?)
         cleanup_and_exit()
         return
         end  
@@ -741,6 +749,7 @@ def run
         test_comment = "Test completed: Output clips at #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}"
     end
     set_result(test_done_result,test_comment)
+	#dut.disconnect
 end
 
 def channel_reset(dut,tcid)
@@ -836,6 +845,10 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
     if(@test_params.params_chan.instance_variable_defined?("@enc_framerate") && type == "enc_dyn")
       params_hash["#{codec.upcase}_ENC_tgtfrrate_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff
       params_hash["#{codec.upcase}_ENC_tgtfrrate_msb"] = (@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff0000) >> 16
+      params_hash["#{codec.upcase}_ENC_intrafrint_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000 & 0xffff
+      params_hash["#{codec.upcase}_ENC_intrafrint_msb"] = ((@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000) & 0xffff0000) >> 16
+      params_hash["#{codec.upcase}_ENC_reffrrate_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff
+      params_hash["#{codec.upcase}_ENC_reffrrate_msb"] = (@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff0000) >> 16
     end
     if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_dyn")
       params_hash["#{codec.upcase}_ENC_tgtbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
@@ -1017,7 +1030,7 @@ def setup_boot(dut,ftp_server)
   if boot_required?(@old_keys, @new_keys) # call bootscript if required
     boot(dut,ftp_server,boot_params)
   else
-    puts "Tomahawk VGDK transcoding::setup_boot: dsp and app image NOT specified. Will skip booting process"
+    puts "Tomahawk VGDK transcoding:: skip booting process"
   end
 end
 
