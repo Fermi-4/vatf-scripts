@@ -2,13 +2,15 @@
 
 require File.dirname(__FILE__)+'/lsp_constants'
 require File.dirname(__FILE__)+'/boot'
+require File.dirname(__FILE__)+'/kernel_module_names'
 
 # Default Server-Side Test script implementation for LSP releases
 module LspTestScript 
     class TargetCommand
         attr_accessor :cmd_to_send, :pass_regex, :fail_regex, :ruby_code
     end
-    include Boot   
+    include Boot
+    include KernelModuleNames
     public
     
     def LspTestScript.samba_root_path
@@ -25,9 +27,10 @@ module LspTestScript
       target_from_db   = @test_params.target.downcase
       platform_from_db = @test_params.platform.downcase
       
-      nfs 	 = @test_params.nfs     if @test_params.instance_variable_defined?(:@nfs)
+      nfs  = @test_params.nfs     if @test_params.instance_variable_defined?(:@nfs)
       nandfs = @test_params.nandfs  if @test_params.instance_variable_defined?(:@nandfs)
-      ramfs  = @test_params.ramfs   if @test_params.instance_variable_defined?(:@ramfs)
+      ramfs = @test_params.ramfs   if @test_params.instance_variable_defined?(:@ramfs)
+      kernel_modules = @test_params.kernel_modules   if @test_params.instance_variable_defined?(:@kernel_modules)
       
       samba_root_path_temp = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}"
       nfs_root_path_temp	= @equipment['dut1'].nfs_root_path
@@ -48,13 +51,21 @@ module LspTestScript
         # Copy  nfs filesystem to linux server and untar it if it doesn't exist
         #if nfs and  !File.directory?("\\\\#{@equipment['server1'].telnet_ip}\\#{samba_root_path_temp}\\usr")
         if nfs and  !File.directory?("#{samba_root_path_temp}\\usr")
-          @equipment['server1'].send_cmd("mkdir -p  #{nfs_root_path_temp}", @equipment['server1'].prompt, 10) 		
+          @equipment['server1'].send_cmd("mkdir -p -m 777 #{nfs_root_path_temp}", @equipment['server1'].prompt, 10) 		
           #BuildClient.copy(@test_params.nfs, "\\\\#{@equipment['server1'].telnet_ip}\\#{samba_root_path_temp}\\#{File.basename(@test_params.nfs)}")	
           BuildClient.copy(@test_params.nfs, "#{samba_root_path_temp}\\#{File.basename(@test_params.nfs)}")	
           @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10) 		
           @equipment['server1'].send_sudo_cmd("tar -xvzf #{build_name}", @equipment['server1'].prompt, 300)
         end
         # Need to add logic to handle nandfs and ramfs
+      end
+      if kernel_modules
+          kernel_modules.gsub!(/\\/,'/')
+          kernel_modules_name = /\/[^\/\\]+?\/([\w\.\-]+?)$/.match("#{kernel_modules.strip}").captures[0]
+          #@equipment['server1'].send_sudo_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/lib/modules", @equipment['server1'].prompt, 10)  if !File.directory?("#{samba_root_path_temp}\\lib\\modules")
+          BuildClient.copy(@test_params.kernel_modules, "#{samba_root_path_temp}\\#{File.basename(@test_params.kernel_modules)}")
+          @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10)
+          @equipment['server1'].send_sudo_cmd("tar -xvzf #{kernel_modules_name}", @equipment['server1'].prompt, 300)
       end
       @equipment['server1'].send_sudo_cmd("mkdir -p -m 777 #{nfs_root_path_temp}/test", @equipment['server1'].prompt, 10)
       LspTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp)
@@ -131,6 +142,17 @@ module LspTestScript
       # Leave target in appropriate directory
       @equipment['dut1'].send_cmd("cd #{nfs_path}\n", /#{@equipment['dut1'].prompt}/, 10)  if !(nfs or nandfs or ramfs)
       
+      # modprobe modules specified by test params
+      if kernel_modules
+        @equipment['dut1'].send_cmd("depmod -a", /#{@equipment['dut1'].prompt}/, 30) 
+        if @test_params.params_chan.instance_variable_defined?(:@kernel_modules_list)
+          @test_params.params_chan.kernel_modules_list.each {|mod|
+            #puts 'each mod is '+mod.to_s
+            mod_name = KernelModuleNames::translate_mod_name(@test_params.platform, mod.strip)
+            @equipment['dut1'].send_cmd("modprobe #{mod_name}", /#{@equipment['dut1'].prompt}/, 30)  
+          }
+        end
+      end
     end
     
     def run      
@@ -153,7 +175,18 @@ module LspTestScript
     end
     
     def clean
-        puts "default.clean"
+      puts "default.clean"
+      kernel_modules = @test_params.kernel_modules   if @test_params.instance_variable_defined?(:@kernel_modules)
+      if kernel_modules
+        #kernel_modules_list = @test_params.params_chan.kernel_modules_list  
+        if @test_params.params_chan.instance_variable_defined?(:@kernel_modules_list)
+          @test_params.params_chan.kernel_modules_list.each {|mod|
+            mod_name = KernelModuleNames::translate_mod_name(@test_params.platform, mod.strip)
+            @equipment['dut1'].send_cmd("rmmod #{mod_name}", /#{@equipment['dut1'].prompt}/, 30)  
+          }
+        end
+      end
+
     end
     
     # Returns string with <chan_params_name>=<chan_params_value>[,...] format that can be passed to .runltp
