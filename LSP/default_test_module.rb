@@ -29,51 +29,57 @@ module LspTestScript
       nandfs = @test_params.nandfs  if @test_params.instance_variable_defined?(:@nandfs)
       ramfs  = @test_params.ramfs   if @test_params.instance_variable_defined?(:@ramfs)
       
-      samba_root_path_temp = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}"
       nfs_root_path_temp	= @equipment['dut1'].nfs_root_path
       
-      if @equipment['server1'].respond_to?(:telnet_port) and @equipment['server1'].respond_to?(:telnet_ip) and !@equipment['server1'].target.telnet
-        @equipment['server1'].connect({'type'=>'telnet'})
-      elsif !@equipment['server1'].target.telnet 
-        raise "You need Telnet connectivity to the Linux Server. Please check your bench file" 
-      end
-      
-      if nfs or nandfs or ramfs
-        fs = ([nfs, nandfs, ramfs].select {|f| f != nil})[0]
-        fs.gsub!(/\\/,'/')
-        build_id, build_name = /\/([^\/\\]+?)\/([\w\.\-]+?)$/.match("#{fs.strip}").captures
-        @equipment['server1'].send_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/autofs", @equipment['server1'].prompt, 10)  if !File.directory?("#{samba_root_path_temp}\\autofs")		
-        samba_root_path_temp = samba_root_path_temp + "\\autofs\\#{build_id}"
-        nfs_root_path_temp 	= nfs_root_path_temp + "/autofs/#{build_id}"
-        # Copy  nfs filesystem to linux server and untar it if it doesn't exist
-        #if nfs and  !File.directory?("\\\\#{@equipment['server1'].telnet_ip}\\#{samba_root_path_temp}\\usr")
-        if nfs and  !File.directory?("#{samba_root_path_temp}\\usr")
-          @equipment['server1'].send_cmd("mkdir -p  #{nfs_root_path_temp}", @equipment['server1'].prompt, 10) 		
-          #BuildClient.copy(@test_params.nfs, "\\\\#{@equipment['server1'].telnet_ip}\\#{samba_root_path_temp}\\#{File.basename(@test_params.nfs)}")	
-          BuildClient.copy(@test_params.nfs, "#{samba_root_path_temp}\\#{File.basename(@test_params.nfs)}")	
-          @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10) 		
-          @equipment['server1'].send_sudo_cmd("tar -xvzf #{build_name}", @equipment['server1'].prompt, 300)
+      if @equipment.has_key?('server1')
+        samba_root_path_temp = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}"
+        
+        if @equipment['server1'].respond_to?(:telnet_port) and @equipment['server1'].respond_to?(:telnet_ip) and !@equipment['server1'].target.telnet
+          @equipment['server1'].connect({'type'=>'telnet'})
+        elsif !@equipment['server1'].target.telnet 
+          raise "You need Telnet connectivity to the Linux Server. Please check your bench file" 
         end
-        # Need to add logic to handle nandfs and ramfs
-      end
-      @equipment['server1'].send_sudo_cmd("mkdir -p -m 777 #{nfs_root_path_temp}/test", @equipment['server1'].prompt, 10)
-      LspTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp)
-      # Boot DUT
-      samba_path = "#{samba_root_path_temp}\\test\\#{tester_from_cli}\\#{target_from_db}\\#{platform_from_db}\\bin"
-      nfs_path   = "/test/#{tester_from_cli}/#{target_from_db}/#{platform_from_db}/bin"
-      boot_params = {'power_handler'=> @power_handler, 'platform' => platform_from_db, 'tester' => tester_from_cli, 'target' => target_from_db ,'image_path' => @test_params.kernel, 'server' => @equipment['server1'],  'samba_path' => samba_path, 'nfs_root' => nfs_root_path_temp, 'nfs_path' => "#{nfs_root_path_temp}#{nfs_path}"}
-      boot_params['bootargs'] = @test_params.params_chan.bootargs[0] if @test_params.params_chan.instance_variable_defined?(:@bootargs)
-      @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
       
-      if Boot::boot_required?(@old_keys, @new_keys) # call bootscript if required
-        if @equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil
-          @equipment['dut1'].connect({'type'=>'serial'})
-        elsif @equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil
-          @equipment['dut1'].connect({'type'=>'serial'})
-        else
-          raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
+        if nfs 
+          #fs = ([nfs, nandfs, ramfs].select {|f| f != nil})[0]
+          fs = nfs
+          fs.gsub!(/\\/,'/')
+          build_id, build_name = /\/([^\/\\]+?)\/([\w\.\-]+?)$/.match("#{fs.strip}").captures
+          @equipment['server1'].send_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/autofs", @equipment['server1'].prompt, 10)  if !File.directory?("#{samba_root_path_temp}\\autofs")		
+          samba_root_path_temp = samba_root_path_temp + "\\autofs\\#{build_id}"
+          nfs_root_path_temp 	= nfs_root_path_temp + "/autofs/#{build_id}"
+          # Copy  nfs filesystem to linux server and untar it if it doesn't exist
+          #if nfs and  !File.directory?("\\\\#{@equipment['server1'].telnet_ip}\\#{samba_root_path_temp}\\usr")
+          if !File.directory?("#{samba_root_path_temp}\\usr")
+            @equipment['server1'].send_cmd("mkdir -p  #{nfs_root_path_temp}", @equipment['server1'].prompt, 10) 		
+            #BuildClient.copy(@test_params.nfs, "\\\\#{@equipment['server1'].telnet_ip}\\#{samba_root_path_temp}\\#{File.basename(@test_params.nfs)}")	
+            BuildClient.copy(@test_params.nfs, "#{samba_root_path_temp}\\#{File.basename(@test_params.nfs)}")	
+            @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10) 		
+            @equipment['server1'].send_sudo_cmd("tar -xvzf #{build_name}", @equipment['server1'].prompt, 300)
+          end
+          # Need to add logic to handle nandfs and ramfs
         end
-        @equipment['dut1'].boot(boot_params) 
+      
+        @equipment['server1'].send_sudo_cmd("mkdir -p -m 777 #{nfs_root_path_temp}/test", @equipment['server1'].prompt, 10)
+      
+        LspTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp)
+        # Boot DUT
+        samba_path = "#{samba_root_path_temp}\\test\\#{tester_from_cli}\\#{target_from_db}\\#{platform_from_db}\\bin"
+        nfs_path   = "/test/#{tester_from_cli}/#{target_from_db}/#{platform_from_db}/bin"
+        boot_params = {'power_handler'=> @power_handler, 'platform' => platform_from_db, 'tester' => tester_from_cli, 'target' => target_from_db ,'image_path' => @test_params.kernel, 'server' => @equipment['server1'],  'samba_path' => samba_path, 'nfs_root' => nfs_root_path_temp, 'nfs_path' => "#{nfs_root_path_temp}#{nfs_path}"}
+        boot_params['bootargs'] = @test_params.params_chan.bootargs[0] if @test_params.params_chan.instance_variable_defined?(:@bootargs)
+        @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
+      
+        if Boot::boot_required?(@old_keys, @new_keys) # call bootscript if required
+          if @equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil
+            @equipment['dut1'].connect({'type'=>'serial'})
+          elsif @equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil
+            @equipment['dut1'].connect({'type'=>'serial'})
+          else
+            raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
+          end
+          @equipment['dut1'].boot(boot_params) 
+        end
       end
       connect_to_equipment('dut1')
       
@@ -81,7 +87,7 @@ module LspTestScript
       raise "UUT may be hanging!" if !is_uut_up?
       
       # Copy executable sources to NFS server (if filesystem was not specified and there are @target_sources
-      if @test_params.params_chan.instance_variable_defined?(:@target_sources) && !(nfs or nandfs or ramfs)
+      if @test_params.params_chan.instance_variable_defined?(:@target_sources) && @equipment.has_key?('server1') && !nfs 
           files_array = Array.new
           src_folder = @view_drive+@test_params.params_chan.target_sources[0].to_s
           puts "target_source_drive is #{@target_source_drive}"
@@ -129,7 +135,7 @@ module LspTestScript
       end 
 
       # Leave target in appropriate directory
-      @equipment['dut1'].send_cmd("cd #{nfs_path}\n", /#{@equipment['dut1'].prompt}/, 10)  if !(nfs or nandfs or ramfs)
+      @equipment['dut1'].send_cmd("cd #{nfs_path}\n", /#{@equipment['dut1'].prompt}/, 10)  if ( @equipment.has_key?('server1') && !(nfs) )
       
     end
     

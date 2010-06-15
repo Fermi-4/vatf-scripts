@@ -77,22 +77,6 @@ module LspTargetTestScript
   # Collect output from standard output, standard error and serial port in test.log
   def run_get_script_output
     puts "\n LinuxTestScript::run_get_script_output"
-    # wait_time = (@test_params.params_control.instance_variable_defined?(:@wait_time) ? @test_params.params_control.wait_time[0] : '10').to_i
-    # keep_checking = @equipment['dut1'].target.serial ? true : false     # Do not try to get data from serial port of there is no serial port connection
-    # while keep_checking
-      # counter=0
-      # while check_serial_port()
-        # sleep 1
-        # counter += 1
-        # if counter >= wait_time
-          # puts "\nDEBUG: Finished waiting for data from Serial Port, assumming that App ran to completion."  
-          # keep_checking = false
-          # break
-        # end
-      # end
-    # end
-    #get_file({'filename'=>'stderr.log'})
-    #get_file({'filename'=>'stdout.log'})
     log_file = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER, 'test.log'),'w')
     stderr_file  = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER,'stderr.log'),'w')
     stdout_file  = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER,'stdout.log'),'w')
@@ -104,7 +88,6 @@ module LspTargetTestScript
     stderr_file.write(std_error)
     log_file.write("\n<STD_OUTPUT>\n"+std_output+"</STD_OUTPUT>\n")
     log_file.write("\n<ERR_OUTPUT>\n"+std_error+"</ERR_OUTPUT>\n")
-    #log_file.write("\n<SERIAL_OUTPUT>\n"+@serial_port_data.to_s+"</SERIAL_OUTPUT>\n") 
     stdout_file.close
     stderr_file.close
     log_file.close
