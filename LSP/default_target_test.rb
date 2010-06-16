@@ -74,10 +74,11 @@ module LspTargetTestScript
     @equipment['dut1'].send_cmd("./test.sh 2> stderr.log > stdout.log",@equipment['dut1'].prompt)
   end
   
-  # Collect output from standard output, standard error and serial port in test.log
+  # Collect output from standard outputand  standard error in test.log
   def run_get_script_output
     puts "\n LinuxTestScript::run_get_script_output"
-    log_file = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER, 'test.log'),'w')
+    log_file_name = File.join(SiteInfo::LINUX_TEMP_FOLDER, 'test.log') 
+    log_file = File.new(log_file_name,'w')
     stderr_file  = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER,'stderr.log'),'w')
     stdout_file  = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER,'stdout.log'),'w')
     @equipment['dut1'].send_cmd("cat stdout.log",@equipment['dut1'].prompt,30)
@@ -91,6 +92,7 @@ module LspTargetTestScript
     stdout_file.close
     stderr_file.close
     log_file.close
+    add_log_to_html(log_file_name)
   end
   
   # Parse test.log and extracts performance data into perf.log. This method MUST be overridden if performance data needs to be collected.

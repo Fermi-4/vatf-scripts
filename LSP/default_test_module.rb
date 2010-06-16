@@ -316,18 +316,13 @@ module LspTestScript
       end
     end
 	
-    def test_led_vars
-      puts "\n================= Vars ==================="
-      @equipment['dut1'].instance_variables.each {|v| puts "VAR NAME=#{v}"} 
-      puts "\n================= Methods ==================="
-      @equipment['dut1'].methods.sort.each {|v| puts "METHOD NAME=#{v}"}   
-      puts "\n================= LspTestScript Methods ==================="
-      puts "LspTestScript.self = #{LspTestScript.class}"
-      LspTestScript.instance_methods.sort.each {|v| puts "METHOD NAME=#{v}"}         
-      puts "\n================= Special Tests ==================="
-      puts "boot_prompt= #{@equipment['dut1'].boot_prompt}"
-      puts "telnet_ip= #{@equipment['dut1'].telnet_ip}"
-      puts "nfs_root_path= #{@equipment['dut1'].nfs_root_path}"
+    def add_log_to_html(log_file_name)
+      # add log in result page
+      all_lines = ''
+      File.open(log_file_name, 'r').each {|line|
+        all_lines += line 
+      }
+      @results_html_file.add_paragraph(all_lines,nil,nil,nil)
     end
 end
    
