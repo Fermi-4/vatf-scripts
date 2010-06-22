@@ -44,7 +44,6 @@ module LspTestScript
         end
       
         if nfs 
-          #fs = ([nfs, nandfs, ramfs].select {|f| f != nil})[0]
           fs = nfs
           fs.gsub!(/\\/,'/')
           build_id, build_name = /\/([^\/\\]+?)\/([\w\.\-]+?)$/.match("#{fs.strip}").captures
@@ -52,18 +51,17 @@ module LspTestScript
           samba_root_path_temp = samba_root_path_temp + "\\autofs\\#{build_id}"
           nfs_root_path_temp 	= nfs_root_path_temp + "/autofs/#{build_id}"
           # Copy  nfs filesystem to linux server and untar it if it doesn't exist
-          #if nfs and  !File.directory?("\\\\#{@equipment['server1'].telnet_ip}\\#{samba_root_path_temp}\\usr")
           if !File.directory?("#{samba_root_path_temp}\\usr")
             @equipment['server1'].send_cmd("mkdir -p  #{nfs_root_path_temp}", @equipment['server1'].prompt, 10) 		
-            #BuildClient.copy(@test_params.nfs, "\\\\#{@equipment['server1'].telnet_ip}\\#{samba_root_path_temp}\\#{File.basename(@test_params.nfs)}")	
             BuildClient.copy(@test_params.nfs, "#{samba_root_path_temp}\\#{File.basename(@test_params.nfs)}")	
             @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10) 		
             @equipment['server1'].send_sudo_cmd("tar -xvzf #{build_name}", @equipment['server1'].prompt, 300)
           end
+        else
           # Need to add logic to handle nandfs and ramfs
         end
         
-        if kernel_modules
+        if kernel_modules and nfs
           kernel_modules.gsub!(/\\/,'/')
           kernel_modules_name = /\/[^\/\\]+?\/([\w\.\-]+?)$/.match("#{kernel_modules.strip}").captures[0]
           #@equipment['server1'].send_sudo_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/lib/modules", @equipment['server1'].prompt, 10)  if !File.directory?("#{samba_root_path_temp}\\lib\\modules")
@@ -72,13 +70,24 @@ module LspTestScript
           @equipment['server1'].send_sudo_cmd("tar -xvzf #{kernel_modules_name}", @equipment['server1'].prompt, 300)
         end
       
-        @equipment['server1'].send_sudo_cmd("mkdir -p -m 777 #{nfs_root_path_temp}/test", @equipment['server1'].prompt, 10)
+        @equipment['server1'].send_sudo_cmd("mkdir -p -m 777 #{nfs_root_path_temp}/test", @equipment['server1'].prompt, 10) if !(@test_params.instance_variable_defined?(:@var_nfs))
       
-        LspTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp)
+        LspTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp) 
         # Boot DUT
         samba_path = "#{samba_root_path_temp}\\test\\#{tester_from_cli}\\#{target_from_db}\\#{platform_from_db}\\bin"
-        nfs_path   = "/test/#{tester_from_cli}/#{target_from_db}/#{platform_from_db}/bin"
-        boot_params = {'power_handler'=> @power_handler, 'platform' => platform_from_db, 'tester' => tester_from_cli, 'target' => target_from_db ,'image_path' => @test_params.kernel, 'server' => @equipment['server1'],  'samba_path' => samba_path, 'nfs_root' => nfs_root_path_temp, 'nfs_path' => "#{nfs_root_path_temp}#{nfs_path}"}
+        nfs_path   = "#{nfs_root_path_temp}/test/#{tester_from_cli}/#{target_from_db}/#{platform_from_db}/bin"
+        nfs_root_path_temp = "#{params['server'].telnet_ip}:#{nfs_root_path_temp}"
+        nfs_root_path_temp = @test_params.var_nfs  if @test_params.instance_variable_defined?(:@var_nfs)  # Optionally use external nfs server
+      
+        boot_params = {'power_handler'=> @power_handler,
+                       'platform' => platform_from_db,
+                       'tester' => tester_from_cli,
+                       'target' => target_from_db ,
+                       'image_path' => @test_params.kernel,
+                       'server' => @equipment['server1'], 
+                       'samba_path' => samba_path, 
+                       'nfs_root' => nfs_root_path_temp,
+                       'nfs_path' => nfs_path}
         boot_params['bootargs'] = @test_params.params_chan.bootargs[0] if @test_params.params_chan.instance_variable_defined?(:@bootargs)
         @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
       
@@ -99,7 +108,7 @@ module LspTestScript
       raise "UUT may be hanging!" if !is_uut_up?
       
       # Copy executable sources to NFS server (if filesystem was not specified and there are @target_sources
-      if @test_params.params_chan.instance_variable_defined?(:@target_sources) && @equipment.has_key?('server1') && !nfs 
+      if @test_params.params_chan.instance_variable_defined?(:@target_sources) && @equipment.has_key?('server1') && !nfs && !@test_params.instance_variable_defined?(:@var_nfs) 
           files_array = Array.new
           src_folder = @view_drive+@test_params.params_chan.target_sources[0].to_s
           puts "target_source_drive is #{@target_source_drive}"
@@ -147,7 +156,7 @@ module LspTestScript
       end 
 
       # Leave target in appropriate directory
-      @equipment['dut1'].send_cmd("cd #{nfs_path}\n", /#{@equipment['dut1'].prompt}/, 10)  if ( @equipment.has_key?('server1') && !(nfs) )
+      @equipment['dut1'].send_cmd("cd #{nfs_path}\n", /#{@equipment['dut1'].prompt}/, 10)  if ( @equipment.has_key?('server1') && !(nfs) && !(@test_params.instance_variable_defined?(:@var_nfs)) )
       
       # modprobe modules specified by test params
       if kernel_modules

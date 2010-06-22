@@ -15,6 +15,12 @@ def run_generate_script
   out_file.puts("failtest() {")
   out_file.puts("  echo 1 >&3")
   out_file.puts("}")
+  param_names = @test_params.params_chan.instance_variables
+  param_names.each {|name|
+    val=@test_params.params_chan.instance_variable_get(name)[0]
+    out_file.puts("#{name.sub(/@/,'')}=#{/\s+/.match(val) ? "'"+val+"'" : val }")
+  }
+  out_file.puts("# Start of user's script logic")
   raw_test_lines.each do |current_line|
     out_file.puts(eval('"'+current_line.gsub("\\","\\\\\\\\").gsub('"','\\"')+'"'))
   end
@@ -42,10 +48,19 @@ def run_determine_test_outcome
   failtest_check = !@equipment['dut1'].timeout?
   
   if returncode_check
-    return [FrameworkConstants::Result[:fail], "The shell script returned non-zero value"]
+    return [FrameworkConstants::Result[:fail], "The shell script returned non-zero value. \n"+get_detailed_info]
   elsif failtest_check
-    return [FrameworkConstants::Result[:fail], "The shell script called failtest()"]
+    return [FrameworkConstants::Result[:fail], "The shell script called failtest(). \n"+get_detailed_info]
   else
-    return [FrameworkConstants::Result[:pass], "Shell script returned 0 and did not call failtest()"]
+    return [FrameworkConstants::Result[:pass], "Shell script returned 0 and did not call failtest(). \n"+get_detailed_info]
   end
+end
+
+def get_detailed_info
+  log_file_name = File.join(SiteInfo::LINUX_TEMP_FOLDER, 'test.log') 
+  all_lines = ''
+  File.open(log_file_name, 'r').each {|line|
+    all_lines += line.gsub(/<\/*(STD|ERR)_OUTPUT>/,'')
+  }
+  return all_lines
 end
