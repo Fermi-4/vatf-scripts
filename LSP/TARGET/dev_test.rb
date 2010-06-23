@@ -8,7 +8,65 @@ include LspTargetTestScript
 def run_generate_script
   puts "\n LinuxTestScript::run_generate_script"
   FileUtils.mkdir_p SiteInfo::LINUX_TEMP_FOLDER
-  in_file = File.new(File.join(@test_params.shell_script), 'r')
+  
+  # Resolve Dispatcher name
+  my_staf_handle = STAFHandle.new("my_staf") 
+  staf_req = my_staf_handle.submit("local","VAR","GET SHARED VAR STAF/TMC/Machine") 
+  if(staf_req.rc == 0)
+    tmc_machine = staf_req.result
+  else
+    tmc_machine = nil
+    raise "Could not resolve VAR STAF/TMC/Machine. Make sure that STAF is running and the TEE is reqistered with TMC Dispatcher"
+  end
+  
+  begin
+    # Request FTP BEE to RESMGR
+    staf_req = my_staf_handle.submit(tmc_machine,"RESMGR","REQUEST TYPE ftp TIMEOUT 1w") 
+    if(staf_req.rc != 0)
+     raise "Could not find a FTP BEE available. This test scripts requires a FTP Bee to run"
+    end
+    staf_result_map = STAF::STAFResult.unmarshall_response(staf_req.result)
+    bee_machine = staf_result_map['name'] 
+    bee_id      = staf_result_map['id']
+    
+    ftp_file_version = @test_params.params_chan.shell_script[0].gsub(/ftp:\/\//i,'')
+    # Request GET BUILDID  to FTP BEE
+    staf_req = my_staf_handle.submit(bee_machine,"ftp@"+bee_id,"GET BUILDID ASSET shell_script VERSION #{ftp_file_version}") 
+    if(staf_req.rc != 0)
+      raise "The #{bee_machine} FTP BEE could not get the ID for asset with version: #{ftp_file_version}"
+    end
+    
+    # Request BUILD  to FTP BEE
+    staf_req = my_staf_handle.submit(bee_machine,"ftp@"+bee_id,"BUILD ASSET shell_script VERSION #{ftp_file_version}") 
+    if(staf_req.rc != 0)
+      raise "The #{bee_machine} FTP BEE could not retrieve the asset at #{ftp_file_version}"
+    end
+    staf_result_map = STAF::STAFResult.unmarshall_response(staf_req.result)
+    bee_file_path = staf_result_map['path']
+    bee_file_id   = staf_result_map['id']
+    
+    # Resolve STAF Datadir
+    staf_req = my_staf_handle.submit("local","VAR","GET SYSTEM VAR STAF/DataDir") 
+    if(staf_req.rc != 0)
+      raise "Could not resolve VAR STAF/DataDir. Make sure that STAF is running at the TEE machine"
+    end
+    staf_data_dir = staf_req.result
+    dst_dir = "#{staf_data_dir}\\user\\sw_assets\\ftp\\shell_script\\#{bee_file_id}"
+    dst_file = "#{dst_dir}\\#{File.basename(bee_file_path.gsub(/\\/,'/'))}"
+    if (!File.exists?(dst_file))
+      FileUtils.mkdir_p dst_dir
+      staf_req = my_staf_handle.submit(bee_machine,"fs","COPY FILE #{bee_file_path} TOFILE #{dst_file}") 
+      if(staf_req.rc != 0)
+        raise "Could not copy file from FTP Bee to TEE machine"
+      end
+    end
+  rescue Exception => e
+    puts e.to_s+"\n"+e.backtrace.to_s
+  ensure
+    staf_req = my_staf_handle.submit(tmc_machine,"RESMGR","RELEASE TYPE ftp NAME #{bee_machine} ID #{bee_id}") 
+  end
+  
+  in_file = File.new(dst_file, 'r')
   raw_test_lines = in_file.readlines
   out_file = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER, 'test.sh'),'w')
   #out_file.puts("#!/bin/bash \n")
@@ -24,8 +82,6 @@ def run_generate_script
   raw_test_lines.each do |current_line|
     out_file.puts(eval('"'+current_line.gsub("\\","\\\\\\\\").gsub('"','\\"')+'"'))
   end
-  
-  
   in_file.close
   out_file.close
 end
@@ -63,4 +119,9 @@ def get_detailed_info
     all_lines += line.gsub(/<\/*(STD|ERR)_OUTPUT>/,'')
   }
   return all_lines
+end
+
+
+def unmarshall
+  
 end
