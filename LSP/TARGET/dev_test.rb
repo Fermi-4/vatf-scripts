@@ -3,7 +3,7 @@ require File.dirname(__FILE__)+'/../default_target_test'
 include LspTargetTestScript
 
 # Generate Linux shell script to be executed at DUT.
-# This function used the shell_script software asset, replace any ruby code and/or
+# This function used the script specified in the test params, replace any ruby code and/or
 # test parameter references and creates test.sh  
 def run_generate_script
   puts "\n LinuxTestScript::run_generate_script"
@@ -29,15 +29,15 @@ def run_generate_script
     bee_machine = staf_result_map['name'] 
     bee_id      = staf_result_map['id']
     
-    ftp_file_version = @test_params.params_chan.shell_script[0].gsub(/ftp:\/\//i,'')
+    ftp_file_version = @test_params.params_chan.script[0].gsub(/ftp:\/\//i,'')
     # Request GET BUILDID  to FTP BEE
-    staf_req = my_staf_handle.submit(bee_machine,"ftp@"+bee_id,"GET BUILDID ASSET shell_script VERSION #{ftp_file_version}") 
+    staf_req = my_staf_handle.submit(bee_machine,"ftp@"+bee_id,"GET BUILDID ASSET script VERSION #{ftp_file_version}") 
     if(staf_req.rc != 0)
       raise "The #{bee_machine} FTP BEE could not get the ID for asset with version: #{ftp_file_version}"
     end
     
     # Request BUILD  to FTP BEE
-    staf_req = my_staf_handle.submit(bee_machine,"ftp@"+bee_id,"BUILD ASSET shell_script VERSION #{ftp_file_version}") 
+    staf_req = my_staf_handle.submit(bee_machine,"ftp@"+bee_id,"BUILD ASSET script VERSION #{ftp_file_version}") 
     if(staf_req.rc != 0)
       raise "The #{bee_machine} FTP BEE could not retrieve the asset at #{ftp_file_version}"
     end
@@ -51,7 +51,7 @@ def run_generate_script
       raise "Could not resolve VAR STAF/DataDir. Make sure that STAF is running at the TEE machine"
     end
     staf_data_dir = staf_req.result
-    dst_dir = "#{staf_data_dir}\\user\\sw_assets\\ftp\\shell_script\\#{bee_file_id}"
+    dst_dir = "#{staf_data_dir}\\user\\sw_assets\\ftp\\script\\#{bee_file_id}"
     dst_file = "#{dst_dir}\\#{File.basename(bee_file_path.gsub(/\\/,'/'))}"
     if (!File.exists?(dst_file))
       FileUtils.mkdir_p dst_dir
