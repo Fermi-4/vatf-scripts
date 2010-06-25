@@ -4,14 +4,13 @@
 require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 			
-def setup
-  BuildClient.enable_config_step
-  super
-end
+	def setup
+		BuildClient.enable_config_step
+		super
+	end
 			
-def run
-    connect_to_equipment('pc1')
-	  
+	def run
+		connect_to_equipment('pc1')
     # Initialize DUT to run file-based performance test
 			
     result = 0 		#0=pass, 1=timeout, 2=fail message detected
@@ -22,7 +21,7 @@ def run
       commands = parse_cmd('init_cmds')
       result, cmd = execute_cmd(commands)
     end
-			
+		 
     if result > 0 
       set_result(FrameworkConstants::Result[:fail], "Error preparing DUT to run performance test while executing cmd: #{cmd.cmd_to_send}")
       return
@@ -30,27 +29,23 @@ def run
 			
     iface = @test_params.params_chan.instance_variable_defined?(:@interface) ? @test_params.params_chan.interface[0] : 'eth0'
     @equipment['dut1'].send_cmd("ifconfig #{iface}", @equipment['dut1'].prompt)
-    src_ip = reg_ensureb(/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/, 1)
-    puts "default_perf_iperf_script_run-2"
+		src_ip = reg_ensure(/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/, 1)
+	
+		send_status("run test on #{iface} - test"+ __LINE__.to_s)
+		send_status ("run - test"+ __LINE__.to_s)
 		
-		puts "* * * * * * * * * * * * * "
-		puts iface
-		puts "* * * * * * * * * * * * * "
-    
-	#@equipment['pc1'].send_cmd("ifconfig #{iface}", @equipment['pc1'].prompt)
-	# yliu: remove iface since the iface may be different betwwen pc and dut
-	@equipment['pc1'].send_cmd("ifconfig", @equipment['pc1'].prompt)
-		puts "* * * * * * * * * * * * * "
-    dest_ip = reg_ensureb(/eth.*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/, 1)
-		
-		puts "default_perf_iperf_script_run-2: Checking link continuity."
+    dest_ip = reg_ensureb(/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/, 1)
 			
-    @equipment['dut1'].send_cmd("ping -c 4 #{@equipment['pc1'].telnet_ip}", /4\s*(?:packets)*\s*received/i)
+		send_status("Checking link continuity. --- "+ __LINE__.to_s)
+			
+    @equipment['dut1'].send_cmd("ping -c 4 #{@equipment['pc1'].telnet_ip}", /4\s+packets\s+received.*?/)
 			
     if @equipment['dut1'].timeout?
-      result = 4
+      result = 6
     end
-			
+		
+		intfc_spd = get_intfc_spd ()
+		
     # *********************** set the src & destination ip's as the usb devices ***********************
 			
 		pc_ip = @equipment['pc1'].telnet_ip
@@ -58,23 +53,27 @@ def run
 			
     # *********************** Execute USB iperf performance test ***********************
     @results_html_file.add_paragraph("")
-    res_table = @results_html_file.add_table([["Performance Numbers (#{@rtp_db.get_platform})",{:bgcolor => "green", :colspan => "5"},{:color => "red"}]],{:border => "1",:width=>"40%"})
+    res_table = @results_html_file.add_table([["Performance Numbers (#{@rtp_db.get_platform} - #{@test_params.params_chan.protocol[0]}) - Interface Speed: #{intfc_spd.to_s} Mb/s",{:bgcolor => "green", :colspan => "5"},{:color => "red"}]],{:border => "1",:width=>"40%"})
     @results_html_file.add_row_to_table(res_table, ["TCP Window Size in KBytes", "Bandwidth Mbits/sec", "Transfer Size in MBytes", "Interval in sec"])
     window_sizes = @test_params.params_chan.window_size[0].split(' ')
-    #duration = 60
-		bwidth_size = 10
-		duration = @test_params.params_chan.duration[0]        
+		
+		send_status("Platform Type: #{@rtp_db.get_platform} - Line Speed: #{intfc_spd} Mb/s --- "+ __LINE__.to_s)
+
+		duration = @test_params.params_chan.duration[0]        						##{@test_params.params_chan.protocol[0]}
         i=0
         window_sizes.each {|window_size|
-            
-						result, dur, bw, xfer, jit, pctloss = run_perf_test(pc_ip, dut_ip, bwidth_size, (window_size.to_i/2).to_s, duration, @test_params.params_chan.protocol[0], i)
+=begin
+						#result, dur, bw, xfer, jit, pctloss = run_perf_test(pc_ip, dut_ip, bwidth_size, (window_size.to_i/2).to_s, duration, @test_params.params_chan.protocol[0], i)
+						#result, dur, bw, xfer = run_perf_test(pc_ip, dut_ip, bwidth_size, (window_size.to_i/2).to_s, duration, @test_params.params_chan.protocol[0], i, intfc_spd)
+=end
+						result, dur, bw, xfer = run_perf_test(pc_ip, dut_ip, intfc_spd, (window_size.to_i/2).to_s, duration, @test_params.params_chan.protocol[0], i)
 						
             break if result > 0
             
 						@results_html_file.add_row_to_table(res_table, [window_size, bw, xfer, dur])
             i+=1	        
         }
-
+				
 			if result == 0 
         set_result(FrameworkConstants::Result[:pass], "Test Pass.")
 			elsif result == 1
@@ -84,36 +83,59 @@ def run
 			elsif result == 3
         set_result(FrameworkConstants::Result[:fail], "Invalid string recieved from test equipment (DUT or PC)")
 			elsif result == 4
-        set_result(FrameworkConstants::Result[:fail], "Unable to get initial connectivity to usb device")
+        set_result(FrameworkConstants::Result[:fail], "Unable to get initial connectivity to Ethernet device")
+			elsif result == 5
+        set_result(FrameworkConstants::Result[:fail], "Unable to get Ethernet interface speed information")
+			elsif result == 6
+        set_result(FrameworkConstants::Result[:fail], "Unable to ping remote IP address")
 			else
         set_result(FrameworkConstants::Result[:nry])
 			end
 				
 			ensure 
         result, cmd = execute_cmd(ensure_commands) if @test_params.params_chan.instance_variable_defined?(:@ensure)
-end			
+	end			
 			
-def clean
-	self.as(LspTestScript).clean
-  #super
-end
+	def clean
+		self.as(LspTestScript).clean
+		#super
+	end
 			
 private
+		
+	def send_status(msg)
+		puts " "
+		puts "--------------- eth_iperf_perf #{msg} ------------------"
+		puts " "
+	end
+
+	def get_intfc_spd ()
+    @equipment['dut1'].send_cmd("ethtool eth0", @equipment['dut1'].prompt)
 			
+    if @equipment['dut1'].timeout?
+      result = 5
+    end
+
+		intfc_spd = /Speed\:\s+([\d\.]+)Mb\/s/m.match(@equipment['dut1'].response).captures
+		send_status("#{intfc_spd} Mb/s --- "+ __LINE__.to_s)
+		
+		[intfc_spd]
+	end
+		
 	def send_sudo ()
 		@equipment['pc1'].send_cmd("sudo su -", /Password/, 10)
 			
 		response = @equipment['pc1'].response
-			
-		if response.index(/Password/) != nil
-			puts " "
-			puts "------------------------------ Enter Password Routine --------------------------------------"
-			puts " "
+		
+		puts "------------------------------  Response Start ---------------------------------"+ __LINE__.to_s
+		puts "#{response}"
+		puts "------------------------------  Response End ---------------------------------"+ __LINE__.to_s
+		
+		if response.scan(/Password/) != nil
+			send_status("Enter send_sudo --- "+ __LINE__.to_s)
 			@equipment['pc1'].send_cmd("#{@equipment['pc1'].telnet_passwd}\n\n", /\x0a/, 10)
 			response = @equipment['pc1'].response
-			puts " "
-			puts "------------------------------ Exit Password Routine --------------------------------------"
-			puts " "
+			send_status("Exit send_sudo --- "+ __LINE__.to_s)
 		end
 	end
 		
@@ -129,50 +151,6 @@ private
     return rx != nil ? rx[match] : nil
   end
 		
-	# ********************************************* Get IP address of the DUT ***************************************************
-		
-	def parse_dut_resp(response, name)
-		
-		puts "**************************** ******************************************"
-		puts response
-		puts " "
-		puts "**************************** *****************************************"
-		duration = /([\d\.]+)\s+?sec\s/m.match(@equipment['dut1'].response).captures
-		xfer1 = /\s+([\d\.]+\s+?[MK])Bytes\s/m.match(@equipment['dut1'].response).captures
-		bwl = /\s+([\d\.]+\s+?[MK])bits/m.match(@equipment['dut1'].response).captures
-		
-		[duration, xfer1, bw1]
-	end
-		
-	def parse_pc_tcp_resp(response)
-
-		puts "**************************** parse_tcp_resp 145 ******************************************"
-		puts response
-		puts " "
-		puts "**************************** parse_tcp_resp 148 *****************************************"
-		duration = /([\d\.]+)\s+?sec\s/m.match(@equipment['dut1'].response).captures
-		xfer1 = /\s+([\d\.]+\s+?[MK])Bytes\s/m.match(@equipment['dut1'].response).captures
-		bwl = /\s+([\d\.]+\s+?[MK])bits/m.match(@equipment['dut1'].response).captures
-		jit = /([\d\.]+)\s+?ms/m.match(@equipment['dut1'].response).captures
-		pctloss1 = /[\s\d\/]+?\(([\d\.]+)%\)/m.match(@equipment['pc1'].response).captures
-		
-		[duration, xfer1, bw1, jit, pctloss1]
-	end
-		
-	def parse_pc_udp_resp(response)
-		puts "**************************** ******************************************"
-		puts response
-		puts " "
-		puts "**************************** *****************************************"
-		duration = /([\d\.]+)\s+?sec\s/m.match(@equipment['dut1'].response).captures
-		xfer1 = /\s+([\d\.]+\s+?[MK])Bytes\s/m.match(@equipment['dut1'].response).captures
-		bwl = /\s+([\d\.]+\s+?[MK])bits/m.match(@equipment['dut1'].response).captures
-		jit = /([\d\.]+)\s+?ms/m.match(@equipment['dut1'].response).captures
-		pctloss1 = /[\s\d\/]+?\(([\d\.]+)%\)/m.match(@equipment['pc1'].response).captures
-		
-		[duration, xfer1, bw1, jit, pctloss1]
-	end
-	
 	def send_ctrl_c ()
 
 		@equipment['dut1'].send_cmd("\cC", /#/,10)
@@ -187,183 +165,217 @@ private
   # 2. Start iperf server on the PC side 
   # 3. Start iperf client on the DUT side
   # 4. Collect results from the PC side
-  def run_perf_test(pc_ip, dut_ip, bw_size, packet_size, duration, proto, counter)
+  def run_perf_test(pc_ip, dut_ip, intfc_spd, packet_size, duration, proto, counter)
 			
     result = 0
 			
-    puts "eth_iperf_perf_script-7 - Setup server side on PC."
-		puts " "
+		send_status("Iperf server startup.--- "+ __LINE__.to_s)
+		@equipment['pc1'].send_cmd("ps -a", /\@/, 10)
 			
     # *********************** setup the iperf server side PC/DUT ***********************
 		if proto == 'tcp'
-			puts "eth_iperf_perf_script-7a - Starting Iperf Server TCP on Linux PC."
-			@equipment['pc1'].send_cmd("iperf -s &> perf.log", @equipment['pc1'].prompt)
+			send_status("Starting Iperf Server TCP on Linux PC. --- "+ __LINE__.to_s)
+			sleep 3
+			#@equipment['pc1'].send_cmd("iperf -s & > perf.log", /perf.log/, 70)
+			@equipment['pc1'].send_cmd("iperf -s & \\r", /Server\s+listening.*?TCP\sport.*?/, 10)
 		elsif proto == 'mlti'
-			puts "eth_iperf_perf_script-7b - Starting Iperf Multicast TCP on Linux PC."
-			@equipment['pc1'].send_cmd("iperf -s -u -B 224.0.36.36 &> perf.log", @equipment['pc1'].prompt)
+			send_status("Starting Iperf Multicast TCP on Linux PC. --- "+ __LINE__.to_s)
+			@equipment['pc1'].send_cmd("iperf -s -u -B 224.0.36.36 &> perf.log", /\]\s+\d+/)
 		else
-			puts "eth_iperf_perf_script-7c - Starting Iperf Server UDP on Linux PC."
-			@equipment['pc1'].send_cmd("iperf -u -s &> perf.log", @equipment['pc1'].prompt)
+			send_status("Starting Iperf Server UDP on Linux PC. --- "+ __LINE__.to_s)
+			#@equipment['pc1'].send_cmd("iperf -s -u & >perf.log", /perf.log/, 70)
+			@equipment['pc1'].send_cmd("iperf -s -u & \\r", /Server\s+listening.*?UDP\sport.*?/, 70)
 		end
 				
-		response = @equipment['pc1'].response
+		#sleep (duration.to_i + 10)
 		
-    if response.index(/Password/) != nil
+		response = @equipment['pc1'].response
+
+		puts "------------------------------  Response Start ---------------------------------"+ __LINE__.to_s
+		puts "#{response}"
+		puts "------------------------------  Response End ---------------------------------"+ __LINE__.to_s
+
+		
+		if response.scan(/Password/) != nil
 			@equipment['pc1'].send_cmd("#{@equipment['pc1'].telnet_passwd}", /.*/)
 			response = @equipment['pc1'].response
 		end
-			
-    sleep (2)
-    puts "***********7f************ "
-		puts response
-		puts "***********7g************ "
+		
+		send_status("LineStatus: --- "+ __LINE__.to_s)
+		
+		@equipment['pc1'].send_cmd("ps -a", /\@/, 10)		
+    
+		sleep (3)
 			
     # *********************** get the pid of the iperf process we just started ***********************
-      #pid = reg_ensure(/(\]\s+)(\d+)/, 'pc1', 2)
-      pid = reg_ensure(/(\]\s+)(\d+)/, 2)
+			
+		pid = /(\d+)\s+pts.+?iperf/im.match(@equipment['pc1'].response).captures
 			
     # **************** send traffic from DUT client ***********************
-			
-    if proto == 'tcp'
-      puts "eth_iperf_perf_script-8a - Transferring iperf TCP data to and from PC."
+		
+		send_status("PID:  #{pid} --- Speed: #{intfc_spd} Mb/s Window Size: #{packet_size} --- "+ __LINE__.to_s)
+		
+		sleep 2
+		
+		if proto == 'tcp'
+			send_status("Transferring Iperf TCP data to and from PC. --- "+ __LINE__.to_s)
+			#@equipment['dut1'].send_cmd("iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -d >perf.log", @equipment['dut1'].prompt, duration.to_i + 60)
 			@equipment['dut1'].send_cmd("iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -d", @equipment['dut1'].prompt, duration.to_i + 60)
+			
+			sleep 6
+			
+			if /\sserver threads\s/.match(@equipment['dut1'].response)
+				send_status("Result:  Re-running this window size --- "+ __LINE__.to_s)
+				@equipment['pc1'].send_cmd("\cC", /#/,10)
+				sleep 3
+				@equipment['pc1'].send_cmd("kill -9 #{pid.to_s}", /Killed/)
+				sleep 3
+				@equipment['pc1'].send_cmd("iperf -s &", /Server\slistening.*?TCP\swindow.*?/, 70)
+				sleep 7
+				@equipment['dut1'].send_cmd("iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -d", @equipment['dut1'].prompt, duration.to_i + 60)
+			end
+
     elsif proto == 'mlti'
-      puts "eth_iperf_perf_script-8b - Transferring iperf Client Multicast CDC UDP data from Linux PC."
+			send_status("Transferring Iperf Client Multicast CDC data from Linux PC. --- "+ __LINE__.to_s)
 			@equipment['dut1'].send_cmd("iperf -c 224.0.36.36 -u -w #{packet_size}k -t #{duration} -b 30M >perf.log", @equipment['dut1'].prompt, duration.to_i + 60)
     else
-      puts "eth_iperf_perf_script-8c - Transferring iperf CDC UDP data from DUT."
-			@equipment['dut1'].send_cmd("iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -u -b #{bw_size}m >perf.log", @equipment['dut1'].prompt, duration.to_i + 60)
+			send_status("Transferring Iperf CDC UDP data from DUT. --- "+ __LINE__.to_s)
+			
+			@equipment['dut1'].send_cmd("\cC", @equipment['dut1'].prompt, 10)
+			sleep 3
+			@equipment['dut1'].send_cmd("iperf -c #{pc_ip} -w #{packet_size}k -t #{duration} -u -b 100m", @equipment['dut1'].prompt, duration.to_i + 60)
     end
 			
+		sleep 3
+		
+		response = @equipment['dut1'].response
+=begin
+		puts "------------------------------  Response Start ---------------------------------"+ __LINE__.to_s
+		puts "#{response}"
+		puts "------------------------------  Response End ---------------------------------"+ __LINE__.to_s
+=end
 			# *********************** check for errors ***********************
-    puts "eth_iperf_perf_script-9 - Checking log for errors."
-		puts " "
+		send_status("Checking log for errors. --- "+ __LINE__.to_s)
 			
 		if @equipment['dut1'].timeout?
-			puts "eth_iperf_perf_script-9a - Linux PC timed out."
-			puts " "
+			send_status ("Linux PC timed out. --- "+ __LINE__.to_s)
 			 
 			@equipment['pc1'].send_cmd("kill -9 #{pid.to_s}", /Killed/)
-			puts "eth_iperf_perf_script-9b - Linux PC timed out."
+			send_status ("Linux PC timed out. --- "+ __LINE__.to_s)
 			result = 1
 				return result
-			puts "eth_iperf_perf_script-9c - Kill Iperf server on WinXP."
+			#send_status ("Kill Iperf server on WinXP. --- "+ __LINE__.to_s)
     end
 			
     sleep(2)
 			
-		puts "eth_iperf_perf_script-9d - Checking log for errors."
+		send_status ("Line Status Location: --- "+ __LINE__.to_s)
 			
 		if proto == 'tcp'
-			puts "eth_iperf_perf_script-9e - Checking log for errors."
-			@equipment['pc1'].send_cmd("cat perf.log", /([0-9]*\.?[0-9]+)(?=\s+Mbits)/)
+			send_status("Checking log for TCP errors. --- "+ __LINE__.to_s)
+			#@equipment['dut1'].send_cmd("cat perf.log", /([0-9]*\.?[0-9]+)(?=\s+Mbits)/)
+			#@equipment['dut1'].send_cmd("cat perf.log", @equipment['dut1'].prompt)							#
 		elsif proto == 'mlti'
-			puts "eth_iperf_perf_script-9f - Checking log for errors."
+			send_status("Checking log for Multicast errors. --- "+ __LINE__.to_s)
 			@equipment['pc1'].send_cmd("cat perf.log", /([0-9]*\.?[0-9]+)(?=\s+Mbits)/)
 		else
-			puts "eth_iperf_perf_script-9g - Checking log for errors."
-			@equipment['pc1'].send_cmd("cat perf.log", /@/)
+			send_status("Checking log for UDP errors. --- "+ __LINE__.to_s)
+			#response = @equipment['dut1'].response
+			#@equipment['dut1'].send_cmd("cat perf.log", @equipment['dut1'].prompt)
 		end
 			
-		response = @equipment['pc1'].response
-			
-    puts "***********9h************ "
-		puts response
-		puts "***********9i************ "
-			
-    sleep(2)
+		response = @equipment['dut1'].response
 			
 		if proto == 'tcp'
-			puts "eth_iperf_perf_script-10a - Checking for errors."
-			duration,xfer1,bw1,xfer2,bw2 = /-([\d\.]+)\s+?sec\s+?([\d\.]+\s+?[GMK])Bytes\s+?([\d\.]+\s+?[MK])bits\/sec.+?([\d\.]+\s+?[GMK])Bytes\s+?([\d\.]+\s+?[MK])bits\/sec/m.match(@equipment['pc1'].response).captures
+			send_status("Checking for TCP errors. --- "+ __LINE__.to_s)
+			sleep 5
+			duration,xfer1,bw1,xfer2,bw2 = /-([\d\.]+)\s+?sec\s+?([\d\.]+\s+?[GMK])Bytes\s+?([\d\.]+\s+?[MK])bits\/sec.+?([\d\.]+\s+?[GMK])Bytes\s+?([\d\.]+\s+?[MK])bits\/sec/m.match(@equipment['dut1'].response).captures
 		elsif proto == 'mlti'
-			puts "eth_iperf_perf_script-10b - Checking for errors."
-			duration,xfer1,bw1 = /-([\d\.]+)\s+?sec\s+?([\d\.]+\s+?[MK])Bytes\s+?([\d\.]+\s+?[MK])bits/m.match(@equipment['pc1'].response).captures
+			send_status("Checking for Multicast errors. --- "+ __LINE__.to_s)
+			duration,xfer1,bw1 = /-([\d\.]+)\s+?sec\s+?([\d\.]+\s+?[GMK])Bytes\s+?([\d\.]+\s+?[GMK])bits/m.match(@equipment['pc1'].response).captures
 			xfer2=bw2=0
 		else
-			puts "eth_iperf_perf_script-10c - Checking for errors."
-			duration,xfer1,bw1,jit1,pctloss1 = parse_pc_udp_resp(response)
+			send_status("Checking for UDP errors. --- "+ __LINE__.to_s)
+			#duration,xfer1,bw1,jit1,pctloss1 = /-([\d\.]+)\s+?sec\s+?([\d\.]+\s+?[GMK])Bytes\s+?([\d\.]+\s+?[MK])bits\/sec.+?([\d\.]+)\s+?ms/m.match(@equipment['dut1'].response).captures
+			#    duration,xfer1,bw1,xfer2,bw2 = /-([\d\.]+)\s+?sec\s+?([\d\.]+\s+?[GMK])Bytes\s+?([\d\.]+\s+?[MK])bits\/sec\s+[\d\.]+\s+ms.+?([\d\.]+\s+?[GMK])Bytes\s+?([\d\.]+\s+?[MK])bits\/sec\s+[\d\.]+\s+ms/m.match(@equipment['dut1'].response).captures
+			#duration,xfer1,bw1,jit1 = /-([\d\.]+)\s+?sec\s+?([\d\.]+\s+?[GMK])Bytes\s+?([\d\.]+\s+?[MK])bits\/sec\s+[\d\.]+\s+ms/m.match(@equipment['dut1'].response).captures
+			duration,xfer1,bw1,jit1,jit2,jit3 = /-([\d\.]+)\s+?sec\s+?([\d\.]+\s+?[GMK])Bytes\s+?([\d\.]+\s+?[MK])bits\/sec\s+([\d\.]+\s+ms).*?([\d\.]+)\/([\d.]+)/m.match(@equipment['dut1'].response).captures
+			xfer2=bw2=0
 		end
 		
 		sleep 2
-		puts "Here is the DUT response."
-		puts " "
-		puts "*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-"
-		puts " "
-			
+		
     # *********************** parse/format the results ***********************
-    puts "eth_iperf_perf_script-12 - Parsing test results."
+		send_status("Parsing test results. --- "+ __LINE__.to_s)
 			
 		if /\s*([kK])/.match(bw1.to_s)
 			bw1 = "%.3f" % (bw1.to_f / 1000)
 		else
 			bw1 = "%.3f" % (bw1.to_f)
 		end
-			
+
 		if /\s*([kK])/.match(bw2.to_s)
 			bw2 = "%.3f" % (bw2.to_f / 1000)
 		else
 			bw2 = "%.3f" % (bw2.to_f)
 		end
-			
+
 		if /\s*([kK])/.match(xfer1.to_s)
 			xfer1 = "%.3f" % (xfer1.to_f / 1000)
 		else
 			xfer1 = "%.3f" % (xfer1.to_f)
 		end
-			
+
 		if /\s*([kK])/.match(xfer2.to_s)
 			xfer2 = "%.3f" % (bw2.to_f / 1000)
 		else
 			xfer2 = "%.3f" % (xfer2.to_f)
 		end
-				
-		jit = "%.3f" % (jit1.to_f)
-				
+
     bw=xfer=jit=pctloss=nil
     bw = (bw1.to_f + bw2.to_f).to_s if bw1 and bw2
 		xfer = (xfer1.to_f + xfer2.to_f).to_s if xfer1 and xfer2
 				
+    #puts "=================== Data #{bw1} #{xfer1} #{bw2} #{xfer2} #{"%.3f" % (jit1.to_f)} #{"%.3f" % (pctloss1.to_f)} ===================="
+    #puts "=================== Data #{bw1} #{xfer1} #{bw2} #{xfer2} ===================="
 		puts " "
-    puts "=================== Data #{bw1} #{xfer1} #{bw2} #{xfer2} #{"%.3f" % (jit1.to_f)} #{"%.3f" % (pctloss1.to_f)} ===================="
+    puts "================= Performance Data Total BW: #{bw} Xfer Rate: #{xfer} #{bw1} #{xfer1} #{bw2} #{xfer2} ===================="
 		puts " "
-    puts "=========================== Data #{bw} #{xfer} =============================="
+		puts "======================================== Test Data: #{jit1} #{jit2} #{jit3} ==============================================="
 		puts " "
-				
-    # *********************** ensure results are valid ***********************
+		send_status ("Line Status Location: --- "+ __LINE__.to_s)
+
+		if /(\d+)\s+pts.+?iperf/im.match(@equipment['pc1'].response).captures
+			@equipment['pc1'].send_cmd("kill -9 #{pid.to_s}", /@/) 
+		end
+		
+		puts "------------------------------  Response Start ---------------------------------"+ __LINE__.to_s
+		puts "#{response}"
+		puts "------------------------------  Response End ---------------------------------"+ __LINE__.to_s
+		
+    sleep 1
+		
+		# *********************** ensure results are valid ***********************
     if (duration == nil || bw == nil || xfer == nil)
-      if @test_params.params_chan.comm_mode[0] == 'cdc' 
-				puts "eth_iperf_perf_script-13a - Send 1st Ctrl-C."
-				@equipment['dut1'].send_cmd("\cC", /#/,10)
-				puts "eth_iperf_perf_script-13a - Send 2nd Ctrl-C."
-				sleep 2
-				@equipment['dut1'].send_cmd("\cC", /#/,10)
-				puts "eth_iperf_perf_script-13a - Kill any active iperf sessions on DUT and PC."
 				@equipment['dut1'].send_cmd("kill -9 #{pid.to_s}", /.*/) 
-        @equipment['pc1'].send_cmd("kill -9 #{pid.to_s}", /Killed/) 
-      else
-				
+        @equipment['pc1'].send_cmd("kill -9 #{pid.to_s}", /@/) 
         @equipment['pc2'].send_cmd("taskkill /F /IM IPerf*", /.*/)
-      end
-				
-      result = 3
-      return result
-				
 		else
-			puts "eth_iperf_perf_script-13a - Send 1st Ctrl-C."
+			send_status("Send 1st Ctrl-C. --- "+ __LINE__.to_s)
 			@equipment['dut1'].send_cmd("\cC", /#/,10)
-			puts "eth_iperf_perf_script-13a - Send 2nd Ctrl-C."
-			sleep 2
+			send_status("Send 2nd Ctrl-C. --- "+ __LINE__.to_s)
+			sleep 1
 			@equipment['dut1'].send_cmd("\cC", /#/,10)
-			sleep 2
+			sleep 1
 		end
 			
 		xfer = "%.3f" % (xfer.to_f)
 		bw = "%.3f" % (bw.to_f)
-		jit = "%.3f" % (jit1.to_f)
-		pctloss = "%.3f" % (pctloss1.to_f)
+		#jit = "%.3f" % (jit1.to_f)
+		#pctloss = "%.3f" % (pctloss1.to_f)
 		
-			[result, duration, bw, xfer, jit, pctloss]
+			#[result, duration, bw, xfer, jit, pctloss]
+			[result, duration, bw, xfer]
   end
   
   
