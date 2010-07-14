@@ -40,7 +40,7 @@ module H263PParams
         'h263pvenc_dyn_20_mbdataflag_msb'                    =>      0,
         'h263pvenc_dyn_21_mbdataflag_lsb'                    =>      0,
         'h263pvenc_dyn_22_resyncinterval_msb'                =>      0,   
-        'h263pvenc_dyn_23_resyncinterval_lsb'                =>      2000,   
+        'h263pvenc_dyn_23_resyncinterval_lsb'                =>      28000,   
         'h263pvenc_dyn_24_hecinterval_msb'                   =>      0,   
         'h263pvenc_dyn_25_hecinterval_lsb'                   =>      0,   
         'h263pvenc_dyn_26_airrate_msb'                       =>      0,    
@@ -48,9 +48,9 @@ module H263PParams
         'h263pvenc_dyn_28_mirrate_msb'                       =>      0,    
         'h263pvenc_dyn_29_mirrate_lsb'                       =>      0,    
         'h263pvenc_dyn_30_qpintra_msb'                       =>      0,    
-        'h263pvenc_dyn_31_qpintra_lsb'                       =>      8,    
+        'h263pvenc_dyn_31_qpintra_lsb'                       =>      12,    
         'h263pvenc_dyn_32_qpinter_msb'                       =>      0,    
-        'h263pvenc_dyn_33_qpinter_lsb'                       =>      8,    
+        'h263pvenc_dyn_33_qpinter_lsb'                       =>      12,    
         'h263pvenc_dyn_34_fcode_msb'                         =>      0,    
         'h263pvenc_dyn_35_fcode_lsb'                         =>      1,    
         'h263pvenc_dyn_36_usehpi_msb'                        =>      0,    
@@ -85,8 +85,8 @@ module H263PParams
         'h263pvenc_st_07_maxwidth_lsb'                       =>       176,
         'h263pvenc_st_08_maxframerate_msb'                   =>       0,
         'h263pvenc_st_09_maxframerate_lsb'                   =>       30000,
-        'h263pvenc_st_10_maxbitrate_msb'                     =>       "0x0003",
-        'h263pvenc_st_11_maxbitrate_lsb'                     =>       "0xE800",
+        'h263pvenc_st_10_maxbitrate_msb'                     =>       "0x0016",
+        'h263pvenc_st_11_maxbitrate_lsb'                     =>       "0xE360",
         'h263pvenc_st_12_dataend_msb'                        =>       0,
         'h263pvenc_st_13_dataend_lsb'                        =>       1,
         'h263pvenc_st_14_maxintfrint_msb'                    =>       0,
@@ -108,7 +108,7 @@ module H263PParams
         'h263pvenc_st_30_vbvbuffersize_msb'                  =>       0,
         'h263pvenc_st_31_vbvbuffersize_lsb'                  =>       112,
         'h263pvenc_st_32_usevos_msb'                         =>       0,
-        'h263pvenc_st_33_usevos_lsb'                         =>       0,
+        'h263pvenc_st_33_usevos_lsb'                         =>       1,
         'h263pvenc_st_34_usegov_msb'                         =>       0,
         'h263pvenc_st_35_usegov_lsb'                         =>       0,
         'h263pvenc_st_36_usedatapartition_msb'               =>       0,
@@ -167,23 +167,23 @@ def get_h263p_test_params(codec_type)
         'h263pv_enc_ovly_type'                          =>  0,
         'h263pv_enc_max_payload_size'                   =>  1460,
         #ENC static
-        'h263pvenc_st_encodingpreset'                 =>        1,
-        'h263pvenc_st_ratectrlpr'                     =>        5,
-        'h263pvenc_st_maxframerate'                   =>        30000,
-        'h263pvenc_st_maxintfrint'                    =>        0,       
-        'h263pvenc_st_levelidc'                       =>        5,      
-        'h263pvenc_st_rcalgo'                         =>        8,
-        'h263pvenc_st_maxdelay'                       =>        1000,
+        # 'h263pvenc_st_encodingpreset'                 =>        1,
+        # 'h263pvenc_st_ratectrlpr'                     =>        5,
+        # 'h263pvenc_st_maxframerate'                   =>        30000,
+        # 'h263pvenc_st_maxintfrint'                    =>        0,       
+        # 'h263pvenc_st_levelidc'                       =>        5,      
+        # 'h263pvenc_st_rcalgo'                         =>        4,
+        # 'h263pvenc_st_maxdelay'                       =>        1000,
         
-        #ENC dynamic
-        'h263pvenc_dyn_reffrrate'                       =>        30000,       
-        'h263pvenc_dyn_intrafrint'                      =>        30,
+        # #ENC dynamic
+        # 'h263pvenc_dyn_reffrrate'                       =>        30000,       
+        # 'h263pvenc_dyn_intrafrint'                      =>        30,
         }
         elsif(codec_type == "dec")
           @H263P_test_params = {
         #DEC static
-        'h263pvdec_st_maxframerate'                   =>    30,
-        'h263pvdec_st_maxbitrate'                     =>    10000000,
+        # 'h263pvdec_st_maxframerate'                   =>    30,
+        # 'h263pvdec_st_maxbitrate'                     =>    10000000,
         }
         end
  end

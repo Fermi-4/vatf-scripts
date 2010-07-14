@@ -84,8 +84,8 @@ module MPEG4Params
         'mpeg4venc_st_07_maxwidth_lsb'                       =>        176,
         'mpeg4venc_st_08_maxframerate_msb'                   =>        0,
         'mpeg4venc_st_09_maxframerate_lsb'                   =>        30000,
-        'mpeg4venc_st_10_maxbitrate_msb'                     =>        "0x0003",
-        'mpeg4venc_st_11_maxbitrate_lsb'                     =>        "0xE800",
+        'mpeg4venc_st_10_maxbitrate_msb'                     =>        "0x0016",
+        'mpeg4venc_st_11_maxbitrate_lsb'                     =>        "0xE360",
         'mpeg4venc_st_12_dataend_msb'                        =>        0,
         'mpeg4venc_st_13_dataend_lsb'                        =>        1,
         'mpeg4venc_st_14_maxintfrint_msb'                    =>        0,
@@ -103,7 +103,7 @@ module MPEG4Params
         'mpeg4venc_st_26_numframes_msb'                      =>        0,
         'mpeg4venc_st_27_numframes_lsb'                      =>        240,
         'mpeg4venc_st_28_rcalgo_msb'                         =>        0,
-        'mpeg4venc_st_29_rcalgo_lsb'                         =>        4,
+        'mpeg4venc_st_29_rcalgo_lsb'                         =>        8,
         'mpeg4venc_st_30_vbvbuffersize_msb'                  =>        0,
         'mpeg4venc_st_31_vbvbuffersize_lsb'                  =>        112,
         'mpeg4venc_st_32_usevos_msb'                         =>        0,
@@ -166,23 +166,23 @@ end
         'mpeg4v_enc_ovly_type'                       =>         0,
         'mpeg4v_enc_max_payload_size'                =>         1460,
         #ENC static
-        'mpeg4venc_st_encodingpreset'                 =>        2,
-        'mpeg4venc_st_ratectrlpr'                     =>        1,
-        'mpeg4venc_st_maxframerate'                   =>        30000,
-        'mpeg4venc_st_maxintfrint'                    =>        0,       
-        'mpeg4venc_st_levelidc'                       =>        5,      
-        'mpeg4venc_st_rcalgo'                         =>        8,
-        'mpeg4venc_st_maxdelay'                       =>        1000,
-        'mpeg4venc_st_maxframerate'                   =>        30000,        
-        #ENC dynamic
-        'mpeg4venc_dyn_reffrrate'                     =>        30000,
-        'mpeg4venc_dyn_intrafrint'                    =>        30,
+        # 'mpeg4venc_st_encodingpreset'                 =>        2,
+        # 'mpeg4venc_st_ratectrlpr'                     =>        1,
+        # 'mpeg4venc_st_maxframerate'                   =>        30000,
+        # 'mpeg4venc_st_maxintfrint'                    =>        0,       
+        # 'mpeg4venc_st_levelidc'                       =>        5,      
+        # 'mpeg4venc_st_rcalgo'                         =>        8,
+        # 'mpeg4venc_st_maxdelay'                       =>        1000,
+        # 'mpeg4venc_st_maxframerate'                   =>        30000,        
+        # #ENC dynamic
+        # 'mpeg4venc_dyn_reffrrate'                     =>        30000,
+        # 'mpeg4venc_dyn_intrafrint'                    =>        30,
         }
     elsif(codec_type == "dec")
           @MPEG4_test_params = {
         #DEC static
-        'mpeg4vdec_st_maxframerate'                         =>    30,
-        'mpeg4vdec_st_maxbitrate'                           =>    10000000,
+        # 'mpeg4vdec_st_maxframerate'                         =>    30,
+        # 'mpeg4vdec_st_maxbitrate'                           =>    10000000,
         }
     end
  end
