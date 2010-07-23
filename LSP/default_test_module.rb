@@ -76,6 +76,7 @@ module LspTestScript
         # Boot DUT
         samba_path = "#{samba_root_path_temp}\\test\\#{tester_from_cli}\\#{target_from_db}\\#{platform_from_db}\\bin"
         nfs_path   = "#{nfs_root_path_temp}/test/#{tester_from_cli}/#{target_from_db}/#{platform_from_db}/bin"
+        #nfs_root_path_temp = "#{@equipment['server1'].telnet_ip}:#{nfs_root_path_temp}"
         #nfs_root_path_temp = @test_params.var_nfs  if @test_params.instance_variable_defined?(:@var_nfs)  # Optionally use external nfs server
       
         boot_params = {'power_handler'=> @power_handler,
