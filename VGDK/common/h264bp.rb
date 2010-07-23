@@ -57,8 +57,8 @@ module H264BPParams
     'h264bpvenc_st_07_maxwidth_lsb'                       =>    352,
     'h264bpvenc_st_08_maxframerate_msb'                   =>    0,
     'h264bpvenc_st_09_maxframerate_lsb'                   =>    30000,
-    'h264bpvenc_st_10_maxbitrate_msb'                     =>     "0x0005",
-    'h264bpvenc_st_11_maxbitrate_lsb'                     =>     "0xDC00",
+    'h264bpvenc_st_10_maxbitrate_msb'                     =>     "0x0016",
+    'h264bpvenc_st_11_maxbitrate_lsb'                     =>     "0xE360",
     'h264bpvenc_st_12_dataend_msb'                        =>     0,
     'h264bpvenc_st_13_dataend_lsb'                        =>     1,
     'h264bpvenc_st_14_maxintfrint_msb'                    =>     0,
@@ -72,7 +72,7 @@ module H264BPParams
     'h264bpvenc_st_22_levelidc_msb'                       =>     0,
     'h264bpvenc_st_23_levelidc_lsb'                       =>     30,
     'h264bpvenc_st_24_rcalgo_msb'                         =>     0,
-    'h264bpvenc_st_25_rcalgo_lsb'                         =>     1,
+    'h264bpvenc_st_25_rcalgo_lsb'                         =>     4,
     'h264bpvenc_st_26_srchrnge_msb'                       =>     0,
     'h264bpvenc_st_27_srchrnge_lsb'                       =>     64,
                                               
@@ -96,9 +96,9 @@ module H264BPParams
     'h264bpvenc_dyn_016_frcifr_msb'                       =>     0,  
     'h264bpvenc_dyn_017_frcifr_lsb'                       =>     0,   
     'h264bpvenc_dyn_018_qpintra_msb'                      =>     0,   
-    'h264bpvenc_dyn_019_qpintra_lsb'                      =>     48, 
+    'h264bpvenc_dyn_019_qpintra_lsb'                      =>     28, 
     'h264bpvenc_dyn_020_qpinter_msb'                      =>     0, 
-    'h264bpvenc_dyn_021_qpinter_lsb'                      =>     48, 
+    'h264bpvenc_dyn_021_qpinter_lsb'                      =>     28, 
     'h264bpvenc_dyn_022_qpmax_msb'                        =>     0, 
     'h264bpvenc_dyn_023_qpmax_lsb'                        =>     51, 
     'h264bpvenc_dyn_024_qpmin_msb'                        =>     0, 
@@ -130,9 +130,9 @@ module H264BPParams
     'h264bpvenc_dyn_050_picoodrcntty_msb'                 =>     0, 
     'h264bpvenc_dyn_051_picoodrcntty_lsb'                 =>     2, 
     'h264bpvenc_dyn_052_maxmvpermb_msb'                   =>     0, 
-    'h264bpvenc_dyn_053_maxmvpermb_lsb'                   =>     4, 
+    'h264bpvenc_dyn_053_maxmvpermb_lsb'                   =>     1, 
     'h264bpvenc_dyn_054_int4x4enidc_msb'                  =>     0, 
-    'h264bpvenc_dyn_055_int4x4enidc_lsb'                  =>     1, 
+    'h264bpvenc_dyn_055_int4x4enidc_lsb'                  =>     0, 
     'h264bpvenc_dyn_056_mvdataen_msb'                     =>     0, 
     'h264bpvenc_dyn_057_mvdataen_lsb'                     =>     0, 
     'h264bpvenc_dyn_058_hiercoden_msb'                    =>     0, 
@@ -202,33 +202,33 @@ module H264BPParams
     'h264bpv_enc_ovly_type'                        =>     0,
     'h264bpv_enc_max_payload_size'                 =>   1460,
   # H264 ENC static test params
-    'h264bpvenc_st_encodingpreset'                 =>     3,
-    'h264bpvenc_st_ratectrlpr'                     =>     1,
-    'h264bpvenc_st_maxframerate'                   =>     30000,
-    'h264bpvenc_st_maxintfrint'                    =>     0,
-    'h264bpvenc_st_levelidc'                       =>     30,
-    'h264bpvenc_st_rcalgo'                         =>     1,
-    'h264bpvenc_st_srchrnge'                       =>     16,
+    # 'h264bpvenc_st_encodingpreset'                 =>     3,
+    # 'h264bpvenc_st_ratectrlpr'                     =>     1,
+    # 'h264bpvenc_st_maxframerate'                   =>     30000,
+    # 'h264bpvenc_st_maxintfrint'                    =>     0,
+    # 'h264bpvenc_st_levelidc'                       =>     30,
+    # 'h264bpvenc_st_rcalgo'                         =>     4,
+    # 'h264bpvenc_st_srchrnge'                       =>     16,
     
-    # H264 ENC dynamic test params  
-    'h264bpvenc_dyn_reffrrate'                     =>     30000, 
-    # 'h264bpvenc_dyn_tgtfrrate'                   =>     30000,
-    # 'h264bpvenc_dyn_tgtbitrate'                  =>     384000,     
+    # # H264 ENC dynamic test params  
+    # 'h264bpvenc_dyn_reffrrate'                     =>     30000, 
+    # # 'h264bpvenc_dyn_tgtfrrate'                   =>     30000,
+    # # 'h264bpvenc_dyn_tgtbitrate'                  =>     384000,     
 
-    'h264bpvenc_dyn_intrafrint'                    =>     30,     
-    'h264bpvenc_dyn_qtpeldis'                      =>     0, 
-    'h264bpvenc_dyn_airmbper'                      =>     0, 
-    'h264bpvenc_dyn_intpreden'                     =>     0, 
-    'h264bpvenc_dyn_maxmvpermb'                    =>     1, 
-    'h264bpvenc_dyn_int4x4enidc'                   =>     0, 
-    'h264bpvenc_dyn_hiercoden'                     =>     0, 
+    # 'h264bpvenc_dyn_intrafrint'                    =>     30,     
+    # 'h264bpvenc_dyn_qtpeldis'                      =>     0, 
+    # 'h264bpvenc_dyn_airmbper'                      =>     0, 
+    # 'h264bpvenc_dyn_intpreden'                     =>     0, 
+    # 'h264bpvenc_dyn_maxmvpermb'                    =>     1, 
+    # 'h264bpvenc_dyn_int4x4enidc'                   =>     0, 
+    # 'h264bpvenc_dyn_hiercoden'                     =>     0, 
     }
     elsif(codec_type == "dec")
       @H264BP_test_params = {
       # H264 DEC static test params    
-    'h264bpvdec_st_maxframerate'                   => 30,
-    'h264bpvdec_st_maxbitrate'                     => 10000000,
-    'h264bpvdec_st_ipstrformat'                    => 1, # 0->bytestrfmt, 1->nal unit format
+    # 'h264bpvdec_st_maxframerate'                   => 30,
+    # 'h264bpvdec_st_maxbitrate'                     => 10000000,
+    # 'h264bpvdec_st_ipstrformat'                    => 1, # 0->bytestrfmt, 1->nal unit format
     }
     end
    end

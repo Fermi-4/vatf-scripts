@@ -104,7 +104,10 @@ def run
     @show_debug_messages = false
     @perfData = nil
     subjective = @test_params.params_chan.issubjectivereqd[0].to_i
-    multislice = @test_params.params_chan.multislice[0].to_i
+    multislice = 0
+	if(@test_params.params_chan.instance_variable_defined?("@multislice"))    
+      multislice = @test_params.params_chan.multislice[0].to_i
+    end
     test_case_id = @test_params.caseID
     num_frames = @test_params.params_chan.num_frames[0].to_i
     save_clips = @test_params.params_chan.saveclips[0].to_s
@@ -416,11 +419,9 @@ def run
     pc_udp_port = 32768
     # Generate packet headers
 
-    if (File.exists?"#{INPUT_DIR}/config/pktHdrs/TC#{test_case_id}")
-      FileUtils.remove_dir("#{INPUT_DIR}/config/pktHdrs/TC#{test_case_id}") 
-    end
-    FileUtils.mkdir("#{INPUT_DIR}/config/pktHdrs/TC#{test_case_id}") 
     
+    FileUtils.remove_dir("#{INPUT_DIR}/config/pktHdrs/TC#{test_case_id}")  if (File.exists?"#{INPUT_DIR}/config/pktHdrs/TC#{test_case_id}")
+    FileUtils.mkdir("#{INPUT_DIR}/config/pktHdrs/TC#{test_case_id}")     
     FileUtils.mkdir("#{OUTPUT_DIR}/outputCap/TC#{test_case_id}") if !File.exists?("#{OUTPUT_DIR}/outputCap/TC#{test_case_id}")
     FileUtils.mkdir("#{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}")
     FileUtils.mkdir("#{OUTPUT_DIR}/TC#{test_case_id}") if !File.exists?("#{OUTPUT_DIR}/TC#{test_case_id}")
@@ -787,15 +788,19 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
       params_hash["#{codec.upcase}_ENC_intrafrint_msb"] = ((@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000) & 0xffff0000) >> 16
       params_hash["#{codec.upcase}_ENC_reffrrate_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff
       params_hash["#{codec.upcase}_ENC_reffrrate_msb"] = (@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff0000) >> 16
-    end
+	  if(codec == "h264bp")
+		  params_hash["#{codec.upcase}_ENC_maxdelay_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000 & 0xffff
+		  params_hash["#{codec.upcase}_ENC_maxdelay_msb"] = ((@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000) & 0xffff0000) >> 16
+      end
+	end
     if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_dyn")
       params_hash["#{codec.upcase}_ENC_tgtbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
       params_hash["#{codec.upcase}_ENC_tgtbitrate_msb"] = sprintf("0x%04x", (@test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff0000) >> 16)
     end
-    if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_st")
-      params_hash["#{codec.upcase}_ENC_maxbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
-      params_hash["#{codec.upcase}_ENC_maxbitrate_msb"] = sprintf("0x%04x", (@test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff0000) >> 16)
-    end
+    # if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_st")
+      # params_hash["#{codec.upcase}_ENC_maxbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
+      # params_hash["#{codec.upcase}_ENC_maxbitrate_msb"] = sprintf("0x%04x", (@test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff0000) >> 16)
+    # end
   else #default
     default_params.each_pair do |var,value|
     if /#{codec}v#{type}/.match(var)
