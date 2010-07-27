@@ -33,7 +33,7 @@ def run
     end until file_res_form.test_result != FrameworkConstants::Result[:nry]
     set_result(file_res_form.test_result,file_res_form.comment_text)
     ensure 
-      result, cmd = execute_cmd(ensure_commands)
+      result, cmd = execute_cmd(ensure_commands) if ensure_commands !=""
 =begin
   begin
     @equipment['dut1'].send_cmd("keypad_test &", @equipment['dut1'].prompt, 20)

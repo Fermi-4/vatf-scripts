@@ -65,9 +65,11 @@ module LspTestScript
           kernel_modules.gsub!(/\\/,'/')
           kernel_modules_name = /\/[^\/\\]+?\/([\w\.\-]+?)$/.match("#{kernel_modules.strip}").captures[0]
           #@equipment['server1'].send_sudo_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/lib/modules", @equipment['server1'].prompt, 10)  if !File.directory?("#{samba_root_path_temp}\\lib\\modules")
-          BuildClient.copy(@test_params.kernel_modules, "#{samba_root_path_temp}\\#{File.basename(@test_params.kernel_modules)}")
-          @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10)
-          @equipment['server1'].send_sudo_cmd("tar -xvzf #{kernel_modules_name}", @equipment['server1'].prompt, 300)
+          BuildClient.copy(@test_params.kernel_modules, "#{samba_root_path_temp}\\..\\#{File.basename(@test_params.kernel_modules)}")
+          @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}/..", @equipment['server1'].prompt, 10)
+          @equipment['server1'].send_sudo_cmd("tar -xvzf #{kernel_modules_name} -C #{nfs_root_path_temp}", @equipment['server1'].prompt, 30)
+		  @equipment['server1'].send_cmd("rm -f #{kernel_modules_name}", @equipment['server1'].prompt, 10)
+		  @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10)
         end
       
         @equipment['server1'].send_sudo_cmd("mkdir -p -m 777 #{nfs_root_path_temp}/test", @equipment['server1'].prompt, 10) if !(@test_params.instance_variable_defined?(:@var_nfs))
@@ -76,7 +78,8 @@ module LspTestScript
         # Boot DUT
         samba_path = "#{samba_root_path_temp}\\test\\#{tester_from_cli}\\#{target_from_db}\\#{platform_from_db}\\bin"
         nfs_path   = "#{nfs_root_path_temp}/test/#{tester_from_cli}/#{target_from_db}/#{platform_from_db}/bin"
-        #nfs_root_path_temp = @test_params.var_nfs  if @test_params.instance_variable_defined?(:@var_nfs)  # Optionally use external nfs server
+        nfs_root_path_temp = "#{@equipment['server1'].telnet_ip}:#{nfs_root_path_temp}"
+        nfs_root_path_temp = @test_params.var_nfs  if @test_params.instance_variable_defined?(:@var_nfs)  # Optionally use external nfs server
       
         boot_params = {'power_handler'=> @power_handler,
                        'platform' => platform_from_db,
@@ -90,8 +93,8 @@ module LspTestScript
         boot_params['bootargs'] = @test_params.params_chan.bootargs[0] if @test_params.params_chan.instance_variable_defined?(:@bootargs)
         @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
       
-        if Boot::boot_required?(@old_keys, @new_keys) # call bootscript if required
-          if @equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil
+        if boot_required?(@old_keys, @new_keys) # call bootscript if required
+		  if @equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil
             @equipment['dut1'].connect({'type'=>'serial'})
           elsif @equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil
             @equipment['dut1'].connect({'type'=>'serial'})
@@ -186,7 +189,7 @@ module LspTestScript
             set_result(FrameworkConstants::Result[:nry])
         end
         ensure 
-            result, cmd = execute_cmd(ensure_commands)
+            result, cmd = execute_cmd(ensure_commands) if ensure_commands !=""
     end
     
     def clean
@@ -277,7 +280,7 @@ module LspTestScript
             if cmd.ruby_code 
                 eval cmd.ruby_code
             else
-                cmd.pass_regex =  /#{cmd.cmd_to_send.split(/\s/)[0]}.*#{@equipment['dut1'].prompt.source}/m if !cmd.instance_variable_defined?(:@pass_regex)
+                cmd.pass_regex =  /#{@equipment['dut1'].prompt.source}/m if !cmd.instance_variable_defined?(:@pass_regex)
                 if !cmd.instance_variable_defined?(:@fail_regex)
                     expect_regex = "(#{cmd.pass_regex})"
                 else

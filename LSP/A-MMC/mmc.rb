@@ -26,7 +26,7 @@ def run
           set_result(FrameworkConstants::Result[:fail], "No MMC/SD card found")
         end          
         ensure 
-          result, cmd = execute_cmd(ensure_commands)
+          result, cmd = execute_cmd(ensure_commands) if ensure_commands !=""
 end
 
 # checks the unit to see if the memory card exists/is mountable

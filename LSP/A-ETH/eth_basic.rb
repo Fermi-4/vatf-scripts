@@ -30,7 +30,7 @@ def run
             set_result(FrameworkConstants::Result[:nry])
         end
   ensure 
-    result, cmd = execute_cmd(ensure_commands)
+    result, cmd = execute_cmd(ensure_commands)  if ensure_commands !=""
 end
 
 def clean

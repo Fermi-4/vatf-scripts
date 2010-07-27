@@ -66,11 +66,11 @@ module LspReadWritePerfScript
         
           # umount the device to make writeback happen
           if @test_params.params_chan.instance_variable_defined?(:@mount_point) then
-            @equipment['dut1'].send_cmd("umount #{mnt_point}", @equipment['dut1'].prompt, 10)
+            @equipment['dut1'].send_cmd("umount #{mnt_point}", @equipment['dut1'].prompt, 300)
             # make sure umount ok
             @equipment['dut1'].send_cmd("mount", @equipment['dut1'].prompt, 10)
             if m_regex.match(@equipment['dut1'].response) then
-              # raise "device umount failed!!"  # Disabling for now due to LspTargetController bug
+				raise "device umount failed!!"  # Disabling for now due to LspTargetController bug
             end
           end
       }

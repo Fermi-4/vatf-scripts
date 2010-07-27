@@ -28,7 +28,6 @@ def run_generate_script
     staf_result_map = STAF::STAFResult.unmarshall_response(staf_req.result)
     bee_machine = staf_result_map['name'] 
     bee_id      = staf_result_map['id']
-    
     ftp_file_version = @test_params.params_chan.script[0].gsub(/ftp:\/\//i,'')
     # Request GET BUILDID  to FTP BEE
     staf_req = my_staf_handle.submit(bee_machine,"ftp@"+bee_id,"GET BUILDID ASSET script VERSION #{ftp_file_version}") 
@@ -51,11 +50,13 @@ def run_generate_script
       raise "Could not resolve VAR STAF/DataDir. Make sure that STAF is running at the TEE machine"
     end
     staf_data_dir = staf_req.result
+	
+	# Copy file from BEE to local TEE directory
     dst_dir = "#{staf_data_dir}\\user\\sw_assets\\ftp\\script\\#{bee_file_id}"
     dst_file = "#{dst_dir}\\#{File.basename(bee_file_path.gsub(/\\/,'/'))}"
     if (!File.exists?(dst_file))
       FileUtils.mkdir_p dst_dir
-      staf_req = my_staf_handle.submit(bee_machine,"fs","COPY FILE #{bee_file_path} TOFILE #{dst_file}") 
+	  staf_req = my_staf_handle.submit(bee_machine,"fs","COPY FILE #{bee_file_path} TOFILE #{dst_file}") 
       if(staf_req.rc != 0)
         raise "Could not copy file from FTP Bee to TEE machine"
       end
@@ -69,18 +70,17 @@ def run_generate_script
   in_file = File.new(dst_file, 'r')
   raw_test_lines = in_file.readlines
   out_file = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER, 'test.sh'),'w')
-  #out_file.puts("#!/bin/bash \n")
-  out_file.puts("failtest() {")
-  out_file.puts("  echo 1 >&3")
-  out_file.puts("}")
+  out_file.print("failtest() {\n")
+  out_file.print("  echo 1 >&3\n")
+  out_file.print("}\n")
   param_names = @test_params.params_chan.instance_variables
   param_names.each {|name|
     val=@test_params.params_chan.instance_variable_get(name)[0]
-    out_file.puts("#{name.sub(/@/,'')}=#{/\s+/.match(val) ? "'"+val+"'" : val }")
+    out_file.print("#{name.to_s.sub(/@/,'')}=#{/\s+/.match(val) ? "'"+val+"'" : val }\n")
   }
-  out_file.puts("# Start of user's script logic")
+  out_file.print("\n# Start of user's script logic\n")
   raw_test_lines.each do |current_line|
-    out_file.puts(eval('"'+current_line.gsub("\\","\\\\\\\\").gsub('"','\\"')+'"'))
+    out_file.print(eval('"'+current_line.gsub("\\","\\\\\\\\").gsub('"','\\"')+'"')+"\n")
   end
   in_file.close
   out_file.close
@@ -98,9 +98,9 @@ end
 # the script returned and error code
 def run_determine_test_outcome
   puts "\n LinuxTestScript::run_determine_test_outcome"
-  @equipment['dut1'].send_cmd("echo $?",/^0$/m, 2)
+  @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
   returncode_check = @equipment['dut1'].timeout?
-  @equipment['dut1'].send_cmd("cat result.log",/^1$/m, 2)
+  @equipment['dut1'].send_cmd("cat result.log",/^1[\0\n\r]+/m, 2)
   failtest_check = !@equipment['dut1'].timeout?
   
   if returncode_check
@@ -121,7 +121,3 @@ def get_detailed_info
   return all_lines
 end
 
-
-def unmarshall
-  
-end

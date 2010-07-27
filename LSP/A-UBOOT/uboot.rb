@@ -28,7 +28,7 @@ def run
     set_result(FrameworkConstants::Result[:nry])
   end
   ensure 
-    result, cmd = execute_cmd(ensure_commands)
+    result, cmd = execute_cmd(ensure_commands) if ensure_commands !=""
     @equipment['dut1'].send_cmd('boot', /login/, 90)
     @equipment['dut1'].send_cmd(@equipment['dut1'].login, @equipment['dut1'].prompt, 20) # login to the unit to leave it in a decent state
 end

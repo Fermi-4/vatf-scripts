@@ -48,7 +48,7 @@ def run
       t_diff = (Time.now - t1).to_i
     end
     ensure 
-        result, cmd = execute_cmd(ensure_commands)
+        result, cmd = execute_cmd(ensure_commands)  if ensure_commands !="" 
 
 end
 

@@ -206,8 +206,6 @@ module LspTargetTestScript
   end
   
   
-  
-  private
   def get_keys
     kernel = @test_params.instance_variable_defined?(:@kernel) ? @test_params.kernel.to_s : ''
     keys = @test_params.platform.to_s + kernel
@@ -215,10 +213,12 @@ module LspTargetTestScript
   end
   
   def boot_required?(old_params, new_params)
+    #puts "\n\nIn default_target_test.rb boot_required?. Is kernel defined? #{@test_params.instance_variable_defined?(:@kernel)}" # TODO REMOVE DEBUG PRINT
     return false if !@test_params.instance_variable_defined?(:@kernel)
-    old_test_string = get_test_string(old_params)
-    new_test_string = get_test_string(new_params)
-    old_test_string != new_test_string
+    # old_test_string = get_test_string(old_params)
+    # new_test_string = get_test_string(new_params)
+    # old_test_string != new_test_string
+	old_params!= new_params
   end
   
   def get_test_string(params)
@@ -229,6 +229,7 @@ module LspTargetTestScript
     test_string
   end
   
+  private
   def delete_temp_files
     return if !File.directory?(SiteInfo::LINUX_TEMP_FOLDER)
     Dir.foreach(SiteInfo::LINUX_TEMP_FOLDER) do |f|

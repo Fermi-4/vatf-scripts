@@ -31,7 +31,7 @@ def run
   set_result(file_res_form.test_result,file_res_form.comment_text)
   
   ensure 
-    result, cmd = execute_cmd(ensure_commands)  
+    result, cmd = execute_cmd(ensure_commands) if ensure_commands !=""  
 end
 
 

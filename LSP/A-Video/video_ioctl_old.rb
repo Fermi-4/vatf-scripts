@@ -24,7 +24,7 @@ def run
       set_result(FrameworkConstants::Result[:nry])
   end
   ensure 
-      result, cmd = execute_cmd(ensure_commands)
+      result, cmd = execute_cmd(ensure_commands) if ensure_commands !=""
 =begin
   begin
     #@equipment['dut1'].send_cmd("audiolb -s 48 -f 8192 #{@test_params.params_chan.block[0]} #{@test_params.params_chan.mic[0]}", @equipment['dut1'].prompt, 60)

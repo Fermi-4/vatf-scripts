@@ -8,9 +8,11 @@
 module Boot   
     
   def boot_required?(old_params, new_params)
-    old_test_string = get_test_string(old_params)
-    new_test_string = get_test_string(new_params)
-    old_test_string != new_test_string
+    # old_test_string = get_test_string(old_params)
+    # new_test_string = get_test_string(new_params)
+	# puts "\n\nIn Boot::boot_required?. new_test_string=#{new_test_string}" # TODO REMOVE DEBUG PRINT
+    #old_test_string != new_test_string
+	old_params != new_params
   end
   
   def login_uut

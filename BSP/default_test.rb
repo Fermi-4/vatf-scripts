@@ -51,7 +51,7 @@ module WinceTestScript
       end
       @equipment['dut1'].boot(boot_params) 
       puts "Waiting 30 seconds for kernel to boot...."
-      sleep 30
+      sleep 90
     end
     if @equipment['dut1'].respond_to?(:telnet_port) && @equipment['dut1'].telnet_port != nil  && !@equipment['dut1'].target.telnet
       @equipment['dut1'].connect({'type'=>'telnet'})
@@ -137,8 +137,10 @@ module WinceTestScript
       get_file({'filename'=>'stderr.log'})
       get_file({'filename'=>'stdout.log'})
       #yliu: temp: save differnt test log to different files
-      std_output = File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER,'stdout.log'),'r').read
-      std_error  = File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER,'stderr.log'),'r').read
+      std_file = File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER,'stdout.log'),'r')
+      err_file = File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER,'stderr.log'),'r')
+      std_output = std_file.read
+      std_error  = err_file.read
       log_file.write("\n<STD_OUTPUT>\n"+std_output+"</STD_OUTPUT>\n")
       log_file.write("\n<ERR_OUTPUT>\n"+std_error+"</ERR_OUTPUT>\n")
     rescue Exception => e
@@ -152,6 +154,9 @@ module WinceTestScript
       log_file.write("\n<SERIAL_OUTPUT>\n"+@serial_port_data.to_s+"</SERIAL_OUTPUT>\n") 
       log_file.close
       add_log_to_html(log_file_name)
+    ensure
+      std_file.close if std_file
+      err_file.close if err_file
   end
   
   # Parse test.log and extracts performance data into perf.log. This method MUST be overridden if performance data needs to be collected.
@@ -334,7 +339,7 @@ module WinceTestScript
   
   def get_test_string(params)
     test_string = ''
-    params.each {|element|
+    params.each_char {|element|
       test_string += element.strip
     }
     test_string
