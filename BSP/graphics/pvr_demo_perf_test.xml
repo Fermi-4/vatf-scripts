@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test_session>
+   <build>
+      <id><![CDATA[1841]]></id>
+      <name><![CDATA[omap3530_v1.0.0.11]]></name>
+      <notes><![CDATA[<p>kernel=file:////158.218.106.35/gguser/wince/omap3530/images/NK_v1.0.0.11_Omap3530_lcd.bin; test_scripts_root=git://http://arago-project.org/git/projects/test-automation/execution-engines/vatf-scripts.git; platform=omap3530;var_test_apps_root=//158.218.106.35/gguser/wince/ARM_A8_1.0.0/images/test_apps</p>]]></notes>
+   </build>
+   <testcase>
+      <id><![CDATA[12345]]></id>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/graphics/pvr_demo_perf.bat,test_apps=OGLESChameleonMan.exe,cmd=OGLESChameleonMan.exe,fps=1,time=10,vsync=0
+]]></params_chan>
+      <params_control></params_control>
+      <params_equip></params_equip>
+      <scripts><![CDATA[BSP/graphics/pvr_demo_perf.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>am3517</platform>
+      <target>bsp_AM3517_v02</target>
+      <description><![CDATA[PVR demo performance Test]]></description>
+   </testcase>
+</test_session>

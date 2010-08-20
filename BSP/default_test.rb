@@ -83,14 +83,8 @@ module WinceTestScript
   def run_transfer_script()
     puts "\n WinceTestScript::run_transfer_script"
     put_file({'filename'=>'test.bat'})
-    if @test_params.params_chan.instance_variable_defined?(:@test_libs) #and false  ###### TODO TODO MUST REMOVE 'and false', Added to work around filesystem storage limit error
-      src_dir = @test_params.var_test_libs_root
-      puts "libs source dir set to #{src_dir}"
-      @test_params.params_chan.test_libs.each {|lib_file|
-        puts "libs filename set to #{lib_file}"
-        put_file({'filename' => lib_file, 'src_dir' => src_dir, 'binary' => true})
-      }
-    end
+    transfer_files(:@test_libs, :@var_test_libs_root)
+    transfer_files(:@build_test_libs, :@var_build_test_libs_root)
   end
   
   # Calls shell script (test.bat)
@@ -205,14 +199,11 @@ module WinceTestScript
   def clean_delete_binary_files
     puts "\n WinceTestScript::clean_delete_binary_files"
     @equipment['dut1'].send_cmd("cd #{@wince_dst_dir}",@equipment['dut1'].prompt)
-    if @test_params.params_chan.instance_variable_defined?(:@test_libs)
-      @test_params.params_chan.test_libs.each {|lib_file|
-        @equipment['dut1'].send_cmd("del #{lib_file}",@equipment['dut1'].prompt)  
-      }
-    end
+    delete_bin(:@test_libs)
+    delete_bin(:@build_test_libs)
     @equipment['dut1'].send_cmd("del stderr\.log",@equipment['dut1'].prompt)  
     @equipment['dut1'].send_cmd("del stdout\.log",@equipment['dut1'].prompt)  
-    @equipment['dut1'].send_cmd("del test\.bat",@equipment['dut1'].prompt)      
+    @equipment['dut1'].send_cmd("del test\.bat",@equipment['dut1'].prompt) 
   end
   
   # Return standard output of test.bat as a string
@@ -367,6 +358,24 @@ module WinceTestScript
     @results_html_file.add_paragraph(all_lines,nil,nil,nil)
   end
   
- 
+  def transfer_files(libs_var, libs_root)
+    if @test_params.params_chan.instance_variable_defined?(libs_var) #and false  ###### TODO TODO MUST REMOVE 'and false', Added to work around filesystem storage limit error
+      src_dir = @test_params.instance_variable_get(libs_root)
+      puts "apps source dir set to #{src_dir}"
+      @test_params.params_chan.instance_variable_get(libs_var).each {|lib|
+        puts "lib filename set to #{lib}"
+        put_file({'filename' => lib, 'src_dir' => src_dir, 'binary' => true})
+      }
+    end
+  end
+  
+  def delete_bin(libs_var)
+    if @test_params.params_chan.instance_variable_defined?(libs_var)
+      @test_params.params_chan.instance_variable_get(libs_var).each {|lib|
+        @equipment['dut1'].send_cmd("del #{lib}",@equipment['dut1'].prompt)  
+      }
+    end
+  end
+  
 end
   
