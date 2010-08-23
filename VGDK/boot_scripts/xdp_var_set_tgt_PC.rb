@@ -32,7 +32,27 @@ dut.send_cmd("cc xdp_var set dspIpVoiceTgt5_0 #{pc_ip}",/OK/,2)
 
 dut.send_cmd("cc xdp_var set dspMacBlkTgt0 #{pc_mac}",/OK/,2) 
 dut.send_cmd("cc xdp_var set dspIpBlkTgt0  #{pc_ip}",/OK/,2)
-dut.send_cmd("cc xdp_var set dspUdpBlkTgt0 0x8078",/OK/,2)
+dut.send_cmd("cc xdp_var set dspUdpBlkTgt0 0xCE98",/OK/,2)
+
+dut.send_cmd("cc xdp_var set dspMacBlkTgt1 #{pc_mac}",/OK/,2) 
+dut.send_cmd("cc xdp_var set dspIpBlkTgt1  #{pc_ip}",/OK/,2)
+dut.send_cmd("cc xdp_var set dspUdpBlkTgt1 0xCE9A",/OK/,2)
+
+dut.send_cmd("cc xdp_var set dspMacBlkTgt2 #{pc_mac}",/OK/,2) 
+dut.send_cmd("cc xdp_var set dspIpBlkTgt2  #{pc_ip}",/OK/,2)
+dut.send_cmd("cc xdp_var set dspUdpBlkTgt2 0xCE9C",/OK/,2)
+
+dut.send_cmd("cc xdp_var set dspMacBlkTgt3 #{pc_mac}",/OK/,2) 
+dut.send_cmd("cc xdp_var set dspIpBlkTgt3  #{pc_ip}",/OK/,2)
+dut.send_cmd("cc xdp_var set dspUdpBlkTgt3 0xCE9E",/OK/,2)
+
+dut.send_cmd("cc xdp_var set dspMacBlkTgt4 #{pc_mac}",/OK/,2) 
+dut.send_cmd("cc xdp_var set dspIpBlkTgt4  #{pc_ip}",/OK/,2)
+dut.send_cmd("cc xdp_var set dspUdpBlkTgt4 0xCEA0",/OK/,2)
+
+dut.send_cmd("cc xdp_var set dspMacBlkTgt5 #{pc_mac}",/OK/,2) 
+dut.send_cmd("cc xdp_var set dspIpBlkTgt5  #{pc_ip}",/OK/,2)
+dut.send_cmd("cc xdp_var set dspUdpBlkTgt5 0xCEA2",/OK/,2)
 
 end
 end

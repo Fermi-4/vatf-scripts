@@ -13,7 +13,7 @@ module BootScripts
   def boot(dut,ftp_server,boot_params)
     dut.send_cmd("shell ps",/dimtestvi/,2)
     processes = dut.response
-    processes.each { |line|
+    processes.each_line { |line|
     if(line.match(/dimtestvi/i))
       dimtest = line.match(/\d+/)[0]
       dut.send_cmd("shell kill -9 #{dimtest}",/.*/,2)
@@ -38,10 +38,10 @@ module BootScripts
   
   def download_dsp(dut,ftp_server,dsp)
     begin
-	  File.delete("\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\tv01.ld") if File.exists?("\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\tv01.ld") 
-      File.copy(dsp,"\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\")
+	  File.delete("#{ftp_server.tftp_path}\\tv01.ld") if File.exists?("#{ftp_server.tftp_path}\\tv01.ld") 
+      FileUtils.cp(dsp,"#{ftp_server.tftp_path}\\")
 	  sleep(2)
-      Dir.chdir("\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\")
+      Dir.chdir("#{ftp_server.tftp_path}\\")
       File.rename("#{File.basename(dsp)}","tv01.ld")
     rescue SystemCallError
       $stderr.print "File IO failed" + $!
@@ -50,7 +50,7 @@ module BootScripts
       dut.send_cmd("cd /APP",/.*/,2)
       dut.send_cmd("cd dspi",/.*/,2)
 	  dut.send_cmd("rm tv01\.ld",/.*/,2)
-      dut.send_cmd("wget ftp\://gguser\:gguser@#{ftp_server.telnet_ip}/home/#{ftp_server.tftp_path.gsub('\\','/')}/tv01.ld",/100%/,10)
+      dut.send_cmd("wget ftp\://#{ftp_server.telnet_login}\:#{ftp_server.telnet_passwd}@#{ftp_server.telnet_ip}/tv01.ld",/100%/,10)
 	  sleep(2)
     if(dut.timeout?)
       raise "wget: dsp failed"
@@ -59,11 +59,11 @@ module BootScripts
   
   def download_app(dut,ftp_server,app)
     begin
-	puts "Deleting \\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\dimtestvi"
-	  File.delete("\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\dimtestvi") if File.exists?("\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\dimtestvi")
-      File.copy(app,"\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\")
+	puts "Deleting #{ftp_server.tftp_path}\\dimtestvi"
+	  File.delete("#{ftp_server.tftp_path}\\dimtestvi") if File.exists?("#{ftp_server.tftp_path}\\dimtestvi")
+      FileUtils.cp(app,"#{ftp_server.tftp_path}\\")
 	  sleep(2)
-      Dir.chdir("\\\\#{ftp_server.telnet_ip}\\#{ftp_server.tftp_path}\\")
+      Dir.chdir("#{ftp_server.tftp_path}\\")
       File.rename("#{File.basename(app)}","dimtestvi")
     rescue SystemCallError
       $stderr.print "File IO failed" + $!
@@ -71,7 +71,7 @@ module BootScripts
     end
       dut.send_cmd("cd /APP",/.*/,2)
 	  dut.send_cmd("rm dimtestvi",/.*/,2)
-      dut.send_cmd("wget ftp\://gguser\:gguser@#{ftp_server.telnet_ip}/home/#{ftp_server.tftp_path.gsub('\\','/')}/dimtestvi",/100%/,10)
+      dut.send_cmd("wget ftp\://#{ftp_server.telnet_login}\:#{ftp_server.telnet_passwd}@#{ftp_server.telnet_ip}/dimtestvi",/100%/,10)
 	  sleep(2)
     if(dut.timeout?)
       raise "wget: dimtestvi failed"

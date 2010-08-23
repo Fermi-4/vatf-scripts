@@ -78,7 +78,7 @@ def setup
     dut = @equipment['dut1']
     dut.set_api("vgdk")
     server = defined?(@equipment['server1']) ? @equipment['server1'] : nil
-    dut.connect({'type'=>'serial'})
+    dut.connect({'type'=>'telnet'})
     setup_boot(dut,server)
     dut.send_cmd("wait 10000", /OK/, 2)
     dut.send_cmd("cc ver", /OK/, 2)

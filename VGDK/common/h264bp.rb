@@ -26,8 +26,8 @@ module H264BPParams
     'h264bpvdec_st_03_maxwidth_lsb'                   => 288, #max width = 720 pixels
     'h264bpvdec_st_04_maxframerate_msb'               => 0,
     'h264bpvdec_st_05_maxframerate_lsb'               => 30,
-    'h264bpvdec_st_06_maxbitrate_msb'                 => "0x0098",
-    'h264bpvdec_st_07_maxbitrate_lsb'                 => "0x9680",
+    'h264bpvdec_st_06_maxbitrate_msb'                 => "0x003D",
+    'h264bpvdec_st_07_maxbitrate_lsb'                 => "0x0900",
     'h264bpvdec_st_08_dataend_msb'                    => 0,
     'h264bpvdec_st_09_dataend_lsb'                    => 1, # 1->big endian (xdm_byte)
     'h264bpvdec_st_10_forcechrfmt_msb'                => 0,
@@ -57,8 +57,8 @@ module H264BPParams
     'h264bpvenc_st_07_maxwidth_lsb'                       =>    352,
     'h264bpvenc_st_08_maxframerate_msb'                   =>    0,
     'h264bpvenc_st_09_maxframerate_lsb'                   =>    30000,
-    'h264bpvenc_st_10_maxbitrate_msb'                     =>     "0x0016",
-    'h264bpvenc_st_11_maxbitrate_lsb'                     =>     "0xE360",
+    'h264bpvenc_st_10_maxbitrate_msb'                     =>     "0x003D",
+    'h264bpvenc_st_11_maxbitrate_lsb'                     =>     "0x0900",
     'h264bpvenc_st_12_dataend_msb'                        =>     0,
     'h264bpvenc_st_13_dataend_lsb'                        =>     1,
     'h264bpvenc_st_14_maxintfrint_msb'                    =>     0,
@@ -74,7 +74,7 @@ module H264BPParams
     'h264bpvenc_st_24_rcalgo_msb'                         =>     0,
     'h264bpvenc_st_25_rcalgo_lsb'                         =>     4,
     'h264bpvenc_st_26_srchrnge_msb'                       =>     0,
-    'h264bpvenc_st_27_srchrnge_lsb'                       =>     64,
+    'h264bpvenc_st_27_srchrnge_lsb'                       =>     16,
                                               
      #H264 encoder dynamic params             
     'h264bpvenc_dyn_000_inputht_msb'                      =>     0, 

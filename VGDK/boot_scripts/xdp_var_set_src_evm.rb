@@ -25,7 +25,27 @@ def send_xdp_var_set_srm_evm(dut)
 	
 	dut.send_cmd("cc xdp_var set dspMacBlkSrc0  #{platform_mac["CORE_0"]}",/OK/,2)
 	dut.send_cmd("cc xdp_var set dspIpBlkSrc0  #{platform_ip["CORE_0"]}",/OK/,2)
-	dut.send_cmd("cc xdp_var set dspUdpBlkSrc0 0x8078",/OK/,2)
+	dut.send_cmd("cc xdp_var set dspUdpBlkSrc0 0xCE98",/OK/,2)
+	
+	dut.send_cmd("cc xdp_var set dspMacBlkSrc1  #{platform_mac["CORE_1"]}",/OK/,2)
+	dut.send_cmd("cc xdp_var set dspIpBlkSrc1  #{platform_ip["CORE_1"]}",/OK/,2)
+	dut.send_cmd("cc xdp_var set dspUdpBlkSrc1 0xCE9A",/OK/,2)
+	
+	dut.send_cmd("cc xdp_var set dspMacBlkSrc2  #{platform_mac["CORE_2"]}",/OK/,2)
+	dut.send_cmd("cc xdp_var set dspIpBlkSrc2  #{platform_ip["CORE_2"]}",/OK/,2)
+	dut.send_cmd("cc xdp_var set dspUdpBlkSrc2 0xCE9C",/OK/,2)
+	
+	dut.send_cmd("cc xdp_var set dspMacBlkSrc3  #{platform_mac["CORE_3"]}",/OK/,2)
+	dut.send_cmd("cc xdp_var set dspIpBlkSrc3  #{platform_ip["CORE_3"]}",/OK/,2)
+	dut.send_cmd("cc xdp_var set dspUdpBlkSrc3 0xCE9E",/OK/,2)
+	
+	dut.send_cmd("cc xdp_var set dspMacBlkSrc4  #{platform_mac["CORE_4"]}",/OK/,2)
+	dut.send_cmd("cc xdp_var set dspIpBlkSrc4  #{platform_ip["CORE_4"]}",/OK/,2)
+	dut.send_cmd("cc xdp_var set dspUdpBlkSrc4 0xCEA0",/OK/,2)
+	
+	dut.send_cmd("cc xdp_var set dspMacBlkSrc5  #{platform_mac["CORE_5"]}",/OK/,2)
+	dut.send_cmd("cc xdp_var set dspIpBlkSrc5  #{platform_ip["CORE_5"]}",/OK/,2)
+	dut.send_cmd("cc xdp_var set dspUdpBlkSrc5 0xCEA2",/OK/,2)
 
 end
 end

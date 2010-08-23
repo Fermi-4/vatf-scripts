@@ -1,4 +1,5 @@
 # -*- coding: ISO-8859-1 -*-
+
 require 'FileUtils'
 require File.dirname(__FILE__)+'/../common/codec_params.rb'
 require File.dirname(__FILE__)+'/../utils/eth_info.rb'
@@ -102,27 +103,35 @@ end
 
 def run
     @show_debug_messages = false
-    @perfData = nil
-    subjective = @test_params.params_chan.issubjectivereqd[0].to_i
+    @perfData = []
+	subjective = 0
+	if(@test_params.params_chan.instance_variable_defined?("@issubjectivereqd"))    
+      subjective = @test_params.params_chan.issubjectivereqd[0].to_i
+	end
     multislice = 0
 	if(@test_params.params_chan.instance_variable_defined?("@multislice"))    
       multislice = @test_params.params_chan.multislice[0].to_i
     end
-    test_case_id = @test_params.caseID
-    num_frames = @test_params.params_chan.num_frames[0].to_i
-    save_clips = @test_params.params_chan.saveclips[0].to_s
     neu_rout = "false"
-    profilemips = nil
     if(@test_params.params_chan.instance_variable_defined?("@neu_rout"))    
       neu_rout = @test_params.params_chan.neu_rout[0].to_s
     end
+	profilemips = nil
     if(@test_params.params_chan.instance_variable_defined?("@profilemips"))    
       profilemips = @test_params.params_chan.profilemips[0].split(":")
     end
     video_clarity = 0
     if(@test_params.params_chan.instance_variable_defined?("@video_clarity"))
       video_clarity = @test_params.params_chan.video_clarity[0].to_i
+	  num_frames = @test_params.params_chan.num_frames[0].to_i
     end
+	if @test_params.params_chan.instance_variable_defined?(:@wire_fps)
+      wire_fps = @test_params.params_chan.wire_fps[0].to_i
+    else
+      wire_fps = 30
+    end
+    save_clips = @test_params.params_chan.saveclips[0].to_s
+	test_case_id = @test_params.caseID
     iteration = Time.now
     iteration_id = iteration.strftime("%m_%d_%Y_%H_%M_%S")
     clip_iter = @test_params.params_chan.clip_iter[0].to_i
@@ -134,19 +143,15 @@ def run
     clip_hash = Hash.new
     @test_params.params_chan.instance_variables.each do |curr_var|
       if /_clip/.match(curr_var)
-          clip_hash[curr_var] = @test_params.params_chan.instance_variable_get(curr_var)
+	      clip_hash[curr_var] = @test_params.params_chan.instance_variable_get(curr_var)[0]
       end
     end
-    if @test_params.params_chan.instance_variable_defined?(:@wire_fps)
-      wire_fps = @test_params.params_chan.wire_fps[0].to_i
-    else
-      wire_fps = 30
-    end
+
     
     debug_puts "Close any channels that may be open"
     dut.send_cmd("dim tcids", /OK/, 2)
     tcids_state = dut.response
-    tcids_state.each { |line|
+    tcids_state.each_line { |line|
     if(line.match(/[\d+\s+]{3}\d+\s\/\s+\d+\s+\w[Idle|Video|Exception]/i))
         tcid = line.match(/\d+/)[0]
         channel_reset(dut,tcid)
@@ -282,6 +287,8 @@ def run
             if(/#{codec}v_enc/).match(var) 
               if(/#{codec}v_enc_ovly_type/).match(var) 
               debug_puts "setting default params for #{codec}"
+			  puts value.class
+			  puts value[0]
               dut.send_cmd("dimt set template #{encoder_template} video video_ovly_cfg #{var.gsub("#{codec}v_enc_", "")} #{value}",/OK/,2) 
               else
               dut.send_cmd("dimt set template #{encoder_template} video video_mode #{var.gsub("#{codec}v_enc_", "")} #{value}",/OK/,2) 
@@ -355,7 +362,7 @@ def run
               dut.send_cmd("dimt video_mode #{tcid} alloc #{encoder_template}", /ACK DONE/,10)
             end
             if(dut.timeout?)
-              cleanup_and_exit()
+              cleanup_and_exit(dut)
               return
             end  
           end
@@ -394,7 +401,7 @@ def run
       end
     end
     if(dut.timeout?)
-      cleanup_and_exit()
+      cleanup_and_exit(dut)
       return
     end  
     k += 2
@@ -409,7 +416,7 @@ def run
       }
     }
     if(dut.timeout?)
-      cleanup_and_exit()
+      cleanup_and_exit(dut)
       return
     end  
     num_chans = tcid
@@ -493,8 +500,14 @@ def run
     }
     if(profilemips)
       FileUtils.mkdir("#{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling")
-      system("start #{VIDEO_TOOLS_DIR}/rcvUdpPackets.exe #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo.dat 32888")
-      core_info_hash.keys.sort.each { |key| start_profiling(dut,key)}
+	  pc_udp_port = 0xCE98
+	  sprintf("%d", pc_udp_port)
+      core_info_hash.keys.sort.each { |key|
+		start_profiling(dut,key)
+	    puts("start #{VIDEO_TOOLS_DIR}/rcvUdpPackets.exe #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port}.dat #{pc_udp_port}")
+	    system("start #{VIDEO_TOOLS_DIR}/rcvUdpPackets.exe #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port}.dat #{pc_udp_port}")
+		pc_udp_port += 2
+		}
     end
     clip_iter.times { |c_iter|
         pc_udp_port = 32768
@@ -579,14 +592,35 @@ def run
 	if(profilemips)
 	  system("taskkill /F /IM rcvUdpPackets.exe")
 	  begin
-	    system("ccperl #{VIDEO_TOOLS_DIR}/parsemips.pl -b64xle #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo.dat #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo ")
-          rescue
+		pc_udp_port = 0xCE98
+		sprintf("%d", pc_udp_port)
+		core_info_hash.keys.sort.each { |key|
+		  system("ccperl #{VIDEO_TOOLS_DIR}/parsemips.pl -b64xle #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port}.dat #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port} ")
+	      pc_udp_port += 2
+		}
+	  rescue
 	    raise "ccperl error"
 	  end
-	  core_info_hash.keys.sort.each { |key| stop_profiling(dut,key)}
-	  test_comment,test_done_result,@perfData = profileMips("#{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo.csv",profilemips)
+	  pc_udp_port = 0xCE98
+	  profileData = []
+	  sprintf("%d", pc_udp_port)
+	  core_info_hash.keys.sort.each { |key| 
+	  stop_profiling(dut,key)
+	  profileMips("#{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port}.csv",profilemips,key,@perfData,profileData)
+	  pc_udp_port += 2
+	  }
+	  profileHash = Hash.new{0}
+	  profileData.each { |elem|
+	    profileHash[elem] += 1
+       }
+	   profileHash.each { |param,count|
+	  if(count == core_info_hash.length)
+		test_comment += "#{param} MIPS not found"
+		test_done_result = FrameworkConstants::Result[:fail]
+	  end
+	  }
 	  test_comment += "MIPS Profiling data at #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/ \n"
-        else
+	else
 	 clip_iter.times { |c_iter|
 		codec_hash.each_pair { |codec, res_arr|
 			res_arr.each{|res|
@@ -679,10 +713,11 @@ def run
 
     dut.send_cmd("dim tcids", /OK/, 2)
     tcids_state = dut.response
-    tcids_state.each { |line|
+    tcids_state.each_line { |line|
     if(line.match(/Exception/i))
         test_done_result = FrameworkConstants::Result[:fail]
         test_comment = "Test completed: Channel Exception"
+        set_result(test_done_result,test_comment)
     elsif(line.match(/[\d+\s+]{3}\d+\s\/\s+\d+\s+\w[Idle|Video]/i))
         tcid = line.match(/\d+/)[0]
         channel_reset(dut,tcid)
@@ -761,8 +796,8 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
   if(var_type == "test")
     @test_params.params_chan.instance_variables.each do |curr_var|
       if /#{codec}v#{type}/.match(curr_var)
-        param_msb = curr_var.gsub("@#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")
-        param_lsb = curr_var.gsub("@#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")
+        param_msb = curr_var.to_s.gsub("@#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")
+        param_lsb = curr_var.to_s.gsub("@#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")
         param_msb << "_msb"
         param_lsb << "_lsb" 
         params_hash[param_lsb] = @test_params.params_chan.instance_variable_get(curr_var)[0].to_i & 0xffff
@@ -775,9 +810,9 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
       end
       if((/#{codec}v_#{codectype.downcase}/).match(curr_var) && type == "enc_st")
         if(/#{codec}v_#{codectype.downcase}_ovly_type/).match(curr_var) 
-          dut.send_cmd("dimt set template #{template} video video_ovly_cfg #{curr_var.gsub("@#{codec}v_enc_", "")} #{@test_params.params_chan.instance_variable_get(curr_var)}",/OK/,2) 
+          dut.send_cmd("dimt set template #{template} video video_ovly_cfg #{curr_var.to_s.gsub("@#{codec}v_enc_", "")} #{@test_params.params_chan.instance_variable_get(curr_var)}",/OK/,2) 
         else
-          dut.send_cmd("dimt set template #{template} video video_mode #{curr_var.gsub("@#{codec}v_enc_", "")} #{@test_params.params_chan.instance_variable_get(curr_var)}",/OK/,2) 
+          dut.send_cmd("dimt set template #{template} video video_mode #{curr_var.to_s.gsub("@#{codec}v_enc_", "")} #{@test_params.params_chan.instance_variable_get(curr_var)}",/OK/,2) 
         end
       end
     end
@@ -804,7 +839,7 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
   else #default
     default_params.each_pair do |var,value|
     if /#{codec}v#{type}/.match(var)
-    params_hash[var.gsub("#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")] = value
+    params_hash[var.to_s.gsub("#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")] = value
     end
     end
   end
@@ -961,9 +996,23 @@ def clean
     remove_dir("#{INPUT_DIR}/out/")
     remove_dir("#{INPUT_DIR}/config/autogenerated/") 
     system("ccperl #{SCRIPT_EXTRACTOR}//script_extractor.pl #{@files_dir}//dut1_1_log.txt > #{@files_dir}//dut1_1_log_config_script.txt")
+	# dut = @equipment['dut1']
+	# kill_dimtest(dut)
 end
 
-def cleanup_and_exit()
+def kill_dimtest(dut)
+    dut.send_cmd("shell ps",/dimtestvi/,2)
+    processes = dut.response
+    processes.each_line { |line|
+    if(line.match(/dimtestvi/i))
+      dimtest = line.match(/\d+/)[0]
+      dut.send_cmd("shell kill -9 #{dimtest}",/.*/,2)
+    end
+    }
+end
+
+def cleanup_and_exit(dut)
+  #kill_dimtest(dut)
   test_done_result = FrameworkConstants::Result[:fail]
   test_comment = "No ACK DONE received from DSP, exiting"
   set_result(test_done_result,test_comment)
@@ -1006,7 +1055,7 @@ def get_test_string(params)
   if(params == nil)
     return nil
   end
-  params.each {|element|
+  params.each_line {|element|
   test_string += element.strip
   }
   test_string
@@ -1014,9 +1063,10 @@ end
 
 def start_profiling(dut,core)
   dut.send_cmd("cc write_mem2 #{core} 0 0x428E76 0",/OK/,2)
-  
+  #dut.send_cmd("cc write_mem2 1 0 0x428E76 0",/OK/,2)
 end
 
 def stop_profiling(dut,core)
   dut.send_cmd("cc write_mem2 #{core} 0 0x428E76 0xFFFF",/OK/,2)
+  #dut.send_cmd("cc write_mem2 1 0 0x428E76 0xFFFF",/OK/,2)
 end
