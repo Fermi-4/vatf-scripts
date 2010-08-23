@@ -5,9 +5,12 @@ include WinceTestScript
 def run_collect_performance_data
   ser_out = get_serial_output.split(/[\n\r]+/)
   fps_array = []
+  frame_counter = 0
   ser_out.each do |current_line|
    current_match = current_line.match(/frame\s*(\d+).*?FPS\s*([\d\.]+)\./i)
-    if current_match && current_match.captures[0].to_i > 0
+    if current_match 
+      frame_counter += 1
+      next if frame_counter < 5
       fps_array << current_match.captures[1].to_f
     end
   end
