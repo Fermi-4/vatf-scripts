@@ -37,7 +37,7 @@ def get_test_string(params)
   if(params == nil)
     return nil
   end
-  params.each {|element|
+  params.each_line {|element|
   test_string += element.strip
   }
   test_string

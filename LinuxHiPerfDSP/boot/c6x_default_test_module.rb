@@ -130,15 +130,16 @@ module C6xTestScript
       
       if @test_params.params_chan.instance_variable_defined?(:@test_driver) && @equipment.has_key?('server1') #&& !nfs && !@test_params.instance_variable_defined?(:@var_nfs) 
           files_array = Array.new
-          src = @test_params.params_chan.test_driver[0].to_s
+          src = "#{SiteInfo::LTP_TEMP_FOLDER}\\#{@test_params.params_chan.test_driver[0].to_s}"
           puts "test driver is: #{src}"
-          @equipment['server1'].send_cmd("cd #{@equipment['server1'].nfs_root_path}/usr/bin", @equipment['server1'].prompt, 300)
-          if (File.exists?"#{samba_root_path}\\usr\\bin\\#{File.basename(src)}")
+          @equipment['server1'].send_cmd("cd #{@equipment['server1'].nfs_root_path}/#{DUT_DST_DIR}", @equipment['server1'].prompt, 300)
+          #@equipment['server1'].send_sudo_cmd("chmod 777 .",@equipment['server1'].prompt, 300)   
+          if (File.exists?"#{samba_root_path}\\#{DUT_DST_DIR}\\#{File.basename(src)}")
             @equipment['server1'].send_sudo_cmd("rm -rf #{File.basename(src)}")
           end
-          dst_path = "#{samba_root_path}\\usr\\bin\\#{File.basename(src)}"
+          dst_path = "#{samba_root_path}\\#{DUT_DST_DIR}\\#{File.basename(src)}"
           BuildClient.copy(src, dst_path)     
-          @equipment['server1'].send_sudo_cmd("chmod 777 #{File.basename(src)}", @equipment['server1'].prompt, 300)          
+          #@equipment['server1'].send_sudo_cmd("chmod 777 #{File.basename(src)}",@equipment['server1'].prompt, 300)             
       end 
 
       # Leave target in appropriate directory
