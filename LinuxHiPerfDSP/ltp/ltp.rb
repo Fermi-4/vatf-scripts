@@ -64,7 +64,7 @@ DUT_DST_DIR = "opt/ltp-ltp/opt/ltp"
     if $. == 2 then # we are at the 2 line
       out_file.puts "condev		#{@equipment['dut1'].telnet_ip}:#{@equipment['dut1'].telnet_port}"
       out_file.puts "lockdir		/tmp"
-      out_file.puts "testlist	#{@equipment['server1'].nfs_root_path}/#{DUT_DST_DIR}/ti-c6x/testlist.coff"
+      out_file.puts "testlist	#{@equipment['dut1'].nfs_root_path}/#{DUT_DST_DIR}/ti-c6x/testlist.coff"
       out_file.puts "testlog		\"testruns/test-%Y%m%d-%H%M%S.log\""
       out_file.puts "commlog		\"testruns/comm-%Y%m%d-%H%M%S.log\""
     end
@@ -77,8 +77,11 @@ DUT_DST_DIR = "opt/ltp-ltp/opt/ltp"
   # Transfer the shell script (test.bat) to the DUT. 
   def run_transfer_script()
     debug_puts "LTP::run_transfer_script"
-    if !(File.exists?"\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['server1'].samba_root_path}/#{DUT_DST_DIR}/ti-c6x")
-      @equipment['server1'].send_cmd("mkdir ti-c6x ",@equipment['server1'].prompt) 
+    @equipment['server1'].send_cmd("cd #{@equipment['dut1'].nfs_root_path}/#{DUT_DST_DIR}",@equipment['server1'].prompt)
+    @equipment['server1'].send_sudo_cmd("chmod 777 .",@equipment['server1'].prompt)
+    if !(File.exists?"\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}/#{DUT_DST_DIR}/ti-c6x")
+      @equipment['server1'].send_sudo_cmd("mkdir ti-c6x ",@equipment['server1'].prompt) 
+      @equipment['server1'].send_sudo_cmd("chmod 777 ti-c6x",@equipment['server1'].prompt)
     end
     test_copy({'filename' => 'testlist.coff','src_dir' => "#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'dst_dir' => "#{DUT_DST_DIR}/ti-c6x"})
     test_copy({'filename' => 'stmc.cfg','src_dir' => "#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'dst_dir' => "#{DUT_DST_DIR}/ti-c6x"})
@@ -87,8 +90,8 @@ DUT_DST_DIR = "opt/ltp-ltp/opt/ltp"
   # Calls shell script (test.bat)
   def run_call_script
     debug_puts "LTP::run_call_script"
-    @equipment['server1'].send_cmd("cd #{@equipment['server1'].nfs_root_path}/#{DUT_DST_DIR}",@equipment['server1'].prompt)
-    if(File.exists?"\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['server1'].samba_root_path}/#{DUT_DST_DIR}/testruns")
+    @equipment['server1'].send_cmd("cd #{@equipment['dut1'].nfs_root_path}/#{DUT_DST_DIR}",@equipment['server1'].prompt)
+    if(File.exists?"\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}/#{DUT_DST_DIR}/testruns")
     @equipment['server1'].send_sudo_cmd("rm -f testruns/* ",@equipment['server1'].prompt)
     else
     @equipment['server1'].send_sudo_cmd("mkdir testruns ",@equipment['server1'].prompt)
@@ -199,14 +202,14 @@ DUT_DST_DIR = "opt/ltp-ltp/opt/ltp"
  #takes initial source, final dest and filename
   def test_copy(params)
     src = "#{params['src_dir']}\\#{params['filename']}"
-    dst_path = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['server1'].samba_root_path}\\#{params['dst_dir']}\\#{params['filename']}"
-#    @equipment['server1'].send_sudo_cmd("chmod 777 #{@equipment['server1'].nfs_root_path}\/#{params['dst_dir']}",@equipment['server1'].prompt)
+    dst_path = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}\\#{params['dst_dir']}\\#{params['filename']}"
+#    @equipment['server1'].send_sudo_cmd("chmod 777 #{@equipment['dut1'].nfs_root_path}\/#{params['dst_dir']}",@equipment['server1'].prompt)
 #    debug_puts src, dst_path
     BuildClient.copy(src, dst_path)     
   end
   
   def log_copy(params)
-    src = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['server1'].samba_root_path}\\#{params['src_dir']}\\#{params['filename']}"
+    src = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}\\#{params['src_dir']}\\#{params['filename']}"
     dst_path = "#{params['dst_dir']}\\#{params['filename']}"
    # debug_puts src, dst_path
     BuildClient.copy(src, dst_path)   

@@ -30,10 +30,10 @@ module C6xTestScript
       nandfs = @test_params.nandfs  if @test_params.instance_variable_defined?(:@nandfs)
       ramfs = @test_params.ramfs   if @test_params.instance_variable_defined?(:@ramfs)
       kernel_modules = @test_params.kernel_modules   if @test_params.instance_variable_defined?(:@kernel_modules)
-      nfs_root_path_temp	= @equipment['server1'].nfs_root_path
+      nfs_root_path_temp	= @equipment['dut1'].nfs_root_path
       
       if @equipment.has_key?('server1')
-        samba_root_path_temp = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['server1'].samba_root_path}"
+        samba_root_path_temp = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}"
         
         if @equipment['server1'].respond_to?(:telnet_port) and @equipment['server1'].respond_to?(:telnet_ip) and !@equipment['server1'].target.telnet
           @equipment['server1'].connect({'type'=>'telnet'})
@@ -109,12 +109,12 @@ module C6xTestScript
       raise "UUT may be hanging!" if !is_uut_up?
       
       # Copy executables to NFS server (if filesystem was not specified and there are @target_sources
-      samba_root_path = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['server1'].samba_root_path}"
+      samba_root_path = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}"
       if @test_params.params_chan.instance_variable_defined?(:@target_binaries) && @equipment.has_key?('server1') #&& !nfs && !@test_params.instance_variable_defined?(:@var_nfs) 
           files_array = Array.new
           src = @test_params.params_chan.target_binaries[0].to_s
           puts "target source folder is: #{src}"
-          @equipment['server1'].send_cmd("cd #{@equipment['server1'].nfs_root_path}/opt", @equipment['server1'].prompt, 300)
+          @equipment['server1'].send_cmd("cd #{@equipment['dut1'].nfs_root_path}/opt", @equipment['server1'].prompt, 300)
           testbins = File.basename("#{@test_params.params_chan.target_binaries[0]}").match(/(\w+)\.tar\.gz/).captures[0]
           if (File.exists?"#{samba_root_path}\\opt\\#{testbins}")
             @equipment['server1'].send_sudo_cmd("rm -rf #{testbins}")
@@ -132,8 +132,8 @@ module C6xTestScript
           files_array = Array.new
           src = "#{SiteInfo::LTP_TEMP_FOLDER}\\#{@test_params.params_chan.test_driver[0].to_s}"
           puts "test driver is: #{src}"
-          @equipment['server1'].send_cmd("cd #{@equipment['server1'].nfs_root_path}/#{DUT_DST_DIR}", @equipment['server1'].prompt, 300)
-          #@equipment['server1'].send_sudo_cmd("chmod 777 .",@equipment['server1'].prompt, 300)   
+          @equipment['server1'].send_cmd("cd #{@equipment['dut1'].nfs_root_path}/#{DUT_DST_DIR}", @equipment['server1'].prompt, 300)
+          @equipment['server1'].send_sudo_cmd("chmod 777 .",@equipment['server1'].prompt, 300)   
           if (File.exists?"#{samba_root_path}\\#{DUT_DST_DIR}\\#{File.basename(src)}")
             @equipment['server1'].send_sudo_cmd("rm -rf #{File.basename(src)}")
           end
