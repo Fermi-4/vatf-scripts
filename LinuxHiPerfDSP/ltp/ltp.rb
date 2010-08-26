@@ -11,7 +11,7 @@ DUT_DST_DIR = "opt/ltp"
 
   # Execute shell script in DUT(s) and save results.
   def run
-    @show_debug_messages = true
+    @show_debug_messages = false
     debug_puts "LTP::run"
     iteration = Time.now
     @iteration_id = iteration.strftime("%m_%d_%Y_%H_%M_%S")
@@ -168,6 +168,7 @@ DUT_DST_DIR = "opt/ltp"
           nFail += 1    
           logfile.close
         else 
+          test_done_result = FrameworkConstants::Result[:pass]
           desc = "Test Pass"
           nPass += 1
         end
@@ -180,9 +181,6 @@ DUT_DST_DIR = "opt/ltp"
       raise "Exception: #{err}"
     end
 
-    if(test_done_result != FrameworkConstants::Result[:fail])
-      test_done_result = FrameworkConstants::Result[:pass]
-    end
     resfile = File.new(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}",results_file))
     test_comment += "\n Results file #{(File.path(resfile)).gsub("/","\\")} \n"
     if((nPass + nFail) == 0)
