@@ -1,5 +1,5 @@
 require 'net/ftp'
-DUT_DST_DIR = "opt/ltp-ltp/opt/ltp"
+DUT_DST_DIR = "opt/ltp"
 
   # Connects Test Equipment to DUT(s) and Boot DUT(s)
   require File.dirname(__FILE__)+'/../boot/c6x_default_test_module'
@@ -11,7 +11,7 @@ DUT_DST_DIR = "opt/ltp-ltp/opt/ltp"
 
   # Execute shell script in DUT(s) and save results.
   def run
-    @show_debug_messages = false
+    @show_debug_messages = true
     debug_puts "LTP::run"
     iteration = Time.now
     @iteration_id = iteration.strftime("%m_%d_%Y_%H_%M_%S")
@@ -58,11 +58,12 @@ DUT_DST_DIR = "opt/ltp-ltp/opt/ltp"
   
   
   def run_generate_test_cfg
-    in_file = File.open(File.join(SiteInfo::LTP_TEMP_FOLDER, 'stmc_template.cfg'),'r')
+    in_file = File.open(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/#{@test_params.platform}", 'stmc_template.cfg'),'r')
     out_file = File.open(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'stmc.cfg'),'w')
     while in_file.gets do
     if $. == 2 then # we are at the 2 line
       out_file.puts "condev		#{@equipment['dut1'].telnet_ip}:#{@equipment['dut1'].telnet_port}"
+      out_file.puts "start		[DEAD-NET]"
       out_file.puts "lockdir		/tmp"
       out_file.puts "testlist	#{@equipment['dut1'].nfs_root_path}/#{DUT_DST_DIR}/ti-c6x/testlist.coff"
       out_file.puts "testlog		\"testruns/test-%Y%m%d-%H%M%S.log\""
@@ -137,17 +138,18 @@ DUT_DST_DIR = "opt/ltp-ltp/opt/ltp"
     dur = 0
     status = nil
     test_comment = " "
-
+    test_done_result = FrameworkConstants::Result[:fail]
 
     res_table = @results_html_file.add_table([["Test",{:bgcolor => "green", :colspan => "2"},{:color => "red"}],["Result",{:bgcolor => "green", :colspan => "2"},{:color => "red"}],["Description",{:bgcolor => "green", :colspan => "2"},{:color => "red"}]],{:border => "1",:width=>"20%"})
 
     begin
-    resfile = File.new(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}",results_file))
+    resfile = IO.readlines(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}",results_file))
     nPass = 0
     nFail = 0
-      while ((/--\sreboot\s--/).match(resfile.gets) == nil)
-      end
-      while(line = resfile.gets)
+    resfile.each {|line|
+      if ((/#/).match(line))
+      
+      else 
         results_arr = line.split(":")
         testcase = results_arr[0].strip
         status = results_arr[1].strip
@@ -172,7 +174,8 @@ DUT_DST_DIR = "opt/ltp-ltp/opt/ltp"
         results_hash[testcase] = [status,desc]
         @results_html_file.add_row_to_table(res_table,[[testcase,{:colspan => "2"}],[status,{:colspan => "2"}],[desc,{:colspan => "2"}]])
       end
-      resfile.close
+      }
+   #   IO.close(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}",results_file))
     rescue => err
       raise "Exception: #{err}"
     end
@@ -180,6 +183,7 @@ DUT_DST_DIR = "opt/ltp-ltp/opt/ltp"
     if(test_done_result != FrameworkConstants::Result[:fail])
       test_done_result = FrameworkConstants::Result[:pass]
     end
+    resfile = File.new(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}",results_file))
     test_comment += "\n Results file #{(File.path(resfile)).gsub("/","\\")} \n"
     if((nPass + nFail) == 0)
       #test_comment += "#{nPass} Tests Passed \n #{nFail} Tests Failed \n 0% Success"
