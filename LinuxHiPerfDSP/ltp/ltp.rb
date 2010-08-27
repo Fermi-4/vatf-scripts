@@ -183,6 +183,9 @@ DUT_DST_DIR = "opt/ltp"
 
     resfile = File.new(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}",results_file))
     test_comment += "\n Results file #{(File.path(resfile)).gsub("/","\\")} \n"
+    if(nFail > 0)
+      test_done_result = FrameworkConstants::Result[:fail]
+    end
     if((nPass + nFail) == 0)
       test_comment += "#{nPass} Tests Passed \n #{nFail} Tests Failed \n 0% Success"
     else
