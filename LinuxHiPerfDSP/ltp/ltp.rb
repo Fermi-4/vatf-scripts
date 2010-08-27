@@ -97,12 +97,12 @@ DUT_DST_DIR = "opt/ltp"
     else
     @equipment['server1'].send_sudo_cmd("mkdir testruns ",@equipment['server1'].prompt)
     end
-    @equipment['server1'].send_sudo_cmd("\./testdriver ti-c6x/stmc.cfg",@equipment['server1'].prompt)
+    @equipment['server1'].send_sudo_cmd("\./testdriver ti-c6x/stmc.cfg",@equipment['server1'].prompt,-1)
   end
   
   def run_get_script_output
     debug_puts "LTP::run_get_script_output"
-    @equipment['server1'].send_cmd("ls testruns/",/.*/)
+    @equipment['server1'].send_cmd("ls testruns/",/test-\d+-\d+\.log/,10)
     debug_puts @equipment['server1'].response
     if(@equipment['server1'].timeout?)
       cleanup
@@ -184,9 +184,9 @@ DUT_DST_DIR = "opt/ltp"
     resfile = File.new(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}",results_file))
     test_comment += "\n Results file #{(File.path(resfile)).gsub("/","\\")} \n"
     if((nPass + nFail) == 0)
-      #test_comment += "#{nPass} Tests Passed \n #{nFail} Tests Failed \n 0% Success"
+      test_comment += "#{nPass} Tests Passed \n #{nFail} Tests Failed \n 0% Success"
     else
-      #test_comment += "#{nPass} Tests Passed \n #{nFail} Tests Failed \n #{((nPass.to_f/(nPass+nFail))*100).round}% Success"
+      test_comment += "#{nPass} Tests Passed \n #{nFail} Tests Failed \n #{((nPass.to_f/(nPass+nFail))*100).round}% Success"
     end
     [test_done_result, test_comment]
   end
