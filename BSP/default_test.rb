@@ -85,6 +85,13 @@ module WinceTestScript
     put_file({'filename'=>'test.bat'})
     transfer_files(:@test_libs, :@var_test_libs_root)
     transfer_files(:@build_test_libs, :@var_build_test_libs_root)
+
+    # transfer tux etc files to target
+    get_cetk_basic_filenames(src_dir).split(':').each {|lib_file|
+      puts "ftp #{lib_file}"
+      put_file({'filename' => lib_file, 'src_dir' => src_dir, 'binary' => true})
+    }
+ 
   end
   
   # Calls shell script (test.bat)
@@ -376,6 +383,10 @@ module WinceTestScript
       }
     end
   end
-  
+ 
+  def get_cetk_basic_filenames(cetk_files_dir)
+    cetk_basic_files = {'6.0_R3' => 'tux.exe:kato.dll:tooltalk.dll:ndt.dll:ndt_1c.dll:ndt_2c.dll:clientside.exe:netall.dll:ndtserver.exe:ktux.dll'}    # TODO: return file list based on CE release
+    return cetk_basic_files['6.0_R3']
+  end 
 end
   
