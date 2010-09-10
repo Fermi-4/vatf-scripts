@@ -51,7 +51,7 @@ module WinceTestScript
       end
       @equipment['dut1'].boot(boot_params) 
       puts "Waiting 30 seconds for kernel to boot...."
-      sleep 90
+      sleep 30
     end
     if @equipment['dut1'].respond_to?(:telnet_port) && @equipment['dut1'].telnet_port != nil  && !@equipment['dut1'].target.telnet
       @equipment['dut1'].connect({'type'=>'telnet'})
@@ -87,6 +87,7 @@ module WinceTestScript
     transfer_files(:@build_test_libs, :@var_build_test_libs_root)
 
     # transfer tux etc files to target
+    src_dir = @test_params.var_test_libs_root
     get_cetk_basic_filenames(src_dir).split(':').each {|lib_file|
       puts "ftp #{lib_file}"
       put_file({'filename' => lib_file, 'src_dir' => src_dir, 'binary' => true})
