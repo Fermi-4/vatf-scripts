@@ -12,7 +12,7 @@ def run_collect_performance_data
   puts "\n cetk_test::run_collect_performance_data"
   # ftp the log file to host pc
   #sleep 5
-  log_files = get_dir_files({'src_dir'=>'\Release','dst_dir'=>SiteInfo::WINCE_TEMP_FOLDER} )
+  log_files = get_dir_files({'src_dir'=>'\Release','dst_dir'=>@wince_temp_folder} )
   
   # convert to csv
   begin
@@ -46,20 +46,8 @@ end
 
 def run_determine_test_outcome
   puts "\n cetk_test::run_determine_test_outcome"
-  # perf_data = Array.new
-  # File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER, "perf.log"),'r').each {|line| 
-    # n, v, u = line.strip.split(' ')
-    # perf_data << {'name' => n, 'value' => v, 'units' => u}
-  # }
-  # if perf_data.length > 1
-    # [FrameworkConstants::Result[:pass], "Performace data was collected", perf_data]
-  # else
-    # [FrameworkConstants::Result[:fail], "Performance data was not collected"]
-  # end
   result, comment = [FrameworkConstants::Result[:fail], "This test is fail or skip or abort."]
-  File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER, "test_#{@test_id}\.log"),'r').each {|line| 
-    # n, v, u = line.strip.split(' ')
-    # perf_data << {'name' => n, 'value' => v, 'units' => u}
+  File.new(File.join(@wince_temp_folder, "test_#{@test_id}\.log"),'r').each {|line| 
     if line =~ /\*\*\*\s*passed:\s+1/i then
       puts "-----------test passed---------"
       result, comment = [FrameworkConstants::Result[:pass], "This test pass."]

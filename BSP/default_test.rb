@@ -6,6 +6,7 @@ module WinceTestScript
   # Connects Test Equipment to DUT(s) and Boot DUT(s)
   def setup
     puts "\n WinceTestScript::setup"
+    @wince_temp_folder = SiteInfo::WINCE_DATA_FOLDER + '/' + @test_params.staf_service_name + '/temp'
     delete_temp_files()
     @equipment['dut1'].set_api('bsp')
     @wince_dst_dir = @test_params.params_chan.instance_variable_defined?(:@test_dir) ? @test_params.params_chan.test_dir[0] : '\Windows'
@@ -51,7 +52,7 @@ module WinceTestScript
       end
       @equipment['dut1'].boot(boot_params) 
       puts "Waiting 30 seconds for kernel to boot...."
-      sleep 30
+      sleep 60
     end
     if @equipment['dut1'].respond_to?(:telnet_port) && @equipment['dut1'].telnet_port != nil  && !@equipment['dut1'].target.telnet
       @equipment['dut1'].connect({'type'=>'telnet'})
@@ -68,10 +69,10 @@ module WinceTestScript
   # By default this function only replaces the @test_params references in the shell script template and creates test.bat  
   def run_generate_script
     puts "\n WinceTestScript::run_generate_script"
-    FileUtils.mkdir_p SiteInfo::WINCE_TEMP_FOLDER
+    FileUtils.mkdir_p @wince_temp_folder
     in_file = File.new(File.join(@test_params.view_drive, @test_params.params_chan.shell_script[0]), 'r')
     raw_test_lines = in_file.readlines
-    out_file = File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER, 'test.bat'),'w')
+    out_file = File.new(File.join(@wince_temp_folder, 'test.bat'),'w')
     raw_test_lines.each do |current_line|
       out_file.puts(eval('"'+current_line.gsub("\\","\\\\\\\\").gsub('"','\\"')+'"'))
     end
@@ -134,13 +135,13 @@ module WinceTestScript
     end
     # make sure serial port log wont lost even there is ftp exception
     begin
-      log_file_name = File.join(SiteInfo::WINCE_TEMP_FOLDER, "test_#{@test_id}\.log")
+      log_file_name = File.join(@wince_temp_folder, "test_#{@test_id}\.log")
       log_file = File.new(log_file_name,'w')
       get_file({'filename'=>'stderr.log'})
       get_file({'filename'=>'stdout.log'})
       #yliu: temp: save differnt test log to different files
-      std_file = File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER,'stdout.log'),'r')
-      err_file = File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER,'stderr.log'),'r')
+      std_file = File.new(File.join(@wince_temp_folder,'stdout.log'),'r')
+      err_file = File.new(File.join(@wince_temp_folder,'stderr.log'),'r')
       std_output = std_file.read
       std_error  = err_file.read
       log_file.write("\n<STD_OUTPUT>\n"+std_output+"</STD_OUTPUT>\n")
@@ -176,7 +177,7 @@ module WinceTestScript
     @equipment['dut1'].send_cmd("cd #{@wince_dst_dir}",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("call check_default_result.bat 2> check_result.log > check_result.log",@equipment['dut1'].prompt)
     get_file({'filename'=>'check_result.log'})
-    check_result_output = File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER,'check_result.log'),'r').read
+    check_result_output = File.new(File.join(@wince_temp_folder,'check_result.log'),'r').read
     if check_result_output.match(/PASSED/)
       return [FrameworkConstants::Result[:pass], "test.bat returned zero"]
     else
@@ -188,9 +189,9 @@ module WinceTestScript
   def run_save_results
     puts "\n WinceTestScript::run_save_results"
     result,comment = run_determine_test_outcome
-    if File.exists?(File.join(SiteInfo::WINCE_TEMP_FOLDER,'perf.log'))
+    if File.exists?(File.join(@wince_temp_folder,'perf.log'))
       perfdata = []
-      data = File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER,'perf.log'),'r').readlines
+      data = File.new(File.join(@wince_temp_folder,'perf.log'),'r').readlines
       data.each {|line|
         if /(\S+)\s+([\.\d]+)\s+(\S+)/.match(line)
           name,value,units = /(\S+)\s+([\.\d]+)\s+(\S+)/.match(line).captures 
@@ -216,12 +217,12 @@ module WinceTestScript
   
   # Return standard output of test.bat as a string
   def get_std_output
-    File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER,'stdout.log'),'r').read
+    File.new(File.join(@wince_temp_folder,'stdout.log'),'r').read
   end
   
   # Return standard error of test.bat as a string
   def get_std_error
-    File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER,'stderr.log'),'r').read
+    File.new(File.join(@wince_temp_folder,'stderr.log'),'r').read
   end
   
   # Return serial (i.e. console) output of test.bat as a string
@@ -234,7 +235,7 @@ module WinceTestScript
   def put_file(params)
     p = {'dst_ip'   => @equipment['dut1'].telnet_ip,
          'dst_dir'  => @wince_dst_dir, 
-         'src_dir'  => SiteInfo::WINCE_TEMP_FOLDER, 
+         'src_dir'  => @wince_temp_folder, 
          'login'    => 'anonymous',
          'password' => 'dut@ti.com',
          'binary'   => false,
@@ -265,7 +266,7 @@ module WinceTestScript
   def get_file(params)
     p = {'src_ip'   => @equipment['dut1'].telnet_ip,
          'src_dir'  => @wince_dst_dir, 
-         'dst_dir'  => SiteInfo::WINCE_TEMP_FOLDER, 
+         'dst_dir'  => @wince_temp_folder, 
          'login'    => 'anonymous',
          'password' => 'dut@ti.com',
          'binary'   => false,
@@ -285,7 +286,7 @@ module WinceTestScript
   def get_dir_files(params)
     p = {'src_ip'   => @equipment['dut1'].telnet_ip,
          'src_dir'  => @wince_dst_dir, 
-         'dst_dir'  => SiteInfo::WINCE_TEMP_FOLDER, 
+         'dst_dir'  => @wince_temp_folder, 
          'login'    => 'anonymous',
          'password' => 'dut@ti.com',
          'binary'   => false,
@@ -346,10 +347,10 @@ module WinceTestScript
   
   def delete_temp_files
     # yliu: fix
-    if File.exist?(SiteInfo::WINCE_TEMP_FOLDER) && File.directory?(SiteInfo::WINCE_TEMP_FOLDER) then
-      Dir.foreach(SiteInfo::WINCE_TEMP_FOLDER) do |f|
+    if File.exist?(@wince_temp_folder) && File.directory?(@wince_temp_folder) then
+      Dir.foreach(@wince_temp_folder) do |f|
         #puts "files under temp folder: "+f
-        filepath = File.join(SiteInfo::WINCE_TEMP_FOLDER,f)
+        filepath = File.join(@wince_temp_folder,f)
         if f == '.' or f == '..' or File.directory?(filepath) or File.basename(f) =~ /^test_/ or File.extname(f) == '.csv' or File.extname(f) == '.LOG' then next
         else FileUtils.rm(filepath, {:verbose => true})
         end

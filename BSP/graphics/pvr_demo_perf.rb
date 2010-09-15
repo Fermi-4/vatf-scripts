@@ -22,7 +22,7 @@ def run_collect_performance_data
     sample_max = fps_array.max
     sample_median = get_median(fps_array)
     
-    perf_log = File.new(File.join(SiteInfo::WINCE_TEMP_FOLDER,'perf.log'),'w')
+    perf_log = File.new(File.join(@wince_temp_folder,'perf.log'),'w')
     perf_log.puts(@test_params.params_chan.cmd[0].gsub(/\.exe$/,'')+"_min_fps "+sample_min.to_s+" fps")
     perf_log.puts(@test_params.params_chan.cmd[0].gsub(/\.exe$/,'')+"_max_fps "+sample_max.to_s+" fps")
     perf_log.puts(@test_params.params_chan.cmd[0].gsub(/\.exe$/,'')+"_mean_fps "+sample_mean.to_s+" fps")
@@ -41,7 +41,7 @@ def run_collect_performance_data
 end
 
 def run_determine_test_outcome
-  if File.exists?(File.join(SiteInfo::WINCE_TEMP_FOLDER,'perf.log'))
+  if File.exists?(File.join(@wince_temp_folder,'perf.log'))
     [FrameworkConstants::Result[:pass], "This test pass"]
   else
     [FrameworkConstants::Result[:pass], "This failed no performance data was collected"]
