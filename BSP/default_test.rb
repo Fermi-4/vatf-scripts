@@ -90,7 +90,6 @@ module WinceTestScript
     # transfer tux etc files to target
     src_dir = @test_params.var_test_libs_root
     get_cetk_basic_filenames(src_dir).split(':').each {|lib_file|
-      puts "ftp #{lib_file}"
       put_file({'filename' => lib_file, 'src_dir' => src_dir, 'binary' => true})
     }
  
@@ -244,7 +243,9 @@ module WinceTestScript
     dut_ftp.login(p['login'], p['password'])
     #yliu: if the file exist in dst_dir, don't do ftp
     begin
+      dut_ftp.chdir(p['dst_dir'])
       if !dut_ftp.nlst.include?(p['filename']) then
+        puts "ftp #{p['filename']}"
         if p['binary']
           dut_ftp.putbinaryfile(File.join(p['src_dir'],p['filename']), File.join(p['dst_dir'],p['filename']))
         else
