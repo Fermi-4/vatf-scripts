@@ -360,7 +360,7 @@ def run
           core_info_hash[key].getLength().times { |i|
           if(core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution && core_info_hash[key][i].get_dir == res.codec_type)
             dut.send_cmd("dimt open #{tcid} alloc 11 chan encapcfg rtp txssrc #{ssrc} rxssrc #{ssrc}", /ACK DONE/, 2)
-            dut.send_cmd("wait 40", //, 2)
+            dut.send_cmd("wait 10", //, 2)
             dut.send_cmd("cc xdp_cli_set_prot #{tcid} ether ipv4 udp", /OK/, 2)
             dut.send_cmd("cc xdp_set #{tcid} phy phy_id 24", /OK/, 2) 
             dut.send_cmd("cc xdp_set #{tcid} phy dsp_dev_iface 2", /OK/, 2) 
@@ -775,9 +775,8 @@ end
 
 def channel_reset(dut,tcid)
     puts "#{tcid} : In channel_reset"
-	dut.send_cmd("cc xdp_cli_set_state #{tcid} tx_disable rx_disable",/OK/,2)
     dut.send_cmd("dimt close #{tcid} alloc",/ACK DONE/,2)
-
+	dut.send_cmd("cc xdp_cli_set_state #{tcid} tx_disable rx_disable",/OK/,2)
 
 end
 def close_channel(dut,tcid)
