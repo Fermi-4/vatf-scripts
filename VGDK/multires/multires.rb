@@ -75,7 +75,7 @@ def setup
     dut = @equipment['dut1']
     dut.set_api("vgdk")
     server = defined?(@equipment['server1']) ? @equipment['server1'] : nil
-    dut.connect({'type'=>'telnet'})
+    dut.connect({'type'=>'serial'})
     setup_boot(dut,server)
     dut.send_cmd("wait 10000", /OK/, 2)
     dut.send_cmd("cc ver", /OK/, 2)
@@ -134,7 +134,7 @@ def run
     debug_puts "Close any channels that may be open"
     dut.send_cmd("dim tcids", /OK/, 2)
     tcids_state = dut.response
-    tcids_state.each { |line|
+    tcids_state.each_line { |line|
     if(line.match(/[\d+\s+]{3}\d+\s\/\s+\d+\s+\w[Idle|Video|Exception]/i))
         tcid = line.match(/\d+/)[0]
         channel_reset(dut,tcid)
@@ -319,7 +319,7 @@ def run
           core_info_hash[key].getLength().times { |i|
           if(core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution && core_info_hash[key][i].get_dir == res.codec_type)
             dut.send_cmd("dimt open #{tcid} alloc 11 chan encapcfg rtp txssrc #{ssrc} rxssrc #{ssrc}", /DONE/, 2)
-            dut.send_cmd("wait 10", //, 2)
+            dut.send_cmd("wait 40", //, 2)
             dut.send_cmd("cc xdp_cli_set_prot #{tcid} ether ipv4 udp", /OK/, 2)
             dut.send_cmd("cc xdp_set #{tcid} phy phy_id 24", /OK/, 2) 
             dut.send_cmd("cc xdp_set #{tcid} phy dsp_dev_iface 2", /OK/, 2) 
@@ -427,7 +427,7 @@ def run
                                     raise "Error: ### Clip not found"
                                 end
                                 genCodecCfg(codec,res.resolution,test_case_id,clip_hash[clip].to_s,multislice) 
-                                system("#{VIDEO_TOOLS_DIR}\\desktop_vppu.exe #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.cfg > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt")         
+                                system("#{VIDEO_TOOLS_DIR}/desktop_vppu.exe #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.cfg > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\codec_dump_#{codec}_#{res.resolution}.txt")         
                                 Dir.chdir("#{WIRESHARK_DIR}")
                                 if(multislice == 1)
                                   system("capinfos.exe #{INPUT_DIR}\\in\\#{res.resolution}\\#{codec}\\multislice\\#{clip_hash[clip].to_s}_rtpmarker.cap > #{INPUT_DIR}\\config\\pktHdrs\\TC#{test_case_id}\\capinfos_#{codec}_#{res.resolution}.txt")
@@ -520,8 +520,8 @@ def run
                     core_info_hash[key].getLength().times { |i|
                     transcoded_codec = core_info_hash[key][i].get_transcoded_to_codec
                     if(core_info_hash[key][i].get_dir == "dec" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution && res.subjective_on == 0)
-                        system("start cmd.exe \/c #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\#{transcoded_codec}_#{res.resolution}_subj_bat.bat")
-                        sleep(1)
+                        system("start \"Mplayer\" cmd.exe \/c #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\#{transcoded_codec}_#{res.resolution}_subj_bat.bat")
+						sleep(1)
                         res.subjective_on = 1
                     end
                     }
@@ -534,21 +534,9 @@ def run
         codec_hash.each_pair { |codec, res_arr| res_arr.each{|res| res.stream_sent = 0} }        
         system("taskkill /F /IM tshark.exe")
         system("taskkill /FI \"IMAGENAME eq mplayer.exe\"")
+		system("taskkill /FI \"WINDOWTITLE eq Mplayer\"")
               
-        # pc_udp_port = 32768
-        # codec_hash.each_pair { |codec, res_arr|
-        # res_arr.each {|res|
-        # core_info_hash.keys.sort.each { |key|
-          # core_info_hash[key].getLength().times { |i|  
-            # if(core_info_hash[key][i].get_dir == "enc" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)               
-              # system("tshark -r #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/Iter#{iteration_id}_clipIter#{c_iter}.cap -R \"udp.port == #{pc_udp_port}\" -w #{OUTPUT_DIR}/outputCap/TC#{test_case_id}/Iter#{iteration_id}/#{pc_udp_port}_out_clipIter#{c_iter}.cap")
-            # end
-            # pc_udp_port += 2  
-          # }
-        # }
-        # pc_udp_port = 32768
-        # }
-        # }
+
     }
     pc_udp_port = 32768
     local_ref_file = nil
@@ -653,7 +641,7 @@ def run
     debug_puts "%%%%%%%%%% sending channel close %%%%%%%%%%%%%%%%"
     dut.send_cmd("dim tcids", /OK/, 2)
     tcids_state = dut.response
-    tcids_state.each { |line|
+    tcids_state.each_line { |line|
     if(line.match(/Exception/i))
         test_done_result = FrameworkConstants::Result[:fail]
         test_comment = "Test completed: Channel Exception"
@@ -679,7 +667,6 @@ def run
         test_comment = "Test completed: Output clips at #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}"
     end
     set_result(test_done_result,test_comment)
-	#dut.disconnect
     
 end
 
@@ -741,8 +728,8 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
     if(var_type == "test")
         @test_params.params_chan.instance_variables.each do |curr_var|
         if /#{codec}v#{type}/.match(curr_var)
-        param_msb = curr_var.gsub("@#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")
-        param_lsb = curr_var.gsub("@#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")
+        param_msb = curr_var.to_s.gsub("@#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")
+        param_lsb = curr_var.to_s.gsub("@#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")
         param_msb << "_msb"
         param_lsb << "_lsb" 
         params_hash[param_lsb] = @test_params.params_chan.instance_variable_get(curr_var)[0].to_i & 0xffff
@@ -752,38 +739,45 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
             params_hash[param_lsb] = sprintf("0x%04x", params_hash[param_lsb])
             params_hash[param_msb] = sprintf("0x%04x", params_hash[param_msb])
         end
+      end
+      if((/#{codec}v_#{codectype.downcase}/).match(curr_var) && type == "enc_st")
+        if(/#{codec}v_#{codectype.downcase}_ovly_type/).match(curr_var) 
+          dut.send_cmd("dimt set template #{template} video video_ovly_cfg #{curr_var.to_s.gsub("@#{codec}v_enc_", "")} #{@test_params.params_chan.instance_variable_get(curr_var)[0]}",/OK/,2) 
+        else
+          dut.send_cmd("dimt set template #{template} video video_mode #{curr_var.to_s.gsub("@#{codec}v_enc_", "")} #{@test_params.params_chan.instance_variable_get(curr_var)[0]}",/OK/,2) 
         end
-        if(/#{codec}v_#{codectype.downcase}_ovly_type/.match(curr_var) && type == "enc_st")
-            dut.send_cmd("dimt set template  #{template} video video_ovly_cfg ovly_type #{@test_params.params_chan.instance_variable_get(curr_var)}",/OK/,2)
-        end
-        end
-        if(@test_params.params_chan.instance_variable_defined?("@enc_framerate") && type == "enc_dyn")
-          params_hash["#{codec.upcase}_ENC_tgtfrrate_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff
-          params_hash["#{codec.upcase}_ENC_tgtfrrate_msb"] = (@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff0000) >> 16
-	  params_hash["#{codec.upcase}_ENC_intrafrint_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000 & 0xffff
-          params_hash["#{codec.upcase}_ENC_intrafrint_msb"] = ((@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000) & 0xffff0000) >> 16
-          params_hash["#{codec.upcase}_ENC_reffrrate_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff
-          params_hash["#{codec.upcase}_ENC_reffrrate_msb"] = (@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff0000) >> 16
-        end
-        if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_dyn")
-            params_hash["#{codec.upcase}_ENC_tgtbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
-            params_hash["#{codec.upcase}_ENC_tgtbitrate_msb"] = sprintf("0x%04x", (@test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff0000) >> 16)
-        end
-        if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_st")
-            params_hash["#{codec.upcase}_ENC_maxbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
-            params_hash["#{codec.upcase}_ENC_maxbitrate_msb"] = sprintf("0x%04x", (@test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff0000) >> 16)
-        end
-
-    else #default
-        default_params.each_pair do |var,value|
-        if /#{codec}v#{type}/.match(var)
-        params_hash[var.gsub("#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")] = value
-        end
-        end
+      end
     end
-    arr = Array.new
-    arr = params_hash.sort
-    arr.each do |elem|
+    if(@test_params.params_chan.instance_variable_defined?("@enc_framerate") && type == "enc_dyn")
+      params_hash["#{codec.upcase}_ENC_tgtfrrate_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff
+      params_hash["#{codec.upcase}_ENC_tgtfrrate_msb"] = (@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff0000) >> 16
+      params_hash["#{codec.upcase}_ENC_intrafrint_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000 & 0xffff
+      params_hash["#{codec.upcase}_ENC_intrafrint_msb"] = ((@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000) & 0xffff0000) >> 16
+      params_hash["#{codec.upcase}_ENC_reffrrate_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff
+      params_hash["#{codec.upcase}_ENC_reffrrate_msb"] = (@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff0000) >> 16
+	  if(codec == "h264bp")
+		  params_hash["#{codec.upcase}_ENC_maxdelay_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000 & 0xffff
+		  params_hash["#{codec.upcase}_ENC_maxdelay_msb"] = ((@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000) & 0xffff0000) >> 16
+      end
+	end
+    if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_dyn")
+      params_hash["#{codec.upcase}_ENC_tgtbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
+      params_hash["#{codec.upcase}_ENC_tgtbitrate_msb"] = sprintf("0x%04x", (@test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff0000) >> 16)
+    end
+    # if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_st")
+      # params_hash["#{codec.upcase}_ENC_maxbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
+      # params_hash["#{codec.upcase}_ENC_maxbitrate_msb"] = sprintf("0x%04x", (@test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff0000) >> 16)
+    # end
+  else #default
+    default_params.each_pair do |var,value|
+    if /#{codec}v#{type}/.match(var)
+    params_hash[var.to_s.gsub("#{codec}v#{codectype.swapcase}_#{paramtype}", "#{codec.upcase}_#{codectype}")] = value
+    end
+    end
+  end
+  arr = Array.new
+  arr = params_hash.sort
+  arr.each do |elem|
     dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str #{elem[0].gsub(/_[0-9]+/, "")} #{elem[1]} ",/OK/,2)
     end
 
@@ -879,8 +873,9 @@ def get_results(video_file)
 end
 def channel_reset(dut,tcid)
     debug_puts "#{tcid} : In channel_reset"
+	dut.send_cmd("cc xdp_cli_set_state #{tcid} tx_disable rx_disable",/OK/,2)
     dut.send_cmd("dimt close #{tcid} alloc",/OK/,2)
-    dut.send_cmd("cc xdp_cli_set_state #{tcid} tx_disable rx_disable",/OK/,2)
+
 
 end
 def close_channel(dut,tcid) 
@@ -946,12 +941,18 @@ def clean
     remove_dir("#{INPUT_DIR}/out/")
     remove_dir("#{INPUT_DIR}/config/autogenerated/") 
     system("ccperl #{SCRIPT_EXTRACTOR}//script_extractor.pl #{@files_dir}//dut1_1_log.txt > #{@files_dir}//dut1_1_log_config_script.txt")
+    system("taskkill /F /IM \"tshark.exe\"")
+    system("taskkill /FI \"IMAGENAME eq mplayer.exe\"")
+    system("taskkill /FI \"WINDOWTITLE eq Mplayer\"")
 end
 
 def cleanup_and_exit()
   test_done_result = FrameworkConstants::Result[:fail]
   test_comment = "No ACK DONE received from DSP, exiting"
   set_result(test_done_result,test_comment)
+  system("taskkill /F /IM \"tshark.exe\"")
+  system("taskkill /FI \"IMAGENAME eq mplayer.exe\"")
+  system("taskkill /FI \"WINDOWTITLE eq Mplayer\"")
   clean()
 end
 
@@ -991,7 +992,7 @@ def get_test_string(params)
   if(params == nil)
     return nil
   end
-  params.each {|element|
+  params.each_line {|element|
   test_string += element.strip
   }
   test_string
