@@ -6,7 +6,7 @@ module WinceTestScript
   # Connects Test Equipment to DUT(s) and Boot DUT(s)
   def setup
     puts "\n WinceTestScript::setup"
-    @wince_temp_folder = SiteInfo::WINCE_DATA_FOLDER + '/' + @test_params.staf_service_name + '/temp'
+    @wince_temp_folder = File.join(SiteInfo::WINCE_DATA_FOLDER,@test_params.staf_service_name.to_s,'temp')
     delete_temp_files()
     @equipment['dut1'].set_api('bsp')
     @wince_dst_dir = @test_params.params_chan.instance_variable_defined?(:@test_dir) ? @test_params.params_chan.test_dir[0] : '\Windows'
@@ -41,7 +41,7 @@ module WinceTestScript
     puts "\n WinceTestScript::setup_boot"
     boot_params = {'power_handler'=> @power_handler, 'test_params' => @test_params}
     @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
-    if boot_required?(@old_keys, @new_keys)   # call bootscript if required
+    if false && boot_required?(@old_keys, @new_keys)   # call bootscript if required
       puts " WinceTestScript::setup_boot: kernel image specified. Proceeding to boot DUT"
       if @equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil
         @equipment['dut1'].connect({'type'=>'serial'})
@@ -88,11 +88,12 @@ module WinceTestScript
     transfer_files(:@build_test_libs, :@var_build_test_libs_root)
 
     # transfer tux etc files to target
-    src_dir = @test_params.var_test_libs_root
-    get_cetk_basic_filenames(src_dir).split(':').each {|lib_file|
-      put_file({'filename' => lib_file, 'src_dir' => src_dir, 'binary' => true})
-    }
- 
+	if @test_params.instance_variable_defined?(:@var_test_libs_root)
+      src_dir = @test_params.var_test_libs_root
+      get_cetk_basic_filenames(src_dir).split(':').each {|lib_file|
+        put_file({'filename' => lib_file, 'src_dir' => src_dir, 'binary' => true})
+      }
+    end
   end
   
   # Calls shell script (test.bat)
@@ -369,7 +370,7 @@ module WinceTestScript
   end
   
   def transfer_files(libs_var, libs_root)
-    if @test_params.params_chan.instance_variable_defined?(libs_var) #and false  ###### TODO TODO MUST REMOVE 'and false', Added to work around filesystem storage limit error
+    if @test_params.params_chan.instance_variable_defined?(libs_var) && @test_params.instance_variable_defined?(libs_root) #and false  ###### TODO TODO MUST REMOVE 'and false', Added to work around filesystem storage limit error
       src_dir = @test_params.instance_variable_get(libs_root)
       puts "apps source dir set to #{src_dir}"
       @test_params.params_chan.instance_variable_get(libs_var).each {|lib|
