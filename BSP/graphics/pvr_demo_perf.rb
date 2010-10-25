@@ -14,7 +14,6 @@ def run_collect_performance_data
       fps_array << current_match.captures[1].to_f
     end
   end
-  perf_log = nil
   if (fps_array.length > 0)
     sample_mean = get_mean(fps_array)
     sample_stddev = Math.sqrt(get_variance(fps_array))
@@ -22,12 +21,6 @@ def run_collect_performance_data
     sample_max = fps_array.max
     sample_median = get_median(fps_array)
     
-    perf_log = File.new(File.join(@wince_temp_folder,'perf.log'),'w')
-    perf_log.puts(@test_params.params_chan.cmd[0].gsub(/\.exe$/,'')+"_min_fps "+sample_min.to_s+" fps")
-    perf_log.puts(@test_params.params_chan.cmd[0].gsub(/\.exe$/,'')+"_max_fps "+sample_max.to_s+" fps")
-    perf_log.puts(@test_params.params_chan.cmd[0].gsub(/\.exe$/,'')+"_mean_fps "+sample_mean.to_s+" fps")
-    perf_log.puts(@test_params.params_chan.cmd[0].gsub(/\.exe$/,'')+"_stddev_fps "+sample_stddev.to_s+" fps")
-    perf_log.puts(@test_params.params_chan.cmd[0].gsub(/\.exe$/,'')+"_median_fps "+sample_median.to_s+" fps")
     @results_html_file.add_paragraph("")
     res_table = @results_html_file.add_table([[@test_params.params_chan.cmd[0]+" fps",{:bgcolor => "336666", :colspan => "2"},{:color => "white"}]],{:border => "1",:width=>"20%"})
     @results_html_file.add_row_to_table(res_table,["MIN",sample_min.to_s])
@@ -35,16 +28,18 @@ def run_collect_performance_data
     @results_html_file.add_row_to_table(res_table,["MEAN",sample_mean.to_s])
     @results_html_file.add_row_to_table(res_table,["STDDEV",sample_stddev.to_s])
     @results_html_file.add_row_to_table(res_table,["MEDIAN",sample_median.to_s])
+    {'name' => @test_params.params_chan.cmd[0].gsub(/\.exe$/,'')+"_fps", 'value' => fps_array, 'units' => "fps")  
+  else
+    nil
   end
-  ensure
-  perf_log.close if perf_log
 end
 
 def run_determine_test_outcome
-  if File.exists?(File.join(@wince_temp_folder,'perf.log'))
-    [FrameworkConstants::Result[:pass], "This test pass"]
+  perf_data  = run_collect_performance_data
+  if perf_data
+    [FrameworkConstants::Result[:pass], "This test pass", perf_data]
   else
-    [FrameworkConstants::Result[:pass], "This failed no performance data was collected"]
+    [FrameworkConstants::Result[:fail], "Test failed no performance data was collected"]
   end
 end
 

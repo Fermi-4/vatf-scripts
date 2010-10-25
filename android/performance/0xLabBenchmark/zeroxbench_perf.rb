@@ -20,7 +20,7 @@ def run
         perf_vals.each {|cur_val| perf_sum+=cur_val.to_f}
         perf_val = perf_sum/perf_vals.length
       end
-      perfdata << {'name' => res.attributes["benchmark"].downcase.gsub(/\s+/,'_'), 'value' => perf_val, 'units' => res.attributes["unit"]}
+      perfdata << {'name' => res.attributes["benchmark"].downcase.gsub(/\s+/,'_'), 'value' => perf_vals, 'units' => res.attributes["unit"]}
       @results_html_file.add_row_to_table(res_table,[res.attributes["benchmark"],perf_val.to_s,res.attributes["unit"]])
     end
   end

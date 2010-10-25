@@ -21,7 +21,7 @@ module WinceTestScript
     run_transfer_script
     run_call_script
     run_get_script_output
-    run_collect_performance_data
+    # run_collect_performance_data
     run_save_results
   end
 
@@ -180,7 +180,7 @@ module WinceTestScript
     get_file({'filename'=>'check_result.log'})
     check_result_output = File.new(File.join(@wince_temp_folder,'check_result.log'),'r').read
     if check_result_output.match(/PASSED/)
-      return [FrameworkConstants::Result[:pass], "test.bat returned zero"]
+      return [FrameworkConstants::Result[:pass], "test.bat returned zero", run_collect_performance_data]
     else
       return [FrameworkConstants::Result[:fail], "test.bat returned error"]
     end
@@ -189,16 +189,8 @@ module WinceTestScript
   # Write test result and performance data to results database (either xml or msacess file)
   def run_save_results
     puts "\n WinceTestScript::run_save_results"
-    result,comment = run_determine_test_outcome
-    if File.exists?(File.join(@wince_temp_folder,'perf.log'))
-      perfdata = []
-      data = File.new(File.join(@wince_temp_folder,'perf.log'),'r').readlines
-      data.each {|line|
-        if /(\S+)\s+([\.\d]+)\s+(\S+)/.match(line)
-          name,value,units = /(\S+)\s+([\.\d]+)\s+(\S+)/.match(line).captures 
-          perfdata << {'name' => name, 'value' => value, 'units' => units}
-        end
-      }  
+    result,comment,perf_data = run_determine_test_outcome
+    if perf_data
       set_result(result,comment,perfdata)
     else
       set_result(result,comment)
