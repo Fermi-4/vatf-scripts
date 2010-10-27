@@ -31,6 +31,7 @@ def run_collect_performance_data
         m = line.scan(/,=\s*([0-9\.\/]+)/)
         puts m
         m.each {|data|
+          data = data[0]
           line = line.gsub(/=\s*#{data.to_s}/,"#{eval data.to_s}")
         }
         puts line
@@ -39,6 +40,7 @@ def run_collect_performance_data
     end
   }
   rescue Exception => e
+    clean
     clean_delete_log_files
     raise
   end

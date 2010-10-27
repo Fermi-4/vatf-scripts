@@ -150,6 +150,7 @@ module WinceTestScript
       log_file.write("\n<SERIAL_OUTPUT>\n"+@serial_port_data.to_s+"</SERIAL_OUTPUT>\n") 
       log_file.close
       add_log_to_html(log_file_name)
+      clean_delete_binary_files
       # force dut reboot on next test case
       @new_keys = ''
       raise
