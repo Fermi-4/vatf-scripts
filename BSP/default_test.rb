@@ -41,7 +41,7 @@ module WinceTestScript
     puts "\n WinceTestScript::setup_boot"
     boot_params = {'power_handler'=> @power_handler, 'test_params' => @test_params}
     @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
-    if false && boot_required?(@old_keys, @new_keys)   # call bootscript if required
+    if boot_required?(@old_keys, @new_keys)   # call bootscript if required
       puts " WinceTestScript::setup_boot: kernel image specified. Proceeding to boot DUT"
       if @equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil
         @equipment['dut1'].connect({'type'=>'serial'})
