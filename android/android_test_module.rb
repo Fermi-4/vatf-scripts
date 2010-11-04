@@ -48,8 +48,7 @@ module AndroidTest
         puts "Waiting #{boot_sec} seconds for android to come-up"
         sleep(boot_sec)
         #Unlocking the screen
-        send_adb_cmd("shell input keyevent 82") 
-      end
+    end
     connect_to_equipment()  
     send_adb_cmd("shell input keyevent 82") 
     setupTest(:@test_libs,:@var_test_libs_root)
@@ -104,7 +103,7 @@ module AndroidTest
       puts "apps source dir set to #{src_dir}"
       @test_params.params_chan.instance_variable_get(libs_var).each {|lib|
         lib_info = lib.split(':')
-        installPkg(File.join(src_dir,lib_info[0]), lib_info[1], true)
+        installPkg(File.join(src_dir,lib_info[0]), lib_info[1], false)
       }
     end
   end
