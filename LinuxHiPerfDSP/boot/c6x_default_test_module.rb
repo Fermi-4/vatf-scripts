@@ -76,7 +76,11 @@ module C6xTestScript
           BuildClient.copy(kernel, "#{samba_root_path}\\#{File.basename(kernel)}") if !File.exists?("#{samba_root_path}//#{File.basename(kernel)}")
           BuildClient.copy(BOOTBLOB, "#{samba_root_path}\\bootblob") if !File.exists?("#{samba_root_path}//bootblob")
           @equipment['server1'].send_cmd("cd #{nfs_root_path}", @equipment['server1'].prompt, 10)
-          bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"#{bootblob} ip=#{@equipment['dut1'].telnet_ip} root=/dev/nfs nfsroot=#{@equipment['server1'].telnet_ip}:#{nfs_root_path_temp} rw\""    
+          if(platform_from_db == "himalaya")
+            bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"#{bootblob} emac_addr=#{@equipment['dut1'].params["emac_addr"]} ip=#{@equipment['dut1'].telnet_ip} root=/dev/nfs nfsroot=#{@equipment['server1'].telnet_ip}:#{nfs_root_path_temp} rw\""    
+          else        
+            bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"#{bootblob} ip=#{@equipment['dut1'].telnet_ip} root=/dev/nfs nfsroot=#{@equipment['server1'].telnet_ip}:#{nfs_root_path_temp} rw\""    
+          end
           debug_puts bootblob_cmd
           @equipment['server1'].send_sudo_cmd("./bootblob #{bootblob_cmd}", @equipment['server1'].prompt, 30)
           @equipment['server1'].send_sudo_cmd("rm -f  #{@equipment['server1'].tftp_path}/#{kernel_name}", @equipment['server1'].prompt, 30) 
@@ -97,24 +101,24 @@ module C6xTestScript
         end 
         C6xTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp) 
         # Connect to DUT via serial port
-        if @equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil
-          @equipment['dut1'].connect({'type'=>'serial'})
-        elsif @equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil
-          @equipment['dut1'].connect({'type'=>'serial'})
-        else
-          raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
-        end
+        # if @equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil
+          # @equipment['dut1'].connect({'type'=>'serial'})
+        # elsif @equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil
+          # @equipment['dut1'].connect({'type'=>'serial'})
+        # else
+          # raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
+        # end
         # Turn power ON
         if power_port !=nil
           debug_puts 'Switching on @using power switch'
           @power_handler.switch_on(power_port)
-          sleep 5
-          0.upto 5 do
-            @equipment['dut1'].send_cmd("\n",@equipment['dut1'].prompt, 30)
-            debug_puts 'Sending esc character'
-            sleep 1
-            break if !@equipment['dut1'].timeout?
-          end
+          sleep 120
+          # 0.upto 5 do
+            # @equipment['dut1'].send_cmd("\n",@equipment['dut1'].prompt, 30)
+            # debug_puts 'Sending esc character'
+            # sleep 1
+            # break if !@equipment['dut1'].timeout?
+          # end
         end
       end
       # Connect via telnet
