@@ -73,9 +73,13 @@ module C6xTestScript
         end
         #Create kernel image and place in TFTP directory
         if bootblob and kernel
-          BuildClient.copy(kernel, "#{samba_root_path}\\#{File.basename(kernel)}") if !File.exists?("#{samba_root_path}//#{File.basename(kernel)}")
-          BuildClient.copy(BOOTBLOB, "#{samba_root_path}\\bootblob") if !File.exists?("#{samba_root_path}//bootblob")
           @equipment['server1'].send_cmd("cd #{nfs_root_path}", @equipment['server1'].prompt, 10)
+          BuildClient.copy(kernel, "#{samba_root_path}\\#{File.basename(kernel)}") if !File.exists?("#{samba_root_path}//#{File.basename(kernel)}")
+          if !File.exists?("#{samba_root_path}//bootblob")
+            BuildClient.copy(BOOTBLOB, "#{samba_root_path}\\bootblob") 
+            @equipment['server1'].send_cmd("fromdos bootblob", @equipment['server1'].prompt, 10)
+          end
+            
           if(platform_from_db == "himalaya")
             bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"#{bootblob} emac_addr=#{@equipment['dut1'].params["emac_addr"]} ip=#{@equipment['dut1'].telnet_ip} root=/dev/nfs nfsroot=#{@equipment['server1'].telnet_ip}:#{nfs_root_path_temp} rw\""    
           else        
