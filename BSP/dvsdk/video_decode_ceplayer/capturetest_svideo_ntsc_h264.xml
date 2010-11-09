@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test_session>
+   <build>
+      <id><![CDATA[1841]]></id>
+      <name><![CDATA[omap3530_v1.0.0.11]]></name>
+      <notes><![CDATA[<p>kernel=file:////158.218.106.35/gguser/wince/DVSDK1.10.00/images/NK.bin; test_scripts_root=git://http://arago-project.org/git/projects/test-automation/execution-engines/vatf-scripts.git; platform=omap3530;var_test_apps_root=//158.218.106.35/gguser/wince/DVSDK1.10.00/test_apps</p>]]></notes>
+   </build>
+   <testcase>
+      <extid><![CDATA[12345]]></extid>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/dvsdk/video_encode_capturetest/capturetest.bat,cmdline=capturetest.exe,time=30000,codec=h264,media_source=ntsc_dvd,video_input=svideo,bitrate=4000000,resolution=720x480@30,preview=0,media_location=usb
+]]></params_chan>
+      <params_control></params_control>
+      <params_equip><![CDATA[sample_param=3
+]]></params_equip>
+      <scripts><![CDATA[BSP/dvsdk/video_encode_capturetest/capturetest_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince];ntsc_dvd=["dvd","ntsc"];tv0=["tv",0]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omap3530</platform>
+      <target>NK_RAM.bin</target>
+      <description><![CDATA[Video Encode H.264_4Mbps_svideo_resolution_720x480@30]]></description>
+   </testcase>
+   
+   <testcase>
+      <extid><![CDATA[12346]]></extid>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/dvsdk/video_encode_capturetest/capturetest.bat,build_test_libs=capturetest-temp.exe,cmdline=capturetest-temp.exe,time=30000,codec=h264,media_source=ntsc_dvd,video_input=svideo,bitrate=4000000,resolution=704x480@30,preview=0
+]]></params_chan>
+      <params_control></params_control>
+      <params_equip><![CDATA[sample_param=3
+]]></params_equip>
+      <scripts><![CDATA[BSP/dvsdk/video_encode_capturetest/capturetest_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince];ntsc_dvd=["dvd","ntsc"];tv0=["tv",0]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omap3530</platform>
+      <target>NK_RAM.bin</target>
+      <description><![CDATA[Video Encode H.264_4Mbps_svideo_resolution_704x480@30]]></description>
+   </testcase>
+    <testcase>
+      <extid><![CDATA[12347]]></extid>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/dvsdk/video_encode_capturetest/capturetest.bat,build_test_libs=capturetest-temp.exe,cmdline=capturetest-temp.exe,time=30000,codec=h264,media_source=ntsc_dvd,video_input=svideo,bitrate=4000000,resolution=640x480@30,preview=0
+]]></params_chan>
+      <params_control></params_control>
+      <params_equip><![CDATA[sample_param=3
+]]></params_equip>
+      <scripts><![CDATA[BSP/dvsdk/video_encode_capturetest/capturetest_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince];ntsc_dvd=["dvd","ntsc"];tv0=["tv",0]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omap3530</platform>
+      <target>NK_RAM.bin</target>
+      <description><![CDATA[Video Encode H.264_4Mbps_svideo_resolution_640x480@30]]></description>
+   </testcase>
+   <testcase>
+      <extid><![CDATA[12348]]></extid>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/dvsdk/video_encode_capturetest/capturetest.bat,build_test_libs=capturetest-temp.exe,cmdline=capturetest-temp.exe,time=30000,codec=h264,media_source=ntsc_dvd,video_input=svideo,bitrate=2000000,resolution=640x480@30,preview=0
+]]></params_chan>
+      <params_control></params_control>
+      <params_equip><![CDATA[sample_param=3
+]]></params_equip>
+      <scripts><![CDATA[BSP/dvsdk/video_encode_capturetest/capturetest_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince];ntsc_dvd=["dvd","ntsc"];tv0=["tv",0]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omap3530</platform>
+      <target>NK_RAM.bin</target>
+      <description><![CDATA[Video Encode H.264_2Mbps_svideo_resolution_640x480@30]]></description>
+   </testcase>
+   
+   <testcase>
+      <extid><![CDATA[12349]]></extid>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/dvsdk/video_encode_capturetest/capturetest.bat,build_test_libs=capturetest-temp.exe,cmdline=capturetest-temp.exe,time=30000,codec=h264,media_source=ntsc_dvd,video_input=svideo,bitrate=512000,resolution=352x240@30,preview=0
+]]></params_chan>
+      <params_control></params_control>
+      <params_equip><![CDATA[sample_param=3
+]]></params_equip>
+      <scripts><![CDATA[BSP/dvsdk/video_encode_capturetest/capturetest_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince];ntsc_dvd=["dvd","ntsc"];tv0=["tv",0]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omap3530</platform>
+      <target>NK_RAM.bin</target>
+      <description><![CDATA[Video Encode H.264_512Kbps_svideo_resolution_352x240@30]]></description>
+   </testcase>
+    <testcase>
+      <extid><![CDATA[12350]]></extid>
+            <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/dvsdk/video_encode_capturetest/capturetest.bat,build_test_libs=capturetest-temp.exe,cmdline=capturetest-temp.exe,time=30000,codec=h264,media_source=ntsc_dvd,video_input=svideo,bitrate=512000,resolution=352x240@30,preview=0
+]]></params_chan>
+      <params_control></params_control>
+      <params_equip><![CDATA[sample_param=3
+]]></params_equip>
+      <scripts><![CDATA[BSP/dvsdk/video_encode_capturetest/capturetest_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince];ntsc_dvd=["dvd","ntsc"];tv0=["tv",0]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omap3530</platform>
+      <target>NK_RAM.bin</target>
+      <description><![CDATA[Video Encode H.264_512Kbps_svideo_resolution_320x240@30]]></description>
+   </testcase>
+       <testcase>
+      <extid><![CDATA[12351]]></extid>
+            <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/dvsdk/video_encode_capturetest/capturetest.bat,build_test_libs=capturetest-temp.exe,cmdline=capturetest-temp.exe,time=30000,codec=h264,media_source=ntsc_dvd,video_input=svideo,bitrate=64000,resolution=176x120@30,preview=0
+]]></params_chan>
+      <params_control></params_control>
+      <params_equip><![CDATA[sample_param=3
+]]></params_equip>
+      <scripts><![CDATA[BSP/dvsdk/video_encode_capturetest/capturetest_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince];ntsc_dvd=["dvd","ntsc"];tv0=["tv",0]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>omap3530</platform>
+      <target>NK_RAM.bin</target>
+      <description><![CDATA[Video Encode H.264_64Kbps_svideo_resolution_176x120@30]]></description>
+   </testcase>
+   
+</test_session>

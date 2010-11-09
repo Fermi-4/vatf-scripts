@@ -48,6 +48,7 @@ def setup_connect_equipment
     raw_test_lines = in_file.readlines
     out_file = File.new(File.join(@wince_temp_folder, 'test.bat'),'w')
     raw_test_lines.each do |current_line|
+	  puts "CURRENT LINE IS #{current_line}"
       out_file.puts(eval('"'+current_line.gsub("\\","\\\\\\\\").gsub('"','\\"')+'"'))
     end
     in_file.close
@@ -216,7 +217,7 @@ def run_determine_test_outcome
   if File.exists?(File.join(@wince_temp_folder,'perf.log'))
     [FrameworkConstants::Result[:pass], "This test pass"]
   else
-    [FrameworkConstants::Result[:pass], "This failed no performance data was collected"]
+    [FrameworkConstants::Result[:fail], "This failed no performance data was collected"]
   end
 
 end

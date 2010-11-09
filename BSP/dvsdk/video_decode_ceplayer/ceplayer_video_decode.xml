@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<testcases>
+<testcase internalid="724041" name="Video Decode omap4ad1_h264vid_aacaud_d1ntsc_4mbps_duration_21sec.MP4 USB STORAGE">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[6676]]></externalid>
+	<summary><![CDATA[<p>Video Decode omap4ad1_h264vid_aacaud_d1ntsc_4mbps_duration_21sec.MP4</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omapl137"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omapl138"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3503"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_functional"><notes><![CDATA[
+test type is functional
+]]></notes></keyword>
+	<keyword name="s_full"><notes><![CDATA[
+test scope is full
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP/dvsdk/video_decode_ceplayer/ceplayer_test.bat,cmdline=ceplayer.exe,test_dir=\Hard Disk,input_file=omap4ad1_h264vid_aacaud_d1ntsc_4mbps_duration_21sec.MP4,video_output=LCD,dsp_video_codec=h264,dsp_audio_codec=aac
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP/dvsdk/video_decode_ceplayer/ceplayer_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince];ntsc_dvd=["dvd","ntsc"];tv0=["tv",0]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=12
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+</testcases>
