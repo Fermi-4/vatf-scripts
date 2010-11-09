@@ -48,13 +48,13 @@ def setup_connect_equipment
 	subfolder = ""
 	#if (@test_params.params_chan.input_file[0].to_s.split('.')[1].casecmp("m2v") == 0)
      if (@test_params.params_chan.codec[0].to_s == "mpeg2dec")
-	 subfolder = "/Multimedia/Video/M2V"
+	 subfolder = "/common/Multimedia/Video/M2V"
 	  puts "subfolder is #{subfolder}\n"
 	elsif (@test_params.params_chan.codec[0].to_s == "mpeg4dec")
-	  subfolder = "/Multimedia/Video/MPEG4"
+	  subfolder = "/common/Multimedia/Video/MPEG4"
 	  puts "subfolder is #{subfolder}\n"
 	elsif (@test_params.params_chan.codec[0].to_s == "h264dec")
-	  subfolder = "/Multimedia/Video/264"
+	  subfolder = "/common/Multimedia/Video/264"
 	 puts "subfolder is #{subfolder}\n" 
 	end
 	puts "subfolder is #{subfolder}\n"
@@ -63,7 +63,7 @@ def setup_connect_equipment
 	#dest_folder = dest_folder.concat(subfolder)
 	puts "destination folder is #{dest_folder}\n"
     transfer_server_files(@test_params.params_chan.input_file[0].to_s, dest_folder)
-	puts"build_test_libs is #{@test_params.params_chan.input_file[0].to_s} and var_build_test_libs_root is #{SiteInfo::NETWORK_REFERENCE_FILES_FOLDER}+#{subfolder}\n"
+	#puts"build_test_libs is #{@test_params.params_chan.input_file[0].to_s} and var_build_test_libs_root is #{SiteInfo::NETWORK_REFERENCE_FILES_FOLDER}+#{subfolder}\n"
   end
   
    

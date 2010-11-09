@@ -56,13 +56,13 @@ def setup_connect_equipment
   def run_transfer_script()
     super
 	if (@test_params.params_chan.input_file[0].to_s.split('.')[1].casecmp("avi") == 0)
-	  subfolder = "/Multimedia/Video/AVI"
+	  subfolder = "/common/Multimedia/Video/AVI"
 	  puts "subfolder is #{subfolder}\n"
 	elsif (@test_params.params_chan.input_file[0].to_s.split('.')[1].casecmp("3gp") == 0)
-	  subfolder = "/Multimedia/Video/3GPP"
+	  subfolder = "/common/Multimedia/Video/3GPP"
 	  puts "subfolder is #{subfolder}\n"
 	elsif (@test_params.params_chan.input_file[0].to_s.split('.')[1] .casecmp("mp4") == 0)
-	  subfolder = "/Multimedia/Video/MP4"
+	  subfolder = "/common/Multimedia/Video/MP4"
 	 puts "subfolder is #{subfolder}\n" 
 	end
 	puts "subfolder is #{subfolder}\n"
@@ -71,7 +71,7 @@ def setup_connect_equipment
 	dest_folder = SiteInfo::FILE_SERVER + subfolder
 	puts "destination folder is #{dest_folder}\n"
     transfer_server_files(@test_params.params_chan.input_file[0].to_s, dest_folder)
-	puts"build_test_libs is #{@test_params.params_chan.input_file[0].to_s} and var_build_test_libs_root is #{SiteInfo::NETWORK_REFERENCE_FILES_FOLDER}+#{subfolder}\n"
+	#puts"build_test_libs is #{@test_params.params_chan.input_file[0].to_s} and var_build_test_libs_root is #{SiteInfo::NETWORK_REFERENCE_FILES_FOLDER}+#{subfolder}\n"
   end
   
    

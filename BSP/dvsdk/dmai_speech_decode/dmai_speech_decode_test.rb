@@ -50,13 +50,13 @@ def setup_connect_equipment
     super
 	put_file({'filename'=>'test.bat'})
 	if (@test_params.params_chan.input_file[0].to_s.split('.')[1].casecmp("g711") == 0)
-	  subfolder = "/Multimedia/Speech/G711"
+	  subfolder = "/common/Multimedia/Speech/G711"
 	  puts "subfolder is #{subfolder}\n"
 	# elsif (@test_params.params_chan.input_file[0].to_s.split('.')[1].casecmp("mpeg4") == 0)
-	  # subfolder = "/Multimedia/Video/MPEG4"
+	  # subfolder = "/common/Multimedia/Video/MPEG4"
 	  # puts "subfolder is #{subfolder}\n"
 	# elsif (@test_params.params_chan.input_file[0].to_s.split('.')[1] .casecmp("264") == 0)
-	  # subfolder = "/Multimedia/Video/264"
+	  # subfolder = "/common/Multimedia/Video/264"
 	 # puts "subfolder is #{subfolder}\n" 
 	end
 	puts "subfolder is #{subfolder}\n"
@@ -65,7 +65,7 @@ def setup_connect_equipment
 	dest_folder = SiteInfo::FILE_SERVER + subfolder
 	puts "destination folder is #{dest_folder}\n"
     transfer_server_files(@test_params.params_chan.input_file[0].to_s, dest_folder)
-	puts"build_test_libs is #{@test_params.params_chan.input_file[0].to_s} and var_build_test_libs_root is #{SiteInfo::NETWORK_REFERENCE_FILES_FOLDER}+#{subfolder}\n"
+	#puts"build_test_libs is #{@test_params.params_chan.input_file[0].to_s} and var_build_test_libs_root is #{SiteInfo::NETWORK_REFERENCE_FILES_FOLDER}+#{subfolder}\n"
   end
   
    
