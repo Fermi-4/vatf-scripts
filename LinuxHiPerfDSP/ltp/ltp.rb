@@ -47,11 +47,11 @@ DUT_DST_DIR = "opt/ltp"
   
 
   # Generate commands file to be executed at DUT.
-  # By default this function only replaces the @test_params references and creates testlist.coff 
+  # By default this function only replaces the @test_params references and creates testlist 
   def run_generate_test_list
 
     commands = {}
-    out_file = File.new(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'testlist.coff'),'w')
+    out_file = File.new(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'testlist'),'w')
     @test_params.params_chan.instance_variable_get("@testlist").each do |test_tag|
       tagName, tagValue = test_tag.split("=")[0],test_tag.split("=")[1] 
       out_file.puts "#{tagName} sandbox #{tagValue}"
@@ -68,7 +68,7 @@ DUT_DST_DIR = "opt/ltp"
       out_file.puts "condev		#{@equipment['dut1'].telnet_ip}:#{@equipment['dut1'].telnet_port}"
       out_file.puts "start		[DEAD-NET]"
       out_file.puts "lockdir		/tmp"
-      out_file.puts "testlist	#{@nfs_root_path}/#{DUT_DST_DIR}/ti-c6x/testlist.coff"
+      out_file.puts "testlist	#{@nfs_root_path}/#{DUT_DST_DIR}/ti-c6x/testlist"
       out_file.puts "testlog		\"testruns/test-%Y%m%d-%H%M%S.log\""
       out_file.puts "commlog		\"testruns/comm-%Y%m%d-%H%M%S.log\""
     end
@@ -87,7 +87,7 @@ DUT_DST_DIR = "opt/ltp"
       @equipment['server1'].send_sudo_cmd("mkdir ti-c6x ",@equipment['server1'].prompt) 
       @equipment['server1'].send_sudo_cmd("chmod 777 ti-c6x",@equipment['server1'].prompt)
     end
-    test_copy({'filename' => 'testlist.coff','src_dir' => "#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'dst_dir' => "#{DUT_DST_DIR}/ti-c6x"})
+    test_copy({'filename' => 'testlist','src_dir' => "#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'dst_dir' => "#{DUT_DST_DIR}/ti-c6x"})
     test_copy({'filename' => 'stmc.cfg','src_dir' => "#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'dst_dir' => "#{DUT_DST_DIR}/ti-c6x"})
   end
   
