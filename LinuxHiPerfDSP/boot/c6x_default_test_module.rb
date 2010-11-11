@@ -118,16 +118,15 @@ module C6xTestScript
           @power_handler.switch_on(power_port)
           sleep 90
           # Connect via telnet
-          connect_to_equipment('dut1')
-          0.upto 5 do
-            @equipment['dut1'].send_cmd("\n",@equipment['dut1'].prompt, 30)
-            debug_puts 'Sending esc character'
-            sleep 1
-            break if !@equipment['dut1'].timeout?
-          end
         end
       end
-
+      connect_to_equipment('dut1')
+      0.upto 5 do
+        @equipment['dut1'].send_cmd("\n",@equipment['dut1'].prompt, 30)
+        debug_puts 'Sending esc character'
+        sleep 1
+        break if !@equipment['dut1'].timeout?
+      end
 
       
       # by now, the dut should already login and is up; if not, dut may hang.
