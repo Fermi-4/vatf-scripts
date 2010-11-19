@@ -21,7 +21,7 @@
 ]]></scripts>
       <hw_assets_config><![CDATA[dut1 = ["<platform>",android]; server1 = ["linux_server"]
 ]]></hw_assets_config>
-      <params_control><![CDATA[time=60,buffer_size=16;256;512;1024;4096;8192,port_number=22115,ip_version=4,min_bw=30
+      <params_control><![CDATA[time=60,buffer_size=16;32;64;128;256;512;1024;4096;8192,port_number=22115,ip_version=4,min_bw=30
 ]]></params_control>
       <auto>1</auto>
       <platform>dm3730</platform>

@@ -30,8 +30,8 @@ def run
       puts 'Test failed: Netperf data could not be calculated, make sure Host PC has netperf installed and that the DUT is running'
     else
       min_bw = @test_params.params_control.min_bw[0].to_f
+      pretty_str = get_perf_pretty_str(bw)
       if mean(bw) > min_bw 
-        pretty_str = get_perf_pretty_str(bw)
         set_result(FrameworkConstants::Result[:pass], pretty_str)
         puts "Test Passed: AVG Throughput=#{mean(bw)} \n #{pretty_str}"
       else
