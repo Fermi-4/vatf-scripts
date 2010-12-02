@@ -32,7 +32,7 @@ def setup_connect_equipment
 	
 	end
 	
-	test_command = @test_params.params_chan.cmdline[0]+' '+'--benchmark'+' '+'-c'+' '+@test_params.params_chan.codec[0].to_s+' '+'-r'+' '+@test_params.params_chan.resolution[0].to_s+' '+'-i'+' '+@test_params.params_chan.test_dir[0]+'\\'+@test_params.params_chan.input_file[0].to_s+' '+ '-o'+' '+@test_params.params_chan.test_dir[0]+'\\'+output_file_name+ ' '+'--iColorspace'+' '+@test_params.params_chan.input_colorspace[0]
+	test_command = @test_params.params_chan.cmdline[0]+' '+'--benchmark'+' '+'-c'+' '+@test_params.params_chan.codec[0].to_s+' '+'-r'+' '+@test_params.params_chan.resolution[0].to_s+' '+'-i'+' '+@test_params.params_chan.test_dir[0]+'\\'+@test_params.params_chan.input_file[0].to_s+' '+ '-o'+' '+@test_params.params_chan.test_dir[0]+'\\'+output_file_name+ ' '+'--iColorSpace'+' '+@test_params.params_chan.input_colorspace[0]+' '+'--oColorSpace'+' '+@test_params.params_chan.output_colorspace[0]
 	puts "test_command is #{test_command}\n"
 
     FileUtils.mkdir_p @wince_temp_folder
@@ -52,7 +52,7 @@ def setup_connect_equipment
     super
 	put_file({'filename'=>'test.bat'})
 	if (@test_params.params_chan.input_file[0].to_s.split('.')[1].casecmp("uyvy") == 0)
-	  subfolder = "/common/Multimedia/Image/UYVY"
+	  subfolder = "/common/Multimedia/Image/yuv"
 	  puts "subfolder is #{subfolder}\n"
 	# elsif (@test_params.params_chan.input_file[0].to_s.split('.')[1].casecmp("mpeg4") == 0)
 	  # subfolder = "/common/Multimedia/Video/MPEG4"
@@ -162,14 +162,14 @@ def run_collect_performance_data
 	 #frame_time = frame_time.to_i
 	 total_time_min = total_time.min()
 	 total_time_max = total_time.max()
-	 read_time_mean = get_mean(read_time)
+	 #read_time_mean = get_mean(read_time)
 	 #frame_time = frame_time.to_i
-	 read_time_min = read_time.min()
-	 read_time_max = read_time.max()
-	 write_time_mean = get_mean(write_time)
+	 #read_time_min = read_time.min()
+	 #read_time_max = read_time.max()
+	 #write_time_mean = get_mean(write_time)
 	 #frame_time = frame_time.to_i
-	 write_time_min = write_time.min()
-	 write_time_max = write_time.max()
+	 #write_time_min = write_time.min()
+	 #write_time_max = write_time.max()
   perf_log = File.new(File.join(@wince_temp_folder,'perf.log'),'w')
    # perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.codec[0].to_s+"_"+@test_params.params_chan.bitrate[0].to_s+"_bps_"+@test_params.params_chan.resolution[0].to_s+"_"+@test_params.params_chan.video_input[0].to_s+"_"+@test_params.params_chan.media_location[0].to_s+"_DSP_LOAD_MEAN "+dsp_load_mean.round(2).to_s+"%")
    # perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.codec[0].to_s+"_"+@test_params.params_chan.bitrate[0].to_s+"_bps_"+@test_params.params_chan.resolution[0].to_s+"_"+@test_params.params_chan.video_input[0].to_s+"_"+@test_params.params_chan.media_location[0].to_s+"_DSP_LOAD_MIN "+dsp_load_min.to_s+"%")
@@ -195,19 +195,19 @@ def run_collect_performance_data
     puts "file did not exist and hence, creating one\n"
     xls_file = File.new(File.join(dest_dir,"dmai_image_encode.txt"),'a+')
 	#xls_file.puts("Test Time\t\t\tDescription\t\t\tOpm State\t\t\tARM Load\tDSP Load\tFrame Rate\n")
-	xls_file.puts("TestTime\tFileName\tResolution\tOpmState\tMean Encode Time\tMean Read Time\tMean Write Time\tMean Total Time\n")
+	xls_file.puts("TestTime\tFileName\tResolution\tOpmState\tMean Encode Time(in us)\tMean Total Time(in us)\n")
 	xls_file.close
    end
    
    xls_file = File.open(File.join(dest_dir,"dmai_image_encode.txt"),'a+') 
    time_of_test = (Time.now).strftime("%m_%d_%Y_%H_%M_%S")
-    xls_file.puts("#{time_of_test}\t"+@test_params.params_chan.input_file[0].to_s+"\t"+@test_params.params_chan.resolution[0].to_s+"\t"+"#{opm_info}"+"\t"+encode_time_mean.round(2).to_s+"\t"+read_time_mean.round(2).to_s+"\t"+write_time_mean.round(2).to_s+"\t"+total_time_mean.round(2).to_s)
+    xls_file.puts("#{time_of_test}\t"+@test_params.params_chan.input_file[0].to_s+"\t"+@test_params.params_chan.resolution[0].to_s+"\t"+"#{opm_info}"+"\t"+encode_time_mean.round(2).to_s+"\t"+total_time_mean.round(2).to_s)
 	res_table = @results_html_file.add_table([[@test_params.params_chan.cmdline[0]+"dmai_image_encode"+"_"+@test_params.params_chan.input_file[0].to_s+"_"+"of size_"+@test_params.params_chan.resolution[0].to_s+" performance",{:bgcolor => "336666", :colspan => "2"},{:color => "white"}]],{:border => "1",:width=>"20%"})
     @results_html_file.add_row_to_table(res_table,["OPM_INFO",opm_info])
 	@results_html_file.add_row_to_table(res_table,["TOTAL_TIME",total_time_mean.round(2).to_s])
 	@results_html_file.add_row_to_table(res_table,["ENCODE_TIME",encode_time_mean.round(2).to_s])
-	@results_html_file.add_row_to_table(res_table,["READ_TIME",read_time_mean.round(2).to_s])
-	@results_html_file.add_row_to_table(res_table,["WRITE_TIME",write_time_mean.round(2).to_s])
+	#@results_html_file.add_row_to_table(res_table,["READ_TIME",read_time_mean.round(2).to_s])
+	#@results_html_file.add_row_to_table(res_table,["WRITE_TIME",write_time_mean.round(2).to_s])
 	xls_file.close
 	ensure
     perf_log.close if perf_log
