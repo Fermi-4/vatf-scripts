@@ -178,7 +178,9 @@ module WinceTestScript
     @equipment['dut1'].send_cmd("cd #{@wince_dst_dir}",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("call check_default_result.bat 2> check_result.log > check_result.log",@equipment['dut1'].prompt)
     get_file({'filename'=>'check_result.log'})
-    check_result_output = File.new(File.join(@wince_temp_folder,'check_result.log'),'r').read
+	result_output = File.new(File.join(@wince_temp_folder,'check_result.log'),'r')
+    check_result_output = result_output.read
+	result_output.close
     if check_result_output.match(/PASSED/)
       return [FrameworkConstants::Result[:pass], "test.bat returned zero", run_collect_performance_data]
     else
@@ -210,12 +212,18 @@ module WinceTestScript
   
   # Return standard output of test.bat as a string
   def get_std_output
-    File.new(File.join(@wince_temp_folder,'stdout.log'),'r').read
+    std_file = File.new(File.join(@wince_temp_folder,'stdout.log'),'r')
+	std_out = std_file.read
+	std_file.close
+	std_out
   end
   
   # Return standard error of test.bat as a string
   def get_std_error
-    File.new(File.join(@wince_temp_folder,'stderr.log'),'r').read
+    std_file = File.new(File.join(@wince_temp_folder,'stderr.log'),'r')
+    std_err = std_file.read
+	std_file.close
+	std_err
   end
   
   # Return serial (i.e. console) output of test.bat as a string
