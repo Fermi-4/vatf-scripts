@@ -191,7 +191,7 @@ module WinceTestScript
   # Write test result and performance data to results database (either xml or msacess file)
   def run_save_results
     puts "\n WinceTestScript::run_save_results"
-    result,comment,perf_data = run_determine_test_outcome
+    result,comment,perfdata = run_determine_test_outcome
     if perf_data
       set_result(result,comment,perfdata)
     else
