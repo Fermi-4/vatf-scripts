@@ -36,8 +36,9 @@ module LspTestScript
       
       if @equipment.has_key?('server1')
         samba_root_path_temp = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}"
-        
-        if @equipment['server1'].respond_to?(:telnet_port) and @equipment['server1'].respond_to?(:telnet_ip) and !@equipment['server1'].target.telnet
+        if @equipment['server1'].kind_of? LinuxLocalHostDriver
+					@equipment['server1'].connect({})     # In this case, nothing happens as the server is running locally
+        elsif @equipment['server1'].respond_to?(:telnet_port) and @equipment['server1'].respond_to?(:telnet_ip) and !@equipment['server1'].target.telnet
           @equipment['server1'].connect({'type'=>'telnet'})
         elsif !@equipment['server1'].target.telnet 
           raise "You need Telnet connectivity to the Linux Server. Please check your bench file" 
@@ -72,7 +73,7 @@ module LspTestScript
 		  @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10)
         end
       
-        @equipment['server1'].send_sudo_cmd("mkdir -p -m 777 #{nfs_root_path_temp}/test", @equipment['server1'].prompt, 10) if !(@test_params.instance_variable_defined?(:@var_nfs))
+        @equipment['server1'].send_sudo_cmd("mkdir -p -m 777 #{nfs_root_path_temp}/test", @equipment['server1'].prompt) if !(@test_params.instance_variable_defined?(:@var_nfs))
       
         LspTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp) 
         # Boot DUT
