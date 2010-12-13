@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test_session>
+   <testplan_id/>
+   <build>
+      <id><![CDATA[3601]]></id>
+      <name><![CDATA[Drop1]]></name>
+      <notes><![CDATA[<p>platform=dm3730</p>]]></notes>
+   </build>
+
+   <testcase>
+      <id><![CDATA[349181]]></id>
+      <params_chan><![CDATA[test_libs=android-server-2.0a8.apk:org.openqa.selenium.android.app
+]]></params_chan>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <approver><![CDATA[
+]]></approver>
+      <tee><![CDATA[vatf
+]]></tee>
+      <scripts><![CDATA[android/stability/browser/links_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",android]; server1 = ["linux_server"]
+]]></hw_assets_config>
+      <params_control><![CDATA[starting_sites=http://www.yahoo.com;http://news.google.com;http://www.youtube.com;http://www.nickjr.com/,
+	  num_links_to_follow=50,wait_time=1
+]]></params_control>
+      <auto>1</auto>
+      <platform>dm3730</platform>
+      <target>Drop1</target>
+      <description><![CDATA[Browser links stress test]]></description>
+   </testcase>
+   
+</test_session>
