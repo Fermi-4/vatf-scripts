@@ -75,8 +75,7 @@ def setup
     dut = @equipment['dut1']
     dut.set_api("vgdk")
     server = defined?(@equipment['server1']) ? @equipment['server1'] : nil
-    dut.connect({'type'=>'serial'})
-    setup_boot(dut,server)
+    setup_boot(dut,server,@power_handler)
     dut.send_cmd("wait 10000", /OK/, 2)
     dut.send_cmd("cc ver", /OK/, 2)
     dut.send_cmd("dspi show", /OK/, 2)   
@@ -956,7 +955,7 @@ def cleanup_and_exit()
   clean()
 end
 
-def setup_boot(dut,ftp_server)
+def setup_boot(dut,ftp_server,power_handler)
   # Boot DUT if app and dsp image was specified in the test parameters
 
   if (@test_params.instance_variable_defined?(:@dsp) and @test_params.instance_variable_defined?(:@app))
@@ -969,8 +968,9 @@ def setup_boot(dut,ftp_server)
   end
   
   if boot_required?(@old_keys, @new_keys) # call bootscript if required
-    boot(dut,ftp_server,boot_params)
+    boot(dut,ftp_server,boot_params,power_handler)
   else
+    dut.connect({'type'=>'serial'})
     puts "Tomahawk VGDK transcoding:: skip booting process"
   end
 end

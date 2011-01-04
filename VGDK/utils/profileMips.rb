@@ -67,6 +67,16 @@ module ProfileMips
 
 		  }
 	end
+	
+	if(profileParams.include?("tsu"))
+		param_name = "TSU Tx Cycles"
+		param = "tsu_tx_ch"
+		get_col(param).each_pair{ 
+		  |key,value| add_result("#{param_name} Channel #{value}",key,perfData) 
+		  profileData.delete("tsu")
+
+		  }
+	end
 	if(profileParams.include?("totalcount"))
 		param_name = "Total Cycles"
 		param = "totalcount"

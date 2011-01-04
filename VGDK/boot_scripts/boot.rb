@@ -10,15 +10,22 @@ include XDPVarSetTgtPC
 require File.dirname(__FILE__)+'/dsp_glob_cfg.rb'
 include DSPGlobConfig
 module BootScripts
-  def boot(dut,ftp_server,boot_params)
-    dut.send_cmd("shell ps",/dimtestvi/,2)
-    processes = dut.response
-    processes.each_line { |line|
-    if(line.match(/dimtestvi/i))
-      dimtest = line.match(/\d+/)[0]
-      dut.send_cmd("shell kill -9 #{dimtest}",/.*/,2)
+  def boot(dut,ftp_server,boot_params,power_handler)
+	power_port = dut.power_port
+	if power_port !=nil
+	   debug_puts 'Switching off @using power switch'
+	   power_handler.switch_off(power_port)
+	end
+	power_handler.switch_on(power_port)
+	sleep(60)
+    dut.connect({'type'=>'serial'})
+	0.upto 5 do
+	  dut.send_cmd("\n",dut.prompt, 30)
+	  debug_puts 'Sending esc character'
+	  sleep 1
+	  break if !dut.timeout?
     end
-    }
+
     if(boot_params != nil and ftp_server != nil)
       download_app(dut,ftp_server,boot_params['app'])
       download_dsp(dut,ftp_server,boot_params['dsp'])
