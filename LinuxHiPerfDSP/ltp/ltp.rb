@@ -82,10 +82,12 @@ DUT_DST_DIR = "opt/ltp"
   def run_transfer_script()
     debug_puts "LTP::run_transfer_script"
     @equipment['server1'].send_cmd("cd #{@nfs_root_path}/#{DUT_DST_DIR}",@equipment['server1'].prompt)
-    @equipment['server1'].send_sudo_cmd("chmod 777 .",@equipment['server1'].prompt)
+    @equipment['server1'].send_sudo_cmd("chmod -R 777 .",@equipment['server1'].prompt)
     if !(File.exists?"#{@samba_root_path}/#{DUT_DST_DIR}/ti-c6x")
-      @equipment['server1'].send_sudo_cmd("mkdir ti-c6x ",@equipment['server1'].prompt) 
-      @equipment['server1'].send_sudo_cmd("chmod 777 ti-c6x",@equipment['server1'].prompt)
+      @equipment['server1'].send_sudo_cmd("mkdir -m 777 ti-c6x ",@equipment['server1'].prompt) 
+    else
+      @equipment['server1'].send_sudo_cmd("rm -f ti-c6x/testlist",@equipment['server1'].prompt)
+      @equipment['server1'].send_sudo_cmd("rm -f ti-c6x/stmc.cfg",@equipment['server1'].prompt)
     end
     test_copy({'filename' => 'testlist','src_dir' => "#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'dst_dir' => "#{DUT_DST_DIR}/ti-c6x"})
     test_copy({'filename' => 'stmc.cfg','src_dir' => "#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'dst_dir' => "#{DUT_DST_DIR}/ti-c6x"})
