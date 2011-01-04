@@ -192,7 +192,7 @@ module WinceTestScript
   def run_save_results
     puts "\n WinceTestScript::run_save_results"
     result,comment,perfdata = run_determine_test_outcome
-    if perf_data
+    if perfdata
       set_result(result,comment,perfdata)
     else
       set_result(result,comment)
