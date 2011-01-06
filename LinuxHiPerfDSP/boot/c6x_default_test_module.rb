@@ -83,7 +83,7 @@ module C6xTestScript
           end
           bootblob_str = ''
           bootblob_ip = nil
-          bootblob.split(";").each { |cmd| 
+          bootblob.strip.split(";").each { |cmd|     
           if(cmd == "ip=dhcp")
             bootblob_ip = "ip=dhcp"
           else
@@ -128,7 +128,6 @@ module C6xTestScript
           sleep 90
           # Connect via telnet
         end
-      end
       connect_to_equipment('dut1')
       0.upto 5 do
         @equipment['dut1'].send_cmd("\n",@equipment['dut1'].prompt, 30)
@@ -140,6 +139,8 @@ module C6xTestScript
       
       # by now, the dut should already login and is up; if not, dut may hang.
       raise "UUT may be hanging!" if !is_uut_up?
+      end
+
       
       # Copy executables to NFS server (if filesystem was not specified and there are @target_sources
       if @test_params.params_chan.instance_variable_defined?(:@target_binaries) && @equipment.has_key?('server1') #&& !nfs && !@test_params.instance_variable_defined?(:@var_nfs) 

@@ -102,7 +102,7 @@ DUT_DST_DIR = "opt/ltp"
     else
     @equipment['server1'].send_sudo_cmd("mkdir testruns ",@equipment['server1'].prompt)
     end
-    @equipment['server1'].send_sudo_cmd("\./testdriver ti-c6x/stmc.cfg",@equipment['server1'].prompt,-1)
+    @equipment['server1'].send_sudo_cmd("\./testdriver ti-c6x/stmc.cfg",@equipment['server1'].prompt,300)
   end
   
   def run_get_script_output
