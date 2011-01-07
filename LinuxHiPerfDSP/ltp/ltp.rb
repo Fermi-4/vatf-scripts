@@ -54,7 +54,7 @@ DUT_DST_DIR = "opt/ltp"
     out_file = File.new(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'testlist'),'w')
     @test_params.params_chan.instance_variable_get("@testlist").each do |test_tag|
       tagName, tagValue = test_tag.split("=")[0],test_tag.split("=")[1] 
-      out_file.puts "#{tagName} sandbox #{tagValue}"
+      out_file.puts "#{tagName} sandbox /opt/ltp/testcases/bin/#{tagValue}"
     end
     out_file.close
   end
