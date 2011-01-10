@@ -28,7 +28,7 @@ def run_collect_performance_data
     @results_html_file.add_row_to_table(res_table,["MEAN",sample_mean.to_s])
     @results_html_file.add_row_to_table(res_table,["STDDEV",sample_stddev.to_s])
     @results_html_file.add_row_to_table(res_table,["MEDIAN",sample_median.to_s])
-    {'name' => @test_params.params_chan.cmd[0].gsub(/\.exe$/,'')+"_fps", 'value' => fps_array, 'units' => "fps")  
+    {'name' => @test_params.params_chan.cmd[0].gsub(/\.exe$/,'')+"_fps", 'value' => fps_array, 'units' => "fps"}  
   else
     nil
   end
