@@ -51,12 +51,20 @@ DUT_DST_DIR = "opt/ltp"
   def run_generate_test_list
 
     commands = {}
-    out_file = File.new(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'testlist'),'w')
-    @test_params.params_chan.instance_variable_get("@testlist").each do |test_tag|
+    if @test_params.params_chan.instance_variable_defined?("@testlist_file")
+      src = "#{SiteInfo::LTP_TEMP_FOLDER}\\#{@test_params.params_chan.instance_variable_get("@testlist_file")[0]}"
+      dst_path = "#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}/testlist"
+      BuildClient.copy(src,dst_path)
+      @ltp_timeout = 1800
+    else
+      out_file = File.new(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'testlist'),'w')
+      @test_params.params_chan.instance_variable_get("@testlist").each do |test_tag|
       tagName, tagValue = test_tag.split("=")[0],test_tag.split("=")[1] 
       out_file.puts "#{tagName} sandbox /opt/ltp/testcases/bin/#{tagValue}"
+      end
+      out_file.close
+      @ltp_timeout = 300
     end
-    out_file.close
   end
   
   
@@ -102,7 +110,7 @@ DUT_DST_DIR = "opt/ltp"
     else
     @equipment['server1'].send_sudo_cmd("mkdir testruns ",@equipment['server1'].prompt)
     end
-    @equipment['server1'].send_sudo_cmd("\./testdriver ti-c6x/stmc.cfg",@equipment['server1'].prompt,300)
+    @equipment['server1'].send_sudo_cmd("\./testdriver ti-c6x/stmc.cfg",@equipment['server1'].prompt,@ltp_timeout)
   end
   
   def run_get_script_output
@@ -192,9 +200,9 @@ DUT_DST_DIR = "opt/ltp"
       test_done_result = FrameworkConstants::Result[:fail]
     end
     if((nPass + nFail) == 0)
-     # test_comment += "#{nPass} Tests Passed \n #{nFail} Tests Failed \n 0% Success"
+     test_comment += "#{nPass} Tests Passed \n #{nFail} Tests Failed \n 0% Success"
     else
-     # test_comment += "#{nPass} Tests Passed \n #{nFail} Tests Failed \n #{((nPass.to_f/(nPass+nFail))*100).round}% Success"
+     test_comment += "#{nPass} Tests Passed \n #{nFail} Tests Failed \n #{((nPass.to_f/(nPass+nFail))*100).round}% Success"
     end
     [test_done_result, test_comment]
   end
