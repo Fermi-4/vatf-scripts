@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test_session>
+   <testplan_id/>
+   <build>
+      <id><![CDATA[3601]]></id>
+      <name><![CDATA[Drop1]]></name>
+      <notes><![CDATA[<p>platform=am3730</p>]]></notes>
+   </build>
+
+   <testcase>
+      <id><![CDATA[1]]></id>
+      <params_chan><![CDATA[test_libs=PowerControllerTest.apk:com.ti.android.apps.powercontroller.test;PowerController.apk:com.ti.android.apps.powercontroller,
+	  test_option=-e mtime 60 -e class com.ti.android.apps.powercontroller.test.PowerControllerTest#testPowerCtrlFull com.ti.android.apps.powercontroller.test/com.ti.android.apps.powercontroller.test.TiTestRunner,
+]]></params_chan>
+      <params_control><![CDATA[loop_count=100
+]]></params_control>
+      <params_equip><![CDATA[sample_count=5,timeout=2
+]]></params_equip>
+      <approver><![CDATA[
+]]></approver>
+      <tee><![CDATA[vatf
+]]></tee>
+      <scripts><![CDATA[android/performance/power/power_perf.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",android]; server1 = ["linux_server"]; multimeter1 =["multimeter"]
+]]></hw_assets_config>
+      <auto>1</auto>
+      <platform>dm3730</platform>
+      <target>Drop1</target>
+      <description><![CDATA[Idle power performance with FULL_WAKE_LOCK]]></description>
+   </testcase>
+   
+   <testcase>
+      <id><![CDATA[10]]></id>
+      <params_chan><![CDATA[bypass_dut=yes,bypass_dut_wait=30
+]]></params_chan>
+      <params_equip><![CDATA[sample_count=5,timeout=2
+]]></params_equip>
+      <approver><![CDATA[
+]]></approver>
+      <tee><![CDATA[vatf
+]]></tee>
+      <scripts><![CDATA[android/performance/power/power_perf.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",android]; server1 = ["linux_server"]; multimeter1 =["multimeter"]
+]]></hw_assets_config>
+      <params_control><![CDATA[loop_count=100
+]]></params_control>
+      <auto>1</auto>
+      <platform>dm3730</platform>
+      <target>Drop1</target>
+      <description><![CDATA[SUSPEND Mode Power Consumption]]></description>
+   </testcase>
+   
+   
+   <testcase>
+      <id><![CDATA[2]]></id>
+      <params_chan><![CDATA[
+]]></params_chan>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <approver><![CDATA[
+]]></approver>
+      <tee><![CDATA[vatf
+]]></tee>
+      <scripts><![CDATA[android/performance/power/power_perf.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",android]; server1 = ["linux_server"]; multimeter1 =["multimeter"]
+]]></hw_assets_config>
+      <params_control><![CDATA[sample_count=5,loop_count=100,timeout=2
+]]></params_control>
+      <auto>1</auto>
+      <platform>dm3730</platform>
+      <target>Drop1</target>
+      <description><![CDATA[Idle power performance with SCREEN_BRIGHT_WAKE_LOCK]]></description>
+   </testcase>
+   
+   <testcase>
+      <id><![CDATA[3]]></id>
+      <params_chan><![CDATA[
+]]></params_chan>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <approver><![CDATA[
+]]></approver>
+      <tee><![CDATA[vatf
+]]></tee>
+      <scripts><![CDATA[android/performance/power/power_perf.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",android]; server1 = ["linux_server"]; multimeter1 =["multimeter"]
+]]></hw_assets_config>
+      <params_control><![CDATA[sample_count=5,loop_count=100,timeout=2
+]]></params_control>
+      <auto>1</auto>
+      <platform>dm3730</platform>
+      <target>Drop1</target>
+      <description><![CDATA[Idle power performance with SCREEN_DIM_WAKE_LOCK]]></description>
+   </testcase>
+   
+   <testcase>
+      <id><![CDATA[4]]></id>
+      <params_chan><![CDATA[
+]]></params_chan>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <approver><![CDATA[
+]]></approver>
+      <tee><![CDATA[vatf
+]]></tee>
+      <scripts><![CDATA[android/performance/power/power_perf.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",android]; server1 = ["linux_server"]; multimeter1 =["multimeter"]
+]]></hw_assets_config>
+      <params_control><![CDATA[sample_count=5,loop_count=100,timeout=2
+]]></params_control>
+      <auto>1</auto>
+      <platform>dm3730</platform>
+      <target>Drop1</target>
+      <description><![CDATA[Idle power performance with PARTIAL_WAKE_LOCK]]></description>
+   </testcase>
+   
+   <testcase>
+      <id><![CDATA[5]]></id>
+      <params_chan><![CDATA[
+]]></params_chan>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <approver><![CDATA[
+]]></approver>
+      <tee><![CDATA[vatf
+]]></tee>
+      <scripts><![CDATA[android/performance/power/power_perf.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",android]; server1 = ["linux_server"]; multimeter1 =["multimeter"]
+]]></hw_assets_config>
+      <params_control><![CDATA[sample_count=5,loop_count=100,timeout=2
+]]></params_control>
+      <auto>1</auto>
+      <platform>dm3730</platform>
+      <target>Drop1</target>
+      <description><![CDATA[SUSPEND power performance]]></description>
+   </testcase>
+   
+   <testcase>
+      <id><![CDATA[6]]></id>
+      <params_chan><![CDATA[
+]]></params_chan>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <approver><![CDATA[
+]]></approver>
+      <tee><![CDATA[vatf
+]]></tee>
+      <scripts><![CDATA[android/performance/power/power_perf.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",android]; server1 = ["linux_server"]; multimeter1 =["multimeter"]
+]]></hw_assets_config>
+      <params_control><![CDATA[sample_count=5,loop_count=100,timeout=2
+]]></params_control>
+      <auto>1</auto>
+      <platform>dm3730</platform>
+      <target>Drop1</target>
+      <description><![CDATA[Audio + Video power performance]]></description>
+   </testcase>
+
+    <testcase>
+      <id><![CDATA[7]]></id>
+      <params_chan><![CDATA[
+]]></params_chan>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <approver><![CDATA[
+]]></approver>
+      <tee><![CDATA[vatf
+]]></tee>
+      <scripts><![CDATA[android/performance/power/power_perf.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",android]; server1 = ["linux_server"]; multimeter1 =["multimeter"]
+]]></hw_assets_config>
+      <params_control><![CDATA[sample_count=5,loop_count=100,timeout=2
+]]></params_control>
+      <auto>1</auto>
+      <platform>dm3730</platform>
+      <target>Drop1</target>
+      <description><![CDATA[Graphics power performance]]></description>
+   </testcase>
+   
+   <testcase>
+      <id><![CDATA[8]]></id>
+      <params_chan><![CDATA[
+]]></params_chan>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <approver><![CDATA[
+]]></approver>
+      <tee><![CDATA[vatf
+]]></tee>
+      <scripts><![CDATA[android/performance/power/power_perf.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",android]; server1 = ["linux_server"]; multimeter1 =["multimeter"]
+]]></hw_assets_config>
+      <params_control><![CDATA[sample_count=5,loop_count=100,timeout=2
+]]></params_control>
+      <auto>1</auto>
+      <platform>dm3730</platform>
+      <target>Drop1</target>
+      <description><![CDATA[Dhrystone power performance with PARTIAL_WAKE_LOCK ]]></description>
+   </testcase>
+
+    <testcase>
+      <id><![CDATA[9]]></id>
+      <params_chan><![CDATA[
+]]></params_chan>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <approver><![CDATA[
+]]></approver>
+      <tee><![CDATA[vatf
+]]></tee>
+      <scripts><![CDATA[android/performance/power/power_perf.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",android]; server1 = ["linux_server"]; multimeter1 =["multimeter"]
+]]></hw_assets_config>
+      <params_control><![CDATA[sample_count=5,loop_count=100,timeout=2
+]]></params_control>
+      <auto>1</auto>
+      <platform>dm3730</platform>
+      <target>Drop1</target>
+      <description><![CDATA[Boot power performance]]></description>
+   </testcase>
+
+   <command>
+      <execute><![CDATA[process
+	]]></execute>
+      <params><![CDATA[start shell command "ruby -C {vatf@1/staf/tee/test_framework_root} atf_run.rb -v {vatf@1/auto/tee/test_scripts_root} -r {vatf@1/STAF/TEE/inFile} -w vatf@1 -f C:/VATF/vatf_automation_results.xml" wait
+	]]></params>
+   </command>
+</test_session>

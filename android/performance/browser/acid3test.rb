@@ -4,11 +4,25 @@ require File.dirname(__FILE__)+'/../../webdriver_module'
 include AndroidTest
 include WatirWebDriver
 
+def setup
+  super
+  send_adb_cmd "forward tcp:8080 tcp:8080"  # Forward local tcp:8080 requests to android target
+  install_selenium_server()
+end
+
+#def install_selenium_server
+#  response = send_adb_cmd "shell ps"
+#  if !/org\.openqa\.selenium\.android\.app/m.match(response)
+#    send_adb_cmd "shell am start -W -n org.openqa.selenium.android.app/.MainActivity --activity-clear-top"
+#    sleep 5  # Wait for server to start
+#  end
+#end
+
 def run
   score=nil
   log_data "Creating Webdriver client"
-  #browser = Watir::Browser.new(:remote, :url=>'http://localhost:8080/hub')   # For running on Android DUT
-  browser = Watir::Browser.new()        # For running on Firefox in local PC
+  browser = Watir::Browser.new(:remote, :url=>'http://localhost:8080/hub')   # For running on Android DUT
+  #browser = Watir::Browser.new()        # For running on Firefox in local PC
   log_data "Opening page"
   browser.goto "http://acid3.acidtests.org/"
   log_data "Page title: #{browser.title}"
@@ -16,7 +30,7 @@ def run
   sleep 10
   score = browser.span(:id, 'score').text
   perfdata = []
-  perfdata << {'name' => 'acid3', 'value' => score.to_f, 'units' => ''} if score
+  perfdata << {'name' => 'acid3', 'value' => score.to_f, 'units' => ' '} if score
   log_data "\n\n==========\n#{browser.text}\n============\n\n"
   log_data "Test Completed!!!"
    ensure

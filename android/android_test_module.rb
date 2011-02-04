@@ -150,6 +150,13 @@ module AndroidTest
         raise "You need Telnet or Serial port connectivity to #{equipment}. Please check your bench file" 
       end
     end
-
+  
+  def install_selenium_server
+    response = send_adb_cmd "shell ps"
+    if !/org\.openqa\.selenium\.android\.app/m.match(response)
+      send_adb_cmd "shell am start -W -n org.openqa.selenium.android.app/.MainActivity --activity-clear-top"
+      sleep 5  # Wait for server to start
+    end
+  end
 end  # End of module
 

@@ -21,16 +21,18 @@ def run
   end
   
   ensure
-    if i < 10
+    if i < iterations
       set_result(FrameworkConstants::Result[:fail], 'ADB performance data could not be calculated, make sure the target is available')
       puts 'Test failed: ADB performance data could not be calculated, make sure the target is available'
     else
       min_bw = @test_params.params_control.min_bw[0].to_f
+      perfdata = [{'name'=> "TX_Throughput", 'value' => tx_bw.map{|a| a.to_f}, 'units' => "KB/s"},
+                  {'name'=> "RX_Throughput", 'value' => rx_bw.map{|a| a.to_f}, 'units' => "KB/s"}]
       if mean(tx_bw) > min_bw && mean(rx_bw) > min_bw
-        set_result(FrameworkConstants::Result[:pass], "Mean-TX=#{mean(tx_bw)} Mean-RX=#{mean(rx_bw)}")
+        set_result(FrameworkConstants::Result[:pass], "Mean-TX=#{mean(tx_bw)} Mean-RX=#{mean(rx_bw)}", perfdata)
         puts "Test Passed: Mean-TX=#{mean(tx_bw)} Mean-RX=#{mean(rx_bw)}"
       else
-        set_result(FrameworkConstants::Result[:fail], "Performance is less than #{min_bw} KB/s. Mean-TX=#{mean(tx_bw)} Mean-RX=#{mean(rx_bw)}")
+        set_result(FrameworkConstants::Result[:fail], "Performance is less than #{min_bw} KB/s. Mean-TX=#{mean(tx_bw)} Mean-RX=#{mean(rx_bw)}", perfdata)
         puts "Test Failed: Performance is less than #{min_bw} KB/s. Mean-TX=#{mean(tx_bw)} Mean-RX=#{mean(rx_bw)}"
       end
     end

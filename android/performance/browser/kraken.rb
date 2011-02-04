@@ -4,18 +4,24 @@ require File.dirname(__FILE__)+'/../../webdriver_module'
 include AndroidTest
 include WatirWebDriver
 
+def setup
+  super
+  send_adb_cmd "forward tcp:8080 tcp:8080"  # Forward local tcp:8080 requests to android target
+  install_selenium_server()
+end
+
 def run
   score=nil
   log_data "Creating Webdriver client"
-  #browser = Watir::Browser.new(:remote, :url=>'http://localhost:8080/hub')   # For running on Android DUT
-  browser = Watir::Browser.new()        # For running on Firefox in local PC
+  browser = Watir::Browser.new(:remote, :url=>'http://localhost:8080/hub')   # For running on Android DUT
+  #browser = Watir::Browser.new()        # For running on Firefox in local PC
   log_data "Opening page"
   browser.goto "http://krakenbenchmark.mozilla.org/index.html"
   log_data "Page title: #{browser.title}"
   browser.link(:text, /Begin/i).click
   puts "\n==========#{browser.text}\n============"
-  WatirWebDriver.wait_timeout = 1800      # Increase default 2 min timeout to 30 min to wait for test completion
-  sleep 1800                    # TODO: Replace this fix delay with wait logic below.
+  WatirWebDriver.wait_timeout = 3000      # Increase default 2 min timeout to 50 min to wait for test completion
+  sleep 3000                    # TODO: Replace this fix delay with wait logic below.
                                 #       The webdriver raises an "Element not found in the cache" error,
                                 #       so using fix delay for now.
   #begin

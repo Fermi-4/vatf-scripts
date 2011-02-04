@@ -4,23 +4,35 @@ require File.dirname(__FILE__)+'/../../webdriver_module'
 include AndroidTest
 include WatirWebDriver
 
+def setup
+  super
+  send_adb_cmd "forward tcp:8080 tcp:8080"  # Forward local tcp:8080 requests to android target
+  install_selenium_server()
+end
+
 def run
   score=nil
   
   log_data "Creating Webdriver client"
-  #browser = Watir::Browser.new(:remote, :url=>'http://localhost:8080/hub')   # For running on Android DUT
-  browser = Watir::Browser.new()        # For running on Firefox in local PC
+  browser = Watir::Browser.new(:remote, :url=>'http://localhost:8080/hub')   # For running on Android DUT
+  #browser = Watir::Browser.new()        # For running on Firefox in local PC
   log_data "Opening page"
   browser.goto "http://www2.webkit.org/perf/sunspider/sunspider.html"
   log_data "Page title: #{browser.title}"
-  browser.link(:text, /Start\s+SunSpider\s+[\d\.]+\s+now/i).click
-  WatirWebDriver.wait_until { !browser.text.include? "In Progress..." }
+  #browser.link(:text, /Start\s+SunSpider\s+[\d\.]+\s+now/i).click        # This version 0.9.1 does not run on DUT
+  browser.link(:text, /^SunSpider\s+[\d\.]+/i).click
+  WatirWebDriver.wait_timeout = 360       # Increase default 2 min timeout to 6 min to wait for test completion
+  sleep 360                    # TODO: Replace this fix delay with wait logic below.
+                                #       The webdriver raises an "Element not found in the cache" error,
+                                #       so using fix delay for now.
+  #WatirWebDriver.wait_until { !browser.text.include? "In Progress..." }
   
+  log_data "\n\n==========\n#{browser.text}\n============\n\n"
   score= /Total:\s+([\d\.]+)ms/.match(browser.text).captures[0]
   perfdata = []
   perfdata << {'name' => 'sunspider', 'value' => score.to_f, 'units' => 'ms'} if score
   
-  log_data "\n\n==========\n#{browser.text}\n============\n\n"
+  #log_data "\n\n==========\n#{browser.text}\n============\n\n"
   log_data "Test Completed!!!"
    ensure
     if score && score < @test_params.params_control.max_exec_time[0]
