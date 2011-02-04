@@ -159,44 +159,6 @@ module LspTargetTestScript
     @serial_port_data
   end
   
-  # transfer a file from PC to EVM. params keys are: filename (mandatory). dst_ip, dst_dir, src_dir, login and password (Optional)
-  def put_file(params)
-    p = {'dst_ip'   => @equipment['dut1'].telnet_ip,
-         'dst_dir'  => @linux_dst_dir, 
-         'src_dir'  => SiteInfo::LINUX_TEMP_FOLDER, 
-         'login'    => 'anonymous',
-         'password' => 'dut@ti.com',
-         'binary'   => false,
-        }.merge(params) 
-    dut_ftp = Net::FTP.new(p['dst_ip'])
-    dut_ftp.login(p['login'], p['password'])
-    if p['binary']
-      dut_ftp.putbinaryfile(File.join(p['src_dir'],p['filename']), File.join(p['dst_dir'],p['filename']))
-    else
-      dut_ftp.puttextfile(File.join(p['src_dir'],p['filename']), File.join(p['dst_dir'],p['filename']))
-    end
-    dut_ftp.close
-  end
-  
-  # Get a file from EVM to PC. params keys are: filename (mandatory). src_ip, src_dir, dst_dir, login and password (Optional)
-  def get_file(params)
-    p = {'src_ip'   => @equipment['dut1'].telnet_ip,
-         'src_dir'  => @linux_dst_dir, 
-         'dst_dir'  => SiteInfo::LINUX_TEMP_FOLDER, 
-         'login'    => 'anonymous',
-         'password' => 'dut@ti.com',
-         'binary'   => false,
-        }.merge(params) 
-    dut_ftp = Net::FTP.new(p['src_ip'])
-    dut_ftp.login(p['login'], p['password'])
-    if p['binary']
-      dut_ftp.getbinaryfile(File.join(p['src_dir'],p['filename']), File.join(p['dst_dir'],p['filename']))
-    else
-      dut_ftp.gettextfile(File.join(p['src_dir'],p['filename']), File.join(p['dst_dir'],p['filename']))
-    end
-    dut_ftp.close
-  end
-  
   # Return true if there is no new data in serial port
   def check_serial_port
     return true if !@equipment['dut1'].target.serial   # Return right away if there is no serial port connection

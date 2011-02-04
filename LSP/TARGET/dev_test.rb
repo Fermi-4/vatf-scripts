@@ -52,8 +52,8 @@ def run_generate_script
     staf_data_dir = staf_req.result
 	
 	# Copy file from BEE to local TEE directory
-    dst_dir = "#{staf_data_dir}\\user\\sw_assets\\ftp\\script\\#{bee_file_id}"
-    dst_file = "#{dst_dir}\\#{File.basename(bee_file_path.gsub(/\\/,'/'))}"
+    dst_dir = "#{staf_data_dir}/user/sw_assets/ftp/script/#{bee_file_id}"
+    dst_file = "#{dst_dir}/#{File.basename(bee_file_path.gsub(/\\/,'/'))}"
     if (!File.exists?(dst_file))
       FileUtils.mkdir_p dst_dir
 	  staf_req = my_staf_handle.submit(bee_machine,"fs","COPY FILE #{bee_file_path} TOFILE #{dst_file}") 

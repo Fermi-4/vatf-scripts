@@ -1,6 +1,6 @@
 # -*- coding: ISO-8859-1 -*-
 
-require File.dirname(__FILE__)+'/lsp_constants'
+#require File.dirname(__FILE__)+'/lsp_constants'
 require File.dirname(__FILE__)+'/boot'
 require File.dirname(__FILE__)+'/kernel_module_names'
 
@@ -35,7 +35,6 @@ module LspTestScript
       nfs_root_path_temp	= @equipment['dut1'].nfs_root_path
       
       if @equipment.has_key?('server1')
-        samba_root_path_temp = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}"
         if @equipment['server1'].kind_of? LinuxLocalHostDriver
 					@equipment['server1'].connect({})     # In this case, nothing happens as the server is running locally
         elsif @equipment['server1'].respond_to?(:telnet_port) and @equipment['server1'].respond_to?(:telnet_ip) and !@equipment['server1'].target.telnet
@@ -47,38 +46,26 @@ module LspTestScript
         if nfs 
           fs = nfs
           fs.gsub!(/\\/,'/')
-          build_id, build_name = /\/([^\/\\]+?)\/([\w\.\-]+?)$/.match("#{fs.strip}").captures
-          @equipment['server1'].send_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/autofs", @equipment['server1'].prompt, 10)  if !File.directory?("#{samba_root_path_temp}\\autofs")		
-          samba_root_path_temp = samba_root_path_temp + "\\autofs\\#{build_id}"
+          build_id = /\/([^\/\\]+?)\/[\w\.\-]+?$/.match("#{fs.strip}").captures[0]
+          @equipment['server1'].send_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/autofs", @equipment['server1'].prompt, 10)  if !File.directory?("#{nfs_root_path_temp}/autofs")		
           nfs_root_path_temp 	= nfs_root_path_temp + "/autofs/#{build_id}"
-          # Copy  nfs filesystem to linux server and untar it if it doesn't exist
-          if !File.directory?("#{samba_root_path_temp}\\usr")
+          # Untar nfs filesystem if it doesn't exist
+          if !File.directory?("#{nfs_root_path_temp}/usr")
             @equipment['server1'].send_cmd("mkdir -p  #{nfs_root_path_temp}", @equipment['server1'].prompt, 10) 		
-            BuildClient.copy(@test_params.nfs, "#{samba_root_path_temp}\\#{File.basename(@test_params.nfs)}")	
-            @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10) 		
-            @equipment['server1'].send_sudo_cmd("tar -xvzf #{build_name}", @equipment['server1'].prompt, 300)
+            @equipment['server1'].send_sudo_cmd("tar -C #{nfs_root_path_temp} -xvzf #{@test_params.nfs}", @equipment['server1'].prompt, 300)
           end
         else
           # Need to add logic to handle nandfs and ramfs
         end
         
         if kernel_modules and nfs
-          kernel_modules.gsub!(/\\/,'/')
-          kernel_modules_name = /\/[^\/\\]+?\/([\w\.\-]+?)$/.match("#{kernel_modules.strip}").captures[0]
-          #@equipment['server1'].send_sudo_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/lib/modules", @equipment['server1'].prompt, 10)  if !File.directory?("#{samba_root_path_temp}\\lib\\modules")
-          BuildClient.copy(@test_params.kernel_modules, "#{samba_root_path_temp}\\..\\#{File.basename(@test_params.kernel_modules)}")
-          @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}/..", @equipment['server1'].prompt, 10)
-          @equipment['server1'].send_sudo_cmd("tar -xvzf #{kernel_modules_name} -C #{nfs_root_path_temp}", @equipment['server1'].prompt, 30)
-		  @equipment['server1'].send_cmd("rm -f #{kernel_modules_name}", @equipment['server1'].prompt, 10)
-		  @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10)
-        end
+          @equipment['server1'].send_sudo_cmd("tar -C #{nfs_root_path_temp} -xvzf #{@test_params.kernel_modules}", @equipment['server1'].prompt, 30)
+    		end
       
         @equipment['server1'].send_sudo_cmd("mkdir -p -m 777 #{nfs_root_path_temp}/test", @equipment['server1'].prompt) if !(@test_params.instance_variable_defined?(:@var_nfs))
       
-        LspTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp) 
+        LspTestScript.set_paths(nfs_root_path_temp, nfs_root_path_temp) 
         # Boot DUT
-        samba_path = "#{samba_root_path_temp}\\test\\#{tester_from_cli}\\#{target_from_db}\\#{platform_from_db}\\bin"
-        nfs_path   = "#{nfs_root_path_temp}/test/#{tester_from_cli}/#{target_from_db}/#{platform_from_db}/bin"
         nfs_root_path_temp = "#{@equipment['server1'].telnet_ip}:#{nfs_root_path_temp}"
         nfs_root_path_temp = @test_params.var_nfs  if @test_params.instance_variable_defined?(:@var_nfs)  # Optionally use external nfs server
       
@@ -88,14 +75,12 @@ module LspTestScript
                        'target' => target_from_db ,
                        'image_path' => @test_params.kernel,
                        'server' => @equipment['server1'], 
-                       'samba_path' => samba_path, 
-                       'nfs_root' => nfs_root_path_temp,
-                       'nfs_path' => nfs_path}
+                       'nfs_root' => nfs_root_path_temp}
         boot_params['bootargs'] = @test_params.params_chan.bootargs[0] if @test_params.params_chan.instance_variable_defined?(:@bootargs)
         @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
       
         if boot_required?(@old_keys, @new_keys) # call bootscript if required
-		  if @equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil
+		      if @equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil
             @equipment['dut1'].connect({'type'=>'serial'})
           elsif @equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil
             @equipment['dut1'].connect({'type'=>'serial'})
@@ -110,56 +95,8 @@ module LspTestScript
       # by now, the dut should already login and is up; if not, dut may hang.
       raise "UUT may be hanging!" if !is_uut_up?
       
-      # Copy executable sources to NFS server (if filesystem was not specified and there are @target_sources
-      if @test_params.params_chan.instance_variable_defined?(:@target_sources) && @equipment.has_key?('server1') && !nfs && !@test_params.instance_variable_defined?(:@var_nfs) 
-          files_array = Array.new
-          src_folder = @view_drive+@test_params.params_chan.target_sources[0].to_s
-          puts "target_source_drive is #{@target_source_drive}"
-          src_folder = @target_source_drive+@test_params.params_chan.target_sources[0].to_s if !File.directory?(src_folder.strip.gsub("\\","/"))
-          puts "target source folder is: #{src_folder}"
-          
-          last_folder = /\\(\w+)$/.match("#{@test_params.params_chan.target_sources[0].strip}").captures[0]
-      
-          BuildClient.dir_search(src_folder, files_array) if @test_params.params_chan.instance_variable_defined?(:@target_sources)
-          puts "copying target source code ..."
-          dst_folder_regex  = Regexp.new("#{last_folder}\\\\.+")
-          files_array.each {|f|
-            if File.extname(f) != '.yuv' && File.extname(f) != '.raw' && File.extname(f) != '.bmp' && File.extname(f) != '.rgb' && File.extname(f) != '.pdf' && File.extname(f) != '.doc' then
-              dst_path   = samba_path+"\\..\\"+dst_folder_regex.match(f).to_s
-              BuildClient.copy(f, dst_path)
-            end
-          }
-          # Compile sources
-          # force do make clean if platform is changed. 
-          # if not, just do make and make will decide to do compile or not.
-          
-          build_params = {'server'   => @equipment['server1'],
-                         'platform' => platform_from_db,
-                         'microType' => @test_params.microType,
-                         'target_code_dir' => LspTestScript.nfs_root_path+"#{nfs_path}/../#{last_folder}",
-                         'target'   => target_from_db,
-                         'code_source' => @test_params.code_source}
-          platform_regex = Regexp.new("#{@test_params.platform}")
-          if !platform_regex.match(@old_keys) then
-            BuildClient.lsp_make_clean(build_params)
-            BuildClient.lsp_configure(build_params)
-          end
-          BuildClient.lsp_compile(build_params)
-          sleep 5
-          # catch the compile error if any
-          if /(error)|(\*\*\*\s+No\s+rule\s+to\s+make\s+target)/i =~ @equipment['server1'].response then
-            raise "Make compilation had error!"
-          end
-          
-          # sometimes, the one which is copied over is empty. so add delay here.
-          sleep 1
-          # copy the output file(s) under bin to target.
-          @equipment['dut1'].send_cmd("mkdir -p -m 777 #{nfs_path}", @equipment['dut1'].prompt, 10)
-          @equipment['dut1'].send_cmd("cp -f #{nfs_path}/../#{last_folder}/bin/* #{nfs_path}", @equipment['dut1'].prompt, 30)
-      end 
-
       # Leave target in appropriate directory
-      @equipment['dut1'].send_cmd("cd #{nfs_path}\n", /#{@equipment['dut1'].prompt}/, 10)  if ( @equipment.has_key?('server1') && !(nfs) && !(@test_params.instance_variable_defined?(:@var_nfs)) )
+      #@equipment['dut1'].send_cmd("cd #{nfs_path}\n", /#{@equipment['dut1'].prompt}/, 10)  if ( @equipment.has_key?('server1') && !(nfs) && !(@test_params.instance_variable_defined?(:@var_nfs)) )
       
       # modprobe modules specified by test params
       if kernel_modules
@@ -305,9 +242,6 @@ module LspTestScript
     end
     
     def get_keys
-      # keys = @test_params.target.to_s + @test_params.dsp.to_s + @test_params.micro.to_s + 
-      # @test_params.platform.to_s + @test_params.os.to_s + @test_params.custom.to_s + 
-      # @test_params.microType.to_s + @test_params.configID.to_s
       keys = @test_params.platform.to_s
       keys
     end

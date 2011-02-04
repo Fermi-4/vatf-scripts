@@ -8,11 +8,7 @@
 module Boot   
     
   def boot_required?(old_params, new_params)
-    # old_test_string = get_test_string(old_params)
-    # new_test_string = get_test_string(new_params)
-	# puts "\n\nIn Boot::boot_required?. new_test_string=#{new_test_string}" # TODO REMOVE DEBUG PRINT
-    #old_test_string != new_test_string
-	old_params != new_params
+    old_params != new_params
   end
   
   def login_uut
@@ -24,7 +20,6 @@ module Boot
   def is_uut_up?
     # in order to distinquish from uboot prompt, use 'uname' to check if dut alive.
     # But, it only works for Linux. For other OS???
-    #match = @equipment['dut1'].prompt
     @equipment['dut1'].send_cmd("uname -a", /Linux/, 5)
     !@equipment['dut1'].timeout?
   end
@@ -35,13 +30,5 @@ module Boot
     !@equipment['dut1'].timeout?  
   end
 
-  private 
-  def get_test_string(params)
-      test_string = ''
-      params.each {|element|
-          test_string += element.strip
-      }
-      test_string
-  end
   
 end
