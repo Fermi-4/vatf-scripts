@@ -21,7 +21,7 @@ include WinceTestScript
     run_transfer_script
 	@equipment['multimeter1'].connect({'type'=>'serial'})
 	#configure multimeter 
-	@equipment['multimeter1'].configure_multimter(@test_params.params_chan.sample_count[0].to_i)
+	@equipment['multimeter1'].configure_multimeter(@test_params.params_chan.sample_count[0].to_i)
 	# run stress test by setting the loop to desired value in the XML
 	while counter < @test_params.params_chan.suspend_loop[0].to_i  
     run_call_script
