@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test_session>
+   <testplan_id/>
+   <testcase>
+      <id><![CDATA[12345]]></id>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[test_time=60,top_sample_secs=3,buffer_size=106;128,bw=20M,bw_min=12,security=wpa2,protocol=udp,port=7000,mode=iperf,pings=10
+]]></params_chan>
+      <params_control><![CDATA[ap_prompt=gtaccess,ap_mfg=Cisco,ap_wifi_ip=10.10.10.1,remote_ip=10.10.10.104,intfc=tiwlan0,recfg_ap=y,recfg_client=y,ip_vsn=4
+]]></params_control>
+      <params_equip><![CDATA[sample_param=3
+]]></params_equip>
+      <scripts><![CDATA[LSP/A_WIFI/wlan_perf.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",linux];server1 = ["linux_server"];ap1 = ["access_point"];apc1 = ["power_controller"]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>am1808</platform>
+      <target>006</target>
+      <description><![CDATA[WIFI-WLAN Iperf Performance Test]]></description>
+   </testcase>
+</test_session>

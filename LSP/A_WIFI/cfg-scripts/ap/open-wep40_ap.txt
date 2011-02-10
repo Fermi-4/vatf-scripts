@@ -1,0 +1,20 @@
+configure terminal
+no dot11 ssid gtaccess
+interface dot11radio 0
+encryption mode wep mandatory
+no encryption key 1 transmit-key
+no encryption key 2 transmit-key
+no encryption key 3 transmit-key
+no encryption key 4 transmit-key
+encryption key 1 size 40bit 0 0123456789
+no encryption key 2
+no encryption key 3
+no encryption key 4
+ssid gtaccess
+guest-mode
+authentication open
+no authentication shared
+no authentication network-eap
+no authentication key-management
+no wpa-psk
+end

@@ -1,0 +1,19 @@
+configure terminal
+no dot11 ssid gtaccess
+interface dot11radio 0
+no encryption key 1
+no encryption key 2
+no encryption key 3
+no encryption key 4
+encryption mode ciphers aes
+ssid gtaccess
+guest-mode
+no authentication shared
+no authentication network-eap
+no authentication key-management
+no authentication client
+no wpa-psk
+authentication open
+authentication key-management wpa
+wpa-psk ascii q1w2e3r4
+end

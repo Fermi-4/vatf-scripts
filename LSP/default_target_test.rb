@@ -51,7 +51,7 @@ module LspTargetTestScript
     in_file.close
     out_file.close
   end
-  
+
   # Transfer the shell script (test.sh) to the DUT and any require libraries
   def run_transfer_script()
     puts "\n LinuxTestScript::run_transfer_script"
@@ -61,7 +61,7 @@ module LspTargetTestScript
     @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("cat > test.sh << EOF", />/)
     raw_test_lines.each do |current_line|
-      @equipment['dut1'].send_cmd(current_line.gsub(/[^\\]\$/,"\\$"))
+      @equipment['dut1'].send_cmd(current_line.gsub(/\\[^\\]\$/,"\\$"))
     end
     @equipment['dut1'].send_cmd("EOF", @equipment['dut1'].prompt)
   end
@@ -73,7 +73,7 @@ module LspTargetTestScript
     @equipment['dut1'].send_cmd("chmod +x test.sh",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("./test.sh 2> stderr.log > stdout.log",@equipment['dut1'].prompt)
   end
-  
+
   # Collect output from standard outputand  standard error in test.log
   def run_get_script_output
     puts "\n LinuxTestScript::run_get_script_output"
@@ -116,8 +116,12 @@ module LspTargetTestScript
   # Write test result and performance data to results database (either xml or msacess file)
   def run_save_results
     puts "\n LinuxTestScript::run_save_results"
-    result,comment = run_determine_test_outcome
-    if File.exists?(File.join(SiteInfo::LINUX_TEMP_FOLDER,'perf.log'))
+    result = run_determine_test_outcome
+    #result,comment = run_determine_test_outcome
+
+    if result.length == 3
+      set_result(result[0],result[1],result[2])
+    elsif File.exists?(File.join(SiteInfo::LINUX_TEMP_FOLDER,'perf.log'))
       perfdata = []
       data = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER,'perf.log'),'r').readlines
       data.each {|line|
@@ -126,9 +130,9 @@ module LspTargetTestScript
           perfdata << {'name' => name, 'value' => value, 'units' => units}
         end
       }  
-      set_result(result,comment,perfdata)
+      set_result(result[0],result[1],perfdata)
     else
-      set_result(result,comment)
+      set_result(result[0],result[1])
     end
   end
   
@@ -173,24 +177,7 @@ module LspTargetTestScript
     keys = @test_params.platform.to_s + kernel
     keys
   end
-  
-  def boot_required?(old_params, new_params)
-    #puts "\n\nIn default_target_test.rb boot_required?. Is kernel defined? #{@test_params.instance_variable_defined?(:@kernel)}" # TODO REMOVE DEBUG PRINT
-    return false if !@test_params.instance_variable_defined?(:@kernel)
-    # old_test_string = get_test_string(old_params)
-    # new_test_string = get_test_string(new_params)
-    # old_test_string != new_test_string
-	old_params!= new_params
-  end
-  
-  def get_test_string(params)
-    test_string = ''
-    params.each {|element|
-      test_string += element.strip
-    }
-    test_string
-  end
-  
+
   private
   def delete_temp_files
     return if !File.directory?(SiteInfo::LINUX_TEMP_FOLDER)

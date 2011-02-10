@@ -1,0 +1,12 @@
+cd /usr/share/wl1271-demos/wlan/
+ls -l
+./install-wlan.sh
+wlan_cu
+u
+a
+s
+/
+c
+b
+c gtaccess
+/ q
