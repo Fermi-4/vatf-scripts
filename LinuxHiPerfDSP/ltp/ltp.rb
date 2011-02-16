@@ -57,7 +57,7 @@ DUT_DST_DIR = "opt/ltp"
     end
     if @test_params.params_chan.instance_variable_defined?("@type")
       if(@test_params.params_chan.instance_variable_get("@type")[0].to_s == "fs")
-        testcase_bins = "/bin"
+        @testcase_bins = "/bin"
       end
     end
 
@@ -73,7 +73,7 @@ DUT_DST_DIR = "opt/ltp"
       if (tagName.to_s == "cifs-fstst")
         tagValue = tagValue.to_s + " //#{@equipment['server1'].params["nfs_ip"]}/#{@equipment['server1'].params["samba_folder"]} user=#{@equipment['server1'].params["samba_user"]}"
       end
-      out_file.puts "#{tagName} sandbox #{testcase_bins}/#{tagValue}"
+      out_file.puts "#{tagName} sandbox #{@testcase_bins}/#{tagValue}"
       end
       out_file.close
       @ltp_timeout = 300 if !@test_params.params_chan.instance_variable_defined?("@ltp_timeout")
