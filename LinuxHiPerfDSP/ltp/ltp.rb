@@ -11,6 +11,7 @@ DUT_DST_DIR = "opt/ltp"
 
   # Execute shell script in DUT(s) and save results.
   def run
+    @testcase_bins = "/opt/ltp/testcases/bin"
     @show_debug_messages = false
     debug_puts "LTP::run"
     @samba_root_path = C6xTestScript.samba_root_path
@@ -51,19 +52,31 @@ DUT_DST_DIR = "opt/ltp"
   def run_generate_test_list
 
     commands = {}
+    if @test_params.params_chan.instance_variable_defined?("@ltp_timeout")
+      @ltp_timeout = @test_params.params_chan.instance_variable_get("@ltp_timeout")[0].to_i
+    end
+    if @test_params.params_chan.instance_variable_defined?("@type")
+      if(@test_params.params_chan.instance_variable_get("@type")[0].to_s == "fs")
+        testcase_bins = "/bin"
+      end
+    end
+
     if @test_params.params_chan.instance_variable_defined?("@testlist_file")
       src = "#{SiteInfo::LTP_TEMP_FOLDER}\\#{@test_params.params_chan.instance_variable_get("@testlist_file")[0]}"
       dst_path = "#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}/testlist"
       BuildClient.copy(src,dst_path)
-      @ltp_timeout = 1800
+      @ltp_timeout = 1800 if !@test_params.params_chan.instance_variable_defined?("@ltp_timeout")
     else
       out_file = File.new(File.join("#{SiteInfo::LTP_TEMP_FOLDER}/TC#{@test_case_id}/Iter#{@iteration_id}", 'testlist'),'w')
       @test_params.params_chan.instance_variable_get("@testlist").each do |test_tag|
       tagName, tagValue = test_tag.split("=")[0],test_tag.split("=")[1] 
-      out_file.puts "#{tagName} sandbox /opt/ltp/testcases/bin/#{tagValue}"
+      if (tagName.to_s == "cifs-fstst")
+        tagValue = tagValue.to_s + " //#{@equipment['server1'].params["nfs_ip"]}/#{@equipment['server1'].params["samba_folder"]} user=#{@equipment['server1'].params["samba_user"]}"
+      end
+      out_file.puts "#{tagName} sandbox #{testcase_bins}/#{tagValue}"
       end
       out_file.close
-      @ltp_timeout = 300
+      @ltp_timeout = 300 if !@test_params.params_chan.instance_variable_defined?("@ltp_timeout")
     end
   end
   
