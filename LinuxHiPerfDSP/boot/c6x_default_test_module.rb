@@ -94,9 +94,9 @@ module C6xTestScript
             bootblob_ip = "ip=#{@equipment['dut1'].telnet_ip}"
           end
           if(platform_from_db == "himalaya")
-            bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"#{bootblob_str} emac_addr=#{@equipment['dut1'].params["emac_addr"]} #{bootblob_ip} root=/dev/nfs nfsroot=#{@equipment['server1'].params["nfs_ip"]}:#{nfs_root_path_temp} rw\""    
+            bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"#{bootblob_str} emac_addr=#{@equipment['dut1'].params["emac_addr"]} #{bootblob_ip} root=/dev/nfs nfsroot=#{@equipment['server1'].params["nfs_ip"]}:#{nfs_root_path_temp},tcp,v3 rw\""    
           else        
-            bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"#{bootblob_str} #{bootblob_ip} root=/dev/nfs nfsroot=#{@equipment['server1'].params["nfs_ip"]}:#{nfs_root_path_temp} rw\""    
+            bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"#{bootblob_str} #{bootblob_ip} root=/dev/nfs nfsroot=#{@equipment['server1'].params["nfs_ip"]}:#{nfs_root_path_temp},tcp,v3 rw\""    
           end
           @equipment['server1'].send_sudo_cmd("./bootblob #{bootblob_cmd}", @equipment['server1'].prompt, 30)
           @equipment['server1'].send_sudo_cmd("rm -f  #{@equipment['server1'].tftp_path}/#{kernel_name}", @equipment['server1'].prompt, 30) 
