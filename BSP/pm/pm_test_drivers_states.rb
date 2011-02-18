@@ -35,6 +35,8 @@ end
   def run_generate_script
     puts "\n WinceTestScript::run_generate_script"
     #FileUtils.mkdir_p SiteInfo::WINCE_TEMP_FOLDER
+	FileUtils.mkdir_p @wince_temp_folder
+	puts "YEBIO #{@wince_temp_folder}"
     out_file = File.new(File.join(@wince_temp_folder, 'test.bat'),'w')
     @test_params.params_chan.states.each{|s| 
 	out_file.puts('\windows\pmsetd ' + @test_params.params_chan.ipname[0] + ': ' + s + ' ' + @test_params.params_chan.index[0])
