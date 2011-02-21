@@ -2,41 +2,16 @@ require File.dirname(__FILE__)+'/../../default_test'
 
 include WinceTestScript
     media_location_hash = {"sd" => '\Storage Card', "nand" =>'\Mounted Volume',"usb" => '\Hard Disk',"ram" => '\Temp'}
+
 def setup_connect_equipment
-    puts "WinceTestScript::setup_connect_equipment"
-	#======================== Equipment Connections ====================================================
-	#myhash = {"av" => "composite", "ypbpr" =>"component","svideo" => "svideo"}
-	
-	#@connection_handler.make_video_connection({@equipment[@test_params.params_chan.media_source[0]] => {myhash[@test_params.params_chan.video_input[0]] => 0}}, {@equipment["dut1"] => {myhash[@test_params.params_chan.video_input[0]] => 0}}) #, @equipment["tv0"] => {@test_params.params_chan.video_input[0] => 0}}) 
-	#@connection_handler.make_video_connection({@equipment[@test_params.params_chan.media_source[0]] => {myhash[@test_params.params_chan.video_input[0]] => 0}}, {@equipment["dut1"] => {myhash[@test_params.params_chan.video_input[0]] => 0} , @equipment["tv0"] => {myhash[@test_params.params_chan.video_input[0]] => 0}}) 
-	#@connection_handler.make_video_connection({@equipment[@test_params.params_chan.media_source[0]] => {myhash[@test_params.params_chan.video_input[0]] => 0}},{@equipment["dut1"] => {myhash[@test_params.params_chan.video_input[0]] => 0}})
-	#@connection_handler.make_video_connection({@equipment[@test_params.params_chan.media_source[0]] => {myhash[@test_params.params_chan.video_input[0]] => 0}}, {@equipment["dut1"] => {myhash[@test_params.params_chan.video_input[0]] => 0}, @equipment["tv0"] => {myhash[@test_params.params_chan.video_input[0]] => 0}}) 
-    #@connection_handler.make_audio_connection({@equipment[@test_params.params_chan.media_source[0]] => {'mini35mm' => 0}}, {@equipment["dut1"] => {'mini35mm' => 0}, @equipment["tv0"] => {'mini35mm' => 0}})   
-    #@connection_handler.make_video_connection({@equipment["dut1"] => {@test_params.params_chan.display_out[0] => 0}},{@equipment['tv1'] => {@test_params.params_chan.display_out[0] => 0}}) 
-    #@connection_handler.make_audio_connection({@equipment["dut1"] => {'mini35mm' => 0}},{@equipment['tv1'] => {'mini35mm' => 0}})
-  # @connection_handler.make_video_connection({@equipment['ntsc_dvd'] => {@test_params.params_chan.video_input[0] => 0}}, {@equipment["dut1"] => {@test_params.params_chan.video_input[0] => 0}, @equipment["tv0"] => {@test_params.params_chan.video_input[0] => 0}}) 
-  
+    puts "WinceTestScript::setup_connect_equipment"  
   end
   
  def run_generate_script
     puts "\n WinceTestScript::run_generate_script"
-	#media_location_hash = {"sd" => '\Storage Card', "nand" =>'\Mounted Volume',"usb" => '\Hard Disk',"ram" => '\Temp'}
-	#if (@test_params.params_chan.media_location[0] == "ram")
-	#test_command = @test_params.params_chan.cmdline[0]+' '+'/auto'+' '+'/time'+' '+@test_params.params_chan.time[0].to_s+' '+'/venc'+' '+@test_params.params_chan.codec[0].to_s+' '+ '/vin'+' '+@test_params.params_chan.video_input[0].to_s+' '+ '/br'+' '+@test_params.params_chan.bitrate[0].to_s+' '+preview_option+' '+ '/cap'+' '+ @test_params.params_chan.resolution[0].to_s+' '+ '/file'+' '+'\temp'+'\\'+@test_params.params_chan.video_input[0].to_s+'_'+@test_params.params_chan.bitrate[0].to_s+'_'+@test_params.params_chan.resolution[0].to_s+'_'+@test_params.params_chan.codec[0].to_s+'_'+@test_params.params_chan.media_location[0]+'.asf'
+	#media_location_hash = {"sd" => '\Storage Card', 
 	test_command = 'start '+@test_params.params_chan.cmdline[0] +' '+@test_params.params_chan.test_dir[0]+'\\'+@test_params.params_chan.input_file[0].to_s
-	puts "test_command is #{test_command}\n"	
-	#elsif (@test_params.params_chan.media_location[0] == "nand")
-	#test_command = 'start'+' '+@test_params.params_chan.cmdline[0] +' '+'\\Mounted Volume'+'\\'+@test_params.params_chan.input_file[0].to_s
-	#elsif (@test_params.params_chan.media_location[0] == "sd")
-	 #   test_command = 'start'+' '+@test_params.params_chan.cmdline[0] +' '+'\\Storage Card'+'\\'+@test_params.params_chan.input_file[0].to_s
-	#elsif (@test_params.params_chan.media_location[0] == "usb")
-     #   test_command = 'start'+' '+@test_params.params_chan.cmdline[0] +' '+'\\Hard Disk'+'\\'+@test_params.params_chan.input_file[0].to_s
-	#end
-	#puts "test_command is #{test_command}\n"
-	
-	#cmdline=/auto /time 30000 /venc h264 /vin svideo /br 4000000  /cap 720x480@30 /file \/temp\svideo_4000000_720x480@30_h264.asf
- #{@test_params.params_chan.cmdline[0]} /auto /time #{@test_params.params_chan.time[0].to_s} /venc #{@test_params.params_chan.codec[0].to_s} /vin #{@test_params.params_chan.video_input[0].to_s} /br #{@test_params.params_chan.bitrate[0].to_s} #{@test_params.params_chan.preview[0].to_s == '0' ? '' : '/pv'} /cap #{@test_params.params_chan.resolution[0].to_s} /file \temp\#{@test_params.params_chan.video_input[0].to_s}_#{@test_params.params_chan.bitrate[0].to_s}_#{@test_params.params_chan.resolution[0].to_s}_#{@test_params.params_chan.codec[0].to_s}.asf 
-    FileUtils.mkdir_p @wince_temp_folder
+	  FileUtils.mkdir_p @wince_temp_folder
     in_file = File.new(File.join(@test_params.view_drive, @test_params.params_chan.shell_script[0]), 'r')
     raw_test_lines = in_file.readlines
     out_file = File.new(File.join(@wince_temp_folder, 'test.bat'),'w')
@@ -46,15 +21,11 @@ def setup_connect_equipment
     in_file.close
     out_file.close
   end
- 
- # def run_get_script_output
-  # puts "\n cetk_test::run_get_script_output"
-  # super("</TESTGROUP>")
-# end
 
   # Transfer the shell script (test.bat) to the DUT and any require libraries
   def run_transfer_script()
     super
+	puts "filename second part is: #{@test_params.params_chan.input_file[0].to_s.split('.')[1]}\n"
 	if (@test_params.params_chan.input_file[0].to_s.split('.')[1].casecmp("avi") == 0)
 	  subfolder = "/common/Multimedia/Video/AVI"
 	  puts "subfolder is #{subfolder}\n"
@@ -66,12 +37,10 @@ def setup_connect_equipment
 	 puts "subfolder is #{subfolder}\n" 
 	end
 	puts "subfolder is #{subfolder}\n"
-	#dest_folder = SiteInfo::FILE_SERVER.concat(subfolder)
 	dest_folder = ""
 	dest_folder = SiteInfo::FILE_SERVER + subfolder
 	puts "destination folder is #{dest_folder}\n"
     transfer_server_files(@test_params.params_chan.input_file[0].to_s, dest_folder)
-	#puts"build_test_libs is #{@test_params.params_chan.input_file[0].to_s} and var_build_test_libs_root is #{SiteInfo::NETWORK_REFERENCE_FILES_FOLDER}+#{subfolder}\n"
   end
   
    
@@ -80,64 +49,6 @@ def setup_connect_equipment
   end
   
   
-    # # Collect output from standard output, standard error and serial port in test.log
-  # def run_get_script_output(expect_string=nil)
-    # puts "\n WinceTestScript::run_get_script_output"
-    # wait_time = (@test_params.params_control.instance_variable_defined?(:@wait_time) ? @test_params.params_control.wait_time[0] : '10').to_i
-        # check_serial_port
-		# puts "OUT of check_serial_port function\n"
-		# counter = 0
-		# while (counter < wait_time)
-		# puts "waiting inside wait_time loop\n"
-        # counter += 1
-		# end
-    # # make sure serial port log wont lost even there is ftp exception
-    # begin
-      # log_file_name = File.join(@wince_temp_folder, "test_#{@test_id}\.log")
-      # log_file = File.new(log_file_name,'w')
-      # get_file({'filename'=>'stderr.log'})
-      # get_file({'filename'=>'stdout.log'})
-      # #yliu: temp: save differnt test log to different files
-      # std_file = File.new(File.join(@wince_temp_folder,'stdout.log'),'r')
-      # err_file = File.new(File.join(@wince_temp_folder,'stderr.log'),'r')
-      # std_output = std_file.read
-      # std_error  = err_file.read
-      # log_file.write("\n<STD_OUTPUT>\n"+std_output+"</STD_OUTPUT>\n")
-      # log_file.write("\n<ERR_OUTPUT>\n"+std_error+"</ERR_OUTPUT>\n")
-    # rescue Exception => e
-      # log_file.write("\n<SERIAL_OUTPUT>\n"+@serial_port_data.to_s+"</SERIAL_OUTPUT>\n") 
-      # log_file.close
-      # add_log_to_html(log_file_name)
-      # # force dut reboot on next test case
-      # @new_keys = ''
-      # raise
-    # end
-      # log_file.write("\n<SERIAL_OUTPUT>\n"+@serial_port_data.to_s+"</SERIAL_OUTPUT>\n") 
-      # log_file.close
-      # add_log_to_html(log_file_name)
-    # ensure
-      # std_file.close if std_file
-      # err_file.close if err_file
-  # end
-# # Collect output from standard output, standard error and serial port in test.log
-
-# def check_serial_port(counter)
-    # file_duration = (@test_params.params_chan.input_file[0].to_s.split("duration_")[1].split("_sec")[0]).to_s
-    # #file_duration += 10
-	# counter = 0
-	# puts "Entering while loop in check_serial_port - file duration is #{file_duration}\n"
-	# while (counter.to_s < file_duration)
-	 # temp = (@serial_port_data.to_s).dup
-	 # puts "temp is #{temp}\n"
-	 # @serial_port_data = @equipment['dut1'].update_response('serial').to_s.dup
-	 # @serial_port_data == temp
-	 # puts "Serial port data is #{@serial_port_data}\n"
-	 # counter += 1
-	 # puts "Counter inside file_duration_counter is #{counter}\n"
-	# end
-# end
-
-# aparna
 # Collect output from standard output, standard error and serial port in test.log
   def run_get_script_output(expect_string=nil)
     puts "\n WinceTestScript from ceplayer_test ::run_get_script_output"
@@ -161,53 +72,11 @@ def setup_connect_equipment
 	   puts "Completed sleep #{Time.now}\n"
 	   @serial_port_data = ''
 	   check_serial_port()
-	  # while ( file_duration_counter < file_duration + 10)
-	  #puts "OOOOOOOOOOOOOOOOOutside the first while loop\n"
-        #puts "@serial_port_data is: \n"+@serial_port_data+"\nend of @serial_port_data"
-        #wait for end of test
-		# while(@serial_port_data.scan(/FPS=/).size > 0)
-		  # #puts" ALERT1 we are inside the second while()\n"
-		  # sleep(5)
-		  # check_serial_port()
-		    # # puts"ALERT2: Inside check for LPM_open\n"
-		    # # startTime = Time.now
-			# # puts "ALERT3: file_duration is #{file_duration}\n"
-		    # # while (Time.now - startTime < file_duration+20)	
-			   # # diff = Time.now - startTime
-               # # puts "ALERT4: time now is #{Time.now} and startTime is #{startTime} and difference is #{diff}\n"			
-			   # # check_serial_port		
-		    # # end
-			  # # puts "ALERT4: time now is #{Time.now} and startTime is #{startTime} and difference is #{diff}\n"
-		# end
-		# puts "OOOOOOOOOOOOOOOOOutside the second while loop\n"
-		# check_serial_port()
-		# if (playout_started == 1 || @serial_port_data.scan(/LPM_open/).size >0)
-		   # puts "playout has started and we are inside the if condition\n"
-		   # file_duration_counter += 1
-		   # playout_started = 1
-        # end
-          
-        # end
-        #if not see expect_string, wait for timeout to prevent infinite loop
-        # sleep 1
-        # counter += 1
-        # if counter >= wait_time
-          # puts "\nDEBUG: Finished waiting for data from Serial Port, assumming that App ran to completion."  
-          # keep_checking = false
-          # break
-        # end
-      #end
     
     # make sure serial port log wont lost even there is ftp exception
     begin
-    
-      
-	  
 	    log_file_name = File.join(@wince_temp_folder, "test_#{@test_id}\.log")
       log_file = File.new(log_file_name,'w')
-	  
-	 
-	  
       get_file({'filename'=>'stderr.log'})
       get_file({'filename'=>'stdout.log'})
       #yliu: temp: save differnt test log to different files
@@ -249,17 +118,11 @@ def setup_connect_equipment
     
    if (!File.exist?(dest_dir))
     puts "Saw that video_decode folder does not exist in run_collect_performance_data and calling makedirs now\n"
-    #File.makedirs(dest_dir)
         Dir.mkdir(dest_dir)
    end
-   #log_files = get_dir_files({'src_dir'=>'\Temp','dst_dir'=>dest_dir,'binary'=>true} )
-    #test_output_files = get_dir_files({'src_dir'=>media_location_hash[@test_params.params_chan.media_location[0]],'dst_dir'=>dest_dir,'binary'=>true} )
-	puts "Calling get_serial_output from run_collect_performance_data\n"
-	#ser_out = get_serial_output.split(/[\n\r]+/)
 	log_file_name = File.join(@wince_temp_folder, "test_#{@test_id}\.log")
     log_file = File.open(log_file_name,'r')
 	ser_out = log_file.read()
-
 	dsp_load_array = []
     arm_load_array = []
     video_fps_array = []
@@ -268,21 +131,13 @@ def setup_connect_equipment
     max_time_between_frames_to_renderer  = []
     buffer_copy_time_array = []
     decode_frame_size_array = []
-	#ser_out = @serial_port_data.to_s.split(/[\n\r]+/)
-	#puts "Ssssssssserial output is #{ser_out}\n"
 	puts "......printing result of first scan\n"
 	dsp_load = ser_out.scan(/Timm: DSP CPU Load=\d+/)
 	arm_load = ser_out.scan(/Timm: ARM CPU Load=\d+/)
-	#puts "VIDEO CODEC is #{@test_params.params_chan.dsp_video_codec[0].to_s}\n"
-   # puts "AUDIO CODEC is #{@test_params.params_chan.dsp_audio_codec[0].to_s}\n"
-	#video_codec = @test_params.params_chan.dsp_video_codec[0]
-	#audio_codec = @test_params.params_chan.dsp_video_codec[0]
-	
 	video_decoder_FPS_data = ser_out.scan(/#{@test_params.params_chan.dsp_video_codec[0]}: FPS=\d+/i)
 	puts "VIDEO parsing result is #{video_decoder_FPS_data}\n"
 	if (@test_params.params_chan.instance_variable_defined?(:@dsp_audio_codec))
 	audio_decoder_FPS_data = ser_out.scan(/#{@test_params.params_chan.dsp_audio_codec[0]}: FPS=\d+/i)
-	
 	puts "AUDIO parsing result is #{audio_decoder_FPS_data}\n"
 	end
 	frames_to_renderer_time_data = ser_out.scan(/renderer=\d+/)
@@ -310,18 +165,6 @@ def setup_connect_equipment
     frames_to_renderer_time_data.each do |time_result|
      max_time_between_frames_to_renderer << time_result.split(/=/)[1].to_f
 	end
-	#decoder_h264_data = ser_out.scan(/H264: \w+/)
-	#decoder_mpeg4_data = ser_out.scan(/MPEG4: \w+/)
-	#decoder_mpeg2_data = ser_out.scan(/MPEG2: \w+/)
-	# if (decoder_h264_data.size>0)
-	# puts "H264 data is #{decoder_h264_data}\n"
-	# elsif (decoder_mpeg4_data.size>0)
-	# puts "MPEG4 data is #{decoder_mpeg4_data}\n"
-	# elsif (decoder_mpeg2_data.size>0)
-	# puts "MPEG2 data is #{decoder_mpeg2_data}\n"
-	# end
-	#puts "DSP data is #{dsp_load_array.shift}\n"
-	#puts "ARM data is #{arm_load_array.shift}\n"
 	puts "Video FPS_data is #{video_fps_array}\n"
 	if (@test_params.params_chan.instance_variable_defined?(:@dsp_audio_codec))
 	puts "Audio FPS_data is #{audio_fps_array}\n"
@@ -345,71 +188,6 @@ def setup_connect_equipment
 	 opm_info = "exception in do command"
     end	 
   end
-  # ser_out.each do |current_line|
-    # puts "Current line from ser_out is #{current_line}\n"
-    # if (current_line.scan(/Timm: DSP CPU Load/).size >0)
-	 # current_match = current_line.split(/Timm: DSP CPU Load=/)[1]
-	   # while (start_flag == 0)
-	    # if (current_match.split(/ /)[0].to_f == 0)
-	     # start_count += 1
-        # elsif(current_match.split(/ /)[0].to_f > 0)
-	     # start_flag = 1
-	    # end
-	   # end
-	   # while (start_flag == 1 && stop_flag == 0)
-	    # if(current_match.split(/ /)[0].to_f > 0)
-          # dsp_load_array << current_match.split(/ /)[0].to_f
-	      # dsp_count += 1
-	    # else
-	      # stop_flag = 1
-	      # stop_count = dsp_count
-        # end
-       # end
-	 # # end
-   
-   # elsif (current_line.scan(/Timm: ARM CPU Load/).size >0)
-    # arm_temp_count += 1
-    # next if arm_temp_count<start_count
-    # current_match = current_line.split(/Timm: ARM CPU Load=/)[1]
-	# while (arm_count < stop_count)
-	 # arm_count += 1
-     # arm_load_array << current_match.split(/ /)[0].to_f
-	# end
-   # #end
-   
-   # elsif (current_line.scan(/MPEG2: /).size >0)  
-    # if (current_line.split(/MPEG2: /)[1].scan(/FPS=/).size>0)   
-    # temp = current_line.split(/MPEG2: /)[1].split(/FPS=/)[1]
-	# puts "temp is #{temp}\n"
-	# puts "fps_array is #{temp.split(/,/)[0]}\n"
-	# fps_array << temp.split(/,/)[0].strip.to_f	
-	# temp = temp.split(/=/)[1]
-	# time_between_frames_array << temp.sub(/ms/,'').strip.to_f	
-   # end
-  # # end
-  
-  # elsif (current_line.scan(/H264: /).size >0)  
-    # if (current_line.split(/H264: /)[1].scan(/FPS=/).size>0)   
-    # temp = current_line.split(/H264: /)[1].split(/FPS=/)[1]
-	# puts "temp is #{temp}\n"
-	# puts "fps_array is #{temp.split(/,/)[0]}\n"
-	# fps_array << temp.split(/,/)[0].strip.to_f	
-	# temp = temp.split(/=/)[1]
-	# time_between_frames_array << temp.sub(/ms/,'').strip.to_f	
-   # end
-  # #end
- 
-  # elsif (current_line.scan(/MPEG4: /).size >0)  
-    # if (current_line.split(/MPEG4: /)[1].scan(/FPS=/).size>0)   
-    # temp = current_line.split(/MPEG4: /)[1].split(/FPS=/)[1]
-	# puts "temp is #{temp}\n"
-	# puts "fps_array is #{temp.split(/,/)[0]}\n"
-	# fps_array << temp.split(/,/)[0].strip.to_f	
-	# temp = temp.split(/=/)[1]
-	# time_between_frames_array << temp.sub(/ms/,'').strip.to_f	
-    # end
-  # end 
-  # end
   
   video_fps_mean = get_mean(video_fps_array)
   video_fps_min = video_fps_array.min
@@ -435,25 +213,6 @@ def setup_connect_equipment
   arm_load_mean = get_mean(arm_load_array)
   arm_load_min = arm_load_array.min
   arm_load_max = arm_load_array.max 
-   perf_log = File.new(File.join(@wince_temp_folder,'perf.log'),'w')
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_DSP_LOAD_MEAN "+dsp_load_mean.round(2).to_s+"%")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_DSP_LOAD_MIN "+dsp_load_min.to_s+"%")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_DSP_LOAD_MAX "+dsp_load_max.to_s+"%")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_ARM_LOAD_MEAN "+arm_load_mean.round(2).to_s+"%")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_ARM_LOAD_MIN "+arm_load_min.to_s+"%")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_ARM_LOAD_MAX "+arm_load_max.to_s+"%")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_VIDEO_FRAME_RATE_MEAN "+video_fps_mean.round(2).to_s+" fps")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_VIDEO_FRAME_RATE_MIN "+video_fps_min.round(2).to_s+" fps")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_VIDEO_FRAME_RATE_MAX "+video_fps_max.round(2).to_s+" fps")  
-   if (@test_params.params_chan.instance_variable_defined?(:@dsp_audio_codec))
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_AUDIO_FRAME_RATE_MEAN "+audio_fps_mean.round(2).to_s+" fps")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_AUDIO_FRAME_RATE_MIN "+audio_fps_min.round(2).to_s+" fps")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_AUDIO_FRAME_RATE_MAX "+audio_fps_max.round(2).to_s+" fps")  
-   end
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_MAX_TIME_BETWEEN_FRAMES_MEAN "+max_time_between_frames_mean.round(2).to_s+" ms")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_MAX_TIME_BETWEEN_FRAMES_MIN "+max_time_between_frames_min.round(2).to_s+" ms")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_MAX_TIME_BETWEEN_FRAMES_MAX "+max_time_between_frames_max.round(2).to_s+" ms")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.input_file[0].to_s+"_"+media_location_hash[@test_params.params_chan.test_dir[0]].to_s+"_"+@test_params.params_chan.video_output[0].to_s+"_"+"_MAX_TIME_BEFORE_MEDIA_PLAYOUT "+system_data.to_s+" ms") 
    @results_html_file.add_paragraph("")
    dest_dir = @wince_temp_folder
    dest_dir = File.join(dest_dir,"video_decode")
@@ -463,12 +222,9 @@ def setup_connect_equipment
     Dir.mkdir(dest_dir)
    end
    file_name = File.join(dest_dir,"ceplayer_worksheet.txt")
-   #xls_file = File.open(File.join(dest_dir,"ceplayer_worksheet.txt"),'r')
    if (!File.exist?(file_name))
     puts "file did not exist and hence, creating one\n"
     xls_file = File.new(File.join(dest_dir,"ceplayer_worksheet.txt"),'a+')
-	#xls_file.puts("Test Time\t\t\tDescription\t\t\tOpm State\t\t\tARM Load\tDSP Load\tVideo Frame Rate\tAudio Frame Rate\n")
-	
 	xls_file.puts("TestTime\tFileName\tMediaLocation\tOutputVideo\tOpmState\tARM_Load_Mean\tARM_Load_Min\tARM_Load_Max\tDSP_Load_Mean\tDSP_Load_Min\tDSP_Load_Max\tMean Video FrameRate\tMin Video FrameRate\tMax Video FrameRate\tMean FrameProcessingTime_in ms\tMin FrameProcessingTime_in ms\tMax FrameProcessingTime_in ms\tTimeBeforeMediaPlayout in s\tMean Audio FrameRate(only applicable for AAC)\tMin Audio FrameRate\tMax AudioFrameRate)\n")
 	xls_file.close
    end
@@ -496,18 +252,14 @@ def setup_connect_equipment
 	@results_html_file.add_row_to_table(res_table,["TIME_BETWEEN_FRAMES (in ms)",max_time_between_frames_mean.round(2).to_s])
 	@results_html_file.add_row_to_table(res_table,["SYSTEM_TIME (in s)",system_data.to_s])
 	xls_file.close
+  [{'name' => "DSP_LOAD", 'value' => @dsp_load_array, 'units' => "load"},{'name' => "ARM_LOAD", 'value' => @arm_load_array, 'units' => "load"},{'name' => "VIDEO FRAME_RATE", 'value' => @video_fps_array , 'units' => "fps"},{'name' => "AUDIO FRAME_RATE", 'value' => @audio_fps_array, 'units' => "fps"},{'name' => "TIME_BETWEEN_FRAMES", 'value' => @max_time_between_frames_to_renderer, 'units' => "ms"}]
 	ensure
     perf_log.close if perf_log
-	puts "BBBBBBBBBBBBBBefore exiting collect_performance data\n"
+	
 end
 
 def run_determine_test_outcome
-  if File.exists?(File.join(@wince_temp_folder,'perf.log'))
-    [FrameworkConstants::Result[:pass], "This test pass"]
-  else
-    [FrameworkConstants::Result[:pass], "This failed no performance data was collected"]
-  end
-
+[FrameworkConstants::Result[:fail], "This test must be verified manaully to pass.",run_collect_performance_data]
 end
 
 # This function is used to compute the mean value in an array

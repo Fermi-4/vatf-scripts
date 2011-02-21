@@ -1,21 +1,13 @@
 require File.dirname(__FILE__)+'/../../default_test'
 
 include WinceTestScript
-    media_location_hash = {"sd" => '\Storage Card', "nand" =>'\Mounted Volume',"usb" => '\Hard Disk',"ram" => '\Temp'}
+    
 def setup_connect_equipment
     puts "WinceTestScript::setup_connect_equipment"
 	#======================== Equipment Connections ====================================================
 	myhash = {"av" => "composite", "ypbpr" =>"component","svideo" => "svideo"}
 	
-	#@connection_handler.make_video_connection({@equipment[@test_params.params_chan.media_source[0]] => {myhash[@test_params.params_chan.video_input[0]] => 0}}, {@equipment["dut1"] => {myhash[@test_params.params_chan.video_input[0]] => 0}}) #, @equipment["tv0"] => {@test_params.params_chan.video_input[0] => 0}}) 
 	@connection_handler.make_video_connection({@equipment[@test_params.params_chan.media_source[0]] => {myhash[@test_params.params_chan.video_input[0]] => 0}}, {@equipment["dut1"] => {myhash[@test_params.params_chan.video_input[0]] => 0} , @equipment["tv0"] => {myhash[@test_params.params_chan.video_input[0]] => 0}}) 
-	#@connection_handler.make_video_connection({@equipment[@test_params.params_chan.media_source[0]] => {myhash[@test_params.params_chan.video_input[0]] => 0}},{@equipment["dut1"] => {myhash[@test_params.params_chan.video_input[0]] => 0}})
-	#@connection_handler.make_video_connection({@equipment[@test_params.params_chan.media_source[0]] => {myhash[@test_params.params_chan.video_input[0]] => 0}}, {@equipment["dut1"] => {myhash[@test_params.params_chan.video_input[0]] => 0}, @equipment["tv0"] => {myhash[@test_params.params_chan.video_input[0]] => 0}}) 
-    #@connection_handler.make_audio_connection({@equipment[@test_params.params_chan.media_source[0]] => {'mini35mm' => 0}}, {@equipment["dut1"] => {'mini35mm' => 0}, @equipment["tv0"] => {'mini35mm' => 0}})   
-    #@connection_handler.make_video_connection({@equipment["dut1"] => {@test_params.params_chan.display_out[0] => 0}},{@equipment['tv1'] => {@test_params.params_chan.display_out[0] => 0}}) 
-    #@connection_handler.make_audio_connection({@equipment["dut1"] => {'mini35mm' => 0}},{@equipment['tv1'] => {'mini35mm' => 0}})
-  # @connection_handler.make_video_connection({@equipment['ntsc_dvd'] => {@test_params.params_chan.video_input[0] => 0}}, {@equipment["dut1"] => {@test_params.params_chan.video_input[0] => 0}, @equipment["tv0"] => {@test_params.params_chan.video_input[0] => 0}}) 
-  
   end
   
  def run_generate_script
@@ -29,7 +21,6 @@ def setup_connect_equipment
 		output_filename =  @test_params.params_chan.video_input[0].to_s+'_'+@test_params.params_chan.bitrate[0].to_s+'_'+@test_params.params_chan.resolution[0].to_s+'_'+@test_params.params_chan.codec[0].to_s+'_'+@test_params.params_chan.media_location[0]+'.asf'
 	if (@test_params.params_chan.media_location[0] == "ram")
 
-	#test_command = @test_params.params_chan.cmdline[0]+' '+'/auto'+' '+'/time'+' '+@test_params.params_chan.time[0].to_s+' '+'/venc'+' '+@test_params.params_chan.codec[0].to_s+' '+ '/vin'+' '+@test_params.params_chan.video_input[0].to_s+' '+ '/br'+' '+@test_params.params_chan.bitrate[0].to_s+' '+preview_option+' '+ '/cap'+' '+ @test_params.params_chan.resolution[0].to_s+' '+ '/file'+' '+'\temp'+'\\'+@test_params.params_chan.video_input[0].to_s+'_'+@test_params.params_chan.bitrate[0].to_s+'_'+@test_params.params_chan.resolution[0].to_s+'_'+@test_params.params_chan.codec[0].to_s+'_'+@test_params.params_chan.media_location[0]+'.asf'
 	test_command = @test_params.params_chan.cmdline[0]+' '+'/auto'+' '+'/time'+' '+@test_params.params_chan.time[0].to_s+' '+'/venc'+' '+@test_params.params_chan.codec[0].to_s+' '+ '/vin'+' '+@test_params.params_chan.video_input[0].to_s+' '+ '/br'+' '+@test_params.params_chan.bitrate[0].to_s+' '+preview_option+' '+ '/cap'+' '+ @test_params.params_chan.resolution[0].to_s+' '+ '/file'+' '+'\temp'+'\\'+output_filename
 	puts "test_command is #{test_command}\n"
 	
@@ -41,8 +32,6 @@ def setup_connect_equipment
 		test_command = @test_params.params_chan.cmdline[0]+' '+'/auto'+' '+'/time'+' '+@test_params.params_chan.time[0].to_s+' '+'/venc'+' '+@test_params.params_chan.codec[0].to_s+' '+ '/vin'+' '+@test_params.params_chan.video_input[0].to_s+' '+ '/br'+' '+@test_params.params_chan.bitrate[0].to_s+' '+preview_option+' '+ '/cap'+' '+ @test_params.params_chan.resolution[0].to_s+' '+'/usb'+' '+'/file'+' '+output_filename
 	end
 	
-	#cmdline=/auto /time 30000 /venc h264 /vin svideo /br 4000000  /cap 720x480@30 /file \/temp\svideo_4000000_720x480@30_h264.asf
- #{@test_params.params_chan.cmdline[0]} /auto /time #{@test_params.params_chan.time[0].to_s} /venc #{@test_params.params_chan.codec[0].to_s} /vin #{@test_params.params_chan.video_input[0].to_s} /br #{@test_params.params_chan.bitrate[0].to_s} #{@test_params.params_chan.preview[0].to_s == '0' ? '' : '/pv'} /cap #{@test_params.params_chan.resolution[0].to_s} /file \temp\#{@test_params.params_chan.video_input[0].to_s}_#{@test_params.params_chan.bitrate[0].to_s}_#{@test_params.params_chan.resolution[0].to_s}_#{@test_params.params_chan.codec[0].to_s}.asf 
     FileUtils.mkdir_p @wince_temp_folder
     in_file = File.new(File.join(@test_params.view_drive, @test_params.params_chan.shell_script[0]), 'r')
     raw_test_lines = in_file.readlines
@@ -62,11 +51,19 @@ def run_get_script_output
 end
 
 def run_collect_performance_data
+   puts "Inside run_collect_performance_data\n"
+   dsp_load_array = Array.new
+  arm_load_array = Array.new
+  fps_array = Array.new
+  encode_time_array = Array.new
+  time_between_frames_array = Array.new
+  buffer_copy_time_array = Array.new
+  encode_frame_size_array = Array.new
      media_location_hash = {"sd" => '\Storage Card', "nand" =>'\Mounted Volume',"usb" => '\Hard Disk',"ram" => '\Temp'}
     dest_dir = @wince_temp_folder
 	#dest_dir = dest_dir+'/video_encode'
 	  dest_dir = File.join(dest_dir,"video_encode")
-    
+    puts "Destination directory is: #{dest_dir}\n"
    if (!File.exist?(dest_dir))
     puts "Saw that video_encode folder does not exist in run_collect_performance_data and calling makedirs now\n"
     #File.makedirs(dest_dir)
@@ -78,7 +75,6 @@ def run_collect_performance_data
 	preview_option = '/pv'
 	end
 	log_files = get_dir_files({'src_dir'=>'\Temp','dst_dir'=>dest_dir,'binary'=>true} )
-    #test_output_files = get_dir_files({'src_dir'=>media_location_hash[@test_params.params_chan.media_location[0]],'dst_dir'=>dest_dir,'binary'=>true} )
     output_filename = @test_params.params_chan.video_input[0].to_s+'_'+@test_params.params_chan.bitrate[0].to_s+'_'+@test_params.params_chan.resolution[0].to_s+'_'+@test_params.params_chan.codec[0].to_s+'_'+@test_params.params_chan.media_location[0]+'.asf'
 	test_output_files = get_file({'filename'=>output_filename,'src_dir'=>media_location_hash[@test_params.params_chan.media_location[0]],'dst_dir'=>dest_dir,'binary'=>true})
 	
@@ -87,13 +83,6 @@ def run_collect_performance_data
 	dsp_count = 0
     arm_count = 0
     opm_info = ""
-    dsp_load_array = []
-    arm_load_array = []
-    fps_array = []
-    encode_time_array = []
-    time_between_frames_array = []
-    buffer_copy_time_array = []
-    encode_frame_size_array = []
     std_out.each do |current_line|
     if (current_line.scan(/Current Frequencies/).size>0)
      opm_info = current_line.split(/:/)[1]
@@ -125,7 +114,7 @@ def run_collect_performance_data
 	end
 	puts "temp is #{temp}\n"
 	puts "fps_array is #{temp.split(/,/)[0]}\n"
-	fps_array << temp.split(/,/)[0].strip.to_f	
+	fps_array  << temp.split(/,/)[0].strip.to_f	
 	temp = temp.split(/ frames =/)[1]
 	time_between_frames_array << temp.split(/,/)[0].sub(/ms/,'').strip.to_f
 	if (temp.scan(/encode =/).size>0)
@@ -140,16 +129,16 @@ def run_collect_performance_data
 	temp = temp.split(/buffer copy=/)[1]
 	end
 	buffer_copy_time_array << temp.split(/,/)[0].sub(/ms/,'').strip.to_f
-    if (temp.scan(/enc frame size =/).size > 0)	
-	encode_frame_size_array << temp.split(/enc frame size =/)[1].strip.to_f	
-    else
-	encode_frame_size_array << temp.split(/enc frame size=/)[1].strip.to_f
+  if (temp.scan(/enc frame size =/).size > 0)	
+	  encode_frame_size_array << temp.split(/enc frame size =/)[1].strip.to_f	
+   else
+	 encode_frame_size_array << temp.split(/enc frame size=/)[1].strip.to_f
 	end
    end
 	
   end
  
-  fps_mean = get_mean(fps_array)
+  fps_mean = get_mean(fps_array )
   time_between_frames_mean = get_mean(time_between_frames_array)  
   encode_time_mean = get_mean(encode_time_array)  
   buffer_copy_time_mean = get_mean(buffer_copy_time_array)  
@@ -161,18 +150,6 @@ def run_collect_performance_data
   arm_load_mean = get_mean(arm_load_array)
   arm_load_min = arm_load_array.min
   arm_load_max = arm_load_array.max 
-   perf_log = File.new(File.join(@wince_temp_folder,'perf.log'),'w')
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.codec[0].to_s+"_"+@test_params.params_chan.bitrate[0].to_s+"_bps_"+@test_params.params_chan.resolution[0].to_s+"_"+@test_params.params_chan.video_input[0].to_s+"_"+@test_params.params_chan.media_location[0].to_s+"_DSP_LOAD_MEAN "+dsp_load_mean.round(2).to_s+"%")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.codec[0].to_s+"_"+@test_params.params_chan.bitrate[0].to_s+"_bps_"+@test_params.params_chan.resolution[0].to_s+"_"+@test_params.params_chan.video_input[0].to_s+"_"+@test_params.params_chan.media_location[0].to_s+"_DSP_LOAD_MIN "+dsp_load_min.to_s+"%")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.codec[0].to_s+"_"+@test_params.params_chan.bitrate[0].to_s+"_bps_"+@test_params.params_chan.resolution[0].to_s+"_"+@test_params.params_chan.video_input[0].to_s+"_"+@test_params.params_chan.media_location[0].to_s+"_DSP_LOAD_MAX "+dsp_load_max.to_s+"%")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.codec[0].to_s+"_"+@test_params.params_chan.bitrate[0].to_s+"_bps_"+@test_params.params_chan.resolution[0].to_s+"_"+@test_params.params_chan.video_input[0].to_s+"_"+@test_params.params_chan.media_location[0].to_s+"_ARM_LOAD_MEAN "+arm_load_mean.round(2).to_s+"%")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.codec[0].to_s+"_"+@test_params.params_chan.bitrate[0].to_s+"_bps_"+@test_params.params_chan.resolution[0].to_s+"_"+@test_params.params_chan.video_input[0].to_s+"_"+@test_params.params_chan.media_location[0].to_s+"_ARM_LOAD_MIN "+arm_load_min.to_s+"%")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.codec[0].to_s+"_"+@test_params.params_chan.bitrate[0].to_s+"_bps_"+@test_params.params_chan.resolution[0].to_s+"_"+@test_params.params_chan.video_input[0].to_s+"_"+@test_params.params_chan.media_location[0].to_s+"_ARM_LOAD_MAX "+arm_load_max.to_s+"%")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.codec[0].to_s+"_"+@test_params.params_chan.bitrate[0].to_s+"_bps_"+@test_params.params_chan.resolution[0].to_s+"_"+@test_params.params_chan.video_input[0].to_s+"_"+@test_params.params_chan.media_location[0].to_s+"_FRAME_RATE "+fps_mean.round(2).to_s+" fps")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.codec[0].to_s+"_"+@test_params.params_chan.bitrate[0].to_s+"_bps_"+@test_params.params_chan.resolution[0].to_s+"_"+@test_params.params_chan.video_input[0].to_s+"_"+@test_params.params_chan.media_location[0].to_s+"_TIME_BETWEEN_FRAMES "+time_between_frames_mean.round(2).to_s+" ms")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.codec[0].to_s+"_"+@test_params.params_chan.bitrate[0].to_s+"_bps_"+@test_params.params_chan.resolution[0].to_s+"_"+@test_params.params_chan.video_input[0].to_s+"_"+@test_params.params_chan.media_location[0].to_s+"_ENCODE_TIME "+encode_time_mean.round(2).to_s+" ms")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.codec[0].to_s+"_"+@test_params.params_chan.bitrate[0].to_s+"_bps_"+@test_params.params_chan.resolution[0].to_s+"_"+@test_params.params_chan.video_input[0].to_s+"_"+@test_params.params_chan.media_location[0].to_s+"_BUFFER_COPY_TIME "+buffer_copy_time_mean.round(2).to_s+" ms")
-   perf_log.puts(@test_params.params_chan.cmdline[0].gsub(/\.exe$/,'')+"_"+@test_params.params_chan.codec[0].to_s+"_"+@test_params.params_chan.bitrate[0].to_s+"_bps_"+@test_params.params_chan.resolution[0].to_s+"_"+@test_params.params_chan.video_input[0].to_s+"_"+@test_params.params_chan.media_location[0].to_s+"_ENCODE_FRAME_SIZE "+encode_frame_size_mean.round(2).to_s+" ms")
    @results_html_file.add_paragraph("")
    dest_dir = @wince_temp_folder
    dest_dir = File.join(dest_dir,"video_encode")
@@ -182,11 +159,9 @@ def run_collect_performance_data
     Dir.mkdir(dest_dir)
    end
    file_name = File.join(dest_dir,"capturetest_worksheet.txt")
-   #xls_file = File.open(File.join(dest_dir,"capturetest_worksheet.txt"),'r')
    if (!File.exist?(file_name))
     puts "file did not exist and hence, creating one\n"
     xls_file = File.new(File.join(dest_dir,"capturetest_worksheet.txt"),'a+')
-	#xls_file.puts("Test Time\t\t\tDescription\t\t\tOpm State\t\t\tARM Load\tDSP Load\tFrame Rate\n")
 	xls_file.puts("TestTime\tCodec\tBitRate\tResolution\tInputVideo\tOpmState\tARM_Load\tDSP_Load\tFrameRate\tMediaLocation\n")
 	xls_file.close
    end
@@ -208,18 +183,14 @@ def run_collect_performance_data
 	@results_html_file.add_row_to_table(res_table,["BUFFER_COPY_TIME",buffer_copy_time_mean.round(2).to_s])
 	@results_html_file.add_row_to_table(res_table,["ENCODE_FRAME_SIZE",encode_frame_size_mean.round(2).to_s])
 	xls_file.close
+  [{'name' => "DSP_LOAD", 'value' => dsp_load_array, 'units' => "load"},{'name' => "ARM_LOAD", 'value' => arm_load_array, 'units' => "load"},{'name' => "FRAME_RATE", 'value' => fps_array, 'units' => "fps"},{'name' => "TIME_BETWEEN_FRAMES", 'value' => time_between_frames_array, 'units' => "ms"},{'name' => "ENCODE_TIME", 'value' => encode_time_array, 'units' => "ms"},{'name' => "BUFFER_COPY_TIME", 'value' => buffer_copy_time_array , 'units' => "ms"},{'name' => "ENCODE_FRAME_SIZE", 'value' => encode_frame_size_array, 'units' => "size"}]
 	ensure
     perf_log.close if perf_log
-	
+	  
 end
 
 def run_determine_test_outcome
-  if File.exists?(File.join(@wince_temp_folder,'perf.log'))
-    [FrameworkConstants::Result[:pass], "This test pass"]
-  else
-    [FrameworkConstants::Result[:fail], "This failed no performance data was collected"]
-  end
-
+[FrameworkConstants::Result[:fail], "This test must be verified manaully to pass.",run_collect_performance_data]
 end
 
 # This function is used to compute the mean value in an array
@@ -244,18 +215,12 @@ def clean_delete_log_files
   @equipment['dut1'].send_cmd("del \/Q \*\.asf",@equipment['dut1'].prompt) 
  # @equipment['dut1'].send_cmd("del \/Q \*\.asf",@equipment['dut1'].prompt) 
   dest_dir = @wince_temp_folder
-  #dest_dir = File.join(@wince_temp_folder,'video_encode')
-  #dest_dir = File.join(dest_dir,"video_encode")
-  #dest_dir = dest_dir+'\video_encode'
    if (!File.exist?(dest_dir))
     puts "Saw that video_encode in clean_delete_log_files folder does not exist and calling makedirs now\n"
-    #File.makedirs(dest_dir)
 	    Dir.mkdir(dest_dir)
    end
 	 
 	 puts "\n dest_dir is #{dest_dir}\n"
- #system("cd dest_dir")
-  #system("del \/Q \\dest_dir\\\*\.tmp")
   puts "del \/Q #{dest_dir}\\*.tmp"
  system("del \/Q #{dest_dir}\\*.tmp")
 end
