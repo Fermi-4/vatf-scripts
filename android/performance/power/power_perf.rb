@@ -16,12 +16,39 @@ def run
   # Configure multimeter 
   @equipment['multimeter1'].configure_multimeter(@test_params.params_equip.sample_count[0].to_i)
   # Set DUT in appropriate state
+  puts "\n\n======= Power Domain states info =======\n" + send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state")
+  puts "\n\n======= Current CPU Frequency =======\n" +  send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
+  puts "\n\n======= Power Domain transition stats =======\n" + send_adb_cmd("shell cat /debug/pm_debug/count") 
+  if @test_params.params_chan.instance_variable_defined?(:@dvfs_governor)
+    send_adb_cmd("shell \"echo #{@test_params.params_chan.dvfs_governor[0].strip.downcase} > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor\"")
+    if @test_params.params_chan.dvfs_governor[0].strip.downcase == 'userspace'
+      supported_frequencies = send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies").split(/\s+/)
+      raise "This dut does not support #{@test_params.params_chan.dvfs_freq[0]} Hz, supported values are #{supported_frequencies.to_s}" if !supported_frequencies.include?(@test_params.params_chan.dvfs_freq[0])
+      send_adb_cmd("shell \"echo #{@test_params.params_chan.dvfs_freq[0]} > /sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed\"")
+    end 
+  else
+    send_adb_cmd("shell \"echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor\"")
+  end
+    
+  if @test_params.params_chan.instance_variable_defined?(:@disabled_cpu_idle_modes)
+    @test_params.params_chan.disabled_cpu_idle_modes.each do |idle_mode|
+      send_adb_cmd("shell \"echo 0 > /debug/pm_debug/#{idle_mode.strip.downcase}\"")
+    end
+  end
+    
+  if @test_params.params_chan.instance_variable_defined?(:@enabled_cpu_idle_modes)
+    @test_params.params_chan.enabled_cpu_idle_modes.each do |idle_mode|
+      send_adb_cmd("shell \"echo 1 > /debug/pm_debug/#{idle_mode.strip.downcase}\"")
+    end
+  end
+  
   if @test_params.params_chan.instance_variable_defined?(:@bypass_dut)
     # Don't configure DUT, user will set it in the right state
     # before running this test
+    puts "configure DUT, user must set it in the right state"
     sleep @test_params.params_chan.bypass_dut_wait[0].to_i if @test_params.params_chan.instance_variable_defined?(:@bypass_dut_wait)
   else
-    dutThread = Thread.new { run_test(@test_params.params_chan.test_option[0]) }  
+    dutThread = Thread.new { run_test(@test_params.params_chan.test_option[0]) }
   end
   # Get voltage values for all channels in a hash
   volt_readings = run_get_multimeter_output      
@@ -30,6 +57,9 @@ def run
   # Generate the plot of the power consumption for the given application
   power_consumption_plot(power_readings)
   perf = save_results(power_readings, volt_readings)
+  puts "\n\n======= Power Domain states info =======\n" + send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state")
+  puts "\n\n======= Current CPU Frequency =======\n" +  send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
+  puts "\n\n======= Power Domain transition stats =======\n" + send_adb_cmd("shell cat /debug/pm_debug/count") 
   dutThread.join if dutThread
 ensure
   if perf.size > 0
@@ -159,7 +189,6 @@ def power_consumption_plot(power_consumption)
     }
   }
 end 
-
 
 
 
