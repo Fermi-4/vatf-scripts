@@ -5,9 +5,9 @@
       <id><![CDATA[12345]]></id>
       <tee><![CDATA[vatf
 ]]></tee>
-      <params_chan><![CDATA[test_time=60,top_sample_secs=3,buffer_size=106;128,bw=20M,bw_min=12,security=wpa2,protocol=udp,port=7000,mode=iperf,pings=10
+      <params_chan><![CDATA[test_time=60,top_sample_secs=3,buffer_size=106,bw=20M,bw_min=12,security=wpa2-psk,protocol=tcp,port=7000,mode=iperf,pings=10
 ]]></params_chan>
-      <params_control><![CDATA[ap_prompt=gtaccess,ap_mfg=Cisco,ap_wifi_ip=10.10.10.1,remote_ip=10.10.10.104,intfc=tiwlan0,recfg_ap=y,recfg_client=y,ip_vsn=4
+      <params_control><![CDATA[ap_hostname=systest-wlan,ap_mfg=Cisco,ap_wifi_ip=10.10.10.160,local_ip=15.15.15.12,remote_ip=15.15.15.31,intfc=tiwlan0,ip_vsn=4
 ]]></params_control>
       <params_equip><![CDATA[sample_param=3
 ]]></params_equip>

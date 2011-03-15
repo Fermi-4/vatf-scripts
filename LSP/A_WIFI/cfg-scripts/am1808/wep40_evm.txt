@@ -14,5 +14,5 @@ a 0123456789 0 1
 /
 c
 b
-c gtaccess
+c gtaccess-wep40
 / q

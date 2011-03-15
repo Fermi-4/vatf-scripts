@@ -1,3 +1,5 @@
+#03-07-2011 - Removed many debug status messages.
+
 # -*- coding: ISO-8859-1 -*-
 require File.dirname(__FILE__)+'/default_target_test'
 
@@ -44,22 +46,24 @@ module IperfTestScript
     @tot_samples = (@test_params.params_chan.test_time[0].to_i / @test_params.params_chan.top_sample_secs[0].to_i) - 3
     @top_delay = @test_params.params_chan.top_sample_secs[0].to_i
     @test_params.params_chan.buffer_size.each do |packet_size|
-    #send_status("-------------------------- default_iperf_module: Status message - Iperf is being started on the client ---------- Total Samples:  #{@tot_samples}---------------------------- "+ __LINE__.to_s)
     start_iperf_svr("#{@test_params.params_chan.port[0]}", "#{log_file}")
     data[i][0] = packet_size
     start_top('dut1',"top"+i.to_s+".log")
     pkt_size = packet_size.to_i/2
+    sleep 2
 
     # Start Iperf on client EVM
     if @test_params.params_chan.protocol[0] == "tcp"
-      @equipment['dut1'].send_cmd("iperf -c #{@test_params.params_control.remote_ip[0]} -p #{@test_params.params_chan.port[0]} -w #{pkt_size}K -t #{@test_time} -d", @equipment['dut1'].prompt, @test_time.to_i + 60)
-    else
-      @equipment['dut1'].send_cmd("iperf -c #{@test_params.params_control.remote_ip[0]} -p #{@test_params.params_chan.port[0]} -u -w #{pkt_size}K -b #{@test_params.params_chan.bw[0]} -t #{@test_time}", @equipment['dut1'].prompt, @test_time.to_i + 60)
+      #@equipment['dut1'].send_cmd("iperf -c #{@test_params.params_control.remote_ip[0]} -p #{@test_params.params_chan.port[0]} -w #{pkt_size}K -t #{@test_time} -N -d\n", @equipment['dut1'].prompt, @test_time.to_i + 60)
+      @equipment['dut1'].send_cmd("iperf -c #{@test_params.params_control.remote_ip[0]} -w #{pkt_size}K -t #{@test_time} -N -d\n", @equipment['dut1'].prompt, @test_time.to_i + 60)
+.   else
+      #@equipment['dut1'].send_cmd("iperf -c #{@test_params.params_control.remote_ip[0]} -p #{@test_params.params_chan.port[0]} -u -w #{pkt_size}K -b #{@test_params.params_chan.bw[0]} -t #{@test_time} -N", @equipment['dut1'].prompt, @test_time.to_i + 60)
+      @equipment['dut1'].send_cmd("iperf -c #{@test_params.params_control.remote_ip[0]} -u -w #{pkt_size}K -b #{@test_params.params_chan.bw[0]} -t #{@test_time} -N", @equipment['dut1'].prompt, @test_time.to_i + 60)
     end
 
     if @equipment['dut1'].timeout?
       @err_code = 1
-      raise "The ping to #{@test_params.params_control.remote_ip[0]} timed out and could not be completed. "+ __LINE__.to_s
+      raise "The iperf test to #{@test_params.params_control.remote_ip[0]} timed out and could not be completed. "+ __LINE__.to_s
     end
 
     sleep 1
@@ -203,8 +207,6 @@ module IperfTestScript
 
       @test_data << data[i].flatten
       @array_size = data.size
-      #send_status("\n----------------------- default_iperf_module: Status message - Data information -------- #{data} --------- #{@array_size} ----------- "+ __LINE__.to_s)
-      #send_status("\n----------------------- default_iperf_module: Status message - Data information -------- #{@test_data} -------------------- "+ __LINE__.to_s)
       perfdata << {'name'=> "PING_#{@test_params.params_chan.protocol[0].upcase}_#{packet_size}", 'value'=> rtt_avg.to_f, 'units' => "ms"}
 
       i = i+1
@@ -219,7 +221,6 @@ module IperfTestScript
 	def run_determine_test_outcome
     send_status("-------------------------- default_iperf_module: Status message - run_determine_test_outcome -------------------- "+ __LINE__.to_s)
 
-    #send_status("-------------------------- default_iperf_module: Status message - Error Code ->  #{@err_code} -------------------- "+ __LINE__.to_s)
     packet_size = @pk_size.to_i * 2
 
     if @test_params.params_chan.mode[0] == "iperf"
@@ -283,25 +284,28 @@ module IperfTestScript
     host_pid = check_iperf_is_runnning(@equipment["server1"])
 
     if host_pid
-      #send_status("-------------------- default_iperf_module: Status message - Iperf server is running on #{device} at PID #{host_pid} and will be stopped first. ------------------------ "+ __LINE__.to_s)
       @equipment["#{device}"].send_cmd("kill -9 #{host_pid.to_s}")
-      sleep 2
+      send_status("-------------------- default_iperf_module: Status message - Iperf has been stopped on #{device} ------------------------- "+ __LINE__.to_s)
     else
-      #send_status("-------------------- default_iperf_module: Status message - Iperf is being started on #{device} ------------------------- "+ __LINE__.to_s)
+      send_status("-------------------- default_iperf_module: Status message - Iperf is being started on #{device} ------------------------- "+ __LINE__.to_s)
     end
 
+    sleep 3
+    
     if @test_params.params_chan.protocol[0] == "tcp"
-      @equipment["#{device}"].send_cmd("iperf -s -p#{@test_params.params_chan.port[0]} >#{log_file} &")
+      #@equipment["#{device}"].send_cmd("iperf -s -N -p#{@test_params.params_chan.port[0]} >#{log_file} &\n")
+      @equipment["#{device}"].send_cmd("iperf -s -N >#{log_file} &\n")
     else
-      @equipment["#{device}"].send_cmd("iperf -s -p#{@test_params.params_chan.port[0]} -u >#{log_file} &")
+      #@equipment["#{device}"].send_cmd("iperf -s -N -p#{@test_params.params_chan.port[0]} -u >#{log_file} &")
+      @equipment["#{device}"].send_cmd("iperf -s -N -u >#{log_file} &")
     end
-     host_pid = check_iperf_is_runnning(@equipment["#{device}"])
+    
+    host_pid = check_iperf_is_runnning(@equipment["#{device}"])
   end
 
 
   def start_top(device, file)
     @current_top_file_name = file
-    #send_status("-------------------- default_iperf_module: Status message - The TOP command is being started on #{device} ----- #{@current_top_file_name} -------------------- "+ __LINE__.to_s)
     @equipment["#{device}"].send_cmd("nohup top -d #{@top_delay} -n #{@tot_samples} -b |grep tiwlan] >#{file} &", @equipment["#{device}"].prompt, 10)
   end
 
@@ -310,28 +314,23 @@ module IperfTestScript
     wifi_cpu_pct = Array.new
     send_status("-------------------- default_iperf_module: Status message - TOP results are being processed from the cat response------------------------- "+ __LINE__.to_s)
     final_pct = count = tmp_pct = diff = 0
-    #send_status("-------------------------- default_iperf_module: Status message - Total Samples:  ----- #{@tot_samples} ------------------------- "+ __LINE__.to_s)
     wifi_cpu_pct = response.scan(/(\s[\d]+)\%\s+\[tiwlan\]/)
     count = wifi_cpu_pct.flatten!.size
     tst = wifi_cpu_pct[0].match(/([\d]+)/).captures[0].to_i
-    #send_status("-------------------------- default_iperf_module: Status message - Reading TOP data from buffer:  ----- #{tst} --- #{count} --- #{@tot_samples} ------------------- "+ __LINE__.to_s)
 
     for j in 0..count - 1 do
       pct = wifi_cpu_pct[j].to_i
 
       if pct == 0
         diff = diff + 1
-        #puts "***************************** This value will be ignored since it is 0.********* CPU Percent:  #{pct} *** Total Count:  #{count} *** Diff:  #{diff} *********************"
       else
         tmp = tmp_pct
         tmp_pct = tmp + pct
-        #puts "***************************** There was a match ********* CPU Percent: #{pct} ****** #{tmp_pct} ***** #{count} **************"
       end
     end 
 
     count = count - diff    
     final_pct = "%.3f" % (tmp_pct.to_f/ count.to_f)
-    #send_status("-------------------------- default_iperf_module: Status message - Completed processing TOP data: #{final_pct} --- #{count} -------------------- "+ __LINE__.to_s)
 
     [final_pct]
   end

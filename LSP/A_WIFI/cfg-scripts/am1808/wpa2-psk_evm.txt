@@ -8,5 +8,14 @@ s
 /
 c
 b
-c gtaccess
+/
+p
+a
+a 7
+r
+r 3
+p psk12345
+/
+c
+c gtaccess-wpa2-psk
 / q

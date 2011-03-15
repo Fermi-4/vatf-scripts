@@ -14,5 +14,5 @@ a 12345678901234567890123456 0 1
 /
 c
 b
-c gtaccess
+c gtaccess-wep128
 / q

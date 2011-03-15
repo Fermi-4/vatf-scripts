@@ -1,3 +1,12 @@
+# ---------------------------------- Change Log ----------------------------------
+#03-07-2011 - Removed cfg_access_point subroutine.
+#03-07-2011 - Removed many debug status messages.
+#03-07-2011 - Added local_ip variable to define the local tiwlan0 interface ip address.
+#03-07-2011 - renamed client wlan configuration file names.
+#03-07-2011 - Modified run_bluetooth_scan filter expression to recognize the WinXP Bluetooth interface name.
+#03-09-2011 - Modified test results HTML page to include Cisco AP software image file names.
+#03-09-2011 - When testing Bluetooth, the Protocol and Security fields on the HTML will show N/A.
+
 require File.dirname(__FILE__)+'/../default_iperf_module'
 
 include IperfTestScript
@@ -13,10 +22,6 @@ include IperfTestScript
     send_status("-------------------------- wlan_perf_module: Status message - setup_connect_equipment --------------------------  "+ __LINE__.to_s)
     @equipment['ap1'].connect({'type'=>'telnet'})
     get_AP_info
-
-    if @test_params.params_control.recfg_ap[0].downcase == "y"
-      cfg_access_point
-    end
 	end
 
 
@@ -25,6 +30,7 @@ include IperfTestScript
     @array_size = 0
     send_status("-------------------------- wlan_perf_module: Status message - Wifi client configuration started --------------------------  "+ __LINE__.to_s)
     sleep 1
+    @equipment['dut1'].send_cmd("ls -l", @equipment['dut1'].prompt)
     get_proc_list
 
     if /\s+wpa_supplicant\s+/im.match(@equipment['dut1'].response)
@@ -76,15 +82,25 @@ include IperfTestScript
     else
       @err_code = 2
     end
-	end
-
-
-	# Read configuration commands from a text file and send them to the Cisco access point being used
-	def cfg_access_point
-    send_status ("-------------------------- wlan_perf_module: Status message - Checking connectivity with the #{@ap_md} Access Point ------------------------------- "+ __LINE__.to_s)
-    file = @test_params.params_chan.security[0]+"_ap.txt"
-	  send_file(@equipment['ap1'],File.join(File.dirname(__FILE__),'cfg-scripts','ap',"#{file}"))
-	end
+    
+    if /Cisco IOS Software\,\s+([a-zA-Z].*\w\))?/i.match("#{@equipment['ap1'].response}")
+      @APIOSversion = /Cisco IOS Software\,\s+([a-zA-Z].*\w\))?/i.match("#{@equipment['ap1'].response}").captures[0]
+    else
+      @APIOSversion = "Not found"
+    end
+    
+    if /BOOTLDR\:\s+([a-zA-Z].*\w\))?/i.match("#{@equipment['ap1'].response}")
+      @APbootLdrVersion = /BOOTLDR\:\s+([a-zA-Z].*\w\))?/i.match("#{@equipment['ap1'].response}").captures[0]
+    else
+      @APbootLdrVersion = "Not found"
+    end
+    
+    if /image file is\s+\"flash\:\/*([a-zA-Z].*\w)?/i.match("#{@equipment['ap1'].response}")
+      @APimgFileName = /image file is\s+\"flash\:\/*([a-zA-Z].*\w)?/i.match("#{@equipment['ap1'].response}").captures[0]
+    else
+      @APimgFileName = "Not found"
+    end
+ 	end
 
 
 	# This routine will configure and enable the particular test platform (EVM) to be used as a wireless client.
@@ -93,12 +109,12 @@ include IperfTestScript
     send_file(@equipment['dut1'],File.join(File.dirname(__FILE__),'cfg-scripts','am1808',"#{file}"))
     @equipment['dut1'].send_cmd("cd /home/root", @equipment['dut1'].prompt)
     sleep 1
-    @equipment['dut1'].send_cmd("ifconfig tiwlan0 10.10.10.100 netmask 255.255.255.0 up", @equipment['dut1'].prompt)
-    sleep 2
+    @equipment['dut1'].send_cmd("ifconfig tiwlan0 #{@test_params.params_control.local_ip[0]} netmask 255.255.255.0 up", @equipment['dut1'].prompt)
+    sleep 1
     @equipment['dut1'].send_cmd("ifconfig tiwlan0", @equipment['dut1'].prompt)
-    sleep 2
+    sleep 1
     wlan_ip = /([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match("#{@equipment['dut1'].response}").captures[0]
-    @equipment["dut1"].send_cmd("ping -c 3 10.10.10.104", @equipment['dut1'].prompt, 20)
+    @equipment["dut1"].send_cmd("ping -c 3 #{@test_params.params_control.remote_ip[0]}", @equipment['dut1'].prompt, 20)
   end
 
 
@@ -134,7 +150,8 @@ include IperfTestScript
     sleep 2
 
     if /([0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+)/im.match(@equipment['dut1'].response)
-      @bt_mac,@bt_device_name = /([0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+)\s+([0-9a-zA-Z]+\-[0-9a-zA-Z]+\-[0-9a-zA-Z]+)/im.match(@equipment['dut1'].response).captures
+      #@bt_mac,@bt_device_name = /([0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+)\s+([0-9a-zA-Z]+\-[0-9a-zA-Z]+\-[0-9a-zA-Z]+)/im.match(@equipment['dut1'].response).captures
+      @bt_mac,@bt_device_name = /([0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+:[0-9a-zA-Z]+)\s+([0-9a-zA-Z].*)/i.match(@equipment['dut1'].response).captures
     else
       @bt_found = @bt_device_name = "Not found"
       raise "No Bluetooth client devices found. "+ __LINE__.to_s
@@ -160,10 +177,16 @@ include IperfTestScript
     @equipment['dut1'].send_cmd("./BT_Get_Device_Capabilies.sh", "",5)
     tst1_response = @equipment['dut1'].response
     sleep 1
-    @equipment['dut1'].send_cmd("#{@bt_mac}", @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("#{@bt_mac}", @equipment['dut1'].prompt, 15)
     tst2_response = @equipment['dut1'].response
     sleep 2
-    cap_data = tst2_response.scan(/Service\s+Name\:\s+([a-zA-Z].*\w)?/i)
+    
+    if tst2_response.scan(/Service\s+Name\:\s+([a-zA-Z].*\w)?/i)
+      cap_data = tst2_response.scan(/Service\s+Name\:\s+([a-zA-Z].*\w)?/i)
+    else
+      raise "No Bluetooth services were found on device #{@bt_device_name}. "+ __LINE__.to_s
+    end
+    
     count = cap_data.flatten!.size
     @cap2_data = cap_data
     @array_lines = 1
@@ -222,7 +245,7 @@ include IperfTestScript
         @frmwr_ver = test2.match(/Rev.*\s+([\d].*)/).captures[0]
       end
 
-      sleep 1
+      sleep 0.6
 	  	end
 
     in_file.close
@@ -236,16 +259,29 @@ include IperfTestScript
     send_status("----------------------- wlan_module: Status message - Creating test results html page -------- #{@test_params.params_chan.protocol[0]} -------------------- "+ __LINE__.to_s)
 
     @results_html_file.add_paragraph("")
-    res_table = @results_html_file.add_table([["Wireless Equipment Information",{:bgcolor => "#008080", :align => "center", :colspan => "3"}, {:color => "white" ,:size => "4"}]])
+    res_table = @results_html_file.add_table([["Wireless Access Point Information",{:bgcolor => "#008080", :align => "center", :colspan => "3"}, {:color => "white" ,:size => "4"}]])
     res_table = @results_html_file.add_table([["Access Point Model",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
-                                      ["EVM Model",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
-                                      ["Protocol",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
-                                      ["Security",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
+                                      ["IOS Software Version",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
+                                      ["Bootloader Version",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
+                                      ["Image File Name",{:bgcolor => "white"},{:color => "blue", :size => "3"}]])
+
+    @results_html_file.add_rows_to_table(res_table,[[["#{@ap_mdl}",{:bgcolor => "white"},{:size => "2.5"}],["#{@APIOSversion}",{:bgcolor => "white"},{:size => "2"}],["#{@APbootLdrVersion}",{:bgcolor => "white"},{:size => "2"}],["#{@APimgFileName}",{:bgcolor => "white"},{:size => "2"}]]])
+
+    @results_html_file.add_paragraph("")
+    res_table = @results_html_file.add_table([["Bluetooth-Wireless Client Information",{:bgcolor => "#008080", :align => "center", :colspan => "3"}, {:color => "white" ,:size => "4"}]])
+    res_table = @results_html_file.add_table([["EVM Model",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
+                                      ["WIFI Protocol",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
+                                      ["WIFI Security",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
                                       ["WIFI Driver Version",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
                                       ["WIFI Firmware Version",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
                                       ["Bluetooth Firmware Version",{:bgcolor => "white"},{:color => "blue", :size => "3"}]])
 
-    @results_html_file.add_rows_to_table(res_table,[[["#{@ap_mdl}",{:bgcolor => "white"},{:size => "2.5"}],["#{@rtp_db.get_platform}",{:bgcolor => "white"},{:size => "2"}],["#{@test_params.params_chan.protocol[0].upcase}",{:bgcolor => "white"},{:size => "2"}],["#{@test_params.params_chan.security[0].upcase}",{:bgcolor => "white"},{:size => "2"}],["#{@drvr_ver}",{:bgcolor => "white"},{:size => "2"}],["#{@frmwr_ver}",{:bgcolor => "white"},{:size => "2"}],["#{@bt_frmwre_ver}",{:bgcolor => "white"},{:size => "2"}]]])
+     if @test_params.params_chan.mode[0].downcase == "bluetooth"
+       @test_params.params_chan.protocol[0] = "N/A"
+       @test_params.params_chan.security[0] = "N/A"
+     end 
+
+    @results_html_file.add_rows_to_table(res_table,[[["#{@rtp_db.get_platform}",{:bgcolor => "white"},{:size => "2"}],["#{@test_params.params_chan.protocol[0].upcase}",{:bgcolor => "white"},{:size => "2"}],["#{@test_params.params_chan.security[0].upcase}",{:bgcolor => "white"},{:size => "2"}],["#{@drvr_ver}",{:bgcolor => "white"},{:size => "2"}],["#{@frmwr_ver}",{:bgcolor => "white"},{:size => "2"}],["#{@bt_frmwre_ver}",{:bgcolor => "white"},{:size => "2"}]]])
 
     if @test_params.params_chan.mode[0].downcase == "iperf"
       @results_html_file.add_paragraph("")
@@ -279,7 +315,7 @@ include IperfTestScript
                                       ["RTT Maximum \(ms\)",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
                                       ["RTT mdev \(ms\)",{:bgcolor => "white"},{:color => "blue", :size => "3"}]])
     else
-      res_table = @results_html_file.add_table([["Remote Bluetooth Device Statistics",{:bgcolor => "#008080", :align => "center", :colspan => "3"}, {:color => "white" ,:size => "4"}]])
+      res_table = @results_html_file.add_table([["Remote Bluetooth Device Information",{:bgcolor => "#008080", :align => "center", :colspan => "3"}, {:color => "white" ,:size => "4"}]])
       res_table = @results_html_file.add_table([["Remote Device MAC Address",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
                                       ["Remote Device Name",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
                                       ["Remote Device Capabilities",{:bgcolor => "white"},{:color => "blue", :size => "3"}]])
@@ -309,7 +345,6 @@ include IperfTestScript
 
   def get_proc_list
 		@equipment['dut1'].send_cmd("ps", @equipment['dut1'].prompt, 5)
-
     proc = ""
   end
 
