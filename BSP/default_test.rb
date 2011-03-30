@@ -1,4 +1,6 @@
 require 'net/ftp'
+#require File.dirname(__FILE__)+'/ftp_module'
+#include FTP_GET
 
 module WinceTestScript
   attr_reader :serial_port_data    # Holds last data read from serial port
@@ -21,7 +23,7 @@ module WinceTestScript
     run_transfer_script
     run_call_script
     run_get_script_output
-    # run_collect_performance_data
+    #run_collect_performance_data
     run_save_results
   end
 
@@ -52,7 +54,7 @@ module WinceTestScript
       end
       @equipment['dut1'].boot(boot_params) 
       puts "Waiting 30 seconds for kernel to boot...."
-      sleep 60
+      sleep 30
     end
     if @equipment['dut1'].respond_to?(:telnet_port) && @equipment['dut1'].telnet_port != nil  && !@equipment['dut1'].target.telnet
       @equipment['dut1'].connect({'type'=>'telnet'})
@@ -109,6 +111,7 @@ module WinceTestScript
     wait_time = (@test_params.params_control.instance_variable_defined?(:@wait_time) ? @test_params.params_control.wait_time[0] : '10').to_i
     keep_checking = @equipment['dut1'].target.serial ? true : false     # Do not try to get data from serial port of there is no serial port connection
     #puts "keep_checking is: "+keep_checking.to_s
+	puts "expect_string is #{expect_string}\n"
     while keep_checking
       counter=0
       while check_serial_port()
@@ -282,7 +285,7 @@ module WinceTestScript
       puts 'gettextfile: src: '+ File.join(p['src_dir'],p['filename']) + ' dst: ' + File.join(p['dst_dir'],p['filename'])
       dut_ftp.gettextfile(File.join(p['src_dir'],p['filename']), File.join(p['dst_dir'],p['filename']))
     end
-    dut_ftp.close
+  dut_ftp.close
   end
 
   # Get a file from EVM to PC. params keys are: filename (mandatory). src_ip, src_dir, dst_dir, login and password (Optional)
@@ -294,20 +297,18 @@ module WinceTestScript
          'password' => 'dut@ti.com',
          'binary'   => false,
         }.merge(params) 
-    dut_ftp = Net::FTP.new(p['src_ip'])
-    dut_ftp.login(p['login'], p['password'])
     dst_log_files = []
+	system("ruby #{File.join(File.dirname(__FILE__),"ftp_test.rb")} #{p['src_ip']} #{p['login']} #{p['password']} #{p['src_dir']} #{p['dst_dir']} #{@test_id.to_s} #{p['binary']}")
+	#dst_log_files = ftp_get(p['src_ip'], p['login'],p['password'],p['src_dir'], p['dst_dir'], @test_id.to_s, p['binary'])
+	puts "done with system ruby file\n"
+	dut_ftp = Net::FTP.new(p['src_ip'])
+    dut_ftp.login(p['login'], p['password'])
     dut_ftp.nlst(p['src_dir']).each {|f|
       dst_f = File.join(p['dst_dir'],@test_id.to_s+'_'+f)
       puts 'files under release dir: '+f
-      if p['binary']
-        dut_ftp.getbinaryfile(File.join(p['src_dir'],f), dst_f)
-      else
-        dut_ftp.gettextfile(File.join(p['src_dir'],f), dst_f)
-      end
       dst_log_files << dst_f
-    }
-    dut_ftp.close
+    }  
+	dut_ftp.close
     return dst_log_files
   end
   
@@ -332,12 +333,22 @@ module WinceTestScript
   end
   
   def boot_required?(old_params, new_params)
-    #yliu: temp
-    #return false
     return false if !@test_params.instance_variable_defined?(:@kernel)
     old_test_string = get_test_string(old_params)
     new_test_string = get_test_string(new_params)
     old_test_string != new_test_string
+  end
+  
+  def get_os_version
+    os_version = '6.0_R3'
+    @equipment['dut1'].send_cmd("do OSversion",@equipment['dut1'].prompt)
+	@telnet_response = @equipment['dut1'].response
+	@telnet_response.each_line {|l| 
+	if(l.scan(/OSMajor/).size>0)
+	os_version = l.split(/OSMajor=/)[1].split(/,/)[0].to_s+'.'+l.split(/OSMinor=/)[1].split(/[\n\r]+/)[0].to_s
+	end
+	}
+	return os_version
   end
   
   def get_test_string(params)
@@ -390,8 +401,9 @@ module WinceTestScript
   end
  
   def get_cetk_basic_filenames(cetk_files_dir)
-    cetk_basic_files = {'6.0_R3' => 'tux.exe:kato.dll:tooltalk.dll:ndt.dll:ndt_1c.dll:ndt_2c.dll:clientside.exe:netall.dll:ndtserver.exe:ktux.dll'}    # TODO: return file list based on CE release
-    return cetk_basic_files['6.0_R3']
+    cetk_basic_files = {'6.0_R3' => 'tux.exe:kato.dll:tooltalk.dll:ktux.dll','7.0' => 'tux.exe:kato.dll:ktux.dll'}    # TODO: return file list based on CE release
+	os_version = get_os_version
+    return cetk_basic_files[os_version.to_s]
   end 
 end
   
