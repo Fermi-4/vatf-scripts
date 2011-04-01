@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="QBench" >
+<node_order><![CDATA[7]]></node_order>
+<details><![CDATA[]]> 
+</details><testsuite name="Benchmark Measurements" >
+<node_order><![CDATA[7]]></node_order>
+<details><![CDATA[<p>Tests for which benchmark measurements will be reported</p>]]> 
+<keywords>	<keyword name="p_omapl138"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omapl137"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3503"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords></details>
+<testcase internalid="906021" name="CPU Linpack">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8628]]></externalid>
+	<summary><![CDATA[<p>run CPU Linpack benchmark</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\qbench\qbench_test.bat,test_dir=\Windows,test_libs=tux.exe;kato.dll;qbench_reg.lic;qbench_tux.dll;tooltalk.dll;qbench_dll.dll;qbench_res.dll;qb.exe,cmdline=tux -o -d qbench_tux.dll -x 200,benchmark_name=linpack,benchmark_units=MFLOPS
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\qbench\qbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=120
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="906061" name="CPU Whetstones">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8629]]></externalid>
+	<summary><![CDATA[<p>run CPU Whetstones benchmark</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\qbench\qbench_test.bat,test_dir=\Windows,cmdline=tux -o -d qbench_tux.dll -x 201,benchmark_name=whetstones,benchmark_units=WMIPS
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\qbench\qbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=120
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="906101" name="CPU Dhrystone v1.1">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8630]]></externalid>
+	<summary><![CDATA[<p>run CPU Dhrystone v1.1 benchmark</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\qbench\qbench_test.bat,test_dir=\Windows,test_libs=tux.exe;kato.dll;qbench_reg.lic;qbench_tux.dll;tooltalk.dll;qbench_dll.dll;qbench_res.dll;qb.exe,cmdline=tux -o -d qbench_tux.dll -x 202,benchmark_name=Dhrystone v1.1,benchmark_units=DMIPS
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\qbench\qbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=60
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="906141" name="CPU Dhrystone v2.1">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8631]]></externalid>
+	<summary><![CDATA[<p>run CPU Dhrystone v2.1 benchmark</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\qbench\qbench_test.bat,test_dir=\Windows,test_libs=tux.exe;kato.dll;qbench_reg.lic;qbench_tux.dll;tooltalk.dll;qbench_dll.dll;qbench_res.dll;qb.exe,cmdline=tux -o -d qbench_tux.dll -x 203,benchmark_name=Dhrystone v2.1,benchmark_units=DMIPS
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\qbench\qbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=60
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="906181" name="CPU QScore">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8632]]></externalid>
+	<summary><![CDATA[<p>run CPU QScore</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\qbench\qbench_test.bat,test_dir=\Windows,test_libs=tux.exe;kato.dll;qbench_reg.lic;qbench_tux.dll;tooltalk.dll;qbench_dll.dll;qbench_res.dll;qb.exe,cmdline=tux -o -d qbench_tux.dll -x 100,benchmark_name=CPU_QScore,benchmark_units=Q
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\qbench\qbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=360
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="906221" name="Memory QScore">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8633]]></externalid>
+	<summary><![CDATA[<p>run Memory QScore</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\qbench\qbench_test.bat,test_dir=\Windows,test_libs=tux.exe;kato.dll;qbench_reg.lic;qbench_tux.dll;tooltalk.dll;qbench_dll.dll;qbench_res.dll;qb.exe,cmdline=tux -o -d qbench_tux.dll -x 101,benchmark_name=Memory_QScore,benchmark_units=Q
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\qbench\qbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=180
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="906261" name="File I/O QScore">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8634]]></externalid>
+	<summary><![CDATA[<p>run File I/O QScore</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\qbench\qbench_test.bat,test_dir=\Windows,test_libs=tux.exe;kato.dll;qbench_reg.lic;qbench_tux.dll;tooltalk.dll;qbench_dll.dll;qbench_res.dll;qb.exe,cmdline=tux -o -d qbench_tux.dll -x 102,benchmark_name=FileIO_QScore,benchmark_units=Q
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\qbench\qbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=180
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="906301" name="GDI QScore">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8635]]></externalid>
+	<summary><![CDATA[<p>run GDI QScore</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\qbench\qbench_test.bat,test_dir=\Windows,test_libs=tux.exe;kato.dll;qbench_reg.lic;qbench_tux.dll;tooltalk.dll;qbench_dll.dll;qbench_res.dll;qb.exe,cmdline=tux -o -d qbench_tux.dll -x 103,benchmark_name=GDI_QScore,benchmark_units=Q
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\qbench\qbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=120
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="906341" name="PowerManagement_CPU_Intensive_Backlight_off_Multiplier_2">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8636]]></externalid>
+	<summary><![CDATA[<p>run PowerManagement_CPU_Intensive_Backlight_off_Multiplier_2</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\qbench\qbench_test.bat,test_dir=\Windows,test_libs=tux.exe;kato.dll;qbench_reg.lic;qbench_tux.dll;tooltalk.dll;qbench_dll.dll;qbench_res.dll;qb.exe,cmdline=tux -o -d qbench_tux.dll -x 4001,benchmark_name=TotalTime,benchmark_units=sec
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\qbench\qbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=120
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="906381" name="PowerManagement_CPU_Intensive_Backlight_on_Multiplier_2">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8637]]></externalid>
+	<summary><![CDATA[<p>run PowerManagement_CPU_Intensive_Backlight_on_Multiplier_2</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\qbench\qbench_test.bat,test_dir=\Windows,test_libs=tux.exe;kato.dll;qbench_reg.lic;qbench_tux.dll;tooltalk.dll;qbench_dll.dll;qbench_res.dll;qb.exe,cmdline=tux -o -d qbench_tux.dll -x 4004,benchmark_name=TotalTime,benchmark_units=sec
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\qbench\qbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=120
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+</testsuite></testsuite>
