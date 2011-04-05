@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="IlTiming" >
+<node_order><![CDATA[7]]></node_order>
+<details><![CDATA[]]> 
+</details>
+<testcase internalid="906021" name="Priority0_Interval5_Interrupts10">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8628]]></externalid>
+	<summary><![CDATA[<p>run Iltiming</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP/iltiming/iltiming_test.bat,idle_thread_type=0,priority=0,interval=5,num_interrupts=10,build_test_libs=iltiming.exe;iltiming_dll.dll
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP/iltiming/iltiming_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=120
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+</testsuite>
