@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="OSBench" >
+<node_order><![CDATA[7]]></node_order>
+<details><![CDATA[]]> 
+</details>
+<testcase internalid="906021" name="Critical Sections">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8628]]></externalid>
+	<summary><![CDATA[<p>run OSBench</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\osbench\osbench_test.bat,test_dir=\Windows,test_libs=osbench.exe;osbench_dll.dll,cmdline=osbench,test_id=0,num_samples=100,benchmark_units=none
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\osbench\osbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=120
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+<testcase internalid="906021" name="Event set-wakeup">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8628]]></externalid>
+	<summary><![CDATA[<p>run OSBench</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\osbench\osbench_test.bat,test_dir=\Windows,test_libs=osbench.exe;osbench_dll.dll,cmdline=osbench,test_id=1,num_samples=100,benchmark_units=none
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\osbench\osbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=120
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+<testcase internalid="906021" name="Semaphore release-acquire">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8628]]></externalid>
+	<summary><![CDATA[<p>run OSBench</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\osbench\osbench_test.bat,test_dir=\Windows,test_libs=osbench.exe;osbench_dll.dll,cmdline=osbench,test_id=2,num_samples=100,benchmark_units=none
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\osbench\osbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=120
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+<testcase internalid="906021" name="Mutex">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8628]]></externalid>
+	<summary><![CDATA[<p>run OSBench</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\osbench\osbench_test.bat,test_dir=\Windows,test_libs=osbench.exe;osbench_dll.dll,cmdline=osbench,test_id=3,num_samples=100,benchmark_units=none
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\osbench\osbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=120
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+<testcase internalid="906021" name="Voluntary yield">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8628]]></externalid>
+	<summary><![CDATA[<p>run OSBench</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\osbench\osbench_test.bat,test_dir=\Windows,test_libs=osbench.exe;osbench_dll.dll,cmdline=osbench,test_id=4,num_samples=100,benchmark_units=none
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\osbench\osbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=120
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+<testcase internalid="906021" name="PSL API Call Overhead">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8628]]></externalid>
+	<summary><![CDATA[<p>run OSBench</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\osbench\osbench_test.bat,test_dir=\Windows,test_libs=osbench.exe;osbench_dll.dll,cmdline=osbench,test_id=5,num_samples=100,benchmark_units=none
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\osbench\osbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=3600
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+<testcase internalid="906021" name="Interlocked APIs">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[8628]]></externalid>
+	<summary><![CDATA[<p>run OSBench</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP\osbench\osbench_test.bat,test_dir=\Windows,test_libs=osbench.exe;osbench_dll.dll,cmdline=osbench,test_id=6,num_samples=100,benchmark_units=none
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\osbench\osbench_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=3600
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+</testsuite>
