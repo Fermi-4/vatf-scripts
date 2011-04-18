@@ -84,9 +84,9 @@ def run
   end
 
   tst_thread = Thread.new()  {
-    linux_server.wait_for(bios_core_response_regex,180)
+    linux_server.wait_for(bios_core_response_regex,450)
   }
-  dut.send_cmd("./#{@testcase}app.exe #{@ipc_reset_vector}",linux_core_response_regex,150)
+  dut.send_cmd("./#{@testcase}app.exe #{@ipc_reset_vector}",linux_core_response_regex,420)
   tst_thread.join
 
 
