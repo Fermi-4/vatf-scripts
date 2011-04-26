@@ -1,0 +1,211 @@
+require File.dirname(__FILE__)+'/../../android_test_module' 
+require 'gnuplot.rb'
+
+include AndroidTest
+
+def setup
+  puts "\n====================\nPATH=#{ENV['PATH']}\n"
+  super
+  # Connect to multimeter
+  @equipment['ti_multimeter'].connect({'type'=>'serial'})
+
+end
+
+def run
+  # Set DUT in appropriate state
+  puts "\n\n======= Power Domain states info =======\n" + send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state")
+  puts "\n\n======= Current CPU Frequency =======\n" +  send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
+  puts "\n\n======= Power Domain transition stats =======\n" + send_adb_cmd("shell cat /debug/pm_debug/count") 
+  if @test_params.params_chan.instance_variable_defined?(:@dvfs_governor)
+    send_adb_cmd("shell \"echo #{@test_params.params_chan.dvfs_governor[0].strip.downcase} > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor\"")
+    if @test_params.params_chan.dvfs_governor[0].strip.downcase == 'userspace'
+      supported_frequencies = send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies").split(/\s+/)
+      raise "This dut does not support #{@test_params.params_chan.dvfs_freq[0]} Hz, supported values are #{supported_frequencies.to_s}" if !supported_frequencies.include?(@test_params.params_chan.dvfs_freq[0])
+      send_adb_cmd("shell \"echo #{@test_params.params_chan.dvfs_freq[0]} > /sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed\"")
+    end 
+  else
+    send_adb_cmd("shell \"echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor\"")
+  end
+    
+  if @test_params.params_chan.instance_variable_defined?(:@disabled_cpu_idle_modes)
+    @test_params.params_chan.disabled_cpu_idle_modes.each do |idle_mode|
+      send_adb_cmd("shell \"echo 0 > /debug/pm_debug/#{idle_mode.strip.downcase}\"")
+    end
+  end
+    
+  if @test_params.params_chan.instance_variable_defined?(:@enabled_cpu_idle_modes)
+    @test_params.params_chan.enabled_cpu_idle_modes.each do |idle_mode|
+      send_adb_cmd("shell \"echo 1 > /debug/pm_debug/#{idle_mode.strip.downcase}\"")
+    end
+  end
+  
+  if @test_params.params_chan.instance_variable_defined?(:@bypass_dut)
+    # Don't configure DUT, user will set it in the right state
+    # before running this test
+    puts "configure DUT, user must set it in the right state"
+    sleep @test_params.params_chan.bypass_dut_wait[0].to_i if @test_params.params_chan.instance_variable_defined?(:@bypass_dut_wait)
+  else
+    dutThread = Thread.new { run_test(@test_params.params_chan.test_option[0]) }
+  end
+  perf = []
+  num_of_readings =  @test_params.params_chan.test_option[0].scan(/[0-9]+/)[0].to_i 
+  @equipment['ti_multimeter'].read_for(num_of_readings - 10)
+  # Get voltage values for all channels in a hash
+  multimeter_readings = run_get_multimeter_output(@equipment['ti_multimeter'].response)     
+  # Calculate power consumption
+  power_readings = calculate_power_consumption(multimeter_readings )
+  # Generate the plot of the power consumption for the given application
+  power_plots = {}
+  power_plots['Total_power'] = power_consumption_plot(power_readings['Total_power'], 'Total_power')
+  power_plots['EVM_0V9'] = power_consumption_plot(power_readings['EVM_0V9'], 'EVM_0V9')
+  power_plots['EVM_1V8A'] = power_consumption_plot(power_readings['EVM_1V8A'], 'EVM_1V8A')
+  power_plots['EVM_1V8B'] = power_consumption_plot(power_readings['EVM_1V8B'], 'EVM_1V8B')
+  power_plots['EVM_VTT1V5ALT'] = power_consumption_plot(power_readings['EVM_VTT1V5ALT'], 'EVM_VTT1V5ALT')
+  power_plots['EVM_3V3'] = power_consumption_plot(power_readings['EVM_3V3'], 'EVM_3V3')
+  power_plots['EVM_5V0'] = power_consumption_plot(power_readings['EVM_5V0'], 'EVM_5V0')
+  power_plots['EVM_1V5'] = power_consumption_plot(power_readings['EVM_1V5'], 'EVM_1V5')
+  power_plots['EVM_1V0AVS'] = power_consumption_plot(power_readings['EVM_1V0AVS'], 'EVM_1V0AVS')
+  power_plots['EVM_1V0CON'] = power_consumption_plot(power_readings['EVM_1V0CON'], 'EVM_1V0CON')
+  power_plots['EVM_Expansion'] = power_consumption_plot(power_readings['EVM_Expansion'], 'EVM_Expansion')
+  
+  power_plots.each do |vdd, current_file|
+    file_path, mygraphurl = upload_file(current_file)
+    @results_html_file.add_paragraph("#{vdd} POWER CONSUMPTION PLOT POINT BY POINT",nil, nil,mygraphurl)
+  end
+  perf = save_results(power_readings, multimeter_readings)
+  puts "\n\n======= Power Domain states info =======\n" + send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state")
+  puts "\n\n======= Current CPU Frequency =======\n" +  send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
+  puts "\n\n======= Power Domain transition stats =======\n" + send_adb_cmd("shell cat /debug/pm_debug/count") 
+  dutThread.join if dutThread
+ensure
+  if perf.size > 0
+    set_result(FrameworkConstants::Result[:pass], "Power Performance data collected",perf)
+  else
+    set_result(FrameworkConstants::Result[:fail], "Could not get Power Performance data")
+  end
+end
+
+
+def save_results(power_consumption,voltage_reading)
+  perf = []
+  @results_html_file.add_paragraph("")
+  res_table = @results_html_file.add_table([["POWER CONSUMPTION POINT BY POINT",{:bgcolor => "336666", :colspan => "6"},{:color => "white"}]],{:border => "1",:width=>"20%"})
+  count = 0
+  @results_html_file.add_row_to_table(res_table,["Data Idx", "EVM_0V9(mw)","EVM_1V8A(mw)","EVM_1V8B(mw)","EVM_VTT1V5ALT(mw)","EVM_3V3(mw)","EVM_5V0(mw)","EVM_1V5(mw)","EVM_1V0AVS(mw)","EVM_1V0CON(mw)","EVM_Expansion(mw)","EVM_Total(mw)"])
+  power_consumption['EVM_0V9'].each{ |power|
+    @results_html_file.add_row_to_table(res_table,[count.to_s,power.to_s, power_consumption['EVM_1V8A'][count].to_s, power_consumption['EVM_1V8B'][count].to_s, power_consumption['EVM_VTT1V5ALT'][count].to_s, power_consumption['EVM_3V3'][count].to_s, power_consumption['EVM_5V0'][count].to_s, power_consumption['EVM_1V5'][count].to_s, power_consumption['EVM_1V0AVS'][count].to_s, power_consumption['EVM_1V0CON'][count].to_s, power_consumption['EVM_Expansion'][count].to_s, power_consumption['Total_power'][count].to_s])
+    count += 1
+  }
+  perf << {'name' => "EVM_0V9 Power", 'value' => power_consumption['EVM_0V9'], 'units' => "mw"}
+  perf << {'name' => "EVM_1V8A Power", 'value' => power_consumption['EVM_1V8A'], 'units' => "mw"}
+  perf << {'name' => "EVM_1V8B Power", 'value' => power_consumption['EVM_1V8B'], 'units' => "mw"}
+  perf << {'name' => "EVM_VTT1V5ALT Power", 'value' => power_consumption['EVM_VTT1V5ALT'], 'units' => "mw"}
+  perf << {'name' => "EVM_3V3_0V9 Power", 'value' => power_consumption['EVM_3V3'], 'units' => "mw"}
+  perf << {'name' => "EVM_5V0_0V9 Power", 'value' => power_consumption['EVM_5V0'], 'units' => "mw"}
+  perf << {'name' => "EVM_1V5 Power", 'value' => power_consumption['EVM_1V5'], 'units' => "mw"}
+  perf << {'name' => "EVM_1V0AVS Power", 'value' => power_consumption['EVM_1V0AVS'], 'units' => "mw"}
+  perf << {'name' => "EVM_1V0CON Power", 'value' => power_consumption['EVM_1V0CON'], 'units' => "mw"}
+  perf << {'name' => "EVM_Expansion Power", 'value' => power_consumption['EVM_Expansion'], 'units' => "mw"}
+  perf << {'name' => "Total_power Power", 'value' => power_consumption['Total_power'], 'units' => "mw"}
+  return perf
+end
+
+
+def run_get_multimeter_output(response)
+    v_cu_readings = Hash.new
+    vdd_matches = {'u14' => 'evm_0V9', 'u11' => 'evm_1V8A', 'u7' => 'evm_1V8B', 'u59' => 'evm_VTT1V5ALT',
+		  'u22' => 'evm_3V3', 'u17' => 'evm_5V0', 'u42' => 'evm_1V5', 'u23' => 'evm_1V0AVS',
+                  'u18' => 'evm_1V0CON', 'expansion' => 'evm_Expansion'}
+    module_regexp = /!Power Monitor.*?#Expansion\s*1\s*[0-9]+mV\s*[0-9]+uA/im
+    #a = File.new("log6.txt","w+") 
+    idx = 0
+    response.scan(module_regexp).each{|valid_response|
+    valid_response.split("\n").each{|line|
+        current_vdd = line.scan(/#(\w+)\s+([\(\)\/\w\s]+?)\s+([\d-]+)\w+\s+([\d-]+)\w+/)
+	if !current_vdd.empty?
+          vdd = current_vdd[0][0].strip.downcase
+          # puts 'DEBUG >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> for ' + vdd + "_#{idx}"
+          # puts 'DEBUG +++++++++++++++++++++ ' + current_vdd.to_s
+          if !v_cu_readings[vdd_matches[vdd]+'_v']
+            v_cu_readings[vdd_matches[vdd]+'_v'] = []
+            v_cu_readings[vdd_matches[vdd]+'_cur'] = []
+          end 
+	  v_cu_readings[vdd_matches[vdd]+'_v'] << current_vdd[0][2]
+          v_cu_readings[vdd_matches[vdd]+'_cur'] << current_vdd[0][3]
+        end
+    }
+      idx+=1
+   }
+   return v_cu_readings
+end
+
+def calculate_power_consumption(v_cu_readings)
+    power_consumption = Hash.new
+    evm_0V9_power= Array.new
+    evm_1V8A_power= Array.new
+    evm_1V8B_power= Array.new
+    evm_VTT1V5ALT_power= Array.new
+    evm_3V3_power= Array.new
+    evm_5V0_power= Array.new
+    evm_1V5_power= Array.new
+    evm_1V0AVS_power= Array.new
+    evm_1V0CON_power= Array.new
+    evm_Expansion_power= Array.new
+    total_power = Array.new
+    v_cu_readings['evm_0V9_cur'].each_index{|i|
+    evm_0V9_power << (v_cu_readings['evm_0V9_v'][i].to_f * v_cu_readings['evm_0V9_cur'][i].to_f) / 1000000 
+    evm_1V8A_power << (v_cu_readings['evm_1V8A_v'][i].to_f  * v_cu_readings['evm_1V8A_cur'][i].to_f) / 1000000 
+    evm_1V8B_power << (v_cu_readings['evm_1V8B_v'][i].to_f  * v_cu_readings['evm_1V8B_cur'][i].to_f) / 1000000
+    evm_VTT1V5ALT_power << (v_cu_readings['evm_VTT1V5ALT_v'][i].to_f  * v_cu_readings['evm_VTT1V5ALT_cur'][i].to_f) / 1000000
+    evm_3V3_power << (v_cu_readings['evm_3V3_v'][i].to_f  * v_cu_readings['evm_3V3_cur'][i].to_f) / 1000000
+    evm_5V0_power << (v_cu_readings['evm_5V0_v'][i].to_f  * v_cu_readings['evm_5V0_cur'][i].to_f) / 1000000
+    evm_1V5_power << (v_cu_readings['evm_1V5_v'] [i].to_f  * v_cu_readings['evm_1V5_cur'][i].to_f) / 100000
+    evm_1V0AVS_power << (v_cu_readings['evm_1V0AVS_v'][i].to_f  * v_cu_readings['evm_1V0AVS_cur'][i].to_f) / 1000000
+    evm_1V0CON_power << (v_cu_readings['evm_1V0CON_v'][i].to_f  * v_cu_readings['evm_1V0CON_cur'][i].to_f) / 1000000
+    evm_Expansion_power << (v_cu_readings['evm_Expansion_v'][i].to_f  * v_cu_readings['evm_Expansion_cur'][i].to_f) / 1000000  
+    total_power << evm_0V9_power[i] + evm_1V8A_power[i] + evm_1V8B_power[i] + evm_VTT1V5ALT_power[i] + evm_3V3_power[i] + evm_5V0_power[i] + evm_1V5_power[i] + evm_1V0AVS_power[i] + evm_1V0CON_power[i] + evm_Expansion_power[i]
+  }
+  
+  power_consumption['EVM_0V9'] = evm_0V9_power
+  power_consumption['EVM_1V8A'] = evm_1V8A_power
+  power_consumption['EVM_1V8B'] = evm_1V8B_power
+  power_consumption['EVM_VTT1V5ALT'] = evm_VTT1V5ALT_power
+  power_consumption['EVM_3V3'] = evm_3V3_power
+  power_consumption['EVM_5V0'] = evm_5V0_power
+  power_consumption['EVM_1V5'] = evm_1V5_power
+  power_consumption['EVM_1V0AVS'] = evm_1V0AVS_power
+  power_consumption['EVM_1V0CON'] = evm_1V0CON_power
+  power_consumption['EVM_Expansion'] = evm_Expansion_power
+  power_consumption['Total_power'] = total_power
+  return power_consumption
+end 
+
+# This function plots the power consumpotion point by point for the whole clip duration.
+def power_consumption_plot(power_consumption, power_domain = 'Total_power')
+  FileUtils.mkdir_p(File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s,"power"))
+  plot_output = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s,"power","#{power_domain}_plot_#{@test_id}\.pdf")
+  max_range  =  (power_consumption.size).to_i - 1
+  puts "\nDEBUG\nmaxrange=#{max_range}=========\nDEBUG"
+  Gnuplot.open { |gp|
+    Gnuplot::Plot.new( gp ) { |plot|
+      plot.terminal "post eps colour size 13cm,10cm"
+      plot.output plot_output
+      plot.title  "#{power_domain} POWER CONSUMPTION Vs Time"
+      plot.ylabel "Power (mw)"
+      plot.xlabel "Samples"
+      x = (0..max_range).collect { |v| v.to_f }
+      y = power_consumption.collect { |v| v }
+      plot.data << Gnuplot::DataSet.new( [x, y]) { |ds|
+        ds.with = "lines"
+        ds.linewidth = 4
+      }
+      
+    }
+  }
+  plot_output
+end 
+
+
+
+
+

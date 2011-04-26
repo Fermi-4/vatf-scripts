@@ -9,7 +9,7 @@ def run
   fs_type = @test_params.params_chan.file_system[0].strip
   file_size = @test_params.params_chan.test_option[0].match(/-e\s*fileSize\s*([\S]+)/i).captures[0]
   blk_size = @test_params.params_chan.test_option[0].match(/-e\s*blkSize\s*([\S]+)/i).captures[0]
-  dev_mnt_regex = {'usb' => /(sd.)(\d+)/, 'mmc/sd' => /(mmcblk0p)(\d+)/, 'nand' => /(mtdblock)(\d+)/ }
+  dev_mnt_regex = {'usb' => /(sd.)(\d+)/, 'mmc/sd' => /(mmcblk0p)(\d+)/, 'nand' => /(mtdblock)(\d+)/, 'sata' =>  /(sd.)(\d+)/}
   dev_string = send_adb_cmd('shell ls /dev/block')
   dev_array = dev_string.scan(dev_mnt_regex[device.downcase])
   dev_node = ''
