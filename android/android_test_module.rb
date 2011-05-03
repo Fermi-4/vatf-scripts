@@ -1,3 +1,8 @@
+require File.dirname(__FILE__)+'/../lib/sys_stats'
+require File.dirname(__FILE__)+'/../lib/plot'
+
+include SystemStats
+include TestPlots
 
 module AndroidTest
     LOG_TAG = "VATF::ANDROID::RESULT::"

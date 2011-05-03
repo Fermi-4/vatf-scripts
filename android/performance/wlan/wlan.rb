@@ -156,6 +156,7 @@ def run
             end
           }
           
+          start_collecting_system_stats(0.33){|cmd| send_adb_cmd("shell #{cmd}")}
           # Start top on target
           cpu_loads = []
           if @test_params.params_control.instance_variable_defined?(:@wlan_comp)
@@ -169,7 +170,7 @@ def run
             end
             cpu_loads = cpu_info.scan(/\d+\s+(\d+)(%)\s+\w+\s+\d+\s+\d+K\s+\d+K\s+\w+\s+\w+\s+(#{cpu_load_items})/im)
           end
-          
+          sys_stats = stop_collecting_system_stats
           netperf_thread.join
           
           ensure
@@ -188,7 +189,20 @@ def run
                 end
                 perfdata = perfdata + loads_results.values
               end
-              
+              perfdata.concat(sys_stats)
+              @results_html_file.add_paragraph("")
+              systat_names = []
+              systat_vals = []
+              sys_stats.each do |current_stat|
+                systat_vals << current_stat['value']
+                current_stat_plot = stat_plot(current_stat['value'], current_stat['name']+" plot", "sample", current_stat['units'], current_stat['name'], current_stat['name'], "system_stats")
+                plot_path, plot_url = upload_file(current_stat_plot)
+                systat_names << [current_stat['name']+' ('+current_stat['units']+')',nil,nil,plot_url]
+              end
+              @results_html_file.add_paragraph("")
+              res_table2 = @results_html_file.add_table([["Sytem Stats",{:bgcolor => "336666", :colspan => "#{systat_names.length}"},{:color => "white"}]],{:border => "1",:width=>"20%"})
+              @results_html_file.add_row_to_table(res_table2, systat_names)
+              @results_html_file.add_rows_to_table(res_table2,systat_vals.transpose)
               if mean(bw) > min_bw 
                 set_result(FrameworkConstants::Result[:pass], pretty_str, perfdata)
                 puts "Test Passed: AVG Throughput=#{mean(bw)} \n #{pretty_str}"
@@ -241,14 +255,7 @@ def net_connected?(net_name)
 end
 
 def get_wifi_iface
-  sys_props = send_adb_cmd("shell getprop").lines
-  iface = ''
-  sys_props.each do |current_line|
-     if (iface_info = current_line.match(/\[wifi.interface\]:\s+\[(.*?)\]/))
-        iface = iface_info.captures[0].strip
-     end
-  end
-  iface 
+  send_adb_cmd("shell getprop wifi.interface").strip
 end
 
 def get_net_id(ssid)

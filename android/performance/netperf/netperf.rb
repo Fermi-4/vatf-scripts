@@ -15,13 +15,14 @@ def run
   end
   @equipment['server1'].send_sudo_cmd("netserver -p #{port_number} -#{ip_ver}")
   
+  start_collecting_system_stats(0.33){|cmd| send_adb_cmd("shell #{cmd}")}
   # Start netperf on the Target
   @test_params.params_control.buffer_size.each do |bs|
     data = send_adb_cmd "shell netperf -H #{@equipment['server1'].telnet_ip} -l #{time} -p #{port_number} -- -s #{bs}"
     bw << /^\s*\d+\s+\d+\s+\d+\s+[\d\.]+\s+([\d\.]+)/m.match(data).captures[0].to_f
     puts data
   end
-
+  sys_stats = stop_collecting_system_stats
   ensure
     if bw.length == 0
       set_result(FrameworkConstants::Result[:fail], 'Netperf data could not be calculated. Verify that you have netperf installed in your host machine by typing: netperf -h. If you get an error, you need to install netperf. On a ubuntu system, you may type: sudo apt-get install netperf')
@@ -29,6 +30,20 @@ def run
     else
       min_bw = @test_params.params_control.min_bw[0].to_f
       pretty_str, perfdata = get_perf_pretty_str(bw)
+      perfdata.concat(sys_stats)
+      @results_html_file.add_paragraph("")
+      systat_names = []
+      systat_vals = []
+      sys_stats.each do |current_stat|
+        systat_vals << current_stat['value']
+        current_stat_plot = stat_plot(current_stat['value'], current_stat['name']+" plot", "sample", current_stat['units'], current_stat['name'], current_stat['name'], "system_stats")
+        plot_path, plot_url = upload_file(current_stat_plot)
+        systat_names << [current_stat['name']+' ('+current_stat['units']+')',nil,nil,plot_url]
+      end
+      @results_html_file.add_paragraph("")
+      res_table2 = @results_html_file.add_table([["Sytem Stats",{:bgcolor => "336666", :colspan => "#{systat_names.length}"},{:color => "white"}]],{:border => "1",:width=>"20%"})
+      @results_html_file.add_row_to_table(res_table2, systat_names)
+      @results_html_file.add_rows_to_table(res_table2,systat_vals.transpose)
       if mean(bw) > min_bw 
         set_result(FrameworkConstants::Result[:pass], pretty_str, perfdata)
         puts "Test Passed: AVG Throughput=#{mean(bw)} \n #{pretty_str}"
