@@ -31,11 +31,13 @@ module C6xTestScript
       bootblob_util =  @test_params.bootblob_util     if @test_params.instance_variable_defined?(:@bootblob_util)
       testdriver = @test_params.testdriver     if @test_params.instance_variable_defined?(:@testdriver)
       kernel = @test_params.kernel     if @test_params.instance_variable_defined?(:@kernel)
-      kernel_name = @equipment['dut1'].params["kernel"]
+      kernel_name = @equipment['dut1'].params["kernel"] if @equipment['dut1'].instance_variable_defined?(:@params)
       nfs_root_path = @equipment['dut1'].nfs_root_path
+      nfs_root_path_temp 	= nfs_root_path
       if @equipment.has_key?('server1')
       samba_root_path = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}"
       end
+      samba_root_path_temp = samba_root_path
       # Telnet to Linux server
       if @equipment['server1'].respond_to?(:telnet_port) and @equipment['server1'].respond_to?(:telnet_ip) and !@equipment['server1'].target.telnet
         @equipment['server1'].connect({'type'=>'telnet'})
@@ -110,7 +112,17 @@ module C6xTestScript
           @equipment['server1'].send_sudo_cmd("rm -f  #{@equipment['server1'].tftp_path}/#{kernel_name}", @equipment['server1'].prompt, 30) 
           @equipment['server1'].send_sudo_cmd("cp #{File.basename(kernel)} #{@equipment['server1'].tftp_path}/#{kernel_name}", @equipment['server1'].prompt, 30)
         end
-        if testdriver && @equipment.has_key?('server1') #&& !nfs && !@test_params.instance_variable_defined?(:@var_nfs) 
+        # Turn power ON
+        if power_port !=nil
+          debug_puts 'Switching on @using power switch'
+          sleep 7
+          @power_handler.switch_on(power_port)
+          sleep 90
+          # Connect via telnet
+        end
+
+      end
+      if testdriver && @equipment.has_key?('server1') #&& !nfs && !@test_params.instance_variable_defined?(:@var_nfs) 
           @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}/#{DUT_DST_DIR}", @equipment['server1'].prompt, 10)
           @equipment['server1'].send_sudo_cmd("chmod 777 .",@equipment['server1'].prompt, 10)   
           if (File.exists?"#{samba_root_path_temp}\\#{DUT_DST_DIR}\\testdriver}")
@@ -119,23 +131,8 @@ module C6xTestScript
           dst_path = "#{samba_root_path_temp}\\#{DUT_DST_DIR}\\testdriver"
           BuildClient.copy(testdriver, dst_path)     
           #@equipment['server1'].send_sudo_cmd("chmod 777 #{File.basename(src)}",@equipment['server1'].prompt, 30)             
-        end 
-        C6xTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp) 
-        # Connect to DUT via serial port
-        # if @equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil
-          # @equipment['dut1'].connect({'type'=>'serial'})
-        # elsif @equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil
-          # @equipment['dut1'].connect({'type'=>'serial'})
-        # else
-          # raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
-        # end
-        # Turn power ON
-        if power_port !=nil
-          debug_puts 'Switching on @using power switch'
-          @power_handler.switch_on(power_port)
-          sleep 90
-          # Connect via telnet
-        end
+      end 
+      C6xTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp) 
       connect_to_equipment('dut1')
       0.upto 5 do
         @equipment['dut1'].send_cmd("\n",@equipment['dut1'].prompt, 30)
@@ -147,9 +144,6 @@ module C6xTestScript
       
       # by now, the dut should already login and is up; if not, dut may hang.
       raise "UUT may be hanging!" if !is_uut_up?
-      end
-
-      
       # Copy executables to NFS server (if filesystem was not specified and there are @target_sources
       if @test_params.params_chan.instance_variable_defined?(:@target_binaries) && @equipment.has_key?('server1') #&& !nfs && !@test_params.instance_variable_defined?(:@var_nfs) 
           files_array = Array.new
