@@ -10,7 +10,7 @@ module LspTargetTestScript
   def setup
     puts "\n LinuxTestScript::setup"
     delete_temp_files()
-    @linux_dst_dir = @test_params.params_chan.instance_variable_defined?(:@test_dir) ? @test_params.params_chan.test_dir[0] : '/test'
+    @linux_dst_dir = @test_params.params_control.instance_variable_defined?(:@test_dir) ? @test_params.params_control.test_dir[0] : '/test'
     setup_connect_equipment()
     super
   end
@@ -20,10 +20,10 @@ module LspTargetTestScript
     puts "\n LinuxTestScript::run"
     run_generate_script
     run_transfer_script
-    run_call_script
+    return_non_zero = run_call_script
     run_get_script_output
     run_collect_performance_data
-    run_save_results
+    run_save_results(return_non_zero)
   end
 
   # Do nothing by default.  Overwrite implementation in test script if required
@@ -42,7 +42,7 @@ module LspTargetTestScript
   def run_generate_script
     puts "\n LinuxTestScript::run_generate_script"
     FileUtils.mkdir_p SiteInfo::LINUX_TEMP_FOLDER
-    in_file = File.new(File.join(@test_params.view_drive, @test_params.params_chan.shell_script[0]), 'r')
+    in_file = File.new(File.join(@test_params.view_drive, @test_params.params_control.shell_script[0]), 'r')
     raw_test_lines = in_file.readlines
     out_file = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER, 'test.sh'),'w')
     raw_test_lines.each do |current_line|
@@ -72,9 +72,11 @@ module LspTargetTestScript
     @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("chmod +x test.sh",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("./test.sh 2> stderr.log > stdout.log",@equipment['dut1'].prompt)
+    @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
+    @equipment['dut1'].timeout?
   end
 
-  # Collect output from standard outputand  standard error in test.log
+  # Collect output from standard output and  standard error in test.log
   def run_get_script_output
     puts "\n LinuxTestScript::run_get_script_output"
     log_file_name = File.join(SiteInfo::LINUX_TEMP_FOLDER, 'test.log') 
@@ -103,10 +105,9 @@ module LspTargetTestScript
   
   # Parse test.log and  potentially perf.log to determine test result outcome. This method could be overridden
   # This default implementation pass the test if the call to test.sh returns 0 (i.e. no error).
-  def run_determine_test_outcome
+  def run_determine_test_outcome(return_non_zero)
     puts "\n LinuxTestScript::run_determine_test_outcome"
-    @equipment['dut1'].send_cmd("echo $?",/^0$/m, 3)
-    if !@equipment['dut1'].timeout?
+    if !return_non_zero
       return [FrameworkConstants::Result[:pass], "test.sh returned zero"]
     else
       return [FrameworkConstants::Result[:fail], "test.sh returned error"]
@@ -114,9 +115,9 @@ module LspTargetTestScript
   end
   
   # Write test result and performance data to results database (either xml or msacess file)
-  def run_save_results
+  def run_save_results(return_non_zero)
     puts "\n LinuxTestScript::run_save_results"
-    result = run_determine_test_outcome
+    result = run_determine_test_outcome(return_non_zero)
     #result,comment = run_determine_test_outcome
 
     if result.length == 3
@@ -140,8 +141,8 @@ module LspTargetTestScript
   def clean_delete_binary_files
     puts "\n LinuxTestScript::clean_delete_binary_files"
     @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
-    if @test_params.params_chan.instance_variable_defined?(:@test_libs)
-      @test_params.params_chan.test_libs.each {|lib_file|
+    if @test_params.params_control.instance_variable_defined?(:@test_libs)
+      @test_params.params_control.test_libs.each {|lib_file|
         @equipment['dut1'].send_cmd("rm -f #{lib_file}",@equipment['dut1'].prompt)  
       }
     end
