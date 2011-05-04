@@ -14,15 +14,17 @@ def run
     port_number = port_number + 2
   end
   @equipment['server1'].send_sudo_cmd("netserver -p #{port_number} -#{ip_ver}")
-  
-  start_collecting_system_stats(0.33){|cmd| send_adb_cmd("shell #{cmd}")}
-  # Start netperf on the Target
-  @test_params.params_control.buffer_size.each do |bs|
-    data = send_adb_cmd "shell netperf -H #{@equipment['server1'].telnet_ip} -l #{time} -p #{port_number} -- -s #{bs}"
-    bw << /^\s*\d+\s+\d+\s+\d+\s+[\d\.]+\s+([\d\.]+)/m.match(data).captures[0].to_f
-    puts data
+  sys_stats = nil
+  0.upto(1) do |iter|
+    start_collecting_system_stats(0.33){|cmd| send_adb_cmd("shell #{cmd}")} if iter > 0
+    # Start netperf on the Target
+    @test_params.params_control.buffer_size.each do |bs|
+      data = send_adb_cmd "shell netperf -H #{@equipment['server1'].telnet_ip} -l #{time} -p #{port_number} -- -s #{bs}"
+      bw << /^\s*\d+\s+\d+\s+\d+\s+[\d\.]+\s+([\d\.]+)/m.match(data).captures[0].to_f if iter == 0
+      puts data
+    end
+    sys_stats = stop_collecting_system_stats if iter > 0
   end
-  sys_stats = stop_collecting_system_stats
   ensure
     if bw.length == 0
       set_result(FrameworkConstants::Result[:fail], 'Netperf data could not be calculated. Verify that you have netperf installed in your host machine by typing: netperf -h. If you get an error, you need to install netperf. On a ubuntu system, you may type: sudo apt-get install netperf')

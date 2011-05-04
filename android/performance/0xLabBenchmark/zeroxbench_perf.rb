@@ -5,9 +5,17 @@ include AndroidTest
 
 def run
   response = ''
-  start_collecting_system_stats(0.33){|cmd| send_adb_cmd("shell #{cmd}")}
-  test_data = run_test
-  sys_stats = stop_collecting_system_stats
+  test_data = nil
+  sys_stats = nil
+  0.upto(1) do |iter|
+    if iter == 0
+      test_data = run_test
+    else
+      start_collecting_system_stats(0.33){|cmd| send_adb_cmd("shell #{cmd}")}
+      run_test
+      sys_stats = stop_collecting_system_stats
+    end
+  end
   perfdata = []
   current_test = @test_params.params_chan.test_option[0].match(/org.zeroxlab.benchmark.test.BenchmarkTest#(\S+)/).captures[0].gsub('test','')
   if test_data['res_file']

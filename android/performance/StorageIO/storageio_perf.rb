@@ -30,9 +30,17 @@ def run
     mount_resp = send_adb_cmd("shell mount -t  #{fs_type} /dev/block/#{dev_node} /mnt/sio_tst")
     raise "Unable to mount " + device + " device for testing\n" + mount_resp if mount_resp.match(/^\w+/)
   end
-  start_collecting_system_stats(0.33){|cmd| send_adb_cmd("shell #{cmd}")}
-  test_data = run_test(@test_params.params_chan.test_option[0].sub(/-e\s+location\s+#{device}\s+-e/,"-e location #{dev_node} -e"))
-  sys_stats = stop_collecting_system_stats
+  test_data = nil
+  sys_stats = nil
+  0.upto(1) do |iter|
+    if iter == 0
+      test_data = run_test(@test_params.params_chan.test_option[0].sub(/-e\s+location\s+#{device}\s+-e/,"-e location #{dev_node} -e"))
+    else
+      start_collecting_system_stats(0.33){|cmd| send_adb_cmd("shell #{cmd}")}
+      run_test(@test_params.params_chan.test_option[0].sub(/-e\s+location\s+#{device}\s+-e/,"-e location #{dev_node} -e"))
+      sys_stats = stop_collecting_system_stats
+    end
+  end
   perfdata = []
   current_test = 'storageio_'+blk_size
   if !test_data['perf_data'].empty?

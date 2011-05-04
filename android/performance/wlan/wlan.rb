@@ -148,31 +148,36 @@ def run
           raise 'Server/TEE does not have and ip address configured in the wifi LAN' if server_lan_ip == ''
           
           # Start netperf on the Target
-          netperf_thread = Thread.new {
-            @test_params.params_control.buffer_size.each do |bs|
-              data = send_adb_cmd "shell netperf -H #{server_lan_ip} -l #{time} -p #{port_number} -- -s #{bs}"
-              bw << /^\s*\d+\s+\d+\s+\d+\s+[\d\.]+\s+([\d\.]+)/m.match(data).captures[0].to_f
-              puts data
+          cpu_loads = nil
+          sys_stats = nil
+          0.upto(1) do |iter|
+            netperf_thread = Thread.new {
+              @test_params.params_control.buffer_size.each do |bs|
+                data = send_adb_cmd "shell netperf -H #{server_lan_ip} -l #{time} -p #{port_number} -- -s #{bs}"
+                bw << /^\s*\d+\s+\d+\s+\d+\s+[\d\.]+\s+([\d\.]+)/m.match(data).captures[0].to_f if iter == 0
+                puts data
+              end
+            }
+            
+            if iter > 0
+              start_collecting_system_stats(0.33){|cmd| send_adb_cmd("shell #{cmd}")}
+              # Start top on target
+              cpu_loads = []
+              if @test_params.params_control.instance_variable_defined?(:@wlan_comp)
+                cpu_info = ''
+                cpu_load_samples = @test_params.params_control.cpu_load_samples[0].to_i
+                delay = [time.to_i/cpu_load_samples,1].max
+                cpu_info = send_adb_cmd("shell top -d #{delay} -n #{cpu_load_samples-1}")
+                cpu_load_items = '(?:' + @test_params.params_control.wlan_comp[0] + ')'
+                @test_params.params_control.wlan_comp[1..-1].each do |curr_comp|
+                  cpu_load_items += '|(?:' + curr_comp + ')'
+                end
+                cpu_loads = cpu_info.scan(/\d+\s+(\d+)(%)\s+\w+\s+\d+\s+\d+K\s+\d+K\s+\w+\s+\w+\s+(#{cpu_load_items})/im)
+              end
+              sys_stats = stop_collecting_system_stats
             end
-          }
-          
-          start_collecting_system_stats(0.33){|cmd| send_adb_cmd("shell #{cmd}")}
-          # Start top on target
-          cpu_loads = []
-          if @test_params.params_control.instance_variable_defined?(:@wlan_comp)
-            cpu_info = ''
-            cpu_load_samples = @test_params.params_control.cpu_load_samples[0].to_i
-            delay = [time.to_i/cpu_load_samples,1].max
-            cpu_info = send_adb_cmd("shell top -d #{delay} -n #{cpu_load_samples-1}")
-            cpu_load_items = '(?:' + @test_params.params_control.wlan_comp[0] + ')'
-            @test_params.params_control.wlan_comp[1..-1].each do |curr_comp|
-              cpu_load_items += '|(?:' + curr_comp + ')'
-            end
-            cpu_loads = cpu_info.scan(/\d+\s+(\d+)(%)\s+\w+\s+\d+\s+\d+K\s+\d+K\s+\w+\s+\w+\s+(#{cpu_load_items})/im)
+            netperf_thread.join
           end
-          sys_stats = stop_collecting_system_stats
-          netperf_thread.join
-          
           ensure
             if bw.length == 0 || (@test_params.params_control.instance_variable_defined?(:@wlan_comp) && cpu_loads.length == 0)
               set_result(FrameworkConstants::Result[:fail], 'Netperf data could not be calculated or cpu load could not be obtained. Verify that you have netperf installed in your host machine by typing: netperf -h. If you get an error, you need to install netperf. On a ubuntu system, you may type: sudo apt-get install netperf. Also verify that top includes the values specified in test parameter wlan_comp if wlan_comp was specified')
