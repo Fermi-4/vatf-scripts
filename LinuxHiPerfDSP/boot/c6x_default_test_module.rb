@@ -31,7 +31,7 @@ module C6xTestScript
       bootblob_util =  @test_params.bootblob_util     if @test_params.instance_variable_defined?(:@bootblob_util)
       testdriver = @test_params.testdriver     if @test_params.instance_variable_defined?(:@testdriver)
       kernel = @test_params.kernel     if @test_params.instance_variable_defined?(:@kernel)
-      kernel_name = @equipment['dut1'].params["kernel"] if @equipment['dut1'].instance_variable_defined?(:@params)
+      kernel_name = @equipment['dut1'].params["kernel"] if defined? @equipment['dut1'].params["kernel"]
       nfs_root_path = @equipment['dut1'].nfs_root_path
       nfs_root_path_temp 	= nfs_root_path
       if @equipment.has_key?('server1')
