@@ -26,9 +26,12 @@ include WinceTestScript
 	while counter < @test_params.params_chan.suspend_loop[0].to_i  
     run_call_script
 	run_get_script_output
+	puts "done with get_script_output\n"
     # The sleep is needed to syncronize multimeter and application to run. This value has to be caliberated for each 
     # Release 	
+	puts "About to sleep for synchronization\n"
 	sleep @test_params.params_chan.delay[0].to_i 
+	puts "Sleep is done - about to run_get_multimeter_output\n"
 	# final voltadge reading from the domains
 	final_vol_reading.merge!(run_get_multimeter_output)
 	# power consumption is calculated in this function 
@@ -48,29 +51,31 @@ include WinceTestScript
 	sleep 10 #This sleep statment is used by the loop. We sleep a litle bit before we go to the next loop iteration.
 	end 
   end
-
   
+  def run_get_script_output
+  end
    # The function collects voltage output from the multimeter channels and returns readings.
   def run_get_multimeter_output(expect_string=nil)
-	volt_reading = ""
-    puts "\n WinceTestScript::run_get_multimeter_output"
-    wait_time = (@test_params.params_control.instance_variable_defined?(:@wait_time) ? @test_params.params_control.wait_time[0] : '10').to_i
-    keep_checking = @equipment['multimeter1'].target.serial ? true : false     # Do not try to get data from serial port of there is no serial port connection
-	wait_regex = ''
-    @test_params.params_chan.sample_count[0].to_i.times {wait_regex = wait_regex + '.+,'}
-    wait_regex.sub!(/,$/,'')
-	counter=0
-    while counter < @test_params.params_chan.loop_count[0].to_i         
-		@equipment['multimeter1'].send_cmd("READ?", /#{wait_regex}/, @test_params.params_chan.timeout[0].to_i, false)
-		#puts "READING READING #{@equipment['multimeter1'].response}"
-		volt_reading += @equipment['multimeter1'].response+","
-        counter += 1
-      end
-	  return sort_raw_data(volt_reading.strip)
+	sleep 5    # Make sure multimeter is configured and DUT is in the right state
+  volt_reading = []
+  counter=0
+  while counter < @test_params.params_chan.loop_count[0].to_i    
+    Kernel.print("Collecting sample #{counter}\n")
+    @equipment['multimeter1'].send_cmd("READ?", /.+?,.+?,.+?,.+?,[^\r\n]+/, @test_params.params_chan.timeout[0].to_i, false)
+    d =  @equipment['multimeter1'].response
+    Kernel.print("#{d}\n")
+    volt_reading << @equipment['multimeter1'].response
+    counter += 1
+    #sleep 0.5
   end
+  return sort_raw_data(volt_reading)
+end
+
+ # end
 
   # The function calculates  average,min,max,  volttage for all channels. All value are returned in hash table. 
   def sort_raw_data(raw_volt_reading)
+  
     chan_ave_volt_reading = Hash.new 
 	chan_max_volt_reading = Hash.new  
 	chan_min_volt_reading = Hash.new
@@ -90,9 +95,20 @@ include WinceTestScript
 	chan_5_volt_reading = 0
 	chan_1_current_reading = 0
 	chan_2_current_reading = 0
-	volt_reading_array = raw_volt_reading.split(/(?<=[\d,])[+-]/)
+	volt_reading_array = Array.new
+	#raw_volt_reading.split(/(?<=[\d,])[+-]/)
 	test_file = File.new("C:/DVSDK/debug_file.txt","w+")
-	volt_reading_array.each_index{|array_index|
+	raw_volt_reading.each do |current_line| 
+     current_line_arr = current_line.strip.split(/[,\r\n]+/)
+     if current_line_arr.length == 5 && current_line.match(/([+-]\d+\.\d+E[+-]\d+,){4}[+-]\d+\.\d+E[+-]\d+/)
+       volt_reading_array.concat(current_line_arr)
+     else 
+     puts "NOTHING #{current_line}"
+     end
+    end
+	
+	 volt_reading_array.each_index{|array_index|
+	 
 	 mod = array_index % 5 
 	 
 	 case mod
