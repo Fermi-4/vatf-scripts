@@ -333,6 +333,7 @@ module WinceTestScript
   end
   
   def boot_required?(old_params, new_params)
+    #return false
     return false if !@test_params.instance_variable_defined?(:@kernel)
     old_test_string = get_test_string(old_params)
     new_test_string = get_test_string(new_params)
@@ -405,5 +406,11 @@ module WinceTestScript
 	os_version = get_os_version
     return cetk_basic_files[os_version.to_s]
   end 
-end
   
+def translate_module_name(cmdline,platform,mod_name)
+   @module_name = {'MSFlash'=>{'am1808'=>'NandFlashDisk','am1707'=>'NandFlashDisk','omapl138'=>'NandFlashDisk','omapl137'=>'NandFlashDisk'}}
+   return cmdline if !@module_name.include?(mod_name)
+   return cmdline if !@module_name[mod_name].include?(platform)
+   return cmdline.gsub(mod_name,@module_name[mod_name][platform])
+ end
+end
