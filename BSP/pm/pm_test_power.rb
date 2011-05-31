@@ -48,7 +48,7 @@ include WinceTestScript
 	#query_ips_State(@test_params.params_chan.ips_to_query, true)
 	counter += 1
 	puts "############# Iteration Number ############## #{counter}"
-	sleep 10 #This sleep statment is used by the loop. We sleep a litle bit before we go to the next loop iteration.
+	sleep 60 #This sleep statment is used by the loop. We sleep a litle bit before we go to the next loop iteration.
 	end 
   end
   
@@ -97,7 +97,6 @@ end
 	chan_2_current_reading = 0
 	volt_reading_array = Array.new
 	#raw_volt_reading.split(/(?<=[\d,])[+-]/)
-	test_file = File.new("C:/DVSDK/debug_file.txt","w+")
 	raw_volt_reading.each do |current_line| 
      current_line_arr = current_line.strip.split(/[,\r\n]+/)
      if current_line_arr.length == 5 && current_line.match(/([+-]\d+\.\d+E[+-]\d+,){4}[+-]\d+\.\d+E[+-]\d+/)
@@ -118,14 +117,12 @@ end
 	   chan_1_volt_readings << temp
 	   chan_1_current_readings << temp/0.05
 	   chan_1_current_reading += temp/0.05
-	    test_file.write(temp.to_s+"\n")
 	   when  1
 	   chan_2_volt_reading += volt_reading_array[array_index].gsub(/\+/,'').to_f + 0.00029
 	   temp = volt_reading_array[array_index].gsub(/\+/,'').to_f + 0.00029
 	   chan_2_volt_readings << temp
 	   chan_2_current_readings << temp/0.1
 	   chan_2_current_reading += temp/0.1
-	   test_file.write(temp.to_s+"\n")
 	   when  2
 	   chan_3_volt_reading += volt_reading_array[array_index].gsub(/\+/,'').to_f + 0.00029
 	   chan_3_volt_readings << volt_reading_array[array_index].gsub(/\+/,'').to_f + 0.00029
@@ -137,7 +134,6 @@ end
 	   chan_5_volt_readings << volt_reading_array[array_index].gsub(/\+/,'').to_f + 0.00029
 	 end 
 	}
-	test_file.close
 	array_size = volt_reading_array.size/5
 	#avarage reading for each channel
 	chan_ave_volt_reading["chan_1"] = chan_1_volt_reading/array_size
@@ -435,12 +431,12 @@ end
     temp << state
   } 
   count = 0 
-  File.new(File.join(@wince_temp_folder, "test_#{@test_id}\.log"),'r').each {|line| 
- 	if line.include? "GetDevicePower" then
-	states << line.scan(/[A-Za-z0-9:,]+\('#{ipnames[count].strip}:', 0x1\)\s[A-Za-z:,\s]+([0-4])/)[0][0].to_i 
-	count +=1
-	end 
-  }
+  # File.new(File.join(@wince_temp_folder, "test_#{@test_id}\.log"),'r').each {|line| 
+ 	# if line.include? "GetDevicePower" then
+	# states << line.scan(/[A-Za-z0-9:,]+\('#{ipnames[count].strip}:', 0x1\)\s[A-Za-z:,\s]+([0-4])/)[0][0].to_i 
+	# count +=1
+	# end 
+  # }
   count = 0 
   temp.each{|n|
   expected_states << states[count].to_s.strip.eql?(n.to_s.strip)   
@@ -478,7 +474,11 @@ def run_app(apps, action)
   # Transfer the shell script (test.bat) to the DUT and any require libraries
   def run_transfer_script()
     super
+	if (get_os_version == '6.0_R3')
 	media_location_hash = {"sd" => '\Storage Card', "nand" =>'\Mounted Volume',"usb" => '\Hard Disk',"ram" => '\Temp'}
+	else
+	media_location_hash = {"sd" => '\Storage_Card', "nand" =>'\Mounted_Volume',"usb" => '\Hard_Disk',"ram" => '\Temp'}
+	end
 	put_file({'filename'=>'test.bat'})
 	transfer_files(:@test_libs, :@var_test_libs_root)
     transfer_files(:@build_test_libs, :@var_build_test_libs_root)
@@ -486,7 +486,8 @@ def run_app(apps, action)
 	src_folder = ""
 	src_folder = SiteInfo::FILE_SERVER + subfolder
 	# scipt if there was no file to ftp 
-	if @test_params.params_chan.file_name[0] != ""
+	if (@test_params.params_chan.instance_variable_defined?(:@file_name) && @test_params.params_chan.instance_variable_defined?(:@media_location))
+	#if @test_params.params_chan.file_name[0]
 	test_output_files = put_file({'filename'=>@test_params.params_chan.file_name[0],'src_dir'=>src_folder,'dst_dir'=>media_location_hash[@test_params.params_chan.media_location[0]],'binary'=>true})
 	end 
   end
