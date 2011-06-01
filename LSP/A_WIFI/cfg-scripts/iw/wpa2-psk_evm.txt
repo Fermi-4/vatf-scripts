@@ -1,0 +1,15 @@
+if [[ "$(ifconfig | grep wlan0)" == "" ]] ; then wpa_supplicant -d -Dnl80211 -c/etc/wpa_supplicant.conf -iwlan0 -B ; fi
+wpa_cli -iwlan0 disconnect
+for i in `wpa_cli -iwlan0 list_networks | grep ^[0-9] | cut -f1`; do wpa_cli -iwlan0 remove_network $i; done
+wpa_cli -iwlan0 add_network
+wpa_cli -iwlan0 set_network 0 auth_alg OPEN
+wpa_cli -iwlan0 set_network 0 key_mgmt WPA-PSK
+wpa_cli -iwlan0 set_network 0 psk '"psk12345"'
+wpa_cli -iwlan0 set_network 0 proto RSN
+wpa_cli -iwlan0 set_network 0 mode 0
+wpa_cli -iwlan0 set_network 0 ssid '"gtaccess-wpa2-psk"'
+wpa_cli -iwlan0 select_network 0
+wpa_cli -iwlan0 enable_network 0
+wpa_cli -iwlan0 reassociate
+wpa_cli -iwlan0 status
+iw wlan0 link

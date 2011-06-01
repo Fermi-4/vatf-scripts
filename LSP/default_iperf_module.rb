@@ -36,7 +36,7 @@ module IperfTestScript
   end
 
 
-  def run_client_iperf
+  def run_client_iperf(iface=nil)
     i = p = result = 0
     port = 7000
     log_file = "perf.log"
@@ -52,18 +52,23 @@ module IperfTestScript
     pkt_size = packet_size.to_i/2
     sleep 2
 
+    server_ip = @test_params.params_control.remote_ip[0]
+    if(iface != nil)
+      dut_ip = get_iface_ip_addr(iface)
+      server_ip = get_server_lan_ip(dut_ip) if dut_ip != ''
+    end
     # Start Iperf on client EVM
     if @test_params.params_chan.protocol[0] == "tcp"
       #@equipment['dut1'].send_cmd("iperf -c #{@test_params.params_control.remote_ip[0]} -p #{@test_params.params_chan.port[0]} -w #{pkt_size}K -t #{@test_time} -N -d\n", @equipment['dut1'].prompt, @test_time.to_i + 60)
-      @equipment['dut1'].send_cmd("iperf -c #{@test_params.params_control.remote_ip[0]} -w #{pkt_size}K -t #{@test_time} -N -d\n", @equipment['dut1'].prompt, @test_time.to_i + 60)
-.   else
+      @equipment['dut1'].send_cmd("iperf -c #{server_ip} -w #{pkt_size}K -t #{@test_time} -N -d\n", @equipment['dut1'].prompt, @test_time.to_i + 60)
+    else
       #@equipment['dut1'].send_cmd("iperf -c #{@test_params.params_control.remote_ip[0]} -p #{@test_params.params_chan.port[0]} -u -w #{pkt_size}K -b #{@test_params.params_chan.bw[0]} -t #{@test_time} -N", @equipment['dut1'].prompt, @test_time.to_i + 60)
-      @equipment['dut1'].send_cmd("iperf -c #{@test_params.params_control.remote_ip[0]} -u -w #{pkt_size}K -b #{@test_params.params_chan.bw[0]} -t #{@test_time} -N", @equipment['dut1'].prompt, @test_time.to_i + 60)
+      @equipment['dut1'].send_cmd("iperf -c #{server_ip} -u -w #{pkt_size}K -b #{@test_params.params_chan.bw[0]} -t #{@test_time} -N", @equipment['dut1'].prompt, @test_time.to_i + 60)
     end
 
     if @equipment['dut1'].timeout?
       @err_code = 1
-      raise "The iperf test to #{@test_params.params_control.remote_ip[0]} timed out and could not be completed. "+ __LINE__.to_s
+      raise "The iperf test to #{server_ip} timed out and could not be completed. "+ __LINE__.to_s
     end
 
     sleep 1
@@ -160,7 +165,7 @@ module IperfTestScript
   end
 
 
-  def run_client_ping
+  def run_client_ping(iface=nil)
     i = p = result = 0
     port = 7000
     log_file = "ping.log"
@@ -170,12 +175,17 @@ module IperfTestScript
     @tot_samples = @test_params.params_chan.pings[0].to_i
     @test_params.params_chan.buffer_size.each do |packet_size|
       data[i][0] = packet_size
-      @equipment['dut1'].send_cmd("ping  -s#{packet_size} -c#{@test_params.params_chan.pings[0]} #{@test_params.params_control.remote_ip[0]} >ping"+i.to_s+".log", @equipment['dut1'].prompt, @test_time.to_i + 60)
+      server_ip = @test_params.params_control.remote_ip[0]
+      if(iface != nil)
+        dut_ip = get_iface_ip_addr(iface)
+        server_ip = get_server_lan_ip(dut_ip) if dut_ip != ''
+      end 
+      @equipment['dut1'].send_cmd("ping  -s#{packet_size} -c#{@test_params.params_chan.pings[0]} #{server_ip} >ping"+i.to_s+".log", @equipment['dut1'].prompt, @test_time.to_i + 60)
       # Start Iperf on client EVM                                                                                 "+i.to_s+".log"
 
       if @equipment['dut1'].timeout?
         @err_code = 7
-        raise "The ping to #{@test_params.params_control.remote_ip[0]} timed out and could not be completed. "+ __LINE__.to_s
+        raise "The ping to #{server_ip} timed out and could not be completed. "+ __LINE__.to_s
       end
 
       sleep 1
@@ -306,7 +316,9 @@ module IperfTestScript
 
   def start_top(device, file)
     @current_top_file_name = file
-    @equipment["#{device}"].send_cmd("nohup top -d #{@top_delay} -n #{@tot_samples} -b |grep tiwlan] >#{file} &", @equipment["#{device}"].prompt, 10)
+    iface_grep = 'tiwlan]'
+    iface_grep = 'wl1271]' if is_kernel_ge37?
+    @equipment["#{device}"].send_cmd("nohup top -d #{@top_delay} -n #{@tot_samples} -b |grep #{iface_grep} >#{file} &", @equipment["#{device}"].prompt, 10)
   end
 
 
@@ -314,7 +326,9 @@ module IperfTestScript
     wifi_cpu_pct = Array.new
     send_status("-------------------- default_iperf_module: Status message - TOP results are being processed from the cat response------------------------- "+ __LINE__.to_s)
     final_pct = count = tmp_pct = diff = 0
-    wifi_cpu_pct = response.scan(/(\s[\d]+)\%\s+\[tiwlan\]/)
+    iface_regex = /tiwlan/
+    iface_regex = /irq\/\d+\-wl\d+/
+    wifi_cpu_pct = response.scan(/(\s[\d]+)\%\s+\[#{iface_regex}\]/)
     count = wifi_cpu_pct.flatten!.size
     tst = wifi_cpu_pct[0].match(/([\d]+)/).captures[0].to_i
 
@@ -380,5 +394,36 @@ module IperfTestScript
     rx = regex.match(@equipment['pc1'].response) 
     return rx != nil ? rx[match] : nil
   end
+
+  def get_server_lan_ip(dut_ip)
+    ip_addr = ''
+    @equipment['server1'].send_cmd("ifconfig")
+    #          inet addr:158.218.103.11  Bcast:158.218.103.255  Mask:255.255.254.0
+    @equipment['server1'].response.lines.each do |current_line|
+      if (line_match = current_line.match(/^\s+inet\s+addr:(#{dut_ip.gsub('.','\.').sub(/\d+$/,'\d+')})\s+Bcast:.*/))
+        ip_addr = line_match.captures[0]
+      end
+    end
+    ip_addr
+  end
+
+  def get_iface_ip_addr(iface)
+    addr = ''
+    @equipment['dut1'].send_cmd("ifconfig #{iface}",@equipment['dut1'].prompt)
+    net_info = @equipment['dut1'].response
+    net_info.lines.each do |current_line|
+      if current_line.match(/^\s*inet\s*addr:[\d\.]{7,15}\s+Bcast:.+/i)
+      addr = current_line.match(/^\s*inet\s*addr:([\d\.]{7,15})\s+Bcast:.+/i).captures[0]
+      end
+    end
+    addr
+  end
+
+   def is_kernel_ge37?
+    @equipment['dut1'].send_cmd("uname -a", @equipment['dut1'].prompt)
+    version_arr = @equipment['dut1'].response.match(/Linux.*?(\d+\.\d+\.\d+).*/im).captures[0].split(/\./)
+    version_arr[0].to_i > 2  || (version_arr[0].to_i == 2 && version_arr[1].to_i > 6) || (version_arr[0].to_i == 2 && version_arr[1].to_i == 6 && version_arr[2].to_i >= 37)
+  end
+
 
 end

@@ -33,10 +33,10 @@ include IperfTestScript
     @equipment['dut1'].send_cmd("ls -l", @equipment['dut1'].prompt)
     get_proc_list
 
-    if /\s+wpa_supplicant\s+/im.match(@equipment['dut1'].response)
-      @err_code = 2
-      raise "The WIFI interface is still active from last run. A manual reboot will be required. "+ __LINE__.to_s
-    end
+    #if /\s+wpa_supplicant\s+/im.match(@equipment['dut1'].response)
+    #  @err_code = 2
+    #  raise "The WIFI interface is still active from last run. A manual reboot will be required. "+ __LINE__.to_s
+    #end
 
     cfg_bluetooth_client
     sleep 1
@@ -45,12 +45,16 @@ include IperfTestScript
     send_status("-------------------------- wlan_perf_module: Status message - collect_performance_data logic started --------------------------  "+ __LINE__.to_s)
 
     if @test_params.params_chan.mode[0] == "iperf"
-      result = run_client_iperf
+      iface = nil
+      iface = 'wlan0' if is_kernel_ge37?
+      result = run_client_iperf(iface)
     elsif @test_params.params_chan.mode[0] == "bluetooth"
       result = run_bluetooth_scan
       get_bluetooth_capabilities
     else
-      result = run_client_ping
+      iface = nil
+      iface = 'wlan0' if is_kernel_ge37?
+      result = run_client_ping(iface)
     end
 
     create_html_page
@@ -106,17 +110,25 @@ include IperfTestScript
 	# This routine will configure and enable the particular test platform (EVM) to be used as a wireless client.
 	def cfg_wifi_client
     file = @test_params.params_chan.security[0]+"_evm.txt"
-    send_file(@equipment['dut1'],File.join(File.dirname(__FILE__),'cfg-scripts','am1808',"#{file}"))
+    if is_kernel_ge37?
+      send_file(@equipment['dut1'],File.join(File.dirname(__FILE__),'cfg-scripts','iw',"#{file}"))
+    else
+      send_file(@equipment['dut1'],File.join(File.dirname(__FILE__),'cfg-scripts','am1808',"#{file}"))
+    end
     @equipment['dut1'].send_cmd("cd /home/root", @equipment['dut1'].prompt)
     sleep 1
-    @equipment['dut1'].send_cmd("ifconfig tiwlan0 #{@test_params.params_control.local_ip[0]} netmask 255.255.255.0 up", @equipment['dut1'].prompt)
+    wifi_iface = "tiwlan0"
+    wifi_iface = "wlan0" if is_kernel_ge37?
+    #@equipment['dut1'].send_cmd("ifconfig #{wifi_iface} #{@test_params.params_control.local_ip[0]} netmask 255.255.255.0 up", @equipment['dut1'].prompt)
+    @equipment['dut1'].send_cmd("ifdown #{wifi_iface}", @equipment['dut1'].prompt)
     sleep 1
-    @equipment['dut1'].send_cmd("ifconfig tiwlan0", @equipment['dut1'].prompt)
+    @equipment['dut1'].send_cmd("ifup #{wifi_iface}", @equipment['dut1'].prompt)
+    sleep 1
+    @equipment['dut1'].send_cmd("ifconfig #{wifi_iface}", @equipment['dut1'].prompt)
     sleep 1
     wlan_ip = /([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match("#{@equipment['dut1'].response}").captures[0]
-    @equipment["dut1"].send_cmd("ping -c 3 #{@test_params.params_control.remote_ip[0]}", @equipment['dut1'].prompt, 20)
+    @equipment["dut1"].send_cmd("ping -c 3 #{get_server_lan_ip(wlan_ip)}", @equipment['dut1'].prompt, 20)
   end
-
 
 	# This routine will configure and enable the particular test platform (EVM) to be used as a wireless client.
 	def cfg_bluetooth_client
@@ -213,14 +225,14 @@ include IperfTestScript
     if device == "ap1"
       tempy = "ping -c #{@test_params.params_control.test_time[0]} #{@test_params.params_control.ap_wifi_ip[0]}"
     else
-      tempy = "ping -c #{@test_params.params_control.test_time[0]} #{@test_params.params_control.remote_ip[0]}"
+      tempy = "ping -c #{@test_params.params_control.test_time[0]} #{get_server_lan_ip(@test_params.params_control.local_ip[0])}"
     end
 
 		@equipment["#{device}"].send_cmd("#{tempy}", /\s+packet\s+loss/, count.to_i + 15)
 
     if @equipment['dut1'].timeout?
       @err_code = 5
-      raise "The ping to #{@test_params.params_control.remote_ip[0]} timed out and could not be completed. "+ __LINE__.to_s
+      raise "The ping to #{get_server_lan_ip(@test_params.params_control.local_ip[0])} timed out and could not be completed. "+ __LINE__.to_s
     end
 
     if /([\d\.]+)\%\s+packet\s+loss?/.match("#{@equipment['dut1'].response}").captures[0].to_i == "0"
@@ -289,7 +301,8 @@ include IperfTestScript
       res_table = @results_html_file.add_table([["IP Version",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
                                       ["IP Protocol",{:bgcolor => "white"},{:color => "blue", :size => "3"}],
                                       ["Port Number",{:bgcolor => "white"},{:color => "blue", :size => "3"}]])
-      @results_html_file.add_rows_to_table(res_table,[[[@test_params.params_control.ip_vsn[0],{:bgcolor => "white"},{:size => "2"}],[@test_params.params_chan.protocol[0].upcase,{:bgcolor => "white"},{:size => "2"}],[@test_params.params_chan.port[0],{:bgcolor => "white"},{:size => "2"}]]])
+      #@results_html_file.add_rows_to_table(res_table,[[[@test_params.params_control.ip_vsn[0],{:bgcolor => "white"},{:size => "2"}],[@test_params.params_chan.protocol[0].upcase,{:bgcolor => "white"},{:size => "2"}],[@test_params.params_chan.port[0],{:bgcolor => "white"},{:size => "2"}]]])
+     @results_html_file.add_rows_to_table(res_table,[[[@test_params.params_control.ip_vsn[0],{:bgcolor => "white"},{:size => "2"}],[@test_params.params_chan.protocol[0].upcase,{:bgcolor => "white"},{:size => "2"}],[@test_params.params_chan.port[0],{:bgcolor => "white"},{:size => "2"}]]])
     end
 
     @results_html_file.add_paragraph("")
