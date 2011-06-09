@@ -1,8 +1,10 @@
 require File.dirname(__FILE__)+'/../lib/sys_stats'
 require File.dirname(__FILE__)+'/../lib/plot'
+require File.dirname(__FILE__)+'/keyevents_module'
 
 include SystemStats
 include TestPlots
+include AndroidKeyEvents
 
 module AndroidTest
     LOG_TAG = "VATF::ANDROID::RESULT::"
@@ -13,6 +15,10 @@ module AndroidTest
       target_from_db   = @test_params.target.downcase
       platform_from_db = @test_params.platform.downcase
       
+      nandfs = @test_params.nandfs  if @test_params.instance_variable_defined?(:@nandfs)
+      ramfs = @test_params.ramfs   if @test_params.instance_variable_defined?(:@ramfs)
+      kernel_modules = @test_params.kernel_modules   if @test_params.instance_variable_defined?(:@kernel_modules)
+      
       nfs_root_path_temp = @equipment['dut1'].nfs_root_path
       
       if @test_params.instance_variable_defined?(:@nfs) 
@@ -20,8 +26,8 @@ module AndroidTest
         build_id, build_name = /\/([^\/\\]+?)\/([\w\.\-]+?)$/.match("#{fs.strip}").captures
         nfs_root_path_temp 	= File.join(nfs_root_path_temp, "/autofs/#{build_id}")
         if !@equipment['server1'].file_exists?("#{nfs_root_path_temp}/sys")
-          @equipment['server1'].send_cmd("mkdir -p -m 755 #{nfs_root_path_temp}") 		
-          @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}; tar -jxvf #{fs}")
+          @equipment['server1'].send_sudo_cmd("mkdir -p -m 777 #{nfs_root_path_temp}") 		
+          @equipment['server1'].send_sudo_cmd("sh -c 'cd #{nfs_root_path_temp}; tar -jxvf #{fs}'")
         end 		
       end
 
@@ -29,7 +35,7 @@ module AndroidTest
       nfs_root_path_temp = @test_params.var_nfs  if @test_params.instance_variable_defined?(:@var_nfs)  # Optionally use external nfs server
       
       @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
-      if @old_keys != @new_keys && @test_params.params_chan.instance_variable_defined?(:@kernel) # call bootscript if required
+      if @old_keys != @new_keys && @test_params.instance_variable_defined?(:@kernel) # call bootscript if required
         boot_params = {'power_handler'=> @power_handler,
                      'platform' => platform_from_db,
                      'tester' => tester_from_cli,
@@ -48,14 +54,9 @@ module AndroidTest
           raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
         end
         @equipment['dut1'].boot(boot_params)
-        #Wait for android to come-up
-        boot_sec = 120
-        puts "Waiting #{boot_sec} seconds for android to come-up"
-        sleep(boot_sec)
-        #Unlocking the screen
     end
     connect_to_equipment()  
-    send_adb_cmd("shell input keyevent 82") 
+    send_events_for('__menu__') 
     setupTest(:@test_libs,:@var_test_libs_root)
   end
 	
