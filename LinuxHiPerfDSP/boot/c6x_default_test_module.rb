@@ -120,17 +120,18 @@ module C6xTestScript
           sleep 90
           # Connect via telnet
         end
-
+      else
+        samba_root_path_temp = C6xTestScript.get_samba_path ? C6xTestScript.get_samba_path : samba_root_path_temp
+        nfs_root_path_temp 	= C6xTestScript.get_nfs_path ? C6xTestScript.get_nfs_path : nfs_root_path_temp
       end
       if testdriver && @equipment.has_key?('server1') #&& !nfs && !@test_params.instance_variable_defined?(:@var_nfs) 
-          @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}/#{DUT_DST_DIR}", @equipment['server1'].prompt, 10)
-          @equipment['server1'].send_sudo_cmd("chmod 777 .",@equipment['server1'].prompt, 10)   
-          if (File.exists?"#{samba_root_path_temp}\\#{DUT_DST_DIR}\\testdriver}")
-            @equipment['server1'].send_sudo_cmd("rm -rf #{File.basename(src)}")
-          end
-          dst_path = "#{samba_root_path_temp}\\#{DUT_DST_DIR}\\testdriver"
-          BuildClient.copy(testdriver, dst_path)     
-          #@equipment['server1'].send_sudo_cmd("chmod 777 #{File.basename(src)}",@equipment['server1'].prompt, 30)             
+           if (!File.exists?"#{samba_root_path_temp}\\#{DUT_DST_DIR}\\testdriver}")
+            @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}/#{DUT_DST_DIR}", @equipment['server1'].prompt, 10)
+            @equipment['server1'].send_sudo_cmd("chmod 777 .",@equipment['server1'].prompt, 10)  
+            dst_path = "#{samba_root_path_temp}\\#{DUT_DST_DIR}\\testdriver"
+            BuildClient.copy(testdriver, dst_path)     
+            @equipment['server1'].send_sudo_cmd("chmod 777 #{File.basename(testdriver)}",@equipment['server1'].prompt, 30)  
+          end            
       end 
       C6xTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp) 
       connect_to_equipment('dut1')
