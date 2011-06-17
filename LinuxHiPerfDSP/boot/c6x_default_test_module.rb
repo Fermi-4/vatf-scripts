@@ -170,6 +170,10 @@ module C6xTestScript
       @samba_root_path_temp
     end
     
+    def get_nfs_path()
+      @nfs_root_path_temp
+    end
+    
     def connect_to_equipment(equipment)
       this_equipment = @equipment["#{equipment}"]
       if this_equipment.respond_to?(:telnet_port) && this_equipment.telnet_port != nil  && !this_equipment.target.telnet
