@@ -72,7 +72,7 @@ def run_generate_script
   
   in_file = File.new(dst_file, 'r') if !isScriptACommand
   if isScriptACommand
-    raw_test_lines = [@test_params.params_control.script[0]]  # Return command as an array
+    raw_test_lines = @test_params.params_control.script  # Return array of commands
   else
     raw_test_lines = in_file.readlines  
   end
