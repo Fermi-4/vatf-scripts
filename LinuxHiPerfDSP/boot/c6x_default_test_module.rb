@@ -3,6 +3,7 @@
 require File.dirname(__FILE__)+'/boot'
 require File.dirname(__FILE__)+'/c6x_kernel_module_names'
 BOOTBLOB = File.dirname(__FILE__)+'/bootblob'
+SYSLINK_DST_DIR='/opt'
 
 # Default Server-Side Test script implementation for c6x-Linux releases
 module C6xTestScript 
@@ -25,6 +26,7 @@ module C6xTestScript
       @equipment['dut1'].set_api('linux-c6x')
       platform_from_db = @test_params.platform.downcase    
       nfs  = @test_params.nfs     if @test_params.instance_variable_defined?(:@nfs)
+      syslink_bins  = @test_params.syslink_bins    if @test_params.instance_variable_defined?(:@syslink_bins)
       bootblob = @test_params.var_bootblob     if @test_params.instance_variable_defined?(:@var_bootblob)
       bootblob_util =  @test_params.bootblob_util     if @test_params.instance_variable_defined?(:@bootblob_util)
       testdriver = @test_params.testdriver     if @test_params.instance_variable_defined?(:@testdriver)
@@ -50,7 +52,12 @@ module C6xTestScript
         @new_keys = ''
       else
         @new_keys = (bootblob)? (get_keys() + bootblob) : (get_keys()) 
+        @new_keys = (@test_params.params_chan.instance_variable_defined?(:@syslink_testname))? (@new_keys + @test_params.params_chan.instance_variable_get("@syslink_testname")[0].to_s) : (@new_keys) 
       end
+      puts "+++++++++++++++++++++++"
+      puts @old_keys
+      puts @new_keys
+      puts "+++++++++++++++++++++++"
       # call bootscript if required
       if Boot::boot_required?(@old_keys, @new_keys) 
         power_port = @equipment['dut1'].power_port
@@ -132,7 +139,14 @@ module C6xTestScript
             BuildClient.copy(testdriver, dst_path)     
             @equipment['server1'].send_sudo_cmd("chmod 777 #{File.basename(testdriver)}",@equipment['server1'].prompt, 30)  
           end            
-      end 
+      end
+      if syslink_bins
+        @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}/#{SYSLINK_DST_DIR}", @equipment['server1'].prompt, 10)
+        @equipment['server1'].send_sudo_cmd("chmod 777 .",@equipment['server1'].prompt, 10)   
+        dst_path = "#{samba_root_path_temp}\\#{SYSLINK_DST_DIR}"
+        BuildClient.copy(syslink_bins, dst_path)    
+        @equipment['server1'].send_sudo_cmd("tar -xvzf #{File.basename(syslink_bins)}",@equipment['server1'].prompt, 10)   
+      end
       C6xTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp) 
       connect_to_equipment('dut1')
       0.upto 5 do
