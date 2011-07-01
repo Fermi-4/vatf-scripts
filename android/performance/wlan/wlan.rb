@@ -104,6 +104,8 @@ def run
       when 'enable'
         puts "Enabling network #{@test_params.params_chan.ssid[0]}"
         send_adb_cmd("shell wpa_cli enable_network #{net_id}")
+	iface = get_wifi_iface
+        send_adb_cmd("shell netcfg #{iface} up")
         current_trial = 0
         while get_dut_ip_addr == '0.0.0.0' && current_trial < 5
           sleep 20
@@ -118,6 +120,8 @@ def run
         puts "Selecting network #{@test_params.params_chan.ssid[0]}"
         net_id = get_net_id(@test_params.params_chan.ssid[0])
         send_adb_cmd("shell wpa_cli select_network #{net_id}")
+	iface = get_wifi_iface
+        send_adb_cmd("shell netcfg #{iface} up")
         current_trial = 0
         while get_dut_ip_addr == '0.0.0.0' && current_trial < 5
           sleep 20
