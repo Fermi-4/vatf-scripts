@@ -76,8 +76,10 @@ module C6xTestScript
             # Copy  nfs filesystem to linux server and untar it if it doesn't exist
             @equipment['server1'].send_sudo_cmd("mkdir -p -m 777  #{nfs_root_path_temp}", @equipment['server1'].prompt, 10)  
             BuildClient.copy(@test_params.nfs, "#{samba_root_path_temp}\\#{File.basename(@test_params.nfs)}")	
-            @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10)   
-            @equipment['server1'].send_sudo_cmd("tar -xvzf #{File.basename(@test_params.nfs)} ", @equipment['server1'].prompt, 30)
+            @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10)
+            @equipment['server1'].send_cmd("mv #{File.basename(@test_params.nfs)} #{File.basename(@test_params.nfs)}.cpio.gz", @equipment['server1'].prompt, 10)               
+            @equipment['server1'].send_sudo_cmd("gunzip #{File.basename(@test_params.nfs)}.cpio.gz", @equipment['server1'].prompt, 30)
+            @equipment['server1'].send_sudo_cmd("cpio -idmv < *", @equipment['server1'].prompt, 30)
           end
         else
           @initramfs = true
