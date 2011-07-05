@@ -4,6 +4,7 @@ require File.dirname(__FILE__)+'/boot'
 require File.dirname(__FILE__)+'/c6x_kernel_module_names'
 BOOTBLOB = File.dirname(__FILE__)+'/bootblob'
 SYSLINK_DST_DIR='/opt'
+DUT_DST_DIR = 'opt/ltp'
 
 # Default Server-Side Test script implementation for c6x-Linux releases
 module C6xTestScript 
@@ -192,10 +193,10 @@ module C6xTestScript
     
     def connect_to_equipment(equipment)
       this_equipment = @equipment["#{equipment}"]
-      if this_equipment.respond_to?(:telnet_port) && this_equipment.telnet_port != nil  && !this_equipment.target.telnet
+      if ((this_equipment.respond_to?(:serial_port) && this_equipment.serial_port != nil ) || (this_equipment.respond_to?(:serial_server_port) && this_equipment.serial_server_port != nil)) && !this_equipment.target.serial
+        this_equipment.connect({'type'=>'serial'})     
+      elsif this_equipment.respond_to?(:telnet_port) && this_equipment.telnet_port != nil  && !this_equipment.target.telnet
         this_equipment.connect({'type'=>'telnet'})
-      elsif ((this_equipment.respond_to?(:serial_port) && this_equipment.serial_port != nil ) || (this_equipment.respond_to?(:serial_server_port) && this_equipment.serial_server_port != nil)) && !this_equipment.target.serial
-        this_equipment.connect({'type'=>'serial'})
       elsif !this_equipment.target.telnet && !this_equipment.target.serial
         raise "You need Telnet or Serial port connectivity to #{equipment}. Please check your bench file" 
       end
