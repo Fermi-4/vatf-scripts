@@ -35,20 +35,47 @@ def run
       send_adb_cmd("shell \"echo 0 > /debug/pm_debug/#{idle_mode.strip.downcase}\"")
     end
   end
-    
+  #the timeout must be passed as parameter.  
+  if @test_params.params_chan.instance_variable_defined?(:@uart_mode)
+  send_adb_cmd("shell \"echo 5 > /sys/devices/platform/omap/omap_uart.0/#{@test_params.params_chan.uart_mode[0]}\"")
+  send_adb_cmd("shell \"echo 5 > /sys/devices/platform/omap/omap_uart.1/#{@test_params.params_chan.uart_mode[0]}\"")
+  send_adb_cmd("shell \"echo 5 > /sys/devices/platform/omap/omap_uart.2/#{@test_params.params_chan.uart_mode[0]}\"")
+  end 
+  #I am enabling smart reflex for suspend/resume test area. I am running the others with default smart reflex configuration. 
+  if @test_params.params_chan.instance_variable_defined?(:@smart_reflex)
+  if @test_params.params_chan.smart_reflex[0].strip == "enable" 
+  puts "SMART FLEX ENABLED"
+  send_adb_cmd("shell \"echo 1 > /debug/voltage/vdd_core/smartreflex/autocomp\"")
+  send_adb_cmd("shell \"echo 1 > /debug/voltage/vdd_mpu/smartreflex/autocomp\"")
+  end 
+  end 
   if @test_params.params_chan.instance_variable_defined?(:@enabled_cpu_idle_modes)
     @test_params.params_chan.enabled_cpu_idle_modes.each do |idle_mode|
       send_adb_cmd("shell \"echo 1 > /debug/pm_debug/#{idle_mode.strip.downcase}\"")
     end
   end
   
+ #added by Yebio to be review 
+  if @test_params.params_chan.instance_variable_defined?(:@intent) 
+  cmd = "push " + @test_params.params_chan.host_file_path[0] + " " +     @test_params.params_chan.target_file_path[0]
+  #send file push command 
+  data = send_adb_cmd cmd
+  if data.scan(/[0-9]+\s*KB\/s\s*\([0-9]+\s*bytes\s*in/)[0] == nil
+   puts "Installed failed: #{data}"
+   exit 
+  end
+  end 
+
   if @test_params.params_chan.instance_variable_defined?(:@bypass_dut)
     # Don't configure DUT, user will set it in the right state
     # before running this test
     puts "configure DUT, user must set it in the right state"
     sleep @test_params.params_chan.bypass_dut_wait[0].to_i if @test_params.params_chan.instance_variable_defined?(:@bypass_dut_wait)
   else
-    dutThread = Thread.new { run_test(@test_params.params_chan.test_option[0]) }
+    dutThread = Thread.new {run_test(@test_params.params_chan.test_option[0]) } if @test_params.params_chan.instance_variable_defined?(:@test_option)
+ if @test_params.params_chan.instance_variable_defined?(:@intent)
+    dutThread = Thread.new {run_test(nil, @test_params.params_chan.intent[0]+ " #{@test_params.params_chan.target_file_path[0]}") } 
+ end 
   end
   # Get voltage values for all channels in a hash
   volt_readings = run_get_multimeter_output      
@@ -57,9 +84,9 @@ def run
   # Generate the plot of the power consumption for the given application
   power_consumption_plot(power_readings)
   perf = save_results(power_readings, volt_readings)
-  puts "\n\n======= Power Domain states info =======\n" + send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state")
-  puts "\n\n======= Current CPU Frequency =======\n" +  send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
-  puts "\n\n======= Power Domain transition stats =======\n" + send_adb_cmd("shell cat /debug/pm_debug/count") 
+  #puts "\n\n======= Power Domain states info =======\n" + send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state")
+  #puts "\n\n======= Current CPU Frequency =======\n" +  send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
+  #puts "\n\n======= Power Domain transition stats =======\n" + send_adb_cmd("shell cat /debug/pm_debug/count") 
   dutThread.join if dutThread
 ensure
   if perf.size > 0
@@ -77,9 +104,9 @@ def save_results(power_consumption,voltage_reading)
   @results_html_file.add_paragraph("")
     res_table = @results_html_file.add_table([["VDD1 and VDD2 , VOLTAGES and  TOTAL POWER CONSUMPTION POINT BY POINT",{:bgcolor => "336666", :colspan => "3"},{:color => "white"}]],{:border => "1",:width=>"20%"})
   count = 0
-  @results_html_file.add_row_to_table(res_table,["VDD1 and VDD2 Power in mw","VDD1 in mw","VDD2 in mw", "VDD1 voltage in V",  "VDD2 voltage in V"])
+  @results_html_file.add_row_to_table(res_table,["Sample", "VDD1 and VDD2 Power in mw","VDD1 in mw","VDD2 in mw", "VDD1 voltage in V", "VDD1(J6) Cross voltage in V", "VDD2 voltage in V","VDD2(J6) Cross voltage in V"])
   power_consumption['all_vvd1_vdd2'].each{|power|
-    @results_html_file.add_row_to_table(res_table,[power.to_s,power_consumption['all_vvd1'][count].to_s,power_consumption['all_vvd2'][count].to_s,voltage_reading['chan_4'][count].to_s,voltage_reading['chan_5'][count].to_s])
+    @results_html_file.add_row_to_table(res_table,[count.to_s, power.to_s,power_consumption['all_vvd1'][count].to_s,power_consumption['all_vvd2'][count].to_s,voltage_reading['chan_4'][count].to_s,voltage_reading['chan_1'][count].to_s,voltage_reading['chan_5'][count].to_s,voltage_reading['chan_2'][count].to_s])
     v1 << power_consumption['all_vvd1'][count]
     v2 << power_consumption['all_vvd2'][count]
     vtotal << power
@@ -93,22 +120,23 @@ end
 
 def run_get_multimeter_output
   sleep 5    # Make sure multimeter is configured and DUT is in the right state
-  volt_reading = ""
+  volt_reading = []
   counter=0
   while counter < @test_params.params_control.loop_count[0].to_i
     Kernel.print("Collecting sample #{counter}\n")
-    @equipment['multimeter1'].send_cmd("READ?", /.+,.+,.+,.+,.+/, @test_params.params_equip.timeout[0].to_i, false)
+    @equipment['multimeter1'].send_cmd("READ?", /.+?,.+?,.+?,.+?,[^\r\n]+/, @test_params.params_equip.timeout[0].to_i, false)
     d =  @equipment['multimeter1'].response
     Kernel.print("#{d}\n")
-    volt_reading += @equipment['multimeter1'].response+","
+    volt_reading << @equipment['multimeter1'].response
     counter += 1
+    #sleep 0.5
   end
-  return sort_raw_data(volt_reading.strip)
+  return sort_raw_data(volt_reading)
 end
 
 # Procedure to meaasure power on AM37x.
 # chan1= vdrop at vdd1 , chan2=vdrop at vdd2, chan3=ignore, chan4=vdd1, chan5=vdd2
-def sort_raw_data(raw_volt_reading)
+def sort_raw_data(volt_readings)
   chan_all_volt_reading = Hash.new
   chan_1_volt_readings = Array.new
   chan_2_volt_readings = Array.new
@@ -116,8 +144,16 @@ def sort_raw_data(raw_volt_reading)
   chan_4_volt_readings = Array.new
   chan_5_volt_readings = Array.new
   chan_1_current_readings = Array.new
-  chan_2_current_readings = Array.new 
-  volt_reading_array = raw_volt_reading.split(",")
+  chan_2_current_readings = Array.new
+  volt_reading_array = Array.new
+  volt_readings.each do |current_line| 
+    current_line_arr = current_line.strip.split(/[,\r\n]+/)
+    if current_line_arr.length == 5 && current_line.match(/([+-]\d+\.\d+E[+-]\d+,){4}[+-]\d+\.\d+E[+-]\d+/)
+      volt_reading_array.concat(current_line_arr)
+    else 
+    puts "NOTHING #{current_line}"
+    end
+  end
   volt_reading_array.each_index{|array_index|
    mod = array_index % 5 
    case mod
