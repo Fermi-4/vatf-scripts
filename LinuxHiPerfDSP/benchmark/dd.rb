@@ -17,7 +17,11 @@ def run
   puts "Starting dd write followed by sync"
   params = ["dd-write","write-sync"]
   combined = 0
-  @equipment['dut1'].send_cmd("time dd if=/dev/zero of=file bs=#{bs} count=#{count} ; time sync",@equipment['dut1'].prompt,120)
+  if @test_params.params_chan.instance_variable_defined?("@if")
+    @equipment['dut1'].send_cmd("time dd if=#{@test_params.params_chan.instance_variable_get("@if")[0]} of=file bs=#{bs} count=#{count} ; time sync",@equipment['dut1'].prompt,120)
+  else
+    @equipment['dut1'].send_cmd("time dd if=/dev/zero of=file bs=#{bs} count=#{count} ; time sync",@equipment['dut1'].prompt,120)
+  end
   params.each { |value|
     @res_table = @results_html_file.add_table([["#{value} bs:#{bs} count:#{count} (in seconds)",{:bgcolor => "blue", :colspan => "2"},{:color => "red"}]],{:border => "1",:width=>"20%"})
     time = get_time(value,@equipment['dut1'].response)
