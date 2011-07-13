@@ -28,7 +28,7 @@ module C6xTestScript
       platform_from_db = @test_params.platform.downcase    
       nfs  = @test_params.nfs     if @test_params.instance_variable_defined?(:@nfs)
       syslink_bins  = @test_params.syslink_bins    if @test_params.instance_variable_defined?(:@syslink_bins)
-      benchmark_bins =  @test_params.cyclictest_bin if @test_params.instance_variable_defined?(:@benchmark_bins)
+      benchmark_bins =  @test_params.benchmark_bins if @test_params.instance_variable_defined?(:@benchmark_bins)
       bootblob = @test_params.var_bootblob     if @test_params.instance_variable_defined?(:@var_bootblob)
       bootblob_util =  @test_params.bootblob_util     if @test_params.instance_variable_defined?(:@bootblob_util)
       testdriver = @test_params.testdriver     if @test_params.instance_variable_defined?(:@testdriver)
