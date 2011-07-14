@@ -2,7 +2,9 @@ require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 
 def setup
-  super
+  #super
+  @equipment['dut1'].set_api('psp')
+  connect_to_equipment('dut1')
 end
 
 def run
@@ -32,8 +34,6 @@ def run
 end
 
 def clean
-  #puts "reset the board..."
-  #@power_handler.reset(@equipment['dut1'].power_port)
-
+  super
 end
 
