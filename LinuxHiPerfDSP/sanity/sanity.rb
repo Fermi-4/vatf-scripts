@@ -7,7 +7,7 @@ def setup
 end
 
 def run
-  @equipment['dut1'].send_cmd("uname -a",@equipment['dut1'].prompt, 30)
+  @equipment['dut1'].send_cmd("cat /proc/version",@equipment['dut1'].prompt, 30)
   test_done_result = FrameworkConstants::Result[:fail]
   comment = "Test fail"
   if (/Linux/.match(@equipment['dut1'].response.to_s) != nil)

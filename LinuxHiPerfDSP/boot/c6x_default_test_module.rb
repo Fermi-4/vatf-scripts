@@ -87,36 +87,44 @@ module C6xTestScript
           @initramfs = true
         end
         #Create kernel image and place in TFTP directory
-        if bootblob and kernel
+        if (bootblob and kernel) or (@initramfs)
           @equipment['server1'].send_cmd("cd #{nfs_root_path}", @equipment['server1'].prompt, 10)
-          BuildClient.copy(kernel, "#{samba_root_path}\\#{File.basename(kernel)}") if !File.exists?("#{samba_root_path}//#{File.basename(kernel)}")
+          if File.exists?("#{samba_root_path}//#{File.basename(kernel)}")
+            @equipment['server1'].send_sudo_cmd("rm #{File.basename(kernel)}", @equipment['server1'].prompt, 10)
+          end
+          BuildClient.copy(kernel, "#{samba_root_path}\\#{File.basename(kernel)}") 
           if !File.exists?("#{samba_root_path}//bootblob")
             BuildClient.copy(bootblob_util, "#{samba_root_path}\\bootblob") 
-            @equipment['server1'].send_cmd("fromdos bootblob", @equipment['server1'].prompt, 10)
-          end
-          bootblob_str = ''
-          bootblob_ip = nil
-          bootblob.strip.split(";").each { |cmd|     
-          if(cmd == "ip=dhcp")
-            bootblob_ip = "ip=dhcp"
-          else
-            bootblob_str << cmd + " "
-          end
-          }
-          if(bootblob_ip == nil) 
-            bootblob_ip = "ip=#{@equipment['dut1'].telnet_ip}"
+            #@equipment['server1'].send_cmd("fromdos bootblob", @equipment['server1'].prompt, 10)
           end
           if nfs 
+            bootblob_str = ''
+            bootblob_ip = nil
+            bootblob.strip.split(";").each { |cmd|     
+            if(cmd == "ip=dhcp")
+              bootblob_ip = "ip=dhcp"
+            else
+              bootblob_str << cmd + " "
+            end
+            }
+            if(bootblob_ip == nil) 
+              bootblob_ip = "ip=#{@equipment['dut1'].telnet_ip}"
+            end
             if(platform_from_db == "himalaya")
               bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"#{bootblob_str} emac_addr=#{@equipment['dut1'].params["emac_addr"]} #{bootblob_ip} root=/dev/nfs nfsroot=#{@equipment['server1'].params["nfs_ip"]}:#{nfs_root_path_temp},tcp,v3 rw\""    
             else        
               bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"#{bootblob_str} #{bootblob_ip} root=/dev/nfs nfsroot=#{@equipment['server1'].params["nfs_ip"]}:#{nfs_root_path_temp},tcp,v3 rw\""    
             end
           elsif @initramfs
-             if(platform_from_db == "himalaya")
-              bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"#{bootblob_str} emac_addr=#{@equipment['dut1'].params["emac_addr"]} #{bootblob_ip} rw\""    
+            @equipment['server1'].send_sudo_cmd("./bootblob get-cmdline #{File.basename(kernel)}", @equipment['server1'].prompt, 30)
+            bootblob_str = @equipment['server1'].response.scan(/[^console].*[rw$]/)[0].strip
+            puts "+++++++++++++++++++++++"
+            puts "Response: #{bootblob_str}"
+            puts "+++++++++++++++++++++++"
+            if(platform_from_db == "himalaya")
+              bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"emac_addr=#{@equipment['dut1'].params["emac_addr"]} #{bootblob_str}\""    
             else        
-              bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"#{bootblob_str} #{bootblob_ip} rw\""    
+              bootblob_cmd = "set-cmdline #{File.basename(kernel)} \"#{bootblob_str}\""    
             end           
           end
           @equipment['server1'].send_sudo_cmd("./bootblob #{bootblob_cmd}", @equipment['server1'].prompt, 30)
