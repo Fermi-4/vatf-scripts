@@ -26,7 +26,7 @@ end
 def run_determine_test_outcome(return_non_zero)
   @equipment['dut1'].send_cmd("cat result.log",/^1[\0\n\r]+/m, 2)
   failtest_check = !@equipment['dut1'].timeout?
-  perf_data = get_performance_data(File.join(SiteInfo::LINUX_TEMP_FOLDER,'test.log'), get_perf_metrics)
+  perf_data = get_performance_data(File.join(@linux_temp_folder,'test.log'), get_perf_metrics)
   test_type = @test_params.params_control.type[0]
   if test_type.match(/tcp/i)
     perf_data.each{|d|

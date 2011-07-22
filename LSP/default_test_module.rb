@@ -22,6 +22,7 @@ module LspTestScript
     end
     
     def setup
+      @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)
       @equipment['dut1'].set_api('psp')
       tester_from_cli  = @tester.downcase
       target_from_db   = @test_params.target.downcase

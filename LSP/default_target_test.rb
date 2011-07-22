@@ -9,6 +9,7 @@ module LspTargetTestScript
   # Connects Test Equipment to DUT(s) and Boot DUT(s)
   def setup
     puts "\n LinuxTestScript::setup"
+    @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)
     delete_temp_files()
     @linux_dst_dir = @test_params.params_control.instance_variable_defined?(:@test_dir) ? @test_params.params_control.test_dir[0] : '/test'
     setup_connect_equipment()
@@ -41,10 +42,10 @@ module LspTargetTestScript
   # By default this function only replaces the @test_params references in the shell script template and creates test.sh  
   def run_generate_script
     puts "\n LinuxTestScript::run_generate_script"
-    FileUtils.mkdir_p SiteInfo::LINUX_TEMP_FOLDER
+    FileUtils.mkdir_p @linux_temp_folder
     in_file = File.new(File.join(@test_params.view_drive, @test_params.params_control.shell_script[0]), 'r')
     raw_test_lines = in_file.readlines
-    out_file = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER, 'test.sh'),'w')
+    out_file = File.new(File.join(@linux_temp_folder, 'test.sh'),'w')
     raw_test_lines.each do |current_line|
       out_file.puts(eval('"'+current_line.gsub("\\","\\\\\\\\").gsub('"','\\"')+'"'))
     end
@@ -55,7 +56,7 @@ module LspTargetTestScript
   # Transfer the shell script (test.sh) to the DUT and any require libraries
   def run_transfer_script()
     puts "\n LinuxTestScript::run_transfer_script"
-    in_file = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER,'test.sh'), 'r')
+    in_file = File.new(File.join(@linux_temp_folder,'test.sh'), 'r')
     raw_test_lines = in_file.readlines
     @equipment['dut1'].send_cmd("mkdir -p -m 777 #{@linux_dst_dir}", @equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
@@ -79,10 +80,10 @@ module LspTargetTestScript
   # Collect output from standard output and  standard error in test.log
   def run_get_script_output
     puts "\n LinuxTestScript::run_get_script_output"
-    log_file_name = File.join(SiteInfo::LINUX_TEMP_FOLDER, 'test.log') 
+    log_file_name = File.join(@linux_temp_folder, 'test.log') 
     log_file = File.new(log_file_name,'w')
-    stderr_file  = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER,'stderr.log'),'w')
-    stdout_file  = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER,'stdout.log'),'w')
+    stderr_file  = File.new(File.join(@linux_temp_folder,'stderr.log'),'w')
+    stdout_file  = File.new(File.join(@linux_temp_folder,'stdout.log'),'w')
     @equipment['dut1'].send_cmd("cat stdout.log",@equipment['dut1'].prompt,30)
     std_output = @equipment['dut1'].response
     @equipment['dut1'].send_cmd("cat stderr.log",@equipment['dut1'].prompt,30)
@@ -122,9 +123,9 @@ module LspTargetTestScript
 
     if result.length == 3
       set_result(result[0],result[1],result[2])
-    elsif File.exists?(File.join(SiteInfo::LINUX_TEMP_FOLDER,'perf.log'))
+    elsif File.exists?(File.join(@linux_temp_folder,'perf.log'))
       perfdata = []
-      data = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER,'perf.log'),'r').readlines
+      data = File.new(File.join(@linux_temp_folder,'perf.log'),'r').readlines
       data.each {|line|
         if /(\S+)\s+([\.\d]+)\s+(\S+)/.match(line)
           name,value,units = /(\S+)\s+([\.\d]+)\s+(\S+)/.match(line).captures 
@@ -150,12 +151,12 @@ module LspTargetTestScript
   
   # Return standard output of test.sh as a string
   def get_std_output
-    File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER,'stdout.log'),'r').read
+    File.new(File.join(@linux_temp_folder,'stdout.log'),'r').read
   end
   
   # Return standard error of test.sh as a string
   def get_std_error
-    File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER,'stderr.log'),'r').read
+    File.new(File.join(@linux_temp_folder,'stderr.log'),'r').read
   end
   
   # Return serial (i.e. console) output of test.sh as a string
@@ -181,9 +182,9 @@ module LspTargetTestScript
 
   private
   def delete_temp_files
-    return if !File.directory?(SiteInfo::LINUX_TEMP_FOLDER)
-    Dir.foreach(SiteInfo::LINUX_TEMP_FOLDER) do |f|
-      filepath = File.join(SiteInfo::LINUX_TEMP_FOLDER,f)
+    return if !File.directory?(@linux_temp_folder)
+    Dir.foreach(@linux_temp_folder) do |f|
+      filepath = File.join(@linux_temp_folder,f)
       if f == '.' or f == '..' or File.directory?(filepath) then next
       else FileUtils.rm(filepath, {:verbose => true})
       end

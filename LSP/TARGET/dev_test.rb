@@ -7,7 +7,7 @@ include LspTargetTestScript
 # test parameter references and creates test.sh  
 def run_generate_script
   puts "\n LinuxTestScript::run_generate_script"
-  FileUtils.mkdir_p SiteInfo::LINUX_TEMP_FOLDER
+  FileUtils.mkdir_p @linux_temp_folder
   ftp_file_version = @test_params.params_control.script[0]
   isScriptACommand = !ftp_file_version.match(/ftp:\/\//i)
   if (!isScriptACommand)  # Need to retrieve script using ftp bee
@@ -77,7 +77,7 @@ def run_generate_script
     raw_test_lines = in_file.readlines  
   end
   
-  out_file = File.new(File.join(SiteInfo::LINUX_TEMP_FOLDER, 'test.sh'),'w')
+  out_file = File.new(File.join(@linux_temp_folder, 'test.sh'),'w')
   out_file.print("failtest() {\n")
   out_file.print("  echo 1 >&3\n")
   out_file.print("}\n")
@@ -122,7 +122,7 @@ def run_determine_test_outcome(return_non_zero)
 end
 
 def get_detailed_info
-  log_file_name = File.join(SiteInfo::LINUX_TEMP_FOLDER, 'test.log') 
+  log_file_name = File.join(@linux_temp_folder, 'test.log') 
   all_lines = ''
   File.open(log_file_name, 'r').each {|line|
     all_lines += line.gsub(/<\/*(STD|ERR)_OUTPUT>/,'')

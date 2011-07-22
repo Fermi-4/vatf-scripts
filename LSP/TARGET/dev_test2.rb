@@ -17,18 +17,19 @@ def run_determine_test_outcome(return_non_zero)
   puts "\n LinuxTestScript::run_determine_test_outcome"
   @equipment['dut1'].send_cmd("cat result.log",/^1[\0\n\r]+/m, 2)
   failtest_check = !@equipment['dut1'].timeout?
+
   if return_non_zero
     return [FrameworkConstants::Result[:fail], 
             "Application exited with non-zero value. \n",
-            get_performance_data(File.join(SiteInfo::LINUX_TEMP_FOLDER,'test.log'), get_perf_metrics)]
+            get_performance_data(File.join(@linux_temp_folder,'test.log'), get_perf_metrics)]
   elsif failtest_check
     return [FrameworkConstants::Result[:fail],
             "failtest() function was called. \n",
-            get_performance_data(File.join(SiteInfo::LINUX_TEMP_FOLDER,'test.log'), get_perf_metrics)]
+            get_performance_data(File.join(@linux_temp_folder,'test.log'), get_perf_metrics)]
   else
     return [FrameworkConstants::Result[:pass],
             "Test passed. Application exited with zero. \n",
-            get_performance_data(File.join(SiteInfo::LINUX_TEMP_FOLDER,'test.log'), get_perf_metrics)]
+            get_performance_data(File.join(@linux_temp_folder,'test.log'), get_perf_metrics)]
   end
 end
 
