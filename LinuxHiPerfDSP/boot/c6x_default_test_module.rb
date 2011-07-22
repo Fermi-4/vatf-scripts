@@ -29,6 +29,7 @@ module C6xTestScript
       nfs  = @test_params.nfs     if @test_params.instance_variable_defined?(:@nfs)
       syslink_bins  = @test_params.syslink_bins    if @test_params.instance_variable_defined?(:@syslink_bins)
       benchmark_bins =  @test_params.benchmark_bins if @test_params.instance_variable_defined?(:@benchmark_bins)
+      writer_image =  @test_params.writer_image if @test_params.instance_variable_defined?(:@writer_image)
       bootblob = @test_params.var_bootblob     if @test_params.instance_variable_defined?(:@var_bootblob)
       bootblob_util =  @test_params.bootblob_util     if @test_params.instance_variable_defined?(:@bootblob_util)
       testdriver = @test_params.testdriver     if @test_params.instance_variable_defined?(:@testdriver)
@@ -144,12 +145,12 @@ module C6xTestScript
         nfs_root_path_temp 	= C6xTestScript.get_nfs_path ? C6xTestScript.get_nfs_path : nfs_root_path_temp
       end
       if testdriver && @equipment.has_key?('server1') #&& !nfs && !@test_params.instance_variable_defined?(:@var_nfs) 
-           if (!File.exists?"#{samba_root_path_temp}\\#{DUT_DST_DIR}\\testdriver}")
+           if (!File.exists?"#{samba_root_path_temp}\\#{DUT_DST_DIR}\\testdriver")
             @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}/#{DUT_DST_DIR}", @equipment['server1'].prompt, 10)
             @equipment['server1'].send_sudo_cmd("chmod 777 .",@equipment['server1'].prompt, 10)  
             dst_path = "#{samba_root_path_temp}\\#{DUT_DST_DIR}\\testdriver"
             BuildClient.copy(testdriver, dst_path)     
-            @equipment['server1'].send_sudo_cmd("chmod 777 #{File.basename(testdriver)}",@equipment['server1'].prompt, 30)  
+            @equipment['server1'].send_sudo_cmd("chmod 777 testdriver",@equipment['server1'].prompt, 30)  
           end            
       end
       if syslink_bins
@@ -165,7 +166,15 @@ module C6xTestScript
         dst_path = "#{samba_root_path_temp}\\opt"
         BuildClient.copy(benchmark_bins, dst_path)    
         @equipment['server1'].send_sudo_cmd("tar -xvzf #{File.basename(benchmark_bins)}",@equipment['server1'].prompt, 10)       
-      end        
+      end
+      if writer_image
+        @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}/opt", @equipment['server1'].prompt, 10)
+        @equipment['server1'].send_sudo_cmd("chmod 777 .",@equipment['server1'].prompt, 10)   
+        dst_path = "#{samba_root_path_temp}/opt"
+        BuildClient.copy(writer_image, dst_path)
+	    @equipment['server1'].send_sudo_cmd("rm image.bin",@equipment['server1'].prompt, 10)  
+        @equipment['server1'].send_sudo_cmd("mv #{File.basename(writer_image)} image.bin",@equipment['server1'].prompt, 10)     
+      end
       C6xTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp) 
       connect_to_equipment('dut1')
       0.upto 5 do
