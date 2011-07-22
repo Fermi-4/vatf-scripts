@@ -20,7 +20,7 @@ module Boot
     # in order to distinquish from uboot prompt, use 'uname' to check if dut alive.
     # But, it only works for Linux. For other OS???
     #match = @equipment['dut1'].prompt
-    @equipment['dut1'].send_cmd("uname -a", /Linux/, 5)
+    @equipment['dut1'].send_cmd("cat /proc/version", /Linux/, 5)
     !@equipment['dut1'].timeout?
   end
 
