@@ -1,0 +1,11 @@
+test_importer.rb
+-----------------
+ Creates xml file suitable to be imported into Testlink.
+The xml file contains all the test cases extracted from ltp-ddt project (master branch)
+
+The script does not take any parameters and it will save the xml file in a timestamp directory at the location where the script resides
+
+SKIP_TESTCASES.rb
+-----------------
+Array of regular expressions that identify test case tags that SHOULD NOT be imported.
+
