@@ -85,7 +85,7 @@ class TestImporter
       return []
     end
   
-    if /^\s*#\s*@setup_requires\s+(.+)/ =~ data
+    if /^\s*#\s*@setup_requires\s+([-\w]+)/ =~ data
       common['setup_requires'] = $1.strip
     end
     testcases = []
@@ -162,7 +162,7 @@ class TestImporter
       when /STRESS/i
         return (3600*24).to_s
       when /PERF/i
-        return (3600*2).to_s
+        return '3600'
       else
         return '600'
     end     
