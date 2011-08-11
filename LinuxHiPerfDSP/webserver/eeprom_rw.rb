@@ -81,8 +81,8 @@ def run
     comment = "Test pass"
   end
   
-  # @equipment['server1'].send_sudo_cmd("rm myfile", @equipment['server1'].prompt, 30)
-  # @equipment['server1'].send_cmd("rm myfile-out", @equipment['server1'].prompt, 30)
+  @equipment['server1'].send_sudo_cmd("rm myfile", @equipment['server1'].prompt, 30)
+  @equipment['server1'].send_cmd("rm myfile-out", @equipment['server1'].prompt, 30)
 
   set_result(test_done_result,comment)
 end
