@@ -1,116 +1,147 @@
 # -*- coding: ISO-8859-1 -*-
 require File.dirname(__FILE__)+'/../default_test_module'
+require File.dirname(__FILE__)+'/Platform_Specific_VarNames'
+# Default Server-Side Test script implementation for LSP releases
+   
 include LspTestScript
+include PlatformSpecificVarNames
 
-def setup             # added on 01-12-2009 to bypass the normal setup routines.  The original routine was causing the board to hang at various times.
-  puts "alternate.default.setup"
+def setup
+	@equipment['dut1'].set_api('psp')
+	connect_to_equipment('dut1')
+	
+	#Check if DUT is already at boot_prompt
+	@equipment['dut1'].send_cmd("\n", @equipment['dut1'].boot_prompt,1)
+	#If DUT is not at boot_prompt do reboot with power_controller or soft reboot
+	@equipment['dut1'].boot_to_bootloader(@power_handler) if @equipment['dut1'].timeout?
+	#self.as(LspTestScript).setup
+
+	tester_from_cli = @tester.downcase
+	target_from_db = @test_params.target
+	platform_from_db = @test_params.platform
+	image_path = @test_params.kernel
+	
+	tmp_path = File.join(tester_from_cli.downcase.strip,target_from_db.downcase.strip,platform_from_db.downcase.strip)
+	if image_path != nil && File.exists?(image_path) && @equipment['dut1'].get_image(image_path, @equipment['server1'], tmp_path) then
+		puts "uImage copied to  #{tmp_path}"
+		bootfile_path = File.join(tmp_path,File.basename(image_path))
+	else
+		raise "image #{image_path} does not exist, unable to copy"
+	end
+
 end
 
 def run
-  puts "uboot.run"
-  commands = ensure_commands = ""
-  commands = parse_cmd('cmd') 
-  ensure_commands = parse_cmd('ensure') if @test_params.params_chan.instance_variable_defined?(:@ensure) 
-  
-  @equipment['dut1'].boot_to_bootloader
-  
-  result, cmd = execute_cmd(commands)
-	
-  if result == 0 
-    set_result(FrameworkConstants::Result[:pass], "Test Pass.")
-  elsif result == 1
-    set_result(FrameworkConstants::Result[:fail], "Timeout executing cmd: #{cmd.cmd_to_send}")
-  elsif result == 2
-    set_result(FrameworkConstants::Result[:fail], "Fail message received executing cmd: #{cmd.cmd_to_send}")
-  elsif result == 3
-    set_result(FrameworkConstants::Result[:NSup], "This command is not supported: #{cmd.cmd_to_send}")
-  else
-    set_result(FrameworkConstants::Result[:nry])
-  end
-  ensure 
-    result, cmd = execute_cmd(ensure_commands) if ensure_commands !=""
-    @equipment['dut1'].send_cmd('boot', /login/, 90)
-    @equipment['dut1'].send_cmd(@equipment['dut1'].login, @equipment['dut1'].prompt, 20) # login to the unit to leave it in a decent state
+	self.as(LspTestScript).run
 end
 
 def clean
-  #@equipment['apc1'].reset(@equipment['dut1'].power_port.to_s)
-  puts 'uboot.clean'
+  	#super
+  	self.as(LspTestScript).clean
 end
 
-def execute_cmd(commands)
-		last_cmd = nil
-		result = 0 	#0=pass, 1=timeout, 2=fail message detected 
-		dut_timeout = 30
-		vars = Array.new
-				
-		puts ">>>>>>>>>>>>>"
-		puts "Start - Here I am."
-		puts ">>>>>>>>>>>>>>>"
-				
-    commands.each {|cmd|
-    last_cmd = cmd
-            
-		puts "Step 1."
-						
-		if cmd.ruby_code
-      puts "Step 2."
-			eval cmd.ruby_code
-    else
-			puts "Step 3."
-			puts "There is no cmd.pass_regex" if !cmd.instance_variable_defined?(:@pass_regex)
-      cmd.pass_regex =  /#{cmd.cmd_to_send.split(/\s/)[0]}.*#{@equipment['dut1'].boot_prompt}/m if !cmd.instance_variable_defined?(:@pass_regex)
-       
-			#puts "Step 4."
-				
-			#puts ">>>>>>>>4a>>>>>>>>"
-      #puts "Command:  " + cmd.cmd_to_send
-      #puts ">>>>>>>>4b>>>>>>>"
-		
-			if !cmd.instance_variable_defined?(:@fail_regex)
-				puts "Step 5."
-        puts "(#{cmd.pass_regex})"
-				expect_regex = "(#{cmd.pass_regex})"
-      else
-				#puts "Step 6."
-        expect_regex = "(#{cmd.pass_regex}|#{cmd.fail_regex})"
-      end
+def parse_cmd(var_name)
+	target_commands = []
+	cmds = @test_params.params_chan.instance_variable_get("@#{var_name}")
+	cmds.each {|cmd|
+	cmd.strip!
+	target_cmd = TargetCommand.new
+	if /^\[/.match(cmd)
+		# ruby code
+		target_cmd.ruby_code = cmd.strip.sub(/^\[/,'').sub(/\]$/,'')
+	else
+		# substitute matrix variables
+		if cmd.scan(/[^\\]\{(\w+)\}/).size > 0
+			cmd = cmd.gsub!(/[^\\]\{(\w+)\}/) {|match|
+			match[0,1] + @test_params.params_chan.instance_variable_get("@#{match[1,match.size].gsub(/\{|\}/,'')}").to_s
+		}
+		end
+		# get command to send
+		m = /[^\\]`(.+)[^\\]`$/.match(cmd)
+             
+		if m == nil     # No expected-response specified
+			target_cmd.cmd_to_send = eval('"'+cmd+'"')
+			target_commands << target_cmd
+			next
+		else
+			target_cmd.cmd_to_send = eval('"'+m.pre_match+cmd[m.begin(0),1]+'"')
+		end
+    
+		# get expected response
+		pass_regex_specified = fail_regex_specified = false
+		response_regex = m[1] + cmd[m.end(0)-2,1]
+		m = /\+\+/.match(response_regex)
+		(m == nil) ? (pass_regex_specified = false) : (pass_regex_specified = true)
+		m = /\-\-/.match(response_regex)
+		(m == nil) ? (fail_regex_specified = false) : (fail_regex_specified = true)
+		m = /^\+\+/.match(response_regex)
+		if m == nil     # Starts with --fail response 
+			if pass_regex_specified
+				target_cmd.fail_regex = /^\-\-(.+)\+\+/.match(response_regex)[1]
+				target_cmd.pass_regex = /\+\+(.+)$/.match(response_regex)[1] 
+			else
+				target_cmd.fail_regex = /^\-\-(.+)$/.match(response_regex)[1]
+			end
+		else            # Starts with ++pass response
+			if fail_regex_specified
+				target_cmd.pass_regex = /^\+\+(.+)\-\-/.match(response_regex)[1]
+				target_cmd.fail_regex = /\-\-(.+)$/.match(response_regex)[1] 
+			else
+				target_cmd.pass_regex = /^\+\+(.+)$/.match(eval('"'+response_regex+'"'))[1]
+			end
+		end
+	end
+	target_commands << target_cmd
+	}
+	target_commands
+end
 
-=begin
-			puts "Step 7."
-			regex = Regexp.new(expect_regex)
-			puts ">>>>>>>>>>>>>>>"
-			puts "Regex:  " + "(#{Regexp.new(expect_regex)})"
-			puts "Response:  " + @equipment['dut1'].response
-      puts ">>>>>>>>>>>>>>>"
-=end
-      #@equipment['dut1'].send_cmd(cmd.cmd_to_send, regex, dut_timeout)
-			
-      regex = Regexp.new(expect_regex)
-			@equipment['dut1'].send_cmd(cmd.cmd_to_send, regex, 15)
-=begin
-			puts "Step 8."
-			puts ">>>>>>>>>>>>>>>"
-      puts "Command:  " + cmd.cmd_to_send
-			puts "Regex:  " + "(#{Regexp.new(expect_regex)})"
-			#puts "Timeout:  (#{dut_timeout})"
-      puts ">>>>>>>>>>>>>>>"
-      puts "Step 9"
-			puts "<<<<<<<<<<<<<<<"
-      puts "Response:  " + @equipment['dut1'].response
-      puts "<<<<<<<<<<<<<<<"
-      puts "Result:  (#{@equipment['dut1'].timeout?})"
-      puts "<<<<<<<<<<<<<<<"
-=end
-			if @equipment['dut1'].timeout?
-         result = 1
-         break
-      elsif cmd.instance_variable_defined?(:@fail_regex) && Regexp.new(cmd.fail_regex).match(@equipment['dut1'].response)
-         result = 2
-         break
+
+def execute_cmd(commands)
+	last_cmd = nil
+	result = 0 	#0=pass, 1=timeout, 2=fail message detected 
+	dut_timeout = 10
+	vars = Array.new
+	commands.each {|cmd|
+	last_cmd = cmd
+	if cmd.ruby_code 
+		eval cmd.ruby_code
+	else
+		cmd.pass_regex =  /#{@equipment['dut1'].boot_prompt.source}/m if !cmd.instance_variable_defined?(:@pass_regex)
+		if !cmd.instance_variable_defined?(:@fail_regex)
+			expect_regex = "(#{cmd.pass_regex})"
+		else
+			expect_regex = "(#{cmd.pass_regex}|#{cmd.fail_regex})"
+		end
+	regex = Regexp.new(expect_regex)                                                
+	@equipment['dut1'].send_cmd(cmd.cmd_to_send, regex, dut_timeout)
+	if @equipment['dut1'].timeout?
+	    result = 1
+	    break 
+	elsif cmd.instance_variable_defined?(:@fail_regex) && Regexp.new(cmd.fail_regex).match(@equipment['dut1'].response)
+		result = 2
+		break
+	end
+	end
+	}
+	[result , last_cmd]
+end
+
+def stop_boot()
+	@equipment['dut1'].wait_for(/I2C:/, 10) if @test_params.platform.match('am387x-evm')
+	@equipment['dut1'].send_cmd("\e", @equipment['dut1'].boot_prompt, 1)	
+end
+
+def put_val(val)
+	@equipment['dut1'].send_cmd(val, @equipment['dut1'].boot_prompt, 1)	
+end
+
+def connect_to_equipment(equipment)
+      this_equipment = @equipment["#{equipment}"]
+      #puts "You are serially connecting to #{equipment}"
+      if ((this_equipment.respond_to?(:serial_port) && this_equipment.serial_port != nil ) || (this_equipment.respond_to?(:serial_server_port) && this_equipment.serial_server_port != nil)) && !this_equipment.target.serial
+        this_equipment.connect({'type'=>'serial'})
+      elsif !this_equipment.target.serial
+        raise "You need Serial port connectivity to #{equipment}. Please check your bench file" 
       end
-      end
-        }
-		
-        [result , last_cmd]
-    end
+end
