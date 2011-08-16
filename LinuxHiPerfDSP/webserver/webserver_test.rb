@@ -12,17 +12,10 @@ end
 def run
   test_done_result = FrameworkConstants::Result[:fail]
   comment = "Test fail"
-  
-  @equipment['dut1'].send_cmd("uname -a",@equipment['dut1'].prompt,10)
-  platform = @equipment['dut1'].response.match(/ti(c\d+\w)/).captures[0].to_s
+  test_str = @test_params.params_chan.instance_variable_get("@test_str")[0].to_s
 
-  if (platform == "c6678" or platform == "c6670")
-    test_str=/C6x\sLinux\sWeb\sControl\sPanel/
-  else
-    test_str=/This\sis\sthe\sOut\sof\sBox\sdemo\sprototype\sfor\sLinux-c6x/
-  end
   res = Net::HTTP.get_response(URI.parse("http://#{@equipment['dut1'].telnet_ip}"))
-  http_str = res.body.match(test_str)
+  http_str = res.body.match(Regexp.new(test_str))
   if (http_str != nil)
     test_done_result = FrameworkConstants::Result[:pass]
     comment = "Test pass: found string #{http_str}"
