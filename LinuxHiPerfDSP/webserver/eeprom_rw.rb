@@ -29,7 +29,7 @@ def run
   else
     puts "No input file specified, creating an input file .."
     id = Time.now.strftime("%m_%d_%Y_%H_%M_%S")
-    test_str = "This is a NAND #{test_type} test " + id
+    test_str = "This is a EEPROM #{i2c_bus_addr} test " + id
     f = File.new("#{C6xTestScript.samba_root_path}/myfile","w+")
     f.puts test_str
     f.close
