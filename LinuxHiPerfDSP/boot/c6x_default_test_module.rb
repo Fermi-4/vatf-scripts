@@ -154,9 +154,9 @@ module C6xTestScript
           end            
       end
       if syslink_bins
-        @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}/#{SYSLINK_DST_DIR}", @equipment['server1'].prompt, 10)
+        @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}/", @equipment['server1'].prompt, 10)
         @equipment['server1'].send_sudo_cmd("chmod 777 .",@equipment['server1'].prompt, 10)   
-        dst_path = "#{samba_root_path_temp}\\#{SYSLINK_DST_DIR}"
+        dst_path = "#{samba_root_path_temp}"
         BuildClient.copy(syslink_bins, dst_path)    
         @equipment['server1'].send_sudo_cmd("tar -xvzf #{File.basename(syslink_bins)}",@equipment['server1'].prompt, 10)   
       end
