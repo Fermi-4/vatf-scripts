@@ -96,7 +96,7 @@ module LspTestScript
       connect_to_equipment('dut1')
       
       # by now, the dut should already login and is up; if not, dut may hang.
-      #raise "UUT may be hanging!" if !is_uut_up?
+      raise "UUT may be hanging!" if !is_uut_up?
       
       # Leave target in appropriate directory
       #@equipment['dut1'].send_cmd("cd #{nfs_path}\n", /#{@equipment['dut1'].prompt}/, 10)  if ( @equipment.has_key?('server1') && !(nfs) && !(@test_params.instance_variable_defined?(:@var_nfs)) )
