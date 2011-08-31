@@ -265,7 +265,7 @@ module C6xTestScript
       @equipment['server1'].send_sudo_cmd("chmod +x make-filesystem",@equipment['server1'].prompt, 10)
       @equipment['server1'].send_sudo_cmd("rm #{template}.#{@endian}.cpio.gz",@equipment['server1'].prompt, 10)
       @equipment['server1'].send_sudo_cmd("rm #{template}.#{@endian}.bin",@equipment['server1'].prompt, 10)
-      @equipment['server1'].send_sudo_cmd("./bootblob #{template}",/some attempted template combinations were skipped or failed/, 40)
+      @equipment['server1'].send_sudo_cmd("./bootblob #{template}",/some attempted template combinations were skipped or failed/, 120)
       
       case get_fs_type(template)
         when "nfs"
