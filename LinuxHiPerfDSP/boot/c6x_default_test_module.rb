@@ -151,20 +151,20 @@ module C6xTestScript
               bootblob_cmd = "set-cmdline #{File.basename(@kernel)} \"#{bootblob_str} #{bootblob_ip} root=/dev/nfs nfsroot=#{@equipment['server1'].params["nfs_ip"]}:#{nfs_root_path_temp},tcp,v3 rw\""    
             end
           elsif @initramfs
-            @equipment['server1'].send_sudo_cmd("./bootblob get-cmdline #{File.basename(@kernel)}", @equipment['server1'].prompt, 30)
-            bootblob_str = @equipment['server1'].response.scan(/[^console].*[rw$]/)[0].strip
+            @equipment['server1'].send_sudo_cmd("./bootblob get-cmdline #{File.basename(@initramfs)}", @equipment['server1'].prompt, 30)
+            bootblob_str = @equipment['server1'].response.scan(/^console.*$/)[0].strip
             puts "+++++++++++++++++++++++"
             puts "Response: #{bootblob_str}"
             puts "+++++++++++++++++++++++"
             if(@platform == "himalaya")
-              bootblob_cmd = "set-cmdline #{File.basename(@kernel)} \"emac_addr=#{@equipment['dut1'].params["emac_addr"]} #{bootblob_str}\""    
+              bootblob_cmd = "set-cmdline #{File.basename(@initramfs)} \"emac_addr=#{@equipment['dut1'].params["emac_addr"]} #{bootblob_str}\""    
             else        
-              bootblob_cmd = "set-cmdline #{File.basename(@kernel)} \"#{bootblob_str}\""    
+              bootblob_cmd = "set-cmdline #{File.basename(@initramfs)} \"#{bootblob_str}\""    
             end           
           end
           @equipment['server1'].send_sudo_cmd("./bootblob #{bootblob_cmd}", @equipment['server1'].prompt, 30)
           @equipment['server1'].send_sudo_cmd("rm -f  #{@equipment['server1'].tftp_path}/#{kernel_name}", @equipment['server1'].prompt, 30) 
-          @equipment['server1'].send_sudo_cmd("cp #{File.basename(@kernel)} #{@equipment['server1'].tftp_path}/#{kernel_name}", @equipment['server1'].prompt, 30)
+          @equipment['server1'].send_sudo_cmd("cp #{File.basename(@initramfs)} #{@equipment['server1'].tftp_path}/#{kernel_name}", @equipment['server1'].prompt, 30)
         end
         # Turn power ON
         if power_port !=nil
@@ -265,7 +265,7 @@ module C6xTestScript
       @equipment['server1'].send_sudo_cmd("chmod +x make-filesystem",@equipment['server1'].prompt, 10)
       @equipment['server1'].send_sudo_cmd("rm #{template}.#{@endian}.cpio.gz",@equipment['server1'].prompt, 10)
       @equipment['server1'].send_sudo_cmd("rm #{template}.#{@endian}.bin",@equipment['server1'].prompt, 10)
-      @equipment['server1'].send_sudo_cmd("./bootblob #{template}",/some attempted template combinations were skipped or failed/, 120)
+      @equipment['server1'].send_sudo_cmd("FLOAT=#{@test_params.var_float} ./bootblob #{template}",/some attempted template combinations were skipped or failed/, 120)
       
       case get_fs_type(template)
         when "nfs"
@@ -279,7 +279,7 @@ module C6xTestScript
           @equipment['server1'].send_sudo_cmd("mv #{template}.#{@endian}#{@float}.bin #{@kernel_id}.bin",@equipment['server1'].prompt, 10)
           @kernel = "#{@samba_root_path}\\#{@kernel_id}.bin"
         when "initramfs"
-          @initramfs = "#{@samba_root_path}\\#{template}.bin"
+          @initramfs = "#{@samba_root_path}\\#{template}.#{@endian}#{@float}.bin"
       end
 
       
