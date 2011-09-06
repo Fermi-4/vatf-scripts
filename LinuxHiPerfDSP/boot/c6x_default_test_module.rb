@@ -164,7 +164,11 @@ module C6xTestScript
           end
           @equipment['server1'].send_sudo_cmd("./bootblob #{bootblob_cmd}", @equipment['server1'].prompt, 30)
           @equipment['server1'].send_sudo_cmd("rm -f  #{@equipment['server1'].tftp_path}/#{kernel_name}", @equipment['server1'].prompt, 30) 
-          @equipment['server1'].send_sudo_cmd("cp #{File.basename(@initramfs)} #{@equipment['server1'].tftp_path}/#{kernel_name}", @equipment['server1'].prompt, 30)
+          if @nfs 
+            @equipment['server1'].send_sudo_cmd("cp #{File.basename(@kernel)} #{@equipment['server1'].tftp_path}/#{kernel_name}", @equipment['server1'].prompt, 30)
+          elsif @initramfs
+            @equipment['server1'].send_sudo_cmd("cp #{File.basename(@initramfs)} #{@equipment['server1'].tftp_path}/#{kernel_name}", @equipment['server1'].prompt, 30)
+          end
         end
         # Turn power ON
         if power_port !=nil
