@@ -19,9 +19,11 @@ include WinceTestScript
 	counter=0
     run_generate_script
     run_transfer_script
+	if(!@test_params.params_chan.instance_variable_defined?(:@power_measurement_enabled) || (@test_params.params_chan.instance_variable_defined?(:@power_measurement_enabled) && @test_params.params_chan.power_measurement_enabled[0]) == true)
 	@equipment['multimeter1'].connect({'type'=>'serial'})
 	#configure multimeter 
 	@equipment['multimeter1'].configure_multimeter(@test_params.params_chan.sample_count[0].to_i)
+	end
 	# run stress test by setting the loop to desired value in the XML
 	while counter < @test_params.params_chan.suspend_loop[0].to_i  
     run_call_script
@@ -32,23 +34,28 @@ include WinceTestScript
 	puts "About to sleep for synchronization\n"
 	sleep @test_params.params_chan.delay[0].to_i 
 	puts "Sleep is done - about to run_get_multimeter_output\n"
+	if(!@test_params.params_chan.instance_variable_defined?(:@power_measurement_enabled) || (@test_params.params_chan.instance_variable_defined?(:@power_measurement_enabled) && @test_params.params_chan.power_measurement_enabled[0]) == true)
 	# final voltadge reading from the domains
 	final_vol_reading.merge!(run_get_multimeter_output)
 	# power consumption is calculated in this function 
 	final_power_reading.merge!(calculate_power_consumption(final_vol_reading))
 	# generates the plot of the power consumption for the given application
 	power_consumption_plot(final_power_reading,)
+	end
 	run_collect_performance_data(final_power_reading,final_vol_reading)
 	query_ips_State(@test_params.params_chan.ips_to_query, true)
 	#run_determine_test_outcome(final_power_reading,final_vol_reading,@test_params.params_chan, true)
 	#run_save_results(final_power_reading,@test_params.params_chan,true)
+	if(!@test_params.params_chan.instance_variable_defined?(:@power_measurement_enabled) || (@test_params.params_chan.instance_variable_defined?(:@power_measurement_enabled) && @test_params.params_chan.power_measurement_enabled[0]) == true)
 	run_save_results(final_power_reading,final_vol_reading,@test_params.params_chan, true)
+	end
 	#set ip state to the initial  state 
 	change_ips_State(@test_params.params_chan.ipname,false)
 	#query_ips_State(@test_params.params_chan.ips_to_query, true)
 	counter += 1
 	puts "############# Iteration Number ############## #{counter}"
 	sleep 60 #This sleep statment is used by the loop. We sleep a litle bit before we go to the next loop iteration.
+	         # This sleep time might require tweaking in case RTC timer ticks of target are greater than 60 seconds
 	end 
   end
   
@@ -214,6 +221,7 @@ end
 
     # The function writes performance values into perf.log. Also write all results to HTML file to be linked to each test case result.  
 def run_collect_performance_data(power_consumption,voltage_reading)
+if(!@test_params.params_chan.instance_variable_defined?(:@power_measurement_enabled) || (@test_params.params_chan.instance_variable_defined?(:@power_measurement_enabled) && @test_params.params_chan.power_measurement_enabled[0]) == true)
     perf_log = nil
     perf_log = File.new(File.join(@wince_temp_folder,'perf.log'),'w')
 	perf_log.puts('VDD1_AVERAGE_POWER_CONSUMPTION  ' +  power_consumption['ave_vvd1'].to_s + ' mw') 
@@ -267,6 +275,7 @@ def run_collect_performance_data(power_consumption,voltage_reading)
     @results_html_file.add_row_to_table(res_table,[power.to_s,power_consumption['all_vvd1'][count].to_s,power_consumption['all_vvd2'][count].to_s,voltage_reading['all']['chan_4'][count].to_s,voltage_reading['all']['chan_5'][count].to_s,voltage_reading['all']['chan_1_current'][count].to_s,voltage_reading['all']['chan_2_current'][count].to_s])
      count += 1	 
 	}	
+	end
   ensure
   perf_log.close if perf_log
 end
