@@ -1,0 +1,572 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Boot Stress Tests" >
+<node_order><![CDATA[1]]></node_order>
+<details><![CDATA[<p>Make sure device is setup for the right type of boot. If NAND boot, then make sure NK.bin is flashed into NAND using eboot command. If SD boot, make sure the right switch settings are in use and the correctly-formatted SD card with the eboot and image files are attached to the target.</p>]]> 
+</details>
+<testcase internalid="1286601" name="Boot Stress - 1000 iterations - boot from NAND">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[13091]]></externalid>
+	<summary><![CDATA[<p>Boot stress test will check the serial output on booting up and test the telnet connectivity as well.</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[<p>NA</p>]]></steps>
+	<expectedresults><![CDATA[<p>NA</p>]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[number_of_boots=1000,bootup_string=SDHC: CPU revision,image_location=nand, test_type=boot_stress,max_wait=50
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\boot_stress\bootstress_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=50
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="1315441" name="Boot Stress - 1000  iterations - boot from SD">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[13097]]></externalid>
+	<summary><![CDATA[<p>Boot stress test will check the serial output on booting up and test the telnet connectivity as well.</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[<p>NA</p>]]></steps>
+	<expectedresults><![CDATA[<p>NA</p>]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[number_of_boots=1000,bootup_string=SDHC: CPU revision,image_location=sd, test_type=boot_stress,max_wait=50
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\boot_stress\bootstress_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=50
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="1315561" name="Boot Stress - 1000 iterations - boot from Ethernet">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[13098]]></externalid>
+	<summary><![CDATA[<p>Boot stress test will check the serial output on booting up and test the telnet connectivity as well.</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[<p>NA</p>]]></steps>
+	<expectedresults><![CDATA[<p>NA</p>]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[number_of_boots=1000,bootup_string=SDHC: CPU revision,image_location=ethernet, test_type=boot_stress,max_wait=120
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\boot_stress\bootstress_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=50
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="1315841" name="Boot Stress - 50 iterations - boot from NAND">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[13101]]></externalid>
+	<summary><![CDATA[<p>Boot stress test will check the serial output on booting up and test the telnet connectivity as well.</p>]]></summary>
+	<execution_type><![CDATA[3]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[<p>NA</p>]]></steps>
+	<expectedresults><![CDATA[<p>NA</p>]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[number_of_boots=50,bootup_string=SDHC: CPU revision,image_location=nand, test_type=boot_stress,max_wait=50
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\boot_stress\bootstress_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=50
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="1315961" name="Boot Stress - 50 iterations - boot from Ethernet">
+	<node_order><![CDATA[2]]></node_order>
+	<externalid><![CDATA[13102]]></externalid>
+	<summary><![CDATA[<p>Boot stress test will check the serial output on booting up and test the telnet connectivity as well.</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[<p>NA</p>]]></steps>
+	<expectedresults><![CDATA[<p>NA</p>]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[number_of_boots=50,bootup_string=SDHC: CPU revision,image_location=ethernet, test_type=boot_stress,max_wait=120
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\boot_stress\bootstress_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=50
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="1316081" name="Boot Stress - 50  iterations - boot from SD">
+	<node_order><![CDATA[3]]></node_order>
+	<externalid><![CDATA[13103]]></externalid>
+	<summary><![CDATA[<p>Boot stress test will check the serial output on booting up and test the telnet connectivity as well.</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[<p>NA</p>]]></steps>
+	<expectedresults><![CDATA[<p>NA</p>]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[number_of_boots=50,bootup_string=SDHC: CPU revision,image_location=sd, test_type=boot_stress,max_wait=50
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\boot_stress\bootstress_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=50
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="1316201" name="Boot Stress - 1 iteration - boot from NAND">
+	<node_order><![CDATA[4]]></node_order>
+	<externalid><![CDATA[13104]]></externalid>
+	<summary><![CDATA[<p>Boot stress test will check the serial output on booting up and test the telnet connectivity as well.</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[<p>NA</p>]]></steps>
+	<expectedresults><![CDATA[<p>NA</p>]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[number_of_boots=1,bootup_string=SDHC: CPU revision,image_location=nand, test_type=boot_stress,max_wait=50
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\boot_stress\bootstress_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=50
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="1316321" name="Boot Stress - 1 iteration - boot from Ethernet">
+	<node_order><![CDATA[5]]></node_order>
+	<externalid><![CDATA[13105]]></externalid>
+	<summary><![CDATA[<p>Boot stress test will check the serial output on booting up and test the telnet connectivity as well.</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[<p>NA</p>]]></steps>
+	<expectedresults><![CDATA[<p>NA</p>]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[number_of_boots=1,bootup_string=SDHC: CPU revision,image_location=ethernet, test_type=boot_stress,max_wait=120
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\boot_stress\bootstress_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=50
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="1316441" name="Boot Stress - 1  iteration - boot from SD">
+	<node_order><![CDATA[6]]></node_order>
+	<externalid><![CDATA[13106]]></externalid>
+	<summary><![CDATA[<p>Boot stress test will check the serial output on booting up and test the telnet connectivity as well.</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[<p>NA</p>]]></steps>
+	<expectedresults><![CDATA[<p>NA</p>]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[number_of_boots=1,bootup_string=SDHC: CPU revision,image_location=sd, test_type=boot_stress,max_wait=50
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\boot_stress\bootstress_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=50
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+</testsuite>

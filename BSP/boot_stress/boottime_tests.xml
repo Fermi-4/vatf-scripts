@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Boot Time Measurement" >
+<node_order><![CDATA[1]]></node_order>
+<details><![CDATA[<p>Make sure device is setup for the right type of boot. If NAND boot, then  make sure NK.bin is flashed into NAND using eboot command. If SD boot,  make sure the right switch settings are in use and the  correctly-formatted SD card with the eboot and image files are attached  to the target.</p>]]> 
+</details>
+<testcase internalid="1092481" name="Ethernet Boot Time Measurement">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[11818]]></externalid>
+	<summary><![CDATA[<p>Ethernet Boot time will be measured</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[<p>NA</p>]]></steps>
+	<expectedresults><![CDATA[<p>NA</p>]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_performance"><notes><![CDATA[
+test type is performance
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[number_of_boots=1,bootup_string=SDHC: CPU revision,image_location=ethernet,test_type=boot_time,max_wait=120
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\boot_stress\bootstress_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="1315681" name="SD Boot Time Measurement">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[13099]]></externalid>
+	<summary><![CDATA[<p>SD Boot time will be measured</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[<p>NA</p>]]></steps>
+	<expectedresults><![CDATA[<p>NA</p>]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_performance"><notes><![CDATA[
+test type is performance
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[number_of_boots=1,bootup_string=SDHC: CPU revision,image_location=sd,test_type=boot_time,max_wait=50
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\boot_stress\bootstress_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+
+<testcase internalid="1315761" name="Nand Boot Time Measurement">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[13100]]></externalid>
+	<summary><![CDATA[<p>Nand Boot time will be measured</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[<p>NA</p>]]></steps>
+	<expectedresults><![CDATA[<p>NA</p>]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_performance"><notes><![CDATA[
+test type is performance
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[number_of_boots=1,bootup_string=SDHC: CPU revision,image_location=nand,test_type=boot_time,max_wait=50
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP\boot_stress\bootstress_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+</testsuite>
