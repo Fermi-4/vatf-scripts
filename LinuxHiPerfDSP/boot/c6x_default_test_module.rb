@@ -213,6 +213,10 @@ module C6xTestScript
 	      @equipment['server1'].send_sudo_cmd("rm image.bin",@equipment['server1'].prompt, 10)  
         @equipment['server1'].send_sudo_cmd("mv #{File.basename(writer_image)} image.bin",@equipment['server1'].prompt, 10)     
       end
+       
+      @equipment['server1'].send_cmd("cd #{nfs_root_path}", @equipment['server1'].prompt, 10)       
+      clean_build_assets(kernel,filesystem,modules,test_modules,syslink_modules,bootblob_templates,template)
+      
       C6xTestScript.set_paths(samba_root_path_temp, nfs_root_path_temp) 
       connect_to_equipment('dut1')
       0.upto 5 do
@@ -309,14 +313,16 @@ module C6xTestScript
     end
     
     def get_fs_name(template)
-
+    # This is based on assumptions made in bootblob-templates/ of source code
       case template
         when /ltp/
           fs_name = (@endian == "el") ? "ltp-root-c6x#{@float}.cpio.gz" : "ltp-root-c6xeb#{@float}.cpio.gz"
         when /demo/
-          fs_name = (@endian == "el") ? "mcsdk-demo-root-c6x#{@float}.cpio.gz" : "ltp-root-c6xeb#{@float}.cpio.gz"
-        when /demo/
-          fs_name = (@endian == "el") ? "mcsdk-demo-root-c6x#{@float}.cpio.gz" : "ltp-root-c6xeb#{@float}.cpio.gz"
+          fs_name = (@endian == "el") ? "mcsdk-demo-root-c6x#{@float}.cpio.gz" : "mcsdk-demo-root-c6xeb#{@float}.cpio.gz"
+        when /min/
+          fs_name = (@endian == "el") ? "min-root-c6x#{@float}.cpio.gz" : "min-root-c6xeb#{@float}.cpio.gz"
+        else
+          fs_name = (@endian == "el") ? "full-root-c6x#{@float}.cpio.gz" : "full-root-c6xeb#{@float}.cpio.gz"
       end
       fs_name
 
@@ -340,6 +346,33 @@ module C6xTestScript
       elsif !this_equipment.target.telnet && !this_equipment.target.serial
         raise "You need Telnet or Serial port connectivity to #{equipment}. Please check your bench file" 
       end
+    end
+    
+    def clean_build_assets(kernel,filesystem,modules,test_modules,syslink_modules,bootblob_templates,template)
+      if kernel and File.exists?("#{@samba_root_path}\\vmlinux-2.6.34-#{@evm}.#{@endian}.bin") 
+        @equipment['server1'].send_sudo_cmd("rm vmlinux-2.6.34-#{@evm}.#{@endian}.bin",@equipment['server1'].prompt, 10)
+        @equipment['server1'].send_sudo_cmd("rm #{template}.#{@endian}#{@float}.bin",@equipment['server1'].prompt, 10)
+      end
+      
+      fs_name = get_fs_name(template)
+      if filesystem and File.exists?("#{@samba_root_path}\\#{fs_name}")
+        @equipment['server1'].send_sudo_cmd("rm #{fs_name}",@equipment['server1'].prompt, 10)
+        @equipment['server1'].send_sudo_cmd("rm #{template}.#{@endian}#{@float}.cpio.gz",@equipment['server1'].prompt, 10)
+      end
+      if modules and File.exists?("#{@samba_root_path}\\modules-2.6.34-#{@evm}.#{@endian}.tar.gz")
+        @equipment['server1'].send_sudo_cmd("rm modules-2.6.34-#{@evm}.#{@endian}.tar.gz",@equipment['server1'].prompt, 10)
+      end
+      if test_modules and File.exists?("#{@samba_root_path}\\test-modules-2.6.34-#{@evm}.#{@endian}.tar.gz")
+        @equipment['server1'].send_sudo_cmd("rm test-modules-2.6.34-#{@evm}.#{@endian}.tar.gz",@equipment['server1'].prompt, 10)
+      end
+      if syslink_modules and File.exists?("#{@samba_root_path}\\syslink-all-#{@evm}.#{@endian}#{@float}.tar.gz")
+        @equipment['server1'].send_sudo_cmd("rm syslink-all-#{@evm}.#{@endian}#{@float}.tar.gz",@equipment['server1'].prompt, 10)
+      end
+      if bootblob_templates and File.exists?("#{@samba_root_path}\\bootblob_templates.tar.gz")
+        @equipment['server1'].send_sudo_cmd("rm -rf bootblob-templates",@equipment['server1'].prompt, 10)
+        @equipment['server1'].send_sudo_cmd("rm bootblob_templates.tar.gz",@equipment['server1'].prompt, 10)        
+      end
+      
     end
 	
     def debug_puts(message)
