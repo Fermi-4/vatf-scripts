@@ -51,7 +51,7 @@ module C6xTestScript
            @evm = "evmc6472"
         when "faraday"
            @evm = "evmc6474"
-        when "himlaya"
+        when "himalaya"
            @evm = "dsk6455"
         when "curie"
            @evm = "evmc6457"
