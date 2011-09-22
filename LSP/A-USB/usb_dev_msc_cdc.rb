@@ -1,5 +1,5 @@
 # -*- coding: ISO-8859-1 -*-
-require File.dirname(__FILE__)+'/default_test_module'
+require File.dirname(__FILE__)+'/../default_test_module'
 require 'net/telnet'
 # Default Server-Side Test script implementation for LSP releases
 
