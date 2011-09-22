@@ -15,18 +15,19 @@ def setup
 	#If DUT is not at boot_prompt do reboot with power_controller or soft reboot
 	@equipment['dut1'].boot_to_bootloader(@power_handler) if @equipment['dut1'].timeout?
 	#self.as(LspTestScript).setup
-
-	tester_from_cli = @tester.downcase
-	target_from_db = @test_params.target
-	platform_from_db = @test_params.platform
-	image_path = @test_params.kernel
+if @test_params.instance_variable_defined?(:@kernel)
+		tester_from_cli = @tester.downcase
+		target_from_db = @test_params.target
+		platform_from_db = @test_params.platform
+		image_path = @test_params.kernel
 	
-	tmp_path = File.join(tester_from_cli.downcase.strip,target_from_db.downcase.strip,platform_from_db.downcase.strip)
-	if image_path != nil && File.exists?(image_path) && @equipment['dut1'].get_image(image_path, @equipment['server1'], tmp_path) then
-		puts "uImage copied to  #{tmp_path}"
-		bootfile_path = File.join(tmp_path,File.basename(image_path))
-	else
-		raise "image #{image_path} does not exist, unable to copy"
+		tmp_path = File.join(tester_from_cli.downcase.strip,target_from_db.downcase.strip,platform_from_db.downcase.strip)
+		if image_path != nil && File.exists?(image_path) && @equipment['dut1'].get_image(image_path, @equipment['server1'], tmp_path) then
+			puts "uImage copied to  #{tmp_path}"
+			bootfile_path = File.join(tmp_path,File.basename(image_path))
+		else
+			raise "image #{image_path} does not exist, unable to copy"
+		end
 	end
 
 end
@@ -129,6 +130,7 @@ end
 
 def stop_boot()
 	@equipment['dut1'].wait_for(/I2C:/, 10) if @test_params.platform.match('am387x-evm')
+	@equipment['dut1'].wait_for(/cpsw/, 10) if @test_params.platform.match('am335x-evm')
 	@equipment['dut1'].send_cmd("\e", @equipment['dut1'].boot_prompt, 1)	
 end
 
