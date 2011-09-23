@@ -26,7 +26,7 @@ module C6xTestScript
     def setup
       @equipment['dut1'].set_api('linux-c6x')
       @platform = @test_params.platform.downcase    
-      #nfs  = @test_params.nfs     if @test_params.instance_variable_defined?(:@nfs)
+      nfs  = @test_params.nfs     if @test_params.instance_variable_defined?(:@nfs)
       syslink_bins  = @test_params.syslink_bins    if @test_params.instance_variable_defined?(:@syslink_bins)
       benchmark_bins =  @test_params.benchmark_bins if @test_params.instance_variable_defined?(:@benchmark_bins)
       writer_image =  @test_params.writer_image if @test_params.instance_variable_defined?(:@writer_image)
@@ -99,16 +99,25 @@ module C6xTestScript
            @power_handler.switch_off(power_port)
         end
         # Prepare kernel and NFS
-
+	    @equipment['server1'].send_cmd("cd #{nfs_root_path}", @equipment['server1'].prompt, 10)
+	    if !File.exists?("#{@samba_root_path}//bootblob")
+		  BuildClient.copy(bootblob_util, "#{@samba_root_path}\\#{File.basename(bootblob_util)}") 
+		  @equipment['server1'].send_sudo_cmd("mv #{File.basename(bootblob_util)} bootblob",@equipment['server1'].prompt, 10)
+	    end
         if kernel and filesystem and bootblob_templates
           @equipment['server1'].send_cmd("cd #{nfs_root_path}", @equipment['server1'].prompt, 10)
-          prepare_kernel_fs(kernel,filesystem,modules,test_modules,syslink_modules,bootblob_util,make_filesystem,bootblob_templates,template) 
+            prepare_kernel_fs(kernel,filesystem,modules,test_modules,syslink_modules,make_filesystem,bootblob_templates,template)                     
+	# For backward compatibility with bootblob version
+        elsif (kernel and nfs)
+          nfs.gsub!(/\\/,'/')
+          build_id, build_name = /\/([^\/\\]+?)\/([\w\.\-]+?)$/.match("#{nfs.strip}").captures
+          @nfs_id = build_id
+		  @nfs = nfs
+		  BuildClient.copy(kernel, "#{@samba_root_path}\\#{File.basename(kernel)}") 
+		  @kernel = "#{@samba_root_path}\\#{File.basename(kernel)}"
         end
         #Untar NFS
         if @nfs 
-          fs = @nfs
-          # fs.gsub!(/\\/,'/')
-          # build_id, build_name = /\/([^\/\\]+?)\/([\w\.\-]+?)$/.match("#{fs.strip}").captures
           samba_root_path_temp = @samba_root_path + "\\autofs\\#{@nfs_id}"
           nfs_root_path_temp 	= nfs_root_path + "/autofs/#{@nfs_id}"
           if !File.directory?("#{samba_root_path_temp}")		
@@ -116,22 +125,15 @@ module C6xTestScript
             @equipment['server1'].send_sudo_cmd("mkdir -p -m 777  #{nfs_root_path_temp}", @equipment['server1'].prompt, 10)  
             BuildClient.copy(@nfs, "#{samba_root_path_temp}\\#{File.basename(@nfs)}")	
             @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10)
-            #@equipment['server1'].send_cmd("mv #{File.basename(@nfs)} #{File.basename(@nfs)}.cpio.gz", @equipment['server1'].prompt, 10)               
-            @equipment['server1'].send_sudo_cmd("gunzip #{File.basename(@nfs)}", @equipment['server1'].prompt, 30)
+	    @equipment['server1'].send_sudo_cmd("mv #{File.basename(@nfs)} #{@nfs_id}.cpio.gz",@equipment['server1'].prompt, 10)			
+            @equipment['server1'].send_sudo_cmd("gunzip #{File.basename(@nfs)}.cpio.gz", @equipment['server1'].prompt, 30)
             @equipment['server1'].send_sudo_cmd("cpio -idmv < *", @equipment['server1'].prompt, 30)
           end
         end
         #Create kernel image and place in TFTP directory
-        if (bootblob and @kernel and @nfs) or (@initramfs)
+        if (@kernel and @nfs) or (@initramfs)
+
           @equipment['server1'].send_cmd("cd #{nfs_root_path}", @equipment['server1'].prompt, 10)
-          # if File.exists?("#{@samba_root_path}//#{File.basename(kernel)}")
-            # @equipment['server1'].send_sudo_cmd("rm #{File.basename(kernel)}", @equipment['server1'].prompt, 10)
-          # end
-          # BuildClient.copy(kernel, "#{@samba_root_path}\\#{File.basename(kernel)}") 
-          # if !File.exists?("#{@samba_root_path}//bootblob")
-            # BuildClient.copy(bootblob_util, "#{@samba_root_path}\\bootblob") 
-            # #@equipment['server1'].send_cmd("fromdos bootblob", @equipment['server1'].prompt, 10)
-          # end
           if @nfs 
             bootblob_str = ''
             bootblob_ip = nil
@@ -238,7 +240,7 @@ module C6xTestScript
 
     end
     
-    def prepare_kernel_fs(kernel,filesystem,modules,test_modules,syslink_modules,bootblob_util,make_filesystem,bootblob_templates,template)  
+    def prepare_kernel_fs(kernel,filesystem,modules,test_modules,syslink_modules,make_filesystem,bootblob_templates,template)  
       BuildClient.copy(kernel, "#{@samba_root_path}\\#{File.basename(kernel)}") 
       @equipment['server1'].send_sudo_cmd("mv #{File.basename(kernel)} vmlinux-2.6.34-#{@evm}.#{@endian}.bin",@equipment['server1'].prompt, 10)
       BuildClient.copy(filesystem, "#{@samba_root_path}\\#{File.basename(filesystem)}") 
@@ -256,10 +258,7 @@ module C6xTestScript
         BuildClient.copy(syslink_modules, "#{@samba_root_path}\\#{File.basename(syslink_modules)}") 
         @equipment['server1'].send_sudo_cmd("mv #{File.basename(syslink_modules)} syslink-all-#{@evm}.#{@endian}#{@float}.tar.gz",@equipment['server1'].prompt, 10)
       end
-      if !File.exists?("#{@samba_root_path}//bootblob")
-        BuildClient.copy(bootblob_util, "#{@samba_root_path}\\#{File.basename(bootblob_util)}") 
-        @equipment['server1'].send_sudo_cmd("mv #{File.basename(bootblob_util)} bootblob",@equipment['server1'].prompt, 10)
-      end
+
       if !File.exists?("#{@samba_root_path}//make-filesystem")
         BuildClient.copy(make_filesystem, "#{@samba_root_path}\\#{File.basename(make_filesystem)}") 
         @equipment['server1'].send_sudo_cmd("mv #{File.basename(make_filesystem)} make-filesystem",@equipment['server1'].prompt, 10)
