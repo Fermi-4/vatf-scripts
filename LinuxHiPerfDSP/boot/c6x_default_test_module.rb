@@ -106,15 +106,15 @@ module C6xTestScript
 	    end
         if kernel and filesystem and bootblob_templates
           @equipment['server1'].send_cmd("cd #{nfs_root_path}", @equipment['server1'].prompt, 10)
-            prepare_kernel_fs(kernel,filesystem,modules,test_modules,syslink_modules,make_filesystem,bootblob_templates,template)                     
-	# For backward compatibility with bootblob version
+          prepare_kernel_fs(kernel,filesystem,modules,test_modules,syslink_modules,make_filesystem,bootblob_templates,template)                     
+        # For backward compatibility with bootblob version
         elsif (kernel and nfs)
           nfs.gsub!(/\\/,'/')
           build_id, build_name = /\/([^\/\\]+?)\/([\w\.\-]+?)$/.match("#{nfs.strip}").captures
           @nfs_id = build_id
-		  @nfs = nfs
-		  BuildClient.copy(kernel, "#{@samba_root_path}\\#{File.basename(kernel)}") 
-		  @kernel = "#{@samba_root_path}\\#{File.basename(kernel)}"
+          @nfs = nfs
+          BuildClient.copy(kernel, "#{@samba_root_path}\\#{File.basename(kernel)}") 
+          @kernel = "#{@samba_root_path}\\#{File.basename(kernel)}"
         end
         #Untar NFS
         if @nfs 
@@ -125,8 +125,8 @@ module C6xTestScript
             @equipment['server1'].send_sudo_cmd("mkdir -p -m 777  #{nfs_root_path_temp}", @equipment['server1'].prompt, 10)  
             BuildClient.copy(@nfs, "#{samba_root_path_temp}\\#{File.basename(@nfs)}")	
             @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10)
-	    @equipment['server1'].send_sudo_cmd("mv #{File.basename(@nfs)} #{@nfs_id}.cpio.gz",@equipment['server1'].prompt, 10)			
-            @equipment['server1'].send_sudo_cmd("gunzip #{File.basename(@nfs)}.cpio.gz", @equipment['server1'].prompt, 30)
+            @equipment['server1'].send_sudo_cmd("mv #{File.basename(@nfs)} #{@nfs_id}.cpio.gz",@equipment['server1'].prompt, 10)			
+            @equipment['server1'].send_sudo_cmd("gunzip #{File.basename(@nfs_id)}.cpio.gz", @equipment['server1'].prompt, 30)
             @equipment['server1'].send_sudo_cmd("cpio -idmv < *", @equipment['server1'].prompt, 30)
           end
         end
@@ -278,8 +278,8 @@ module C6xTestScript
         when "nfs"
           @equipment['server1'].send_cmd("md5sum #{template}.#{@endian}#{@float}.cpio.gz",@equipment['server1'].prompt, 10)
           @nfs_id = /([a-z0-9]{32})/.match(@equipment['server1'].response).captures[0]
-          @equipment['server1'].send_sudo_cmd("mv #{template}.#{@endian}#{@float}.cpio.gz #{@nfs_id}.cpio.gz",@equipment['server1'].prompt, 10)
-          @nfs = "#{@samba_root_path}\\#{@nfs_id}.cpio.gz"
+          @equipment['server1'].send_sudo_cmd("mv #{template}.#{@endian}#{@float}.cpio.gz #{@nfs_id}",@equipment['server1'].prompt, 10)
+          @nfs = "#{@samba_root_path}\\#{@nfs_id}"
           
           @equipment['server1'].send_cmd("md5sum #{template}.#{@endian}#{@float}.bin",@equipment['server1'].prompt, 10)
           @kernel_id = /([a-z0-9]{32})/.match(@equipment['server1'].response).captures[0]
