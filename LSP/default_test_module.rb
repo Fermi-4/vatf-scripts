@@ -48,11 +48,11 @@ module LspTestScript
           fs = nfs
           fs.gsub!(/\\/,'/')
           build_id = /\/([^\/\\]+?)\/[\w\.\-]+?$/.match("#{fs.strip}").captures[0]
-          @equipment['server1'].send_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/autofs", @equipment['server1'].prompt, 10)  if !File.directory?("#{nfs_root_path_temp}/autofs")		
+          @equipment['server1'].send_sudo_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/autofs", @equipment['server1'].prompt, 10)  if !File.directory?("#{nfs_root_path_temp}/autofs")		
           nfs_root_path_temp 	= nfs_root_path_temp + "/autofs/#{build_id}"
           # Untar nfs filesystem if it doesn't exist
           if !File.directory?("#{nfs_root_path_temp}/usr")
-            @equipment['server1'].send_cmd("mkdir -p  #{nfs_root_path_temp}", @equipment['server1'].prompt, 10) 		
+            @equipment['server1'].send_sudo_cmd("mkdir -p  #{nfs_root_path_temp}", @equipment['server1'].prompt, 10) 		
             @equipment['server1'].send_sudo_cmd("tar -C #{nfs_root_path_temp} -xvzf #{@test_params.nfs}", @equipment['server1'].prompt, 300)
           end
         else
