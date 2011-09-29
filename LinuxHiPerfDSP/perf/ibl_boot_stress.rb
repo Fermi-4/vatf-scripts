@@ -19,6 +19,8 @@ def run
   if power_port ==nil
     raise "You need APC connectivity to run this test"
   end
+  # So we can identify boards
+  @equipment['dut1'].send_cmd("ifconfig",@equipment['dut1'].prompt, 30)
 
   boot_times.times { |i|
     puts "Switching power for # #{i}th iteration"
