@@ -80,14 +80,7 @@ def get_dut_ip_addr
 end
 
 def get_wifi_iface
-  sys_props = send_adb_cmd("shell getprop").lines
-  iface = ''
-  sys_props.each do |current_line|
-     if (iface_info = current_line.match(/\[wifi.interface\]:\s+\[(.*?)\]/))
-        iface = iface_info.captures[0].strip
-     end
-  end
-  iface 
+  send_adb_cmd("shell getprop wifi.interface").strip
 end
 
 def get_server_lan_ip(dut_ip)

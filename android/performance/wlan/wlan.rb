@@ -6,23 +6,14 @@ include AndroidKeyEvents
 # Note: If testing 802.1x a radius server must be configured install and configured in the TEE and the access point
 def setup
   self.as(AndroidTest).setup
-  send_events_for(['__menu__', '__home__'])
-  send_adb_cmd("shell am start -a android.settings.WIFI_SETTINGS")
-  netcfg = send_adb_cmd("shell netcfg")
-  iface = get_wifi_iface
-  if !netcfg.match(/#{iface}/i) 
-    send_events_for(['__directional_pad_up__', '__directional_pad_center__'])
-    sleep 5
-  end
-  netcfg_up = send_adb_cmd("shell netcfg")
-  raise "Unable to turn on wifi" if !netcfg_up.match(/#{iface}/i) 
+  enable_wlan
   
   #@equipment['ap1'].connect({'type'=>'telnet'})
 end
 
-def run
+def run_wlan_test(test_seq)
   net_id = -1
-  @test_params.params_chan.test_sequence.each do |action|
+  test_seq.each do |action|
     case action.strip.downcase
       when 'add'
          puts "Adding and configuring network #{@test_params.params_chan.ssid[0]}"
@@ -235,6 +226,10 @@ ensure
   
 end
 
+def run
+  run_wlan_test(@test_params.params_chan.test_sequence)
+end
+
 def get_available_networks
   results = {}
   net_results = send_adb_cmd("shell wpa_cli scan_results").lines
@@ -327,4 +322,17 @@ end
 
 def mean(a)
  a.sum.to_f / a.size
+end
+
+def enable_wlan
+  send_events_for(['__menu__', '__home__'])
+  send_adb_cmd("shell am start -a android.settings.WIFI_SETTINGS")
+  netcfg = send_adb_cmd("shell netcfg")
+  iface = get_wifi_iface
+  if !netcfg.match(/#{iface}/i) 
+    send_events_for(['__directional_pad_up__', '__directional_pad_center__'])
+    sleep 5
+  end
+  netcfg_up = send_adb_cmd("shell netcfg")
+  raise "Unable to turn on wifi" if !netcfg_up.match(/#{iface}/i) 
 end

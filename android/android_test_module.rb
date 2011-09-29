@@ -90,7 +90,7 @@ module AndroidTest
   end
     
   #Installs android package. Raise error if it can't
-  def installPkg(apk,pkgName,force=false, tout=20)
+  def installPkg(apk,pkgName,force=false, tout=60)
     Timeout::timeout(tout) do
       if pkgName && force && isPkgInstalled?(pkgName)
         uninstallPkg(pkgName)
