@@ -16,6 +16,7 @@ include Boot
       power_port = @equipment['dut1'].power_port
       success_times = 0
       fail_times = 0
+      boot_failures = 0
       boot_arr = [] 
       @read_fail_caches_on = 0
       @read_fail_caches_off1 = 0
@@ -73,6 +74,7 @@ include Boot
           end
         else
           fail_times = fail_times+1
+          boot_failures = boot_failures+1
           boot_arr << 'X'
         end
       }
@@ -84,6 +86,9 @@ include Boot
       elsif success_times == boot_times
         test_done_result = FrameworkConstants::Result[:pass]
         comment = "Test pass. DDR test completed successfully #{boot_times} out of #{boot_times} times "
+      end
+      if (boot_failures > 0) 
+        comment += "Board failed to boot #{boot_failures} out of #{boot_times} times"
       end
       set_result(test_done_result,comment)
 
