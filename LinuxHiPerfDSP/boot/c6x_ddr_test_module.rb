@@ -20,6 +20,14 @@ include Boot
       @read_fail_caches_on = 0
       @read_fail_caches_off1 = 0
       @read_fail_caches_off2 = 0
+      
+      @read_refresh_fail_caches_on = 0
+      @read_refresh_fail_caches_off1 = 0
+      @read_refresh_fail_caches_off2 = 0
+
+      @write_fail_caches_on = 0
+      @write_fail_caches_off1 = 0
+      @write_fail_caches_off2 = 0
        
       test_done_result = FrameworkConstants::Result[:fail]
       comment = "Test fail"    
@@ -54,10 +62,15 @@ include Boot
         @power_handler.switch_off(power_port)
         sleep(30)
         @power_handler.switch_on(power_port)
-        if (response = connect_to_equipment('dut1',wait_for_string,timeout))
-          parse_response(response)
-          success_times = success_times+1
-          boot_arr << 'B'
+        response = connect_to_equipment('dut1',wait_for_string,timeout)
+        if (response != nil)
+          if parse_response(response)
+            success_times = success_times+1
+            boot_arr << 'B'
+          else
+            fail_times = fail_times+1
+            boot_arr << 'X'
+          end
         else
           fail_times = fail_times+1
           boot_arr << 'X'
@@ -66,10 +79,10 @@ include Boot
       puts "read_fail_caches_on: #{@read_fail_caches_on}"
       puts "read_fail_caches_off1: #{@read_fail_caches_off1}"
       puts "read_fail_caches_off2: #{@read_fail_caches_off2}" 
-      if(@read_fail_caches_on != 0 || @read_fail_caches_off1 != 0 || @read_fail_caches_off2 != 0)
-        test_done_result = FrameworkConstants::Result[:pass]
+      if( @read_fail_caches_on != 0 || @read_fail_caches_off1 != 0 || @read_fail_caches_off2 != 0 || @read_refresh_fail_caches_on != 0 || @read_refresh_fail_caches_off1 != 0 || @read_refresh_fail_caches_off2 != 0 || @write_fail_caches_on != 0 || @write_fail_caches_off1 != 0 || @write_fail_caches_off2 != 0)
         comment = "Test failed. DDR test completed successfully #{success_times} out of #{boot_times} times. Boot log - #{boot_arr.to_s}"
-      else
+      elsif success_times == boot_times
+        test_done_result = FrameworkConstants::Result[:pass]
         comment = "Test pass. DDR test completed successfully #{boot_times} out of #{boot_times} times "
       end
       set_result(test_done_result,comment)
@@ -114,9 +127,31 @@ include Boot
     end
     
     def parse_response(response)
-      @read_fail_caches_on = @read_fail_caches_on + response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[0].to_i
-      @read_fail_caches_off1 = @read_fail_caches_off1 + response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[1].to_i
-      @read_fail_caches_off2 = @read_fail_caches_off2 + response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[2].to_i      
+      read_fail_caches_on = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[0].to_i
+      @read_fail_caches_on = @read_fail_caches_on + read_fail_caches_on
+      read_fail_caches_off1 = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[1].to_i
+      @read_fail_caches_off1 = @read_fail_caches_off1 + read_fail_caches_off1
+      read_fail_caches_off2 = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[2].to_i 
+      @read_fail_caches_off2 = @read_fail_caches_off2 + read_fail_caches_off2    
+
+      read_refresh_fail_caches_on = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[0].to_i
+      @read_refresh_fail_caches_on = @read_refresh_fail_caches_on + read_refresh_fail_caches_on
+      read_refresh_fail_caches_off1 = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[1].to_i
+      @read_refresh_fail_caches_off1 = @read_refresh_fail_caches_off1 + read_refresh_fail_caches_off1
+      read_refresh_fail_caches_off2 = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[2].to_i  
+      @read_refresh_fail_caches_off2 = @read_refresh_fail_caches_off2 + read_refresh_fail_caches_off2
+
+      write_fail_caches_on = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[0].to_i
+      @write_fail_caches_on = @write_fail_caches_on + write_fail_caches_on
+      write_fail_caches_off1 = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[1].to_i
+      @write_fail_caches_off1 = @read_fail_caches_off1 + write_fail_caches_off1
+      write_fail_caches_off2 = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[2].to_i
+      @write_fail_caches_off2 = @write_fail_caches_off2 + write_fail_caches_off2   
+      if (read_fail_caches_on != 0 || read_fail_caches_off1 != 0 || read_fail_caches_off2 != 0 || read_refresh_fail_caches_on != 0 || read_refresh_fail_caches_off1 != 0 || read_refresh_fail_caches_off2 != 0 || write_fail_caches_on != 0 || write_fail_caches_off1 != 0 || write_fail_caches_off2 != 0)
+        return false
+      else
+        return true 
+      end        
     end
     
     def debug_puts(message)
