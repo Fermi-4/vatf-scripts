@@ -49,6 +49,7 @@ def run
           test_comment += "Iteration #{iteration}, Stream #{current_stream} did not play or did not finish on the expected time\n#{e.to_s}\n"
       end
     end
+    send_events_for(['__back__','__directional_pad_right__','__directional_pad_right__','__enter__'])
     iteration += 1
   end while cycle_duration > (Time.now - start_time)
   if test_result != FrameworkConstants::Result[:fail]
