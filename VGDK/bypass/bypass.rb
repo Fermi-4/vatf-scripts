@@ -6,6 +6,8 @@ require File.dirname(__FILE__)+'/../boot_scripts/boot.rb'
 require File.dirname(__FILE__)+'/../utils/genPktHdrs'
 require File.dirname(__FILE__)+'/../utils/genSDP'
 require File.dirname(__FILE__)+'/../utils/genCodecCfg'
+require File.dirname(__FILE__)+'/../utils/profileMips'
+include ProfileMips
 include GenCodecCfg
 include GenSDP
 include GenPktHdrs
@@ -101,16 +103,22 @@ end
 
 
 def run
+    @show_debug_messages = false
+    @perfData = []
     dut = @equipment['dut1']
     @platform_info = Eth_info.new()
     @platform_info.init_eth_info(dut)
-	subjective = 0
-	if(@test_params.params_chan.instance_variable_defined?("@issubjectivereqd"))    
+    subjective = 0
+    if(@test_params.params_chan.instance_variable_defined?("@issubjectivereqd"))    
       subjective = @test_params.params_chan.issubjectivereqd[0].to_i
-	end
+    end
     multislice = 0
-	if(@test_params.params_chan.instance_variable_defined?("@multislice"))    
+    if(@test_params.params_chan.instance_variable_defined?("@multislice"))    
       multislice = @test_params.params_chan.multislice[0].to_i
+    end
+    profilemips = nil
+    if(@test_params.params_chan.instance_variable_defined?("@profilemips"))    
+      profilemips = @test_params.params_chan.profilemips[0].split(":")
     end
     video_clarity = 0
     if(@test_params.params_chan.instance_variable_defined?("@video_clarity"))
@@ -550,11 +558,22 @@ def run
             append = 0
         }
     }
-
+    if(profilemips)
+      FileUtils.mkdir("#{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling")
+	  pc_udp_port = 0xCE98
+	  sprintf("%d", pc_udp_port)
+      core_info_hash.keys.sort.each { |key|
+		start_profiling(dut,key)
+	    puts("start #{VIDEO_TOOLS_DIR}/rcvUdpPackets.exe #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port}.dat #{pc_udp_port}")
+	    system("start #{VIDEO_TOOLS_DIR}/rcvUdpPackets.exe #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port}.dat #{pc_udp_port}")
+		pc_udp_port += 2
+		}
+    end
     clip_iter.times { |c_iter|
         pc_udp_port = 32768
         append = 0
         geom = 0       
+        if(!profilemips)
         codec_hash.each_pair { |codec, res_arr|
         res_arr.each {|res|
         core_info_hash.keys.sort.each { |key|
@@ -577,8 +596,9 @@ def run
         geom = 0
         }
         }
+	end
 
-        if(subjective == 1)
+        if(subjective == 1 && !profilemips)
         codec_hash.each_pair { |codec, res_arr|
             res_arr.each{|res|
                 core_info_hash.keys.sort.each { |key|
@@ -645,6 +665,38 @@ def run
         tcid += 1
         }
     }
+	if(profilemips)
+	  system("taskkill /F /IM rcvUdpPackets.exe")
+	  begin
+		pc_udp_port = 0xCE98
+		sprintf("%d", pc_udp_port)
+		core_info_hash.keys.sort.each { |key|
+		  system("ccperl #{VIDEO_TOOLS_DIR}/parsemips.pl -b64xle #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port}.dat #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port} ")
+	      pc_udp_port += 2
+		}
+	  rescue
+	    raise "ccperl error"
+	  end
+	  pc_udp_port = 0xCE98
+	  profileData = []
+	  sprintf("%d", pc_udp_port)
+	  core_info_hash.keys.sort.each { |key| 
+	  stop_profiling(dut,key)
+	  profileMips("#{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port}.csv",profilemips,key,@perfData,profileData)
+	  pc_udp_port += 2
+	  }
+	  profileHash = Hash.new{0}
+	  profileData.each { |elem|
+	    profileHash[elem] += 1
+       }
+	   profileHash.each { |param,count|
+	  if(count == core_info_hash.length)
+		test_comment += "#{param} MIPS not found"
+		test_done_result = FrameworkConstants::Result[:fail]
+	  end
+	  }
+	  test_comment += "MIPS Profiling data at #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/ \n"
+	else
     
     clip_iter.times { |c_iter|
         codec_hash.each_pair { |codec, res_arr|
@@ -739,7 +791,7 @@ def run
             }
         }
     }
-    
+    end
     debug_puts "#### sending channel close #### "
     dut.send_cmd("dim tcids", /OK/, 2)
     tcids_state = dut.response
@@ -766,10 +818,12 @@ def run
     }
     if (test_done_result != FrameworkConstants::Result[:fail])
         test_done_result = FrameworkConstants::Result[:pass] 
-        test_comment = "Test completed: Output clips at #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}"
+        test_comment += "\nTest completed"
+        if(!profilemips)
+          test_comment += "Output clips at #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}"
+        end
     end
-    set_result(test_done_result,test_comment)
-	#dut.disconnect
+    set_result(test_done_result,test_comment,@perfData)
 end
 
 def channel_reset(dut,tcid)
@@ -1091,3 +1145,10 @@ def get_test_string(params)
   test_string
 end
 
+def start_profiling(dut,core)
+  dut.send_cmd("cc write_mem2 #{core} 0 0x428E76 0",/OK/,2)
+end
+
+def stop_profiling(dut,core)
+  dut.send_cmd("cc write_mem2 {core} 0 0x428E76 0xFFFF",/OK/,2)
+end
