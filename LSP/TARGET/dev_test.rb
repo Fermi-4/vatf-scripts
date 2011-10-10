@@ -130,3 +130,6 @@ def get_detailed_info
   return all_lines
 end
 
+def run
+  self.as(LspTargetTestScript).run
+end

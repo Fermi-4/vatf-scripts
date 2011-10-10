@@ -33,3 +33,6 @@ def run_determine_test_outcome(return_non_zero)
   end
 end
 
+def run
+  self.as(LspTargetTestScript).run
+end
