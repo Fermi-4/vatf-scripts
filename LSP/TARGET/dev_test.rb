@@ -2,6 +2,10 @@ require File.dirname(__FILE__)+'/../default_target_test'
 
 include LspTargetTestScript
 
+def setup
+  self.as(LspTargetTestScript).setup
+end
+
 # Generate Linux shell script to be executed at DUT.
 # This function used the script specified in the test params, replace any ruby code and/or
 # test parameter references and creates test.sh  

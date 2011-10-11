@@ -2,6 +2,10 @@ require File.dirname(__FILE__)+'/dev_test'
 require File.dirname(__FILE__)+'/../../lib/parse_perf_data'
 include ParsePerfomance
 
+def setup
+  self.as(LspTargetTestScript).setup
+end
+
 # Default implementation to return empty array
 def get_perf_metrics
   if @test_params.params_control.instance_variable_defined?(:@perf_metrics_file)
