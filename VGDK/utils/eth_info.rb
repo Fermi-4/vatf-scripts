@@ -10,7 +10,7 @@ module ETHInfo
 
         end
 		def init_eth_info(dut)
-			cores = 6
+			cores = 8
 			@@pc_ip = dut.params["pc_ip"]
 			@@pc_mac = dut.params["pc_mac"]
 			@@eth_dev = dut.params["pc_eth_dev"]

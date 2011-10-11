@@ -15,24 +15,30 @@ def send_evm_start(dut)
     dut.send_cmd("dimt set template 40 hw_config2 emif_cfg num_devs 1", /OK/, 2)
     dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 type sdram", /OK/, 2)
     dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram action test", /OK/, 2)
-    dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram pll 25", /OK/, 2)
+    dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram pll 12", /OK/, 2)
 
     # ;16 bit
     # ;dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram config 0x534832
     # ;32 bit
-    dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram config 0x530832", /OK/, 2)
-    dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram refresh 0x73b", /OK/, 2)
-    dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram timing1 0x47245bd2", /OK/, 2)
-    dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram timing2 0x0125dc44", /OK/, 2)
-
+    dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram config 0x63C51A32", /OK/, 2)
+    dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram refresh 0x00001040", /OK/, 2)
+    dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram timing1 0x0CCF369B", /OK/, 2)
+    dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram timing2 0x3A3F7FDA", /OK/, 2)
+	dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram timing3 0x057F83A8", /OK/, 2)
+	dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram phyc 0x0010010B", /OK/, 2)
+	
+	#;Comment this line to have DSPs at 500MHz. If it is included, than DSP runs at 625MHz (25 * 25MHz)
+	dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram ddr_pll 8", /OK/, 2)
+	#dut.send_cmd("dimt set template 40 hw_config2 emif_cfg dev_cfg 0 sdram phyc 0x0010010B", /OK/, 2)
     #; Packet Port Configuration
     dut.send_cmd("dimt set template 10 dsp_glob_config pkt_cfg if_type mac", /OK/, 2)
     dut.send_cmd("dimt set template 10 dsp_glob_config pkt_cfg mac num_mac_ports 1", /OK/, 2)
-    dut.send_cmd("dimt set template 10 dsp_glob_config pkt_cfg mac port 0 port_num 0", /OK/, 2)
+    dut.send_cmd("dimt set template 10 dsp_glob_config pkt_cfg mac port 0 port_num 1", /OK/, 2)
     dut.send_cmd("dimt set template 10 dsp_glob_config pkt_cfg mac port 0 cfg_bfield  init add_addr", /OK/, 2)
     dut.send_cmd("dimt set template 10 dsp_glob_config pkt_cfg mac port 0 type rgmii", /OK/, 2)
     dut.send_cmd("dimt set template 10 dsp_glob_config pkt_cfg mac port 0 duplex full", /OK/, 2)
     dut.send_cmd("dimt set template 10 dsp_glob_config pkt_cfg mac port 0 flow_ctrl disable", /OK/, 2)
+	#dut.send_cmd("dim dbg_5561 dnld_delay_run 100", /OK/, 2)
 
     #; Port Configuration 
     # dut.send_cmd("dimt set template 10 dsp_glob_config tdm_cfg num_ports 3", /OK/, 2)
@@ -128,15 +134,17 @@ def send_evm_start(dut)
 
     #;Disable Reliable message 
     #;dim opt 100001
-    dut.send_cmd("dim opt 3", /OK/, 2)
+    dut.send_cmd("dim opt 100020", /OK/, 2)
 
     #;spy dim_dnld 2
-
+	dut.send_cmd("spy dim_dnld 2", /OK/, 2)
     #; Pre-download the DSP
     #;cc dnld 0 0 40
 
-    dut.send_cmd("dspi load \/APP\/dspi\/tv01\.ld", /OK/, 2)
-
+    dut.send_cmd("dspi load \/root\/app\/video\/sv01\.ld", /OK/, 2)
+    dut.send_cmd("dim dbg_5561 timeout_failure 0", /OK/, 2)
+    dut.send_cmd("spy dim_dnld 2", /OK/, 2)
+    dut.send_cmd("	wait 10", /OK/, 2)
     dut.send_cmd("cc dnld 0 0 40",/Download done/, 100)
     if(dut.timeout?)
       raise "DSP 0 download failed"
@@ -161,6 +169,14 @@ def send_evm_start(dut)
     if(dut.timeout?)
       raise "DSP 5 download failed"
     end   
+	dut.send_cmd("cc dnld 6 0 40", /Download done/, 100)
+    if(dut.timeout?)
+      raise "DSP 6 download failed"
+    end 
+	dut.send_cmd("cc dnld 7 0 40", /Download done/, 100)
+    if(dut.timeout?)
+      raise "DSP 7 download failed"
+    end 
 end
 end
 
