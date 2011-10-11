@@ -34,6 +34,9 @@ def run
       if (/Linux/.match(@equipment['dut1'].response.to_s) != nil)
         success_times = success_times+1
         boot_arr << 'B'
+	    else
+		    fail_times = fail_times+1
+		    boot_arr << 'X'
       end
     else
       fail_times = fail_times+1
