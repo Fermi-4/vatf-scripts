@@ -127,7 +127,7 @@ module C6xTestScript
             @equipment['server1'].send_cmd("cd #{nfs_root_path_temp}", @equipment['server1'].prompt, 10)
             @equipment['server1'].send_sudo_cmd("mv #{File.basename(@nfs)} #{@nfs_id}.cpio.gz",@equipment['server1'].prompt, 10)			
             @equipment['server1'].send_sudo_cmd("gunzip #{File.basename(@nfs_id)}.cpio.gz", @equipment['server1'].prompt, 30)
-            @equipment['server1'].send_sudo_cmd("cpio -idmv < *", @equipment['server1'].prompt, 30)
+            @equipment['server1'].send_sudo_cmd("cpio -idmv < *", @equipment['server1'].prompt, 60)
           end
         end
         #Create kernel image and place in TFTP directory
