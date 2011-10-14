@@ -146,7 +146,7 @@ class TestImporter
         add_custom_field(cfs, "scripts", "LSP/TARGET/dev_test2.rb")
         dut_caps = t.has_key?('hw_caps') ? "linux_#{t['hw_caps']}" : 'linux'
         add_custom_field(cfs, "hw_assets_config", "dut1=[\"<platform>\",#{dut_caps}];server1=[\"linux_server\"]")
-        add_custom_field(cfs, "params_control", "script=cd /opt/ltp;./runltp -P \#{@equipment['dut1'].name} -f #{t['file']} -s #{t['name']},timeout=#{get_timeout(t['type'])}")
+        add_custom_field(cfs, "params_control", "script=cd /opt/ltp;./runltp -P \#{@equipment['dut1'].name} -f #{t['file']} -s \"#{t['name']} \",timeout=#{get_timeout(t['type'])}")
         kws = tc.add_element "keywords"
         kws.add_element "keyword", {'name' => "s_#{t['scope']}"}
         kws.add_element "keyword", {'name' => "t_#{t['type']}"}
