@@ -4,6 +4,7 @@ require File.dirname(__FILE__)+'/h264mp.rb'
 require File.dirname(__FILE__)+'/mpeg2.rb'
 require File.dirname(__FILE__)+'/mpeg4.rb'
 require File.dirname(__FILE__)+'/h263p.rb'
+require File.dirname(__FILE__)+'/h264hp.rb'
 require File.dirname(__FILE__)+'/yuv.rb'
 require File.dirname(__FILE__)+'/graphicsovly.rb'
 require File.dirname(__FILE__)+'/textovly.rb'
@@ -13,6 +14,7 @@ include H264MPParams
 include MPEG4Params
 include MPEG2Params
 include H263PParams
+include H264HPParams
 include YUVParams
 include G_OVLYParams
 include T_OVLYParams
@@ -31,6 +33,8 @@ module CodecParams
         get_mpeg2_default_params()
     when "h263p"
         get_h263p_default_params()
+    when "h264hp"
+        get_h264hp_default_params()
     when "g_ovly"
         get_g_ovly_default_params()
     when "t_ovly"
@@ -54,6 +58,8 @@ end
         get_mpeg2_test_params(codec_type)
     when "h263p"
         get_h263p_test_params(codec_type)
+    when "h264hp"
+        get_h264hp_test_params(codec_type)
     when "g_ovly"
         get_g_ovly_test_params(codec_type)
     when "t_ovly"
@@ -77,6 +83,8 @@ end
         get_mpeg2_group_by_params(group_by_param)
     when "h263p"
         get_h263p_group_by_params(group_by_param)
+    when "h264hp"
+        get_h264hp_group_by_params(group_by_param)
     when "g_ovly"
         get_g_ovly_group_by_params(group_by_param)
     when "t_ovly"

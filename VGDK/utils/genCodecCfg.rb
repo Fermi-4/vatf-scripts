@@ -13,8 +13,14 @@ if (!/yuv/.match(codec))
     ip_codec_dump_cfg.puts "#{INPUT_DIR}\\in\\#{resolution}\\#{codec}\\#{clip}.cap"
   end
   case codec
-      when /h264/
+      when "h264mp"
           ip_codec_dump_cfg.puts("#{codec.upcase}\n")
+          file_ext_name = "264"
+     when "h264bp"
+          ip_codec_dump_cfg.puts("#{codec.upcase}\n")
+          file_ext_name = "264"
+      when "h264hp"
+          ip_codec_dump_cfg.puts("H264BP\n")
           file_ext_name = "264"
       when "mpeg4"
           ip_codec_dump_cfg.puts("#{codec.upcase}\n")
@@ -46,6 +52,12 @@ if (!/yuv/.match(codec))
       when "d1pal"
           width = "720"
           height = "576"
+      when "720p"
+          width = "1280"
+          height = "720"
+      when "1080p"
+          width = "1920"
+          height = "1088"
       else
           puts "#{resolution} Not a supported resolution"
   end       

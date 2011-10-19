@@ -189,6 +189,12 @@ case res
     when "d1pal"
         width = "720"
         height = "576"
+    when "720p"
+        width = "1280"
+        height = "720"
+    when "1080p"
+        width = "1920"
+        height = "1088"
     else
         puts "#{res} Not a supported resolution"
 end       
