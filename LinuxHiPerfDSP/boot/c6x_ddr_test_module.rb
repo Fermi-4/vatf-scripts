@@ -108,9 +108,6 @@ include Boot
       elsif !this_equipment.target.serial
         raise "You need Serial port connectivity to #{equipment}. Please check your bench file" 
       end
-      puts "*******************"
-      puts @equipment['dut1'].response
-      puts "*******************"
       begin
         this_equipment.wait_for(wait_for_string, timeout)
         if (this_equipment.timeout?)
