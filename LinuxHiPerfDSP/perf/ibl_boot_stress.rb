@@ -28,7 +28,7 @@ def run
     @power_handler.switch_off(power_port)
     sleep(30)
     @power_handler.switch_on(power_port)
-    sleep(30)
+    sleep(60)
     if connect_to_equipment('dut1')
       @equipment['dut1'].send_cmd("cat /proc/version",@equipment['dut1'].prompt, 30)
       if (/Linux/.match(@equipment['dut1'].response.to_s) != nil)
