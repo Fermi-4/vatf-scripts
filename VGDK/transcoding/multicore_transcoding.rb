@@ -23,14 +23,15 @@ WIRESHARK_DIR = ("C:/Program Files/Wireshark")
 SCRIPT_EXTRACTOR = SiteInfo::VGDK_INPUT_CLIPS
 
 class ChannelInfo
-    def initialize(codec,dir,resolution,out_codec,in_codec,in_resolution)
+    def initialize(codec,dir,resolution,out_codec,in_codec,in_resolution,is_master,template)
         @in_codec = codec
         @dir = dir # 0 => stream from PC to THK; 1 => stream from THK to PC  
         @resolution = resolution
         @transcoded_to_codec = out_codec # This field is valid ONLY when dir = 0
         @transcoded_from_codec = in_codec # This field is valid ONLY when dir = 1
         @transized_from_resolution = in_resolution # This field is valid ONLY when dir = 1
-        @template
+        @is_master = is_master
+        @template = template
     end
     def get_dir()
     @dir
@@ -41,9 +42,6 @@ class ChannelInfo
     def get_resolution()
     @resolution
     end
-    def get_template()
-    @template
-    end
     def get_transized_from_resolution()
     @transized_from_resolution
     end
@@ -52,6 +50,12 @@ class ChannelInfo
     end
     def get_transcoded_from_codec()
     @transcoded_from_codec
+    end
+    def is_master()
+    @is_master
+    end
+    def get_template()
+    @template
     end
 end
 #data structure that will contain an array of ChannelInfo objects
@@ -140,6 +144,7 @@ def run
     dut = @equipment['dut1']
     @platform_info = Eth_info.new()
     @platform_info.init_eth_info(dut)
+    tsu = false
 
     template = 0
     clip_hash = Hash.new
@@ -166,6 +171,7 @@ def run
     res_class_sent = false
     codec_hash = Hash.new
     codec_template_hash = Hash.new
+    template = 12
 
     chan_params = @test_params.params_chan.chan_config
     (chan_params.length).times do |i|
@@ -174,7 +180,7 @@ def run
         codec_hash.merge!(codec.to_s => [])
         case(codec.to_s)
         when "h264bp"
-            template = 10
+            template = 16
             codec_template_hash.merge!(codec => template)
         when "mpeg4"
             template = 14
@@ -189,7 +195,7 @@ def run
             template = 26
             codec_template_hash.merge!(codec => template)
         when "h264hp"
-            template = 14
+            template = 30
             codec_template_hash.merge!(codec => template)
         else
             raise " #### Error: Not a recognized codec #{codec.to_s}"
@@ -201,36 +207,60 @@ def run
     codec_hash.each_key{|codec| default_params.merge!(initialize_codec_default_params(codec))}
       
     #set ENC/DEC templates for this codec
-    decoder_template = 0
-    encoder_template = 0
-    # Begin codec params configuration
+
        
     core = 0
     res = false
-    tempc_info = CoreInfo::new()
     core_info_hash = Hash.new
     chan_params = @test_params.params_chan.chan_config
-    if(chan_params.length != 2)
-      raise " #### Error: For HD only single pair of chan param string"
-    end
+    decoder_template = 0
+    encoder_template = 0
+    master_enc_template = []
+    master_dec_template = []
+
     (chan_params.length).times do |i| 
       params = chan_params[i].split
       chanCodec = params[0].to_s
       channels = params[1].to_i
       core_num = params[2].to_i
       resolution = params[3].to_s
+      # Once both have been set it means anymore channels are for the same enc/dec - restriction for multicore case only
+      if (decoder_template == 0)
+        decoder_template = codec_template_hash[chanCodec]      
+        master_dec_template << decoder_template
+      elsif (encoder_template == 0)
+        encoder_template = decoder_template + 2
+        master_enc_template << encoder_template
+      end
       if(i%2 == 0)
           dir = "dec" #incoming stream to THK
           transcoded_to_codec = (chan_params[i+1].split)[0]
           transcoded_from_codec = nil
           transized_from_res = nil
           codec_type = "dec"
+          if(decoder_template != 0 and master_dec_template.include?(codec_template_hash[chanCodec])) 
+            template = decoder_template 
+          else
+            template = codec_template_hash[chanCodec]
+            master_dec_template << template
+          end
       else
           dir = "enc"
           transcoded_to_codec = nil
           transcoded_from_codec = (chan_params[i-1].split)[0]
           transized_from_res = (chan_params[i-1].split)[3]
+          transized_to_res = (chan_params[i].split)[3]
+          if (transized_from_res == transized_to_res)
+            tsu = true
+          end
           codec_type = "enc"
+          if((encoder_template != 0) and master_enc_template.include?(codec_template_hash[chanCodec]+2))
+            template =  encoder_template 
+          else
+            template = codec_template_hash[chanCodec]+2
+            master_enc_template << template
+          end
+          # If encoder_template/decoder_template is set, that means 
       end
       codec_hash[chanCodec].each{ |codec_info|
       if(codec_info.codec_type == codec_type && codec_info.resolution == resolution)
@@ -245,28 +275,39 @@ def run
       if(core_info_hash.has_key?(core_num) == true)
           channels.times do 
               debug_puts "Adding #{chanCodec} #{resolution} to core_info_hash"
-              core_info_hash[core_num].append(ChannelInfo.new(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res))
+              core_info_hash[core_num].append(ChannelInfo.new(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res,template))
+              template += 1
               end
-      else   
-          tempc_info = CoreInfo::new() 
+      else  # This will always be the case for HD 
+          master_tempc_info = CoreInfo::new() 
           #For HD case 'channels' is always 1
           channels.times do 
-              tempc_info.append(ChannelInfo.new(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res))             
+              core_info_hash.merge!(core_num => create_chan(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res,1,template))
           end
-          core_info_hash.merge!(core_num => tempc_info)
+ 
           # 1080p decoder needs two cores
           if (resolution == "1080p" and dir == "dec")
-            core_info_hash.merge!(core_num+1 => tempc_info) 
+            core_info_hash.merge!(core_num+1 => create_chan(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res,0,template)) 
+            decoder_template = template + 1
             # 1080p encoder needs six cores
           elsif (resolution == "1080p" and dir == "enc")
-            core_info_hash.merge!(core_num+1 => tempc_info) 
-            core_info_hash.merge!(core_num+2 => tempc_info) 
-            core_info_hash.merge!(core_num+3 => tempc_info) 
-            core_info_hash.merge!(core_num+4 => tempc_info) 
-            core_info_hash.merge!(core_num+5 => tempc_info) 
+            template += 1  
+            core_info_hash.merge!(core_num+1 => create_chan(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res,0,template))
+            template += 1              
+            core_info_hash.merge!(core_num+2 => create_chan(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res,0,template)) 
+            template += 1 
+            core_info_hash.merge!(core_num+3 => create_chan(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res,0,template)) 
+            template += 1 
+            core_info_hash.merge!(core_num+4 => create_chan(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res,0,template)) 
+            template += 1 
+            core_info_hash.merge!(core_num+5 => create_chan(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res,0,template)) 
+            encoder_template = template + 1
           elsif (resolution == "720p" and dir == "enc")
-            core_info_hash.merge!(core_num+1 => tempc_info) 
-            core_info_hash.merge!(core_num+2 => tempc_info) 
+            template += 1  
+            core_info_hash.merge!(core_num+1 => create_chan(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res,0,template)) 
+            template += 1 
+            core_info_hash.merge!(core_num+2 => create_chan(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res,0,template)) 
+            encoder_template = template + 1
           end   
       end
       res = false
@@ -276,20 +317,20 @@ def run
      dut.send_cmd("dimt set template 20 dsp_glob_config video_sw_cfg res_class 3",/OK/,10) 
      dut.send_cmd("dimt dsp_glob_config 0 alloc 20",/ACK DONE/,10) 
      dut.send_cmd("wait 3000",/OK/,10) 
+     
 
+        
     (codec_hash).each_pair{|codec,res_arr| 
       res_arr.each { |res|
         decoder_template = codec_template_hash[codec]
         encoder_template = decoder_template + 2
         if(res.codec_type == "dec")
-          @dec_master_core = res.core
-          @decoder_template = decoder_template
+          # @decoder_template = decoder_template
           set_xdp_vars(dut,codec,"dec_dyn",default_params)
           set_xdp_vars(dut,codec,"dec_st",default_params)
           dut.send_cmd("dimt reset template #{decoder_template}",/OK/,10)
         elsif (res.codec_type == "enc")
-          @enc_master_core = res.core
-          @encoder_template = encoder_template
+          # @encoder_template = encoder_template
           set_xdp_vars(dut,codec,"enc_dyn",default_params)
           set_xdp_vars(dut,codec,"enc_st",default_params)
           dut.send_cmd("dimt reset template #{encoder_template}",/OK/,10)
@@ -312,6 +353,10 @@ def run
             end
           end
         end
+        
+
+        
+        
       #CONF-CONNECT TEMPLATE
         if neu_rout == "true"
           dut.send_cmd("dimt reset template 15", /OK/, 10)
@@ -321,6 +366,29 @@ def run
           dut.send_cmd("dimt reset template 15", /OK/, 10)
           dut.send_cmd("dimt set template 15 conn_req nelem 1", /OK/, 10)
         end
+        
+        # core_info_hash.keys.sort.each { |key|
+          # core_info_hash[key].getLength().times { |i|
+            # if(core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution && core_info_hash[key][i].get_dir == res.codec_type)
+               # if(core_info_hash[key][i].is_master == 1 && core_info_hash[key][i].get_dir == "enc")
+                  # encoder_template = core_info_hash[key][i].get_template
+                  # if core_info_hash[key][i].get_resolution == "1080p"
+                    # set_core_teams(dut,encoder_template,6,key)
+                  # elsif core_info_hash[key][i].get_resolution == "720p"
+                    # set_core_teams(dut,encoder_template,3,key)
+                  # end
+            # elsif (core_info_hash[key][i].is_master == 1 && core_info_hash[key][i].get_dir == "dec")
+                  # decoder_template = core_info_hash[key][i].get_template
+                  # if core_info_hash[key][i].get_resolution == "1080p"
+                    # set_core_teams(dut,decoder_template,2,key)
+                  # end
+                # end
+            # end
+          # }
+        # }
+
+        decoder_template = codec_template_hash[codec]
+        encoder_template = decoder_template + 2
         case res.codec_type
         when "dec"
           set_codec_cfg(dut,codec,nil,multislice,"dec_st",decoder_template,"default",default_params,res.core)
@@ -332,12 +400,64 @@ def run
           set_codec_cfg(dut,codec,nil,multislice,"enc_dyn",encoder_template,"default",default_params,res.core)
           set_codec_cfg(dut,codec,res.resolution,multislice,"enc_st",encoder_template,"test",nil,res.core)
           set_codec_cfg(dut,codec,res.resolution,multislice,"enc_dyn",encoder_template,"test",nil,res.core)
-          if (res.resolution == "720p" || res.resolution == "1080p")
-            set_mc_enc(dut,encoder_template,res.resolution,codec)          
-          end
         else
           # do nothing
         end
+    
+
+        src_core = nil
+        src_template = 0
+        core_info_hash.keys.sort.each { |key|
+          core_info_hash[key].getLength().times { |i|
+            if(core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution && core_info_hash[key][i].get_dir == res.codec_type)
+               if(core_info_hash[key][i].is_master == 1 && core_info_hash[key][i].get_dir == "enc")
+                  if (core_info_hash[key][i].get_resolution == "1080p" || core_info_hash[key][i].get_resolution == "720p")
+                    if(src_core == nil)
+                      src_template = core_info_hash[key][i].get_template
+                      src_core = key
+                      puts "##### Now saving template #{src_template} of core #{key}"
+                    else
+                      dst_template = core_info_hash[key][i].get_template
+                      puts "##### Now setting template #{dst_template} to #{src_template} of core #{key}"
+                      set_mc_template(dut,src_template,dst_template)
+                    end
+                  end
+                end
+            end
+          }
+        }
+         core_info_hash.keys.sort.each { |key|
+          core_info_hash[key].getLength().times { |i|
+            if(core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution && core_info_hash[key][i].get_dir == res.codec_type)
+               if(core_info_hash[key][i].is_master == 1 && core_info_hash[key][i].get_dir == "enc")
+                  encoder_template = core_info_hash[key][i].get_template
+                  if core_info_hash[key][i].get_resolution == "1080p"
+                    set_core_teams(dut,encoder_template,6,key)
+                  elsif core_info_hash[key][i].get_resolution == "720p"
+                    set_core_teams(dut,encoder_template,3,key)
+                  end
+            elsif (core_info_hash[key][i].is_master == 1 && core_info_hash[key][i].get_dir == "dec")
+                  decoder_template = core_info_hash[key][i].get_template
+                  if core_info_hash[key][i].get_resolution == "1080p"
+                    set_core_teams(dut,decoder_template,2,key)
+                  end
+                end
+            end
+          }
+        }
+        core_info_hash.keys.sort.each { |key|
+          core_info_hash[key].getLength().times { |i|
+            if(core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution && core_info_hash[key][i].get_dir == res.codec_type)
+               if(core_info_hash[key][i].is_master == 1 && core_info_hash[key][i].get_dir == "enc")
+                  encoder_template = core_info_hash[key][i].get_template
+                  if (core_info_hash[key][i].get_resolution == "1080p" || core_info_hash[key][i].get_resolution == "720p")
+                    set_mc_enc(dut,encoder_template,res.resolution,codec)
+                  end
+                end
+            end
+          }
+        }
+
         tcid = 0
         core_info_hash.keys.sort.each { |key|
           core_info_hash[key].getLength().times { |i|
@@ -345,7 +465,6 @@ def run
               dut.send_cmd("cc assoc #{tcid} #{key} #{i}", /OK/, 2) 
               #cc assoc <tcid> <dsp> <chan>
               dut.send_cmd("cc xdp_cli_reg #{tcid}", /OK/, 10) 
-
             end
             tcid += 1
           }
@@ -390,7 +509,7 @@ def run
     core_info_hash[key].getLength().times { |i|
         puts "core id: #{key} i:#{i}"
         if(core_info_hash[key][i].get_dir == "dec") 
-            dut.send_cmd("dimt video_mode #{tcid} alloc #{@decoder_template}", /OK/, 10)
+            dut.send_cmd("dimt video_mode #{tcid} alloc #{core_info_hash[key][i].get_template}", /OK/, 10)
         end
      tcid += 1
     }
@@ -402,23 +521,29 @@ def run
     end  
     
     tcid = 0
+    enc_cores = 0
     core_info_hash.keys.sort.each { |key|
     core_info_hash[key].getLength().times { |i|
         puts "core id: #{key} i:#{i}"
         if(core_info_hash[key][i].get_dir == "enc")
-          if (key == @enc_master_core)
-            dut.send_cmd("dimt video_mode #{tcid} alloc #{@encoder_template}", /OK/, 10)
+          if (core_info_hash[key][i].is_master == 1)
+            puts "$$$$$$$$$$$$$ Wait here $$$$$$$$$$$$$$$$"
+            sleep 10
+            dut.send_cmd("dimt video_mode #{tcid} alloc  #{core_info_hash[key][i].get_template}", /OK/, 10)
             #master core id will always be lowest among (decoder or encoder) cores
-            @encoder_template = 32 
+            encoder_template = encoder_template + 1 
+            enc_cores = enc_cores + 1
           else
-            dut.send_cmd("dimt video_mode #{tcid} alloc #{@encoder_template}", /OK/, 10)
-            @encoder_template = @encoder_template +1
+            dut.send_cmd("dimt video_mode #{tcid} alloc  #{core_info_hash[key][i].get_template}", /OK/, 10)
+            encoder_template = encoder_template +1
+            enc_cores = enc_cores + 1
           end
         end
         tcid += 1
         }
     }
-   # dut.wait_for(/(?:ACK\sDONE)/,60)
+    sleep 120
+    # dut.wait_for(/(?:ACK\sDONE)/,60)
     if(dut.timeout?)
       cleanup_and_exit()
       return
@@ -430,31 +555,27 @@ def run
     (((chan_params.length))/2).times do 
     i = (chan_params[k].split)[1].to_i
     j = (chan_params[k+1].split)[1].to_i
-    dec = (chan_params[k].split)[2].to_i
-    enc = (chan_params[k+1].split)[2].to_i
+    dec_res = (chan_params[k].split)[3]
+    enc_res = (chan_params[k+1].split)[3]
     if(i != j)
         raise " #### Error receive and send channel config error ####"
     end
-    (i).times do 
-      if neu_rout == "true"
-        dut.send_cmd("dimt set template 15 conn_req elem 0 req_type add td_pkt_pkt src #{chan} dst #{chan+i}", /OK/, 10)
-        dut.send_cmd("dimt conn_req #{chan} alloc 15", /ACK DONE/, 10)
-        dut.send_cmd("dimt set template 6 chan chan_state p2tmask user app alarm cas rtcp tone p2tval user", /OK/, 10)
-        #dimt set template 6 chan chan_state p2tmask user app alarm cas rtcp tone p2tval user
-        #dimt chan_config 0 alloc 8
-        dut.send_cmd("dimt chan_config #{chan} alloc 6", /ACK DONE/, 10)
-        chan += 1
-      else
-        dut.send_cmd("dimt set template 15 conn_req elem 0 req_type add ld_pkt_pkt src #{dec} dst #{enc}", /OK/, 10)
-        dut.send_cmd("dimt conn_req #{dec} alloc 15", /ACK DONE/, 10)
-        chan += 1
-      end
+
+    if (dec_res == "1080p")
+      i = 2
     end
+    dut.send_cmd("dimt set template 15 conn_req elem 0 req_type add ld_pkt_pkt src #{chan} dst #{chan+i}", /OK/, 10)
+    dut.send_cmd("dimt conn_req #{chan} alloc 15", /ACK DONE/, 10)
+    chan += 1
+
     if(dut.timeout?)
       cleanup_and_exit()
       return
     end  
     k += 2
+    if (enc_res == "720p")
+      i = 3
+    end
     chan += i 
     end
 
@@ -492,7 +613,7 @@ def run
             core_info_hash.keys.sort.each { |key|
                 core_info_hash[key].getLength().times { |i|
                     if(core_info_hash[key][i].get_dir == "dec" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)
-                    if(key == @dec_master_core)
+                    if(core_info_hash[key][i].is_master == 1)
                         debug_puts "Generating pktHdrs.cfg"
                         case codec
                             when /h264/
@@ -571,7 +692,7 @@ def run
             core_info_hash.keys.sort.each { |key|
                     core_info_hash[key].getLength().times { |i|  
                             if(core_info_hash[key][i].get_dir == "enc" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)
-                            if (key == @enc_master_core)
+                            if (core_info_hash[key][i].is_master == 1)
                               debug_puts "Generating SDP for #{core_info_hash[key][i].get_codec} #{core_info_hash[key][i].get_resolution} #{key} #{pc_udp_port}"
                               genSDP(core_info_hash[key][i].get_codec,core_info_hash[key][i].get_resolution,key,pc_udp_port,append,test_case_id,geom,multislice,iteration_id,c_iter,@platform_info)
                               Dir.chdir("#{WIRESHARK_DIR}")
@@ -596,7 +717,7 @@ def run
                         core_info_hash.keys.sort.each { |key|
                                 core_info_hash[key].getLength().times { |i|
                                         if(core_info_hash[key][i].get_dir == "dec" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution && res.stream_sent == 0)
-                                                if (key == @dec_master_core)
+                                                if (core_info_hash[key][i].is_master == 1)
                                                     res.stream_sent = 1  
                                                     debug_puts "get_transcoded_to_codec :#{core_info_hash[key][i].get_transcoded_to_codec}"
                                                     transcoded_codec = core_info_hash[key][i].get_transcoded_to_codec
@@ -619,7 +740,7 @@ def run
                     core_info_hash[key].getLength().times { |i|
                     transcoded_codec = core_info_hash[key][i].get_transcoded_to_codec
                     if(core_info_hash[key][i].get_dir == "dec" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution && res.subjective_on == 0)
-                      if (key == @dec_master_core)
+                      if (core_info_hash[key][i].is_master == 1)
                         system("start \"Mplayer\" cmd.exe \/c #{OUTPUT_DIR}\\TC#{test_case_id}\\Iter#{iteration_id}\\#{transcoded_codec}_#{res.resolution}_subj_bat.bat")
                         sleep(1)
                         res.subjective_on = 1
@@ -686,7 +807,7 @@ def run
                                 core_info_hash.keys.sort.each { |key|
                                         core_info_hash[key].getLength().times { |i|
                                                 if(core_info_hash[key][i].get_dir == "enc" && core_info_hash[key][i].get_dir == res.codec_type && core_info_hash[key][i].get_codec == codec && core_info_hash[key][i].get_resolution == res.resolution)
-                                                    if (key == @enc_master_core)
+                                                    if (core_info_hash[key][i].is_master == 1)
                                                         debug_puts "codec: #{codec} res: #{res.resolution} port:#{pc_udp_port}"
                                                         #system("etherealUtil.exe #{Pathname.new("#{OUTPUT_DIR}").realpath}\\TC#{test_case_id}\\#{codec}_#{res.resolution}\\#{pc_udp_port}.cfg #{OUTPUT_DIR}\\TC#{test_case_id}\\#{codec}_#{res.resolution}\\auto_generated_ConfigFile4sendPkts_#{pc_udp_port}.cfg")
                                                         case(codec)
@@ -829,44 +950,73 @@ def set_xdp_vars(dut,codec,type,params)
 end
 
 def set_mc_enc(dut,src_template,resolution,codec)
+  dst_template = src_template + 1
   case resolution
     when "1080p"
-      dst_template = 32
       top = 128
       bottom = 320
-      set_mc_template(dut,src_template,dst_template,codec,top,bottom)
-      dst_template = 33
+      set_mc_template(dut,src_template,dst_template)
+      set_top_bottom_slices(dut,dst_template,codec,top,bottom)
+      dst_template += 1
       top = 320
       bottom = 512
-      set_mc_template(dut,src_template,dst_template,codec,top,bottom)
-      dst_template = 34
+      set_mc_template(dut,src_template,dst_template)
+      set_top_bottom_slices(dut,dst_template,codec,top,bottom)
+      dst_template += 1
       top = 512
       bottom = 704
-      set_mc_template(dut,src_template,dst_template,codec,top,bottom)
-      dst_template = 35
+      set_mc_template(dut,src_template,dst_template)
+      set_top_bottom_slices(dut,dst_template,codec,top,bottom)
+      dst_template += 1
       top = 704
       bottom = 896
-      set_mc_template(dut,src_template,dst_template,codec,top,bottom)
-      dst_template = 36
+      set_mc_template(dut,src_template,dst_template)
+      set_top_bottom_slices(dut,dst_template,codec,top,bottom)
+      dst_template += 1
       top = 896
       bottom = 1088
-      set_mc_template(dut,src_template,dst_template,codec,top,bottom)
+      set_mc_template(dut,src_template,dst_template)
+      set_top_bottom_slices(dut,dst_template,codec,top,bottom)
     when "720p"
-      dst_template = 37
-      top = 896
-      bottom = 1088
-      set_mc_template(dut,src_template,dst_template,codec,top,bottom)
+
+      top = 240
+      bottom = 480
+      set_mc_template(dut,src_template,dst_template)
+      set_top_bottom_slices(dut,dst_template,codec,top,bottom)
+      dst_template += 1
+      top = 480
+      bottom = 720
+      set_mc_template(dut,src_template,dst_template)
+      set_top_bottom_slices(dut,dst_template,codec,top,bottom)
+
   end
 end
 
-def set_mc_template(dut,src_template,dst_template,codec,top,bottom)
+def set_mc_template(dut,src_template,dst_template)
   dut.send_cmd("dimt reset template #{dst_template}",/OK/,10) 
   dut.send_cmd("dimt copy #{src_template} #{dst_template}",/OK/,10) 
+end
+
+def set_top_bottom_slices(dut,dst_template,codec,top,bottom)
   dut.send_cmd("dimt set template #{dst_template} video dynamic_video_codec_cfg cfg_param_str #{codec.upcase}_ENC_topslline_msb 0",/OK/,10) 
   dut.send_cmd("dimt set template #{dst_template} video dynamic_video_codec_cfg cfg_param_str #{codec.upcase}_ENC_topslline_lsb #{top}",/OK/,10) 
   dut.send_cmd("dimt set template #{dst_template} video dynamic_video_codec_cfg cfg_param_str #{codec.upcase}_ENC_bottomslline_msb 0",/OK/,10) 
   dut.send_cmd("dimt set template #{dst_template} video dynamic_video_codec_cfg cfg_param_str #{codec.upcase}_ENC_bottomslline_lsb #{bottom}",/OK/,10) 
 end
+
+def set_core_teams(dut,template,n_cores,core)
+    dut.send_cmd("dimt set template #{template} video video_mode n_cores #{n_cores}",/OK/,10)
+    core_team_mapping = []
+    chan_id_on_cores = []
+    n_cores.times {
+      core_team_mapping << "#{core}" 
+      chan_id_on_cores <<  1
+      core = core+1
+    }
+    dut.send_cmd("dimt set template #{template} video video_mode core_team_mapping #{core_team_mapping.join(" ")}",/OK/,10)
+    dut.send_cmd("dimt set template #{template} video video_mode chan_id_on_cores #{chan_id_on_cores.join(" ")}",/OK/,10)                 
+end
+
 
 def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params = nil,core)
   i = 0
@@ -927,10 +1077,6 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
       params_hash["#{codec.upcase}_ENC_tgtbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
       params_hash["#{codec.upcase}_ENC_tgtbitrate_msb"] = sprintf("0x%04x", (@test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff0000) >> 16)
     end
-    # if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_st")
-      # params_hash["#{codec.upcase}_ENC_maxbitrate_lsb"] = sprintf("0x%04x", @test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff)
-      # params_hash["#{codec.upcase}_ENC_maxbitrate_msb"] = sprintf("0x%04x", (@test_params.params_chan.instance_variable_get("@enc_bitrate")[0].to_i & 0xffff0000) >> 16)
-    # end
     end
   else #default
     default_params.each_pair do |var,value|
@@ -980,11 +1126,6 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
       if(multislice == 1 && codec == "h264bp")
         dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str #{codec.upcase}_#{codectype}_ipstrformat_lsb 1",/OK/,10)       
       end
-      if (res == "1080p")
-        dut.send_cmd("dimt set template #{template} video video_mode n_cores 2",/OK/,10)
-        dut.send_cmd("dimt set template #{template} video video_mode core_team_mapping #{core} #{core+1}",/OK/,10)
-        dut.send_cmd("dimt set template #{template} video video_mode chan_id_on_cores 1 1",/OK/,10)                 
-      end 
     when "enc_st"
       dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_maxheight_lsb #{height} ",/OK/,10)
       dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_maxwidth_lsb #{width} ",/OK/,10)
@@ -994,16 +1135,10 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
       dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputht_lsb #{height} ",/OK/,10)
       dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputwdth_lsb #{width} ",/OK/,10)
       if (res == "1080p")
-        dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_bottomslline_lsb 128 ",/OK/,10)
-        dut.send_cmd("dimt set template #{template} video video_mode n_cores 6",/OK/,10)
-        dut.send_cmd("dimt set template #{template} video video_mode core_team_mapping #{core} #{core+1} #{core+2} #{core+3} #{core+4} #{core+5}",/OK/,10)
-        dut.send_cmd("dimt set template #{template} video video_mode chan_id_on_cores 1 1 1 1 1 1",/OK/,10)            
+        dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_bottomslline_lsb 128 ",/OK/,10)       
         # 1080p decoder needs six cores
       elsif (res == "720p")
-        dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_bottomslline_lsb 128 ",/OK/,10)
-        dut.send_cmd("dimt set template #{template} video video_mode n_cores 3",/OK/,10)
-        dut.send_cmd("dimt set template #{template} video video_mode core_team_mapping #{core} #{core+1} #{core+2}",/OK/,10)
-        dut.send_cmd("dimt set template #{template} video video_mode chan_id_on_cores 1 1 1",/OK/,10)       
+        dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_bottomslline_lsb 240 ",/OK/,10) 
       end
     end
   end    
@@ -1191,4 +1326,10 @@ end
 
 def stop_profiling(dut,core)
   dut.send_cmd("cc write_mem2 {core} 0 0x428E76 0xFFFF",/OK/,10)
+end
+
+def create_chan(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res,is_master,template)
+  slave_tempc_info = CoreInfo::new()
+  slavenewChan = ChannelInfo.new(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res,is_master,template)
+  slave_tempc_info.append(slavenewChan)  
 end
