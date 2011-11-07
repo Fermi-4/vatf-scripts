@@ -1,0 +1,737 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="CAN Benchmark" >
+<node_order><![CDATA[0]]></node_order>
+<details><![CDATA[]]> 
+</details>
+
+<testcase internalid="1477241" name="CanBenchmark test 250k transmit 10 seconds">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[13939]]></externalid>
+	<summary><![CDATA[<p>CanBenchmark transmit test for 250k baudrate 10 seconds.</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_functional"><notes><![CDATA[
+test type is functional
+]]></notes></keyword>
+	<keyword name="t_performance"><notes><![CDATA[
+test type is performance
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP/can/kvaser/canbench_perf.bat,direction=tx,baud_rate=250,duration=10000,expected_throughput=9
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP/can/kvaser/canbench_perf.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=20
+]]></value>
+</custom_field>
+
+</custom_fields>
+<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+
+<testcase internalid="1495101" name="CanBenchmark test 250k receive 10 seconds">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[14207]]></externalid>
+	<summary><![CDATA[<p>CanBenchmark receive test for 250k baudrate 10 seconds duration.</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_functional"><notes><![CDATA[
+test type is functional
+]]></notes></keyword>
+	<keyword name="t_performance"><notes><![CDATA[
+test type is performance
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP/can/kvaser/canbench_perf.bat,direction=rx,baud_rate=250,duration=10000,expected_throughput=13.5
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP/can/kvaser/canbench_perf.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=20
+]]></value>
+</custom_field>
+</custom_fields>
+<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+
+<testcase internalid="1503981" name="CanBenchmark test 500k transmit 10 seconds">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[14268]]></externalid>
+	<summary><![CDATA[<p>CanBenchmark transmit test for 500k baudrate 10 seconds.</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_functional"><notes><![CDATA[
+test type is functional
+]]></notes></keyword>
+	<keyword name="t_performance"><notes><![CDATA[
+test type is performance
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP/can/kvaser/canbench_perf.bat,direction=tx,baud_rate=500,duration=10000,expected_throughput=16
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP/can/kvaser/canbench_perf.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=20
+]]></value>
+</custom_field>
+</custom_fields>
+<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+
+<testcase internalid="1504361" name="CanBenchmark test 500k receive 10 seconds">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[14270]]></externalid>
+	<summary><![CDATA[<p>CanBenchmark receive test for 500k baudrate 10 seconds duration.</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_functional"><notes><![CDATA[
+test type is functional
+]]></notes></keyword>
+	<keyword name="t_performance"><notes><![CDATA[
+test type is performance
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP/can/kvaser/canbench_perf.bat,direction=rx,baud_rate=500,duration=10000,expected_throughput=26
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP/can/kvaser/canbench_perf.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=20
+]]></value>
+</custom_field>
+</custom_fields>
+<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+
+<testcase internalid="1504521" name="CanBenchmark test 1M transmit 10 seconds">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[14272]]></externalid>
+	<summary><![CDATA[<p>CanBenchmark transmit test for 1M baudrate 10 seconds.</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[3]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_functional"><notes><![CDATA[
+test type is functional
+]]></notes></keyword>
+	<keyword name="t_performance"><notes><![CDATA[
+test type is performance
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP/can/kvaser/canbench_perf.bat,direction=tx,baud_rate=1000,duration=10000,expected_throughput=9
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP/can/kvaser/canbench_perf.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=20
+]]></value>
+</custom_field>
+</custom_fields>
+<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+
+<testcase internalid="1504701" name="CanBenchmark test 1M receive 10 seconds">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[14275]]></externalid>
+	<summary><![CDATA[<p>CanBenchmark receive test for 1M baudrate 10 seconds duration.</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_functional"><notes><![CDATA[
+test type is functional
+]]></notes></keyword>
+	<keyword name="t_performance"><notes><![CDATA[
+test type is performance
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP/can/kvaser/canbench_perf.bat,direction=rx,baud_rate=1000,duration=10000,expected_throughput=46
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP/can/kvaser/canbench_perf.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=20
+]]></value>
+</custom_field>
+</custom_fields>
+<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+
+<testcase internalid="1505541" name="CanBenchmark Stress test 250k receive 1 hour">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[14276]]></externalid>
+	<summary><![CDATA[<p>CanBenchmark receive test for 250k baudrate 1 hour duration.</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="s_full"><notes><![CDATA[
+test scope is full
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP/can/kvaser/canbench_perf.bat,direction=rx,baud_rate=250,duration=3600000,expected_throughput=13.5
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP/can/kvaser/canbench_perf.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=20
+]]></value>
+</custom_field>
+</custom_fields>
+<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+
+<testcase internalid="1505641" name="CanBenchmark Stress test 250k transmit 1 hour">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[14277]]></externalid>
+	<summary><![CDATA[<p>CanBenchmark Stress transmit test for 250k baudrate 1 hour.</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="s_full"><notes><![CDATA[
+test scope is full
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP/can/kvaser/canbench_perf.bat,direction=tx,baud_rate=250,duration=3600000,expected_throughput=9
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP/can/kvaser/canbench_perf.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=20
+]]></value>
+</custom_field>
+</custom_fields>
+<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+
+<testcase internalid="1505721" name="CanBenchmark Stress test 1M transmit 1 hour">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[14278]]></externalid>
+	<summary><![CDATA[<p>CanBenchmark transmit Stress test for 1M baudrate 1 hour.</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="s_full"><notes><![CDATA[
+test scope is full
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP/can/kvaser/canbench_perf.bat,direction=tx,baud_rate=1000,duration=3600000,expected_throughput=9
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP/can/kvaser/canbench_perf.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=20
+]]></value>
+</custom_field>
+</custom_fields>
+<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+
+<testcase internalid="1505801" name="CanBenchmark Stress test 1M receive 1 hour">
+	<node_order><![CDATA[1]]></node_order>
+	<externalid><![CDATA[14279]]></externalid>
+	<summary><![CDATA[<p>CanBenchmark receive Stress test for 1M baudrate 1 hour duration.</p>]]></summary>
+	<execution_type><![CDATA[1]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_functional"><notes><![CDATA[
+test type is functional
+]]></notes></keyword>
+	<keyword name="t_performance"><notes><![CDATA[
+test type is performance
+]]></notes></keyword>
+	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP/can/kvaser/canbench_perf.bat,direction=rx,baud_rate=1000,duration=3600000,expected_throughput=46
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP/can/kvaser/canbench_perf.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=20
+]]></value>
+</custom_field>
+</custom_fields>
+<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[ARM_A8_1.0.0]]></req_spec_title>
+			<doc_id><![CDATA[can-1]]></doc_id>
+			<title><![CDATA[CAN Bus Driver Support:]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+</testsuite>
