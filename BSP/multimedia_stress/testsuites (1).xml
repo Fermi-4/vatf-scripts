@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Multimedia_Playout_Stress_Test" >
+<node_order><![CDATA[1]]></node_order>
+<details><![CDATA[<p>This test suite stresses the file-based and streaming-based multimedia playout capablity</p>]]> 
+<keywords>	<keyword name="os_ce6"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="os_ce7"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="s_full"><notes><![CDATA[
+test scope is full
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+</keywords></details>
+<testcase internalid="1471641" name="WMV Streaming_niceday">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[13923]]></externalid>
+	<summary><![CDATA[]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="p_am3517"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omapl137"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omapl138"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3530"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_omap3503"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="s_full"><notes><![CDATA[
+test scope is full
+]]></notes></keyword>
+	<keyword name="p_am3730"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="t_stress"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[shell_script=BSP/multimedia_stress/multimedia_stress_test.bat,test_dir=\Windows,build_test_libs=ceplayit.exe,input_file=niceday_320x240_313kbps_wma2_44kHz_65kbps_wmv3.wmv,cmdline=ceplayit,playout_type=stream,total_test_duration=5,total_test_duration_units=min,file_duration_in_sec=34,streaming_server=//158.218.103.149:8080/tftpboot/anonymous
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[approver]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[BSP/multimedia_stress/multimedia_stress_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",wince]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+</custom_fields>	<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[ST_EXTRAS]]></req_spec_title>
+			<doc_id><![CDATA[st.stress.0010]]></doc_id>
+			<title><![CDATA[STRESS: Streaming Long-Term Test]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+</testsuite>

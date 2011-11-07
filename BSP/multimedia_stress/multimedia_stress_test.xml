@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test_session>
+   <testcase>
+      <id><![CDATA[12345]]></id>
+      <tee><![CDATA[vatf
+]]></tee>
+      <params_chan><![CDATA[shell_script=BSP/multimedia_stress/multimedia_stress_test.bat,input_file=niceday_320x240_313kbps_wma2_44kHz_65kbps_wmv3.wmv,cmdline=ceplayit,playout_type=stream,total_test_duration=5,total_test_duration_units=min,file_duration_in_sec=34
+]]></params_chan>
+      <params_control></params_control>
+      <params_equip></params_equip>
+      <scripts><![CDATA[BSP/multimedia_stress/multimedia_stress_test.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1 = ["<platform>",wince]
+]]></hw_assets_config>
+      <approver><![CDATA[
+]]></approver>
+      <auto>1</auto>
+      <platform>am3517</platform>
+      <target>bsp_AM3517_v02</target>
+      <description><![CDATA[Multimedia Streaming Stress Test]]></description>
+   </testcase>
+</test_session>
