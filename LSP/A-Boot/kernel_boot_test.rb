@@ -15,6 +15,7 @@ def run
       self.as(LspTestScript).setup
     rescue Exception 
       puts "Failed to boot on iteration #{counter}"
+      @equipment['dut1'].log_info("Failed to boot on Iteration #{counter}")
       result += 1
     ensure
       counter += 1
