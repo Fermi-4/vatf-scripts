@@ -24,9 +24,9 @@ module LspTargetTestScript
     puts "\n LinuxTestScript::run"
     run_generate_script
     run_transfer_script
-    run_start_stats 
+    run_start_stats
     return_non_zero = run_call_script
-    run_stop_stats  
+    run_stop_stats
     run_get_script_output
     run_collect_performance_data
     run_save_results(return_non_zero)
@@ -81,7 +81,7 @@ module LspTargetTestScript
     @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
     @equipment['dut1'].timeout?
   end
-
+  
   # Start collecting system metrics (i.e. cpu load, mem load)
   def run_start_stats
     @eth_ip_addr = get_ip_addr()
@@ -91,6 +91,48 @@ module LspTargetTestScript
       @equipment['dut1'].connect({'type'=>'telnet'})
       @equipment['dut1'].target.telnet.send_cmd("pwd", @equipment['dut1'].prompt , 3)    
       start_collecting_stats(@collect_stats, @collect_stats_interval) do |cmd| 
+        if cmd
+          @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
+          @equipment['dut1'].target.telnet.response
+        end
+      end
+      @equipment['dut1'].target.telnet.send_cmd("cd /sys/class/net/eth0/statistics", /.*/, 3)
+      @equipment['dut1'].target.telnet.send_cmd("find -type f -exec basename {} \;", /.*/, 3)
+      @equipment['dut1'].target.telnet.send_cmd("find -type f -exec cat {} \;", /.*/, 3)
+      @equipment['dut1'].target.telnet.send_cmd("cat /sys/devices/platform/cpsw.0/net/eth0/hw_stats", /.*/, 3)
+    end
+    
+  end
+  
+  # Stop collecting system metrics 
+  def run_stop_stats
+    if @eth_ip_addr
+      @target_sys_stats = stop_collecting_stats(@collect_stats) do |cmd| 
+        if cmd
+          @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
+          @equipment['dut1'].target.telnet.response
+        end
+      end
+      @equipment['dut1'].target.telnet.send_cmd("cd /sys/class/net/eth0/statistics", /.*/, 3)
+      @equipment['dut1'].target.telnet.send_cmd("find -type f -exec basename {} \;", /.*/, 3)
+      @equipment['dut1'].target.telnet.send_cmd("find -type f -exec cat {} \;", /.*/, 3)
+      @equipment['dut1'].target.telnet.send_cmd("cat /sys/devices/platform/cpsw.0/net/eth0/hw_stats", /.*/, 3)
+    end
+     @equipment['dut1'].send_cmd("find /sys/class/net/eth0/statistics -type f -exec basename {} \\;", @equipment['dut1'].prompt, 3)
+     @equipment['dut1'].send_cmd("find /sys/class/net/eth0/statistics -type f -exec cat {} \\;", @equipment['dut1'].prompt, 3)
+     @equipment['dut1'].send_cmd("cat /sys/devices/platform/cpsw.0/net/eth0/hw_stats", @equipment['dut1'].prompt, 3)
+     
+  end
+
+  # Start collecting system metrics (i.e. cpu load, mem load)
+  def run_start_stats
+    @eth_ip_addr = get_ip_addr()
+    if @eth_ip_addr
+      @equipment['dut1'].target.platform_info.telnet_ip = @eth_ip_addr
+      @equipment['dut1'].target.platform_info.telnet_port = 23
+      @equipment['dut1'].connect({'type'=>'telnet'})
+      @equipment['dut1'].target.telnet.send_cmd("pwd", @equipment['dut1'].prompt , 3)    
+      start_collecting_stats(@collect_stats, @collect_stats_interval) do |cmd|
         if cmd
           @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
           @equipment['dut1'].target.telnet.response
@@ -225,6 +267,15 @@ module LspTargetTestScript
     kernel = @test_params.instance_variable_defined?(:@kernel) ? @test_params.kernel.to_s : ''
     keys = @test_params.platform.to_s + kernel
     keys
+  end
+  
+  def get_ip_addr(dev='dut1')     
+    this_equipment = @equipment["#{dev}"]
+    this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*eth.*/{print $1}' | head -1`;ifconfig $eth", this_equipment.prompt)
+    #eth=`ls /sys/class/net/ | awk '/.*eth.*/{print $1}' | head -1`
+    #ifconfig_data =`ifconfig #{eth}`
+    ifconfig_data =/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(this_equipment.response)
+    ifconfig_data ? ifconfig_data[1] : nil
   end
 
   def get_ip_addr(dev='dut1')     

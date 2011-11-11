@@ -1,4 +1,4 @@
-module SystemStats    
+module SystemStats
   
   def start_collecting_system_stats(metrics, interval=-1)
      @system_metrics = metrics.clone
@@ -36,10 +36,10 @@ module SystemStats
       if @system_stats[k].length < 1
         puts "WARNING: Metric #{k} was not passed to start_collecting_system_stats"
         next
-  end
+      end
       results << v.call(@system_stats[k])
-    } 
+    }
     results
- end 
+  end
 end  # End of module
 
