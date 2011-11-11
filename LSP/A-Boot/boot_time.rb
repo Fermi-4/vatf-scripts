@@ -5,8 +5,7 @@ $console = {"am389x-evm" => "ttyO2,115200n8","am387x-evm" => "ttyO0,115200n8"}
 $stage1_bootdelay = {'am387x-evm' => 3}
 $bootcmd_mmc = {}
 $bootargs_mmc = {}
-$bootdelay = 3
-
+$bootdelay = @equipment['dut1'].instance_variable_defined?(:@power_port) ? 3 : 0   
 def setup
   # param 'kernel_from_tftp' means kernel is getting from tftp and rootfs is NFS. 
   # if kernel is not getting from tftp, then skip the default booting part. 
@@ -38,21 +37,26 @@ def run
   regexp2 = /##\s*Booting\s*kernel/
   regexp3 = /\/\s*#|login:/
  
+  loop_count = @test_params.params_control.loop_count[0].to_i
+  for i in (1..loop_count)  
   # set bootdelay so that it can be deducted from total boottime
   @equipment['dut1'].boot_to_bootloader(@power_handler)
   @equipment['dut1'].send_cmd("setenv bootdelay #{$bootdelay}", @equipment['dut1'].boot_prompt, 10)
   if @test_params.params_control.kernel_from_tftp[0] == '0'
-    @equipment['dut1'].send_cmd("setenv bootcmd \'#{bootcmd_mmc}\'", @equipment['dut1'].boot_prompt, 10)
-    @equipment['dut1'].send_cmd("setenv bootargs \'#{bootargs_mmc}\'", @equipment['dut1'].boot_prompt, 10)
+      @equipment['dut1'].get_boot_cmd({'image_path' => 'mmc'}).each {|cmd|
+        @equipment['dut1'].send_cmd("#{cmd}",@equipment['dut1'].boot_prompt, 10)
+        raise "Timeout waiting for bootloader prompt #{@equipment['dut1'].boot_prompt}" if @equipment['dut1'].timeout?
+      }
+      #@equipment['dut1'].send_cmd("setenv bootcmd \'#{bootcmd_mmc}\'", @equipment['dut1'].boot_prompt, 10)
+      #@equipment['dut1'].send_cmd("setenv bootargs \'#{bootargs_mmc}\'", @equipment['dut1'].boot_prompt, 10)
   end
   @equipment['dut1'].send_cmd("saveenv", @equipment['dut1'].boot_prompt, 10)
   @equipment['dut1'].send_cmd("printenv", @equipment['dut1'].boot_prompt, 10)
 
-  loop_count = @test_params.params_control.loop_count[0].to_i
-  for i in (1..loop_count)  
-    @power_handler.switch_off(@equipment['dut1'].power_port)
-    sleep 3
-    @power_handler.switch_on(@equipment['dut1'].power_port)
+    #@power_handler.switch_off(@equipment['dut1'].power_port)
+    #sleep 3
+    #@power_handler.switch_on(@equipment['dut1'].power_port)
+    @equipment['dut1'].send_cmd("boot", /.*/, 1, false)
     time0 = Time.now
     puts "-----------------------time0 is: "+time0.to_s
 
@@ -90,7 +94,10 @@ def run
       puts "---------------------------stage1_delay is: " + stage1_delay.to_s
       boottimes_total << time3 - time0 - $bootdelay -stage1_delay
     end
+    @equipment['dut1'].send_cmd(@equipment['dut1'].login, @equipment['dut1'].prompt, 10) # login to the unit
+    raise 'Unable to login' if @equipment['dut1'].timeout?
   end
+  
   puts "Boottime-LoadKernel  is #{boottimes_readkernel}"
   puts "Boottime-BootKernel  is #{boottimes_bootkernel}"
   puts "Boottime-Total is #{boottimes_total}"
