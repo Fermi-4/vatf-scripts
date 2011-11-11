@@ -39,20 +39,20 @@ def run
  
   loop_count = @test_params.params_control.loop_count[0].to_i
   for i in (1..loop_count)  
-  # set bootdelay so that it can be deducted from total boottime
-  @equipment['dut1'].boot_to_bootloader(@power_handler)
-  @equipment['dut1'].send_cmd("setenv bootdelay #{$bootdelay}", @equipment['dut1'].boot_prompt, 10)
-  if @test_params.params_control.kernel_from_tftp[0] == '0'
+    # set bootdelay so that it can be deducted from total boottime
+    @equipment['dut1'].boot_to_bootloader(@power_handler)
+    @equipment['dut1'].send_cmd("setenv bootdelay #{$bootdelay}", @equipment['dut1'].boot_prompt, 10)
+    if @test_params.params_control.kernel_from_tftp[0] == '0'
       @equipment['dut1'].get_boot_cmd({'image_path' => 'mmc'}).each {|cmd|
         @equipment['dut1'].send_cmd("#{cmd}",@equipment['dut1'].boot_prompt, 10)
         raise "Timeout waiting for bootloader prompt #{@equipment['dut1'].boot_prompt}" if @equipment['dut1'].timeout?
       }
       #@equipment['dut1'].send_cmd("setenv bootcmd \'#{bootcmd_mmc}\'", @equipment['dut1'].boot_prompt, 10)
       #@equipment['dut1'].send_cmd("setenv bootargs \'#{bootargs_mmc}\'", @equipment['dut1'].boot_prompt, 10)
-  end
-  @equipment['dut1'].send_cmd("saveenv", @equipment['dut1'].boot_prompt, 10)
-  @equipment['dut1'].send_cmd("printenv", @equipment['dut1'].boot_prompt, 10)
-
+    end
+    @equipment['dut1'].send_cmd("saveenv", @equipment['dut1'].boot_prompt, 10)
+    @equipment['dut1'].send_cmd("printenv", @equipment['dut1'].boot_prompt, 10)
+  
     #@power_handler.switch_off(@equipment['dut1'].power_port)
     #sleep 3
     #@power_handler.switch_on(@equipment['dut1'].power_port)
