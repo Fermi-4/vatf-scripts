@@ -8,14 +8,23 @@ include PlatformSpecificVarNames
 
 def setup
 	@equipment['dut1'].set_api('psp')
-	connect_to_equipment('dut1')
-	
-	#Check if DUT is already at boot_prompt
-	@equipment['dut1'].send_cmd("\n", @equipment['dut1'].boot_prompt,1)
-	#If DUT is not at boot_prompt do reboot with power_controller or soft reboot
-	@equipment['dut1'].boot_to_bootloader(@power_handler) if @equipment['dut1'].timeout?
-	#self.as(LspTestScript).setup
-if @test_params.instance_variable_defined?(:@kernel)
+  boot_params = {'power_handler'=> @power_handler,
+                 'staf_service_name' => @test_params.staf_service_name.to_s}
+  boot_params['server'] = @equipment['server1'] if  @equipment['server1']
+  boot_params['bootargs'] = @test_params.params_chan.bootargs[0] if @test_params.params_chan.instance_variable_defined?(:@bootargs)
+  boot_params['image_path'] = @test_params.kernel if @test_params.instance_variable_defined?(:@kernel)
+  boot_params['primary_bootloader'] = @test_params.primary_bootloader if @test_params.instance_variable_defined?(:@primary_bootloader)
+  boot_params['secondary_bootloader'] = @test_params.secondary_bootloader if @test_params.instance_variable_defined?(:@secondary_bootloader)
+  if !(@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) && !(@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)
+    raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
+  end
+  @equipment['dut1'].boot_to_bootloader(boot_params) 
+  @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
+  @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 2)
+  raise 'Bootloader was not loaded properly. Failed to get bootloader prompt' if @equipment['dut1'].timeout?
+  
+  
+  if @test_params.instance_variable_defined?(:@kernel)
 		tester_from_cli = @tester.downcase
 		target_from_db = @test_params.target
 		platform_from_db = @test_params.platform
