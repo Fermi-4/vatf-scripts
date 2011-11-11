@@ -3,6 +3,9 @@
 #require File.dirname(__FILE__)+'/lsp_constants'
 require File.dirname(__FILE__)+'/boot'
 require File.dirname(__FILE__)+'/kernel_module_names'
+require File.dirname(__FILE__)+'/metrics'
+
+include Metrics
 
 # Default Server-Side Test script implementation for LSP releases
 module LspTestScript 
