@@ -19,7 +19,7 @@ send_events_for(get_events(@test_params.params_chan.alarm_save_munite[0]))
 end #function end
 
 
-def set_no_wakelock
+def set_no_wakelock(counter)
 sleep 1
 send_events_for(get_events(@test_params.params_chan.go_home[0]))
 data = send_adb_cmd @test_params.params_chan.no_stay_awake_cmd[0]

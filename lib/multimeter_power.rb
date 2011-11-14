@@ -1,4 +1,5 @@
 module MultimeterModule
+
 def run_get_multimeter_output(multimeter=@equipment['ti_multimeter'])
   sleep 5    # Make sure multimeter is configured and DUT is in the right state
   volt_reading = []
@@ -65,5 +66,40 @@ def sort_raw_data(volt_readings)
   
   return chan_all_volt_reading
  end
+
+
+def calculate_mean_power_consumption(volt_reading)
+  power_consumption = Hash.new
+  vdd1_power_readings = Array.new
+  vdd2_power_readings = Array.new
+  vdd1_vdd2_power_readings = Array.new
+  # this function configure dut and play media 
+  volt_reading['chan_1'].each_index{|i|
+    vdd1_power_readings << ((volt_reading['chan_1'][i] * volt_reading['chan_4'][i])/0.05) * 1000
+    vdd2_power_readings  << ((volt_reading['chan_2'][i] * volt_reading['chan_5'][i])/0.1) * 1000
+    vdd1_vdd2_power_readings << vdd1_power_readings[i] + vdd2_power_readings[i]
+  }
+  vdd1_mean_power_reading =  mean(vdd1_power_readings)
+  vdd2_mean_power_reading =  mean(vdd2_power_readings)
+  vdd1_vdd2_mean_power_readings = mean(vdd1_vdd2_power_readings)
+
+  power_consumption['all_vvd1'] = vdd1_mean_power_reading
+  power_consumption['all_vvd2'] = vdd2_mean_power_reading
+  power_consumption['all_vvd1_vdd2'] = vdd1_vdd2_mean_power_readings
+  return power_consumption
+end 
+
+
+def save_results(power_consumption,fps_result)
+  perf = []; v1=[]; v2=[]; vtotal=[]
+  @results_html_file.add_paragraph("")
+    res_table = @results_html_file.add_table([["VDD1 and VDD2 , VOLTAGES and  CLIP FPS ",{:bgcolor => "336666", :colspan => "3"},{:color => "white"}]],{:border => "1",:width=>"20%"})
+  count = 0
+  @results_html_file.add_row_to_table(res_table,["Sample", "VDD1 and VDD2 Power in mw","VDD1 in mw","VDD2 in mw","FPS"])
+    @results_html_file.add_row_to_table(res_table,[1, power_consumption['all_vvd1_vdd2'],power_consumption['all_vvd1'],power_consumption['all_vvd2'],fps_result])
+return perf
+end
+
+
 
 end 
