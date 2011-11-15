@@ -26,7 +26,7 @@ def run
     puts "Switching power for # #{i}th iteration"
     disconnect('dut1')
     @power_handler.switch_off(power_port)
-    sleep(30)
+    sleep(15)
     @power_handler.switch_on(power_port)
     sleep(45)
     if connect_to_equipment('dut1')
