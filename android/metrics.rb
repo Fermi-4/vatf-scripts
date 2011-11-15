@@ -71,6 +71,7 @@ module Metrics
   end
   
   def Metrics.parse_virtual_memory_stats(data_array)
+    mem_usage = []
     0.upto(data_array.length - 2) do |i|
       mem_usage << data_array[i+1]['total']
     end
