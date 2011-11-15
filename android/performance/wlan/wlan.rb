@@ -1,8 +1,7 @@
 require File.dirname(__FILE__)+'/../../android_test_module'
-require File.dirname(__FILE__)+'/../../keyevents_module'
 
 include AndroidTest
-include AndroidKeyEvents
+
 # Note: If testing 802.1x a radius server must be configured install and configured in the TEE and the access point
 def setup
   self.as(AndroidTest).setup
@@ -154,8 +153,9 @@ def run_wlan_test(test_seq)
               end
             }
             
-            if iter > 0
-              start_collecting_system_stats(0.33){|cmd| send_adb_cmd("shell #{cmd}")}
+            if iter > 0 && @test_params.params_control.instance_variable_defined?(:@collect_stats)
+              
+              start_collecting_stats(@test_params.params_control.collect_stats,2){|cmd| send_adb_cmd("shell #{cmd}")}
               # Start top on target
               cpu_loads = []
               if @test_params.params_control.instance_variable_defined?(:@wlan_comp)
@@ -169,7 +169,7 @@ def run_wlan_test(test_seq)
                 end
                 cpu_loads = cpu_info.scan(/\d+\s+(\d+)(%)\s+\w+\s+\d+\s+\d+K\s+\d+K\s+\w+\s+\w+\s+(#{cpu_load_items})/im)
               end
-              sys_stats = stop_collecting_system_stats
+              sys_stats = stop_collecting_stats(@test_params.params_control.collect_stats)
             end
             netperf_thread.join
           end

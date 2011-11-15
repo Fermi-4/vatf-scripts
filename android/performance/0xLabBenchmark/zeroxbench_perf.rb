@@ -10,10 +10,10 @@ def run
   0.upto(1) do |iter|
     if iter == 0
       test_data = run_test
-    else
-      start_collecting_system_stats(0.33){|cmd| send_adb_cmd("shell #{cmd}")}
+    elsif @test_params.params_control.instance_variable_defined?(:@collect_stats)
+      start_collecting_stats(@test_params.params_control.collect_stats,2){|cmd| send_adb_cmd("shell #{cmd}")}
       run_test
-      sys_stats = stop_collecting_system_stats
+      sys_stats = stop_collecting_stats(@test_params.params_control.collect_stats)
     end
   end
   perfdata = []

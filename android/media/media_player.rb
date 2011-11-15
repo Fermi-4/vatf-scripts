@@ -1,9 +1,6 @@
 require File.dirname(__FILE__)+'/../android_test_module'
-require File.dirname(__FILE__)+'/../../lib/sys_stats'
-require File.dirname(__FILE__)+'/../keyevents_module'  
+  
 include AndroidTest
-include SystemStats
-include AndroidKeyEvents
 
 def run 
 fps_values = Array.new()

@@ -1,8 +1,8 @@
-require File.dirname(__FILE__)+'/../lib/sys_stats'
+require File.dirname(__FILE__)+'/metrics'
 require File.dirname(__FILE__)+'/../lib/plot'
 require File.dirname(__FILE__)+'/keyevents_module'
 
-include SystemStats
+include Metrics
 include TestPlots
 include AndroidKeyEvents
 

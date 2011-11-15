@@ -16,14 +16,14 @@ def run
   @equipment['server1'].send_sudo_cmd("netserver -p #{port_number} -#{ip_ver}")
   sys_stats = nil
   0.upto(1) do |iter|
-    start_collecting_system_stats(0.33){|cmd| send_adb_cmd("shell #{cmd}")} if iter > 0
+    start_collecting_stats(@test_params.params_control.collect_stats,2){|cmd| send_adb_cmd("shell #{cmd}")} if iter > 0 && @test_params.params_control.instance_variable_defined?(:@collect_stats)
     # Start netperf on the Target
     @test_params.params_control.buffer_size.each do |bs|
       data = send_adb_cmd "shell netperf -H #{@equipment['server1'].telnet_ip} -l #{time} -p #{port_number} -- -s #{bs}"
       bw << /^\s*\d+\s+\d+\s+\d+\s+[\d\.]+\s+([\d\.]+)/m.match(data).captures[0].to_f if iter == 0
       puts data
     end
-    sys_stats = stop_collecting_system_stats if iter > 0
+    sys_stats = stop_collecting_stats(@test_params.params_control.collect_stats) if iter > 0 && @test_params.params_control.instance_variable_defined?(:@collect_stats)
   end
   ensure
     if bw.length == 0
