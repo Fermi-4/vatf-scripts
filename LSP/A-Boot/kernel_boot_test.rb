@@ -2,19 +2,27 @@ require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 
 def setup
-  # Do nothing. Booting will be controlled from run method
+  self.as(LspTestScript).setup
+  @equipment['dut1'].disconnect
 end
 
 def run
+  @temp_power_port = @equipment['dut1'].power_port if @equipment['dut1'].instance_variable_defined?(:@power_port)
   counter = 0
   result = 0
   loop_count = @test_params.params_control.loop_count[0].to_i
   while counter < loop_count
     puts("Inside the loop counter = #{counter}" );
     begin
+      is_soft_boot = @test_params.params_control.is_soft_boot[0] if @test_params.params_control.instance_variable_defined?(:@is_soft_boot)
+      if is_soft_boot == 'yes'
+        puts "soft-reboot....\n\n"
+        @equipment['dut1'].power_port = nil if @equipment['dut1'].instance_variable_defined?(:@power_port)
+      end
+      sleep 3 
       self.as(LspTestScript).setup
-    rescue Exception 
-      puts "Failed to boot on iteration #{counter}"
+    rescue Exception => e 
+      puts "Failed to boot on iteration #{counter}: " + e.to_s + ": " + e.backtrace.to_s
       @equipment['dut1'].log_info("Failed to boot on Iteration #{counter}")
       result += 1
     ensure
@@ -33,5 +41,6 @@ end
 
 def clean
   super
+  @equipment['dut1'].power_port = @temp_power_port if @equipment['dut1'].instance_variable_defined?(:@power_port)
 end
 
