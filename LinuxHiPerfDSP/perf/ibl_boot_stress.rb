@@ -1,6 +1,6 @@
 require File.dirname(__FILE__)+'/../boot/c6x_default_test_module'
 include C6xTestScript
-  
+# If connected via serial Kernel boot log will be recorded in logs.  
 def setup
   super
 end
@@ -27,16 +27,23 @@ def run
     disconnect('dut1')
     @power_handler.switch_off(power_port)
     sleep(15)
+    if ((@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil ) || (@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)) 
+      @equipment['dut1'].connect({'type'=>'serial'})    
+    end
     @power_handler.switch_on(power_port)
-    sleep(45)
+    if @equipment['dut1'].target.serial
+      @equipment['dut1'].wait_for(/System started/, 45)
+    else
+      sleep(45)
+    end
     if connect_to_equipment('dut1')
       @equipment['dut1'].send_cmd("cat /proc/version",@equipment['dut1'].prompt, 30)
       if (/Linux/.match(@equipment['dut1'].response.to_s) != nil)
         success_times = success_times+1
         boot_arr << 'B'
-	    else
-		    fail_times = fail_times+1
-		    boot_arr << 'X'
+      else
+        fail_times = fail_times+1
+        boot_arr << 'X'
       end
     else
       fail_times = fail_times+1
@@ -56,10 +63,14 @@ end
 
 def connect_to_equipment(equipment)
     this_equipment = @equipment["#{equipment}"]
-    if ((this_equipment.respond_to?(:serial_port) && this_equipment.serial_port != nil ) || (this_equipment.respond_to?(:serial_server_port) && this_equipment.serial_server_port != nil)) && !this_equipment.target.serial
-      this_equipment.connect({'type'=>'serial'})     
+    if ((this_equipment.respond_to?(:serial_port) && this_equipment.serial_port != nil ) || (this_equipment.respond_to?(:serial_server_port) && this_equipment.serial_server_port != nil)) 
+      if (this_equipment.target.serial)
+       # already connected via serial, do nothing 
+      else
+        this_equipment.connect({'type'=>'serial'})     
+      end
     elsif this_equipment.respond_to?(:telnet_port) && this_equipment.telnet_port != nil  && !this_equipment.target.telnet
-      this_equipment.connect({'type'=>'telnet'})
+        this_equipment.connect({'type'=>'telnet'})
     elsif !this_equipment.target.telnet && !this_equipment.target.serial
       raise "You need Telnet or Serial port connectivity to #{equipment}. Please check your bench file" 
     end
