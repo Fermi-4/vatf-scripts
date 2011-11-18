@@ -208,9 +208,9 @@ module LspTargetTestScript
   def run_save_results(return_non_zero)
     puts "\n LinuxTestScript::run_save_results"
     result = run_determine_test_outcome(return_non_zero)
-    #result,comment = run_determine_test_outcome
     if result.length == 3
-      perfdata = result[2] ? result[2].concat(@target_sys_stats) : @target_sys_stats 
+      perfdata = result[2]
+      perfdata = perfdata.concat(@target_sys_stats) if @target_sys_stats 
       set_result(result[0],result[1],perfdata)
     elsif File.exists?(File.join(@linux_temp_folder,'perf.log'))
       perfdata = []
@@ -221,7 +221,8 @@ module LspTargetTestScript
           perfdata << {'name' => name, 'value' => value, 'units' => units}
         end
       }  
-      set_result(result[0],result[1],perfdata.concat(@target_sys_stats))
+      perfdata = perfdata.concat(@target_sys_stats) if @target_sys_stats
+      set_result(result[0],result[1],perfdata)
     else
       set_result(result[0],result[1], @target_sys_stats)
     end
