@@ -50,7 +50,7 @@
         comment = "Test pass. POST test completed successfully #{boot_times} out of #{boot_times} times "
 	  else
 		test_done_result = FrameworkConstants::Result[:fail]
-        comment = "Test fail. POST test failed #{fail_times} out of #{boot_times} times "    
+        comment = "Test fail. POST test failed #{fail_times} out of #{boot_times} times. Boot log - #{boot_arr.to_s} "    
       end
       if (boot_failures > 0) 
         comment += "Board failed to boot #{boot_failures} out of #{boot_times} times"
