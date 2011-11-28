@@ -115,6 +115,7 @@ module AndroidKeyEvents
 	      'x' => 52,
 	      'y' => 53,
 	      'z' => 54,
+	      '-' => 69,
       }
 
       worker_arr.each do |current_string|
