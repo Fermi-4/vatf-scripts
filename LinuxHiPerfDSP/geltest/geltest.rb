@@ -37,14 +37,15 @@ def run
   @write_fail_caches_off2 = 0
  
   response = nil
-  
+  local_logs = "#{File.dirname(__FILE__)}/logs"
+   
   boot_times.times { |i|
   puts "Switching power for # #{i}th iteration"
   disconnect('dut1')
   @power_handler.switch_off(power_port)
   sleep(10)
   @power_handler.switch_on(power_port)
-  sleep(15)
+  sleep(60)
   connect_to_equipment('dut1')
   puts "cd #{File.dirname(__FILE__)} ; #{@dss_dir}/dss.sh #{File.dirname(__FILE__)+'/gel_test.js'} #{@dss_param_evm_id} "
   Thread.new {
@@ -73,17 +74,25 @@ def run
     boot_failures = boot_failures+1
     boot_arr << 'X'
   end
+  @equipment['server1'].send_cmd("ruby #{File.dirname(__FILE__)}/extract_logs.rb #{File.dirname(__FILE__)}/logs/#{@targetFlag}_*-trace.txt",@equipment['server1'].prompt, 10)
+  @equipment['server1'].send_sudo_cmd("cp #{local_logs}/* #{logs_dir}")
+  @equipment['server1'].send_sudo_cmd("rm #{File.dirname(__FILE__)}/logs/*") 
   }
   if success_times == boot_times
     test_done_result = FrameworkConstants::Result[:pass]
     comment = "Test pass. DDR test completed successfully #{boot_times} out of #{boot_times} times "
+  else
+    test_done_result = FrameworkConstants::Result[:fail]
+    comment = "Test fail. DDR test failed #{fail_times} out of #{boot_times} times. Boot log - #{boot_arr.to_s} "    
   end
   if (boot_failures > 0) 
     comment += "Board failed to boot #{boot_failures} out of #{boot_times} times  Boot log - #{boot_arr.to_s}"
   end
-  @equipment['server1'].send_sudo_cmd("rm #{@ccs_gel_dir}/#{@targetFlag}-geltest.gel", @equipment['server1'].prompt, 10)
-  local_logs = "#{File.dirname(__FILE__)}/logs"
-  @equipment['server1'].send_sudo_cmd("cp -r #{local_logs} #{logs_dir}")
+  @equipment['server1'].send_sudo_cmd("rm #{@ccs_gel_dir}/#{@ccstargetFlag}-geltest.gel", @equipment['server1'].prompt, 10)
+
+  # puts "ruby extract_logs.rb #{File.dirname(__FILE__)}/logs/#{@targetFlag}_*-trace.txt"
+  # @equipment['server1'].send_cmd("ruby #{File.dirname(__FILE__)}/extract_logs.rb #{File.dirname(__FILE__)}/logs/#{@targetFlag}_*-trace.txt",@equipment['server1'].prompt, 10)
+  # @equipment['server1'].send_sudo_cmd("cp -r #{local_logs} #{logs_dir}")
   @equipment['server1'].send_sudo_cmd("rm -rf #{File.dirname(__FILE__)}/logs") 
   @equipment['server1'].send_sudo_cmd("rm -rf #{File.dirname(__FILE__)}/binaries") 
   sep = "\\"

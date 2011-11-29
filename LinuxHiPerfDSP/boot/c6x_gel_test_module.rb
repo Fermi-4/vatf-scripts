@@ -23,11 +23,11 @@ module C6xGELTestScript
       
       case (@platform)
       when "shannon"
-        @dss_param_evm_id = "TMDXEVM6678l-le"
+        @dss_param_evm_id = "TMDXEVM6678le-le"
         @targetFlag = "evm6678l"
         @ccstargetFlag = "evmc6678l"
       when "nyquist"
-        @dss_param_evm_id = "TMDXEVM6670l-le"
+        @dss_param_evm_id = "TMDXEVM6670le-le"
         @targetFlag = "evm6670l"
         @ccstargetFlag = "evmc6670l"
       else
@@ -47,7 +47,7 @@ module C6xGELTestScript
       @equipment['server1'].send_cmd("rm -rf #{GEL_TEST_DIR}/logs/*")
       
       # Copy gel, the ccxml that comes with geltest/ points to this GEL file
-      @equipment['server1'].send_sudo_cmd("cp #{platform_gel_file} #{@ccs_gel_dir}/#{@targetFlag}-geltest.gel", @equipment['server1'].prompt, 10)  
+      @equipment['server1'].send_sudo_cmd("cp #{platform_gel_file} #{@ccs_gel_dir}/#{@ccstargetFlag}-geltest.gel", @equipment['server1'].prompt, 10)  
       @power_handler.switch_on(power_port)
     end
 
