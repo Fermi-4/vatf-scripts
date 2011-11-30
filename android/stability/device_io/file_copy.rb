@@ -100,7 +100,7 @@ end
 def get_md5sum_for(file)
   local_file = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s,'file_copy_temp.bin')
   FileUtils.mkdir_p(File.dirname(local_file))
-  send_host_cmd("adb pull #{file} #{local_file}")
+  send_adb_cmd("pull #{file} #{local_file}")
   send_host_cmd("md5sum #{local_file}")
   send_host_cmd("rm #{local_file}")
 end
