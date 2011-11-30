@@ -45,7 +45,7 @@ def run
   @power_handler.switch_off(power_port)
   sleep(10)
   @power_handler.switch_on(power_port)
-  sleep(60)
+  sleep(45)
   connect_to_equipment('dut1')
   puts "cd #{File.dirname(__FILE__)} ; #{@dss_dir}/dss.sh #{File.dirname(__FILE__)+'/gel_test.js'} #{@dss_param_evm_id} "
   Thread.new {
