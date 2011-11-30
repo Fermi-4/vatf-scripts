@@ -260,7 +260,7 @@ pausecomp(1000);
 		debugSession.memory.loadProgram(ddr_test_program);
 		try
 		{
-      debugSession.target.run()
+                  debugSession.target.run()
 		}
 		catch (ex)
 		{
@@ -268,7 +268,7 @@ pausecomp(1000);
 		   script.traceWrite("Error code #" + errCode + ", could not load file " + sFilename +
 					" to target memory!");
 		}
-		debugSession.target.run()
+		
 		end = localTime();
 	}
 	else
