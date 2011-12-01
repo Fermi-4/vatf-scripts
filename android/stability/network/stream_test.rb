@@ -18,7 +18,7 @@ def run
     run_wlan_test(@test_params.params_chan.wlan_setup_seq)
   end
   #
-  #adb shell am start -W -a android.intent.action.VIEW -c android.intent.category.LAUNCHER -n com.daroonsoft.player/.HomeActivity -d http://158.218.103.22/FILE@TS/test2.3gp
+  #adb shell am start -W adb shell am start -W -a action.intent.action.VIEW -d http://10.218.103.81/FILE@TS/Sago_ManInMan.avi -n com.mxtech.videoplayer.ad/.ActivityScreen
   #
   cycle_duration = -1
   start_time = Time.now
@@ -26,6 +26,7 @@ def run
   iteration = 1
   begin 
     @test_params.params_chan.media_streams.each do |current_stream_plus_duration|
+      send_events_for("__back__")
       current_stream,duration=current_stream_plus_duration.split(":")
       puts "Playing #{current_stream} iteration #{iteration}, estimated time #{duration} sec"
       send_adb_cmd("logcat -c")
@@ -33,12 +34,12 @@ def run
       send_adb_cmd("shell am start -W #{@test_params.params_chan.start_stream_intent[0]} -d http://#{@test_params.params_chan.stream_server[0]}/#{current_stream}")
       begin
         status = Timeout::timeout(duration.to_i+30) { 
-          while !send_adb_cmd("logcat -d -s #{@test_params.params_chan.player_filter[0]}").include?("#{@test_params.params_chan.player_ended_string[0]}")
+          while !send_adb_cmd("logcat -d -s #{@test_params.params_chan.player_filter[0]}").match(Regexp.new(@test_params.params_chan.player_ended_string[0],Regexp::MULTILINE | Regexp::IGNORECASE))
             sleep 5
           end
           Time.now
         }
-      if (status - stream_start) < (duration.to_i)
+      if  stream_start + duration.to_i - status > 5
           send_adb_cmd("logcat -d")
           test_result = FrameworkConstants::Result[:fail]
           test_comment += "Iteration #{iteration}, Stream #{current_stream} ended before expected\n"
@@ -48,8 +49,8 @@ def run
           test_result = FrameworkConstants::Result[:fail]
           test_comment += "Iteration #{iteration}, Stream #{current_stream} did not play or did not finish on the expected time\n#{e.to_s}\n"
       end
+      break if cycle_duration < (Time.now - start_time)
     end
-    send_events_for(['__back__','__directional_pad_right__','__directional_pad_right__','__enter__'])
     iteration += 1
   end while cycle_duration > (Time.now - start_time)
   if test_result != FrameworkConstants::Result[:fail]
