@@ -21,9 +21,9 @@ def run
   @equipment['dut1'].send_cmd("flash_eraseall #{partition}",/100 % complete/, 30)
   @equipment['dut1'].send_cmd("nandwrite #{flags} #{partition} image.bin",@equipment['dut1'].prompt, 30)
   @equipment['dut1'].send_cmd("rm image-out.bin",@equipment['dut1'].prompt, 30)
-  @equipment['dut1'].send_cmd("nanddump -o #{partition} -l #{bytes} -f image-out.bin",@equipment['dut1'].prompt, 30)
+  @equipment['dut1'].send_cmd("nanddump -o #{partition} -l #{bytes+1} -f image-out.bin",@equipment['dut1'].prompt, 30)
   @equipment['server1'].send_cmd("cd #{@nfs_root_path}/opt",@equipment['server1'].prompt, 30)
-  @equipment['server1'].send_cmd("cmp -n #{bytes} image.bin image-out.bin",/EOF on image.bin/, 30)
+  @equipment['server1'].send_cmd("cmp -n #{bytes+1} image.bin image-out.bin",/EOF on image.bin/, 30)
   
   if (!@equipment['dut1'].timeout? and !@equipment['server1'].timeout?)
     test_done_result = FrameworkConstants::Result[:pass]
