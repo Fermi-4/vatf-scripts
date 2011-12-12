@@ -8,6 +8,7 @@ module WinceTestScript
   # Connects Test Equipment to DUT(s) and Boot DUT(s)
   def setup
     puts "\n WinceTestScript::setup"
+    @force_telnet_connect = false
     @wince_temp_folder = File.join(SiteInfo::WINCE_DATA_FOLDER,@test_params.staf_service_name.to_s,'temp')
     delete_temp_files()
     @equipment['dut1'].set_api('bsp')
@@ -43,6 +44,7 @@ module WinceTestScript
     puts "\n WinceTestScript::setup_boot"
     boot_params = {'power_handler'=> @power_handler, 'test_params' => @test_params}
     @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
+    
     if boot_required?(@old_keys, @new_keys)   # call bootscript if required
       puts " WinceTestScript::setup_boot: kernel image specified. Proceeding to boot DUT"
       if @equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil
@@ -56,12 +58,15 @@ module WinceTestScript
       puts "Waiting 30 seconds for kernel to boot...."
       sleep 30
     end
+    
     if @equipment['dut1'].respond_to?(:telnet_port) && @equipment['dut1'].telnet_port != nil  && !@equipment['dut1'].target.telnet
-      @equipment['dut1'].connect({'type'=>'telnet'})
+      @equipment['dut1'].connect({'type'=>'telnet','force_connect'=>@force_telnet_connect})
     end
+    
     if ((@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) || (@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)) && !@equipment['dut1'].target.serial
       @equipment['dut1'].connect({'type'=>'serial'})
     end
+    
     if !@equipment['dut1'].target.telnet && !@equipment['dut1'].target.serial
       raise "You need Telnet or Serial port connectivity to the board. Please check your bench file" 
     end
@@ -90,7 +95,7 @@ module WinceTestScript
     transfer_files(:@build_test_libs, :@var_build_test_libs_root)
 
     # transfer tux etc files to target
-	if @test_params.instance_variable_defined?(:@var_test_libs_root)
+  if @test_params.instance_variable_defined?(:@var_test_libs_root)
       src_dir = @test_params.var_test_libs_root
       get_cetk_basic_filenames(src_dir).split(':').each {|lib_file|
         put_file({'filename' => lib_file, 'src_dir' => src_dir, 'binary' => true})
@@ -111,7 +116,7 @@ module WinceTestScript
     wait_time = (@test_params.params_control.instance_variable_defined?(:@wait_time) ? @test_params.params_control.wait_time[0] : '10').to_i
     keep_checking = @equipment['dut1'].target.serial ? true : false     # Do not try to get data from serial port of there is no serial port connection
     #puts "keep_checking is: "+keep_checking.to_s
-	puts "expect_string is #{expect_string}\n"
+    puts "expect_string is #{expect_string}\n"
     while keep_checking
       counter=0
       while check_serial_port()
@@ -181,9 +186,10 @@ module WinceTestScript
     @equipment['dut1'].send_cmd("cd #{@wince_dst_dir}",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("call check_default_result.bat 2> check_result.log > check_result.log",@equipment['dut1'].prompt)
     get_file({'filename'=>'check_result.log'})
-	result_output = File.new(File.join(@wince_temp_folder,'check_result.log'),'r')
+    result_output = File.new(File.join(@wince_temp_folder,'check_result.log'),'r')
     check_result_output = result_output.read
-	result_output.close
+    result_output.close
+    
     if check_result_output.match(/PASSED/)
       return [FrameworkConstants::Result[:pass], "test.bat returned zero", run_collect_performance_data]
     else
@@ -216,17 +222,17 @@ module WinceTestScript
   # Return standard output of test.bat as a string
   def get_std_output
     std_file = File.new(File.join(@wince_temp_folder,'stdout.log'),'r')
-	std_out = std_file.read
-	std_file.close
-	std_out
+    std_out = std_file.read
+    std_file.close
+    std_out
   end
   
   # Return standard error of test.bat as a string
   def get_std_error
     std_file = File.new(File.join(@wince_temp_folder,'stderr.log'),'r')
     std_err = std_file.read
-	std_file.close
-	std_err
+    std_file.close
+    std_err
   end
   
   # Return serial (i.e. console) output of test.bat as a string
@@ -249,6 +255,7 @@ module WinceTestScript
     #yliu: if the file exist in dst_dir, don't do ftp
     begin
       dut_ftp.chdir(p['dst_dir'])
+      
       if !dut_ftp.nlst.include?(p['filename']) then
         puts "ftp #{p['filename']}"
         if p['binary']
@@ -279,6 +286,7 @@ module WinceTestScript
         }.merge(params) 
     dut_ftp = Net::FTP.new(p['src_ip'])
     dut_ftp.login(p['login'], p['password'])
+    
     if p['binary']
       dut_ftp.getbinaryfile(File.join(p['src_dir'],p['filename']), File.join(p['dst_dir'],p['filename']))
     else
@@ -298,23 +306,24 @@ module WinceTestScript
          'binary'   => false,
         }.merge(params) 
     dst_log_files = []
-	system("ruby #{File.join(File.dirname(__FILE__),"ftp_test.rb")} #{p['src_ip']} #{p['login']} #{p['password']} #{p['src_dir']} #{p['dst_dir']} #{@test_id.to_s} #{p['binary']}")
-	#dst_log_files = ftp_get(p['src_ip'], p['login'],p['password'],p['src_dir'], p['dst_dir'], @test_id.to_s, p['binary'])
-	puts "done with system ruby file\n"
-	dut_ftp = Net::FTP.new(p['src_ip'])
+    system("ruby #{File.join(File.dirname(__FILE__),"ftp_test.rb")} #{p['src_ip']} #{p['login']} #{p['password']} #{p['src_dir']} #{p['dst_dir']} #{@test_id.to_s} #{p['binary']}")
+    #dst_log_files = ftp_get(p['src_ip'], p['login'],p['password'],p['src_dir'], p['dst_dir'], @test_id.to_s, p['binary'])
+    puts "done with system ruby file\n"
+    dut_ftp = Net::FTP.new(p['src_ip'])
     dut_ftp.login(p['login'], p['password'])
     dut_ftp.nlst(p['src_dir']).each {|f|
       dst_f = File.join(p['dst_dir'],@test_id.to_s+'_'+f)
       puts 'files under release dir: '+f
       dst_log_files << dst_f
     }  
-	dut_ftp.close
+    dut_ftp.close
     return dst_log_files
   end
   
   # Return true if there is no new data in serial port
   def check_serial_port
     return true if !@equipment['dut1'].target.serial   # Return right away if there is no serial port connection
+   # @force_telnet_connect = false
     #puts "did not return true in check_serial_port"
     temp = (@serial_port_data.to_s).dup
     #puts "---temp:\n"+temp+"\nendoftemp"
@@ -322,7 +331,6 @@ module WinceTestScript
     #puts "---@serial_port_data:\n"+@serial_port_data+"\nendoftemp"
     @serial_port_data == temp
   end
-  
   
   
   private
@@ -343,13 +351,13 @@ module WinceTestScript
   def get_os_version
     os_version = '6.0_R3'
     @equipment['dut1'].send_cmd("do OSversion",@equipment['dut1'].prompt)
-	@telnet_response = @equipment['dut1'].response
-	@telnet_response.each_line {|l| 
-	if(l.scan(/OSMajor/).size>0)
-	os_version = l.split(/OSMajor=/)[1].split(/,/)[0].to_s+'.'+l.split(/OSMinor=/)[1].split(/[\n\r]+/)[0].to_s
-	end
-	}
-	return os_version
+    @telnet_response = @equipment['dut1'].response
+    @telnet_response.each_line {|l| 
+    if(l.scan(/OSMajor/).size>0)
+      os_version = l.split(/OSMajor=/)[1].split(/,/)[0].to_s+'.'+l.split(/OSMinor=/)[1].split(/[\n\r]+/)[0].to_s
+    end
+    }
+    return os_version
   end
   
   def get_test_string(params)
@@ -403,14 +411,14 @@ module WinceTestScript
  
   def get_cetk_basic_filenames(cetk_files_dir)
     cetk_basic_files = {'6.0_R3' => 'tux.exe:kato.dll:tooltalk.dll:ktux.dll','7.0' => 'tux.exe:kato.dll:ktux.dll'}    # TODO: return file list based on CE release
-	os_version = get_os_version
+    os_version = get_os_version
     return cetk_basic_files[os_version.to_s]
   end 
   
-def translate_module_name(cmdline,platform,mod_name)
-   @module_name = {'MSFlash'=>{'am1808'=>'NandFlashDisk','am1707'=>'NandFlashDisk','omapl138'=>'NandFlashDisk','omapl137'=>'NandFlashDisk'}}
-   return cmdline if !@module_name.include?(mod_name)
-   return cmdline if !@module_name[mod_name].include?(platform)
-   return cmdline.gsub(mod_name,@module_name[mod_name][platform])
- end
+  def translate_module_name(cmdline,platform,mod_name)
+    @module_name = {'MSFlash'=>{'am1808'=>'NandFlashDisk','am1707'=>'NandFlashDisk','omapl138'=>'NandFlashDisk','omapl137'=>'NandFlashDisk'}}
+    return cmdline if !@module_name.include?(mod_name)
+    return cmdline if !@module_name[mod_name].include?(platform)
+    return cmdline.gsub(mod_name,@module_name[mod_name][platform])
+  end
 end

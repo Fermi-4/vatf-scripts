@@ -8,6 +8,10 @@ def run_get_script_output
   super("</TESTGROUP>")
 end
 
+def setup_connect_equipment
+  @force_telnet_connect = true              #this variable, set as true, is required to run this script with the CEPC PC
+end
+
 def run_collect_performance_data
   puts "\n cetk_test::run_collect_performance_data"
 end
