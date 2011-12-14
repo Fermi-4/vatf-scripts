@@ -5,8 +5,9 @@ $console = {"am389x-evm" => "ttyO2,115200n8","am387x-evm" => "ttyO0,115200n8"}
 $stage1_bootdelay = {'am387x-evm' => 3}
 $bootcmd_mmc = {}
 $bootargs_mmc = {}
-$bootdelay = @equipment['dut1'].instance_variable_defined?(:@power_port) ? 3 : 0   
+
 def setup
+  $bootdelay = @equipment['dut1'].instance_variable_defined?(:@power_port) ? 3 : 0   
   # param 'kernel_from_tftp' means kernel is getting from tftp and rootfs is NFS. 
   # if kernel is not getting from tftp, then skip the default booting part. 
   # if boot media is other media other than MMCSD, more params need to be added to database to 
