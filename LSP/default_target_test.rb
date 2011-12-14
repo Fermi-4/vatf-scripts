@@ -63,6 +63,7 @@ module LspTargetTestScript
     puts "\n LinuxTestScript::run_transfer_script"
     in_file = File.new(File.join(@linux_temp_folder,'test.sh'), 'r')
     raw_test_lines = in_file.readlines
+    @equipment['dut1'].send_cmd("export IPERFHOST=#{@equipment['server1'].telnet_ip}", @equipment['dut1'].prompt) if @equipment['server1'].respond_to?(:telnet_ip)
     @equipment['dut1'].send_cmd("mkdir -p -m 777 #{@linux_dst_dir}", @equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("cat > test.sh << EOF", />/)
@@ -270,23 +271,15 @@ module LspTargetTestScript
     keys
   end
   
-  def get_ip_addr(dev='dut1')     
+  def get_ip_addr(dev='dut1', iface_type='eth')     
     this_equipment = @equipment["#{dev}"]
-    this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*eth.*/{print $1}' | head -1`;ifconfig $eth", this_equipment.prompt)
+    this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*#{iface_type}.*/{print $1}' | head -1`;ifconfig $eth", this_equipment.prompt)
     #eth=`ls /sys/class/net/ | awk '/.*eth.*/{print $1}' | head -1`
     #ifconfig_data =`ifconfig #{eth}`
     ifconfig_data =/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(this_equipment.response)
     ifconfig_data ? ifconfig_data[1] : nil
   end
 
-  def get_ip_addr(dev='dut1')     
-    this_equipment = @equipment["#{dev}"]
-    this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*eth.*/{print $1}' | head -1`;ifconfig $eth", this_equipment.prompt)
-    #eth=`ls /sys/class/net/ | awk '/.*eth.*/{print $1}' | head -1`
-    #ifconfig_data =`ifconfig #{eth}`
-    ifconfig_data =/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(this_equipment.response)
-    ifconfig_data ? ifconfig_data[1] : nil
-  end
 
   private
   def delete_temp_files
