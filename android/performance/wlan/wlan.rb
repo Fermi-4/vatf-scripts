@@ -11,6 +11,7 @@ def setup
 end
 
 def run_wlan_test(test_seq)
+  send_events_for("__home__")
   net_id = -1
   test_seq.each do |action|
     case action.strip.downcase
@@ -86,7 +87,7 @@ def run_wlan_test(test_seq)
           send_adb_cmd("shell wpa_cli remove_network #{current_id}")
         end
         current_trial = 0
-        while get_dut_ip_addr != '0.0.0.0' && current_trial < 5
+        while get_wlan_state.downcase != 'stop' && current_trial < 5
           sleep 5
           current_trial += 1
         end
@@ -300,16 +301,22 @@ end
 
 def get_dut_ip_addr
   iface = get_wifi_iface
-  addr = ''
-  nets_ips = send_adb_cmd("shell netcfg")
-  nets_ips.lines.each do |current_line|
-    addr = current_line.split(/\s+/)[2] if current_line.match(/^#{iface}\s+(up)|(down)\s+[\d\.]{7,15}\s+.*/i)
-  end
-  addr 
+  #addr = ''
+  #nets_ips = send_adb_cmd("shell netcfg")
+  #nets_ips.lines.each do |current_line|
+  #  addr = current_line.split(/\s+/)[2] if current_line.match(/^#{iface}\s+(up)|(down)\s+[\d\.]{7,15}\s+.*/i)
+  #end
+  #addr
+  send_adb_cmd("shell getprop dhcp.#{iface}.ipaddress").strip 
+end
+
+def get_wlan_state
+  iface = get_wifi_iface
+  send_adb_cmd("shell getprop dhcp.#{iface}.reason").strip
 end
 
 def get_server_lan_ip(dut_ip)
-  ip_addr = ''
+ip_addr = ''
   @equipment['server1'].send_cmd("ifconfig")
   #          inet addr:158.218.103.11  Bcast:158.218.103.255  Mask:255.255.254.0
    @equipment['server1'].response.lines.each do |current_line|
@@ -328,7 +335,7 @@ def enable_wlan
   send_events_for(['__menu__', '__home__'])
   send_adb_cmd("shell am start -a android.settings.WIFI_SETTINGS")
   netcfg = send_adb_cmd("shell netcfg")
-  iface = get_wifi_iface
+  iface = get_wifi_iface.split(':')[0]
   if !netcfg.match(/#{iface}/i) 
     send_events_for(['__directional_pad_up__', '__directional_pad_center__'])
     sleep 5
