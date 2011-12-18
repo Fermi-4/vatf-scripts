@@ -279,7 +279,11 @@ end
 def enable_wlan
   iface = get_wifi_iface
   puts "WLAN interface is:#{iface}"
-  @equipment['dut1'].send_cmd("ifup #{iface}", @equipment['dut1'].prompt, 30)
+  @equipment['dut1'].send_cmd("ifconfig", /^#{iface}\s+/, 5)
+  if @equipment['dut1'].timeout?
+    #wpa_supplicant -Dnl80211 -i#{iface} -c/etc/wpa_supplicant.conf
+    @equipment['dut1'].send_cmd("nohup wpa_supplicant -D#{@test_params.params_chan.wlan_driver[0]} -i#{iface} -c#{@test_params.params_chan.supplicant_conf_file[0]} &",/Association\s+completed/i, 10)   
+  end
   @equipment['dut1'].send_cmd("ifconfig", /^#{iface}\s+/, 5)
   raise "Unable to turn on wifi" if @equipment['dut1'].timeout?
 end
