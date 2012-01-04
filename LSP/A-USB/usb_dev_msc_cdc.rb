@@ -88,13 +88,13 @@ def usb_dev_msc()
 	case 
 		when $cmd.match(/_msc_mmc/)
 			
-			command = "unmount /media/mmcblk0p1"
+			command = "umount /media/mmcblk0p1"
 			@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)			
 			command = "modprobe g_file_storage file=/dev/mmcblk0p1 stall=0 removable=1"
 		
 		when $cmd.match(/_msc_usb/)
 
-			command = "unmount /media/sda1"
+			command = "umount /media/sda1"
 			@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
 			command = "modprobe g_file_storage file=/dev/sda1 stall=0 removable=1"
 
