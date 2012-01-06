@@ -8,7 +8,7 @@ module WinceTestScript
   # Connects Test Equipment to DUT(s) and Boot DUT(s)
   def setup
     puts "\n WinceTestScript::setup"
-    @force_telnet_connect = false
+    @force_telnet_connect = true
     @wince_temp_folder = File.join(SiteInfo::WINCE_DATA_FOLDER,@test_params.staf_service_name.to_s,'temp')
     delete_temp_files()
     @equipment['dut1'].set_api('bsp')
