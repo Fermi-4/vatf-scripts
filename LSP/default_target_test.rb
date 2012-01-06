@@ -209,7 +209,7 @@ module LspTargetTestScript
   def run_save_results(return_non_zero)
     puts "\n LinuxTestScript::run_save_results"
     result = run_determine_test_outcome(return_non_zero)
-    if result.length == 3
+    if result.length == 3 && result[2] != nil
       perfdata = result[2]
       perfdata = perfdata.concat(@target_sys_stats) if @target_sys_stats 
       set_result(result[0],result[1],perfdata)
