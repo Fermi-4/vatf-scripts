@@ -18,67 +18,72 @@ def run_collect_performance_data
   puts "\n cetk_perf_test::run_collect_performance_data" 
   log_files = get_dir_files({'src_dir'=>'\Release','dst_dir'=>@wince_temp_folder,'binary'=>true} )
   begin
-  log_files.each {|log_file|
+    log_files.each {|log_file|
+    
     if (File.extname(log_file) == '.LOG')
-  puts "this LOG is LOG\n"
-    puts "#{File.join(SiteInfo::UTILS_FOLDER, SiteInfo::WINCE_PERFTOCSV_APP)} #{log_file} #{File.basename(log_file)}\.csv #{log_file}\.csv"
-    if system("#{File.join(SiteInfo::UTILS_FOLDER, SiteInfo::WINCE_PERFTOCSV_APP)} #{log_file} #{log_file}\.csv") then
-    csv_file = File.read("#{log_file}\.csv")
-    log_file = File.join(@wince_temp_folder, "test_#{@test_id}\.csv")
-    puts "LOG_FILE is #{log_file}\n"
-      file = File.new(log_file,"w")
-      file.write(csv_file)
-      file.close
-      puts "after convert log to csv. writing to html"
-      res_table = @results_html_file.add_table([["Performance Numbers",{:bgcolor => "green", :colspan => "6"},{:color => "red"}]],{:border => "1",:width=>"20%"})
-      File.open("#{log_file}").each {|line|
+      puts "this LOG is LOG\n"
+      puts "#{File.join(SiteInfo::UTILS_FOLDER, SiteInfo::WINCE_PERFTOCSV_APP)} #{log_file} #{File.basename(log_file)}\.csv #{log_file}\.csv"
+    
+      if system("#{File.join(SiteInfo::UTILS_FOLDER, SiteInfo::WINCE_PERFTOCSV_APP)} #{log_file} #{log_file}\.csv") then
+        csv_file = File.read("#{log_file}\.csv")
+        log_file = File.join(@wince_temp_folder, "test_#{@test_id}\.csv")
+        puts "LOG_FILE is #{log_file}\n"
+        file = File.new(log_file,"w")
+        file.write(csv_file)
+        file.close
+        puts "after convert log to csv. writing to html"
+        res_table = @results_html_file.add_table([["Performance Numbers",{:bgcolor => "green", :colspan => "6"},{:color => "red"}]],{:border => "1",:width=>"20%"})
+      
+        File.open("#{log_file}").each {|line|
         # puts 'line: '+line
         #if !/,=(.*?),/.match(line)
-        if !/,=\s*([0-9\.\/]+)/.match(line)
-          @results_html_file.add_row_to_table( res_table, line.split(',') )
+          if !/,=\s*([0-9\.\/]+)/.match(line)
+            @results_html_file.add_row_to_table( res_table, line.split(',') )
           next
-        end
-        m = line.scan(/,=\s*([0-9\.\/]+)/)
-        puts m
-        m.each {|data|
+          end
+      
+          m = line.scan(/,=\s*([0-9\.\/]+)/)
+          puts m
+          m.each {|data|
           data = data[0]
           line = line.gsub(/=\s*#{data.to_s}/,"#{eval data.to_s}")
-        } 
-        puts line
-        @results_html_file.add_row_to_table( res_table, line.split(',') )
-  }
-  end
+          } 
+          puts line
+          @results_html_file.add_row_to_table( res_table, line.split(',') )
+        }
+      end
+    elsif (File.extname(log_file) == '.xml')  
+      xml_file = File.read(log_file)
+      conv = Iconv.new("UTF-8", "UTF-16")
+      utf8_data = conv.iconv(xml_file)
+      utf8_data.insert(0,"\xEF\xBB\xBF")
+      utf8_data.sub!("\"1.0\"","\"1.0\"  encoding\=\"UTF-8\"")
+      log_file = File.join(@wince_temp_folder, "test_#{@test_id}\.xml")
+      file = File.new(log_file,"w")
+      file.write(utf8_data)
+      file.close
+      perfdata = parse_xml_data(log_file)
+      puts "PerfData from collect_performance_data is #{perfdata}\n"
+    end 
     
-  elsif (File.extname(log_file) == '.xml')  
-    xml_file = File.read(log_file)
-    conv = Iconv.new("UTF-8", "UTF-16")
-    utf8_data = conv.iconv(xml_file)
-    utf8_data.insert(0,"\xEF\xBB\xBF")
-    utf8_data.sub!("\"1.0\"","\"1.0\"  encoding\=\"UTF-8\"")
-    log_file = File.join(@wince_temp_folder, "test_#{@test_id}\.xml")
-    file = File.new(log_file,"w")
-    file.write(utf8_data)
-    file.close
-    perfdata = parse_xml_data(log_file)
-    puts "PerfData from collect_performance_data is #{perfdata}\n"
-	end 
-
-  if (log_file)
-    log_file_path = upload_file(log_file)
-    puts "Log file path is #{log_file_path}\n"
-    # add_log_to_html(log_file)
-    @results_html_file.add_paragraph("Click here for Performance Log",nil,nil,log_file_path[1])
-  end 
-  if perfdata
-    return perfdata
-  end
+    if (log_file)
+      log_file_path = upload_file(log_file)
+      puts "Log file path is #{log_file_path}\n"
+      # add_log_to_html(log_file)
+      @results_html_file.add_paragraph("Click here for Performance Log",nil,nil,log_file_path[1])
+    end 
+  
+    if perfdata
+      return perfdata
+    end
+  
   }
   rescue Exception => e
     clean
     #clean_delete_log_files
     raise
   end
- end
+end
 
 
 def run_determine_test_outcome
@@ -104,26 +109,18 @@ def parse_xml_data(log_file)
   scenario_instance.each do |instance|
   scenario = XPath.first(instance,"Scenario")
   scenario_name = scenario.attributes.get_attribute("Name")
-  ession_namespace = XPath.first(instance,"SessionNamespace")
-  session_namespace = XPath.first(session_namespace,"SessionNamespace")
-  tatistic = XPath.first(session_namespace,"Statistic") 
+  session_namespace_tmp = XPath.first(instance,"SessionNamespace")
+  session_namespace = XPath.first(session_namespace_tmp,"SessionNamespace")
+  statistic_tmp = XPath.first(session_namespace,"Statistic") 
   duration = XPath.first(session_namespace,"Duration")
   aux_data = XPath.match(session_namespace,"//AuxData")
   
-  if (!scenario_name.to_s.include?("Throughput"))
-    return
-  end
-     @results_html_file.add_row_to_table( res_table,["Test_Type",scenario_name])
-     #statistic = XPath.first(instance,"//Statistic") 
-    #puts "Statistic is #{statistic}\n"
-     #statistic_array = XPath.match(instance,"//Statistic")
-    #puts "Statistic_array is #{statistic_array}\n"
-     #duration = XPath.first(instance,"//Duration")
-     #aux_data = XPath.match(instance,"//AuxData")
-    result = {}
-    result_duration = {}
-  if (statistic)	   
-    statistic.attributes.each {		 
+  @results_html_file.add_row_to_table( res_table,["Test_Type",scenario_name])
+  result = {}
+  result_duration = {}
+    
+  if (statistic_tmp)    
+    statistic_tmp.attributes.each {     
     |attr| result[attr[0]] = attr[1]}
     @results_html_file.add_row_to_table( res_table,["Statistics_Data",result])		
   end
@@ -134,7 +131,8 @@ def parse_xml_data(log_file)
   end
   
   aux_text = ''
-  if (aux_data)
+  
+  if (session_namespace.to_s.include?("//AuxData"))
     case aux_data[0].text.to_s
     when "SDMemory"
       aux_text = "SD"
@@ -156,8 +154,8 @@ def parse_xml_data(log_file)
   end
   scenario_name = scenario_name.to_s.chomp
   scenario_name.to_s.gsub!(/; /,' ')
-  scenario_name.to_s.gsub!(/['('') '' ']/,'_').chop!
-  puts "Scenario name is #{scenario_name}\n"
+  #scenario_name.to_s.gsub!(/['('') '' ']/,'_').chop!
+  puts "Scenario name is #{scenario_name}\n"+ __LINE__.to_s
   clean_name = scenario_name.gsub('Throughput_','')
   perf_name = clean_name.to_s.gsub('BufferSize_','')
   puts "Perf name is #{perf_name} and #{result["ChangeAverage"]}\n"
