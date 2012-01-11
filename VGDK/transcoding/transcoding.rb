@@ -170,19 +170,19 @@ def run
         codec_hash.merge!(codec.to_s => [])
         case(codec.to_s)
         when "h264bp"
-            template = 10
+            template = 16
             codec_template_hash.merge!(codec => template)
         when "mpeg4"
-            template = 14
+            template = 20
             codec_template_hash.merge!(codec => template)
         when "mpeg2"
-            template = 18
+            template = 24
             codec_template_hash.merge!(codec => template)
         when "h263p"
-            template = 22
+            template = 28
             codec_template_hash.merge!(codec => template)
         when "h264mp"
-            template = 26
+            template = 32
             codec_template_hash.merge!(codec => template)
         else
             raise " #### Error: Not a recognized codec #{codec.to_s}"
@@ -502,7 +502,7 @@ def run
     }
     if(profilemips)
       FileUtils.mkdir("#{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling")
-      pc_udp_port = 0xCE98
+      pc_udp_port = 0x7802
       sprintf("%d", pc_udp_port)
       core_info_hash.keys.sort.each { |key|
         start_profiling(dut,key)
@@ -595,7 +595,7 @@ def run
         if(profilemips)
           system("taskkill /F /IM rcvUdpPackets.exe")
           begin
-            pc_udp_port = 0xCE98
+            pc_udp_port = 0x7802
             sprintf("%d", pc_udp_port)
             core_info_hash.keys.sort.each { |key|
             system("ccperl #{VIDEO_TOOLS_DIR}/parsemips.pl -b64xle #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port}.dat #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port} ")
@@ -604,7 +604,7 @@ def run
           rescue
             raise "ccperl error"
           end
-          pc_udp_port = 0xCE98
+          pc_udp_port = 0x7802
           profileData = []
           sprintf("%d", pc_udp_port)
           core_info_hash.keys.sort.each { |key| 
@@ -822,9 +822,9 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
       params_hash["#{codec.upcase}_ENC_intrafrint_msb"] = ((@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000) & 0xffff0000) >> 16
       params_hash["#{codec.upcase}_ENC_reffrrate_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff
       params_hash["#{codec.upcase}_ENC_reffrrate_msb"] = (@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i & 0xffff0000) >> 16
-          if(codec == "h264bp")
-                  params_hash["#{codec.upcase}_ENC_maxdelay_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000 & 0xffff
-                  params_hash["#{codec.upcase}_ENC_maxdelay_msb"] = ((@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000) & 0xffff0000) >> 16
+      if(codec == "h264bp")
+        params_hash["#{codec.upcase}_ENC_maxdelay_lsb"] = @test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000 & 0xffff
+        params_hash["#{codec.upcase}_ENC_maxdelay_msb"] = ((@test_params.params_chan.instance_variable_get("@enc_framerate")[0].to_i/1000) & 0xffff0000) >> 16
       end
         end
     if(@test_params.params_chan.instance_variable_defined?("@enc_bitrate") && type == "enc_dyn")
@@ -885,7 +885,9 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
     when "enc_dyn"
       dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputht_lsb #{height} ",/OK/,10)
       dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputwdth_lsb #{width} ",/OK/,10)
-      dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_bottomslline_lsb #{height} ",/OK/,10)
+      if(codec == "h264bp")
+        dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_bottomslline_lsb #{height} ",/OK/,10)
+      end
     end
   end    
 end
@@ -1067,9 +1069,9 @@ def get_test_string(params)
 end
 
 def start_profiling(dut,core)
-  dut.send_cmd("cc write_mem2 #{core} 0 0x428E76 0",/OK/,10)
+    dut.send_cmd("cc write_mem2 #{core} 0 0x420002 0",/OK/,10)
 end
 
 def stop_profiling(dut,core)
-  dut.send_cmd("cc write_mem2 {core} 0 0x428E76 0xFFFF",/OK/,10)
+    dut.send_cmd("cc write_mem2 #{core} 0 0x420002 0xFFFF",/OK/,10)
 end

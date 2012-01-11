@@ -8,6 +8,7 @@ require File.dirname(__FILE__)+'/h264hp.rb'
 require File.dirname(__FILE__)+'/yuv.rb'
 require File.dirname(__FILE__)+'/graphicsovly.rb'
 require File.dirname(__FILE__)+'/textovly.rb'
+require File.dirname(__FILE__)+'/tsu.rb'
 
 include H264BPParams
 include H264MPParams
@@ -18,6 +19,7 @@ include H264HPParams
 include YUVParams
 include G_OVLYParams
 include T_OVLYParams
+include TSUParams
 
 
 module CodecParams
@@ -41,6 +43,8 @@ module CodecParams
         get_t_ovly_default_params()
     when /yuv/
         get_yuv_default_params()
+    when /tsu/
+        get_tsu_default_params()
     else
         raise "Error: not a recognized codec: #{codec.to_s}"
     end
@@ -66,6 +70,8 @@ end
         get_t_ovly_test_params(codec_type)
     when /yuv/
         get_yuv_test_params(codec_type)
+    when /tsu/
+        get_tsu_test_params(codec_type)
     else
         raise "Error: not a recognized codec: #{codec.to_s}"
     end

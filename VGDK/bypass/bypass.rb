@@ -491,11 +491,11 @@ def run
                           if(/#{codec}_#{res.resolution}/.match(clip) || (/yuv/.match(codec) && /yuv_#{res.resolution}/.match(clip)))
                             if(/yuv/.match(codec) && /yuv_#{res.resolution}/.match(clip))
                               if (multislice == 1)
-                                  if(!File.size("#{INPUT_DIR}\\in\\#{res.resolution}\\multislice\\#{clip_hash[clip].to_s}.cap"))
+                                  if(!File.size("#{INPUT_DIR}\\in\\#{res.resolution}\\multislice\\#{clip_hash[clip].to_s}.yuv"))
                                     raise "Error: ### Clip not found"
                                   end
                               else  
-                                  if (!File.size("#{INPUT_DIR}\\in\\#{res.resolution}\\#{clip_hash[clip].to_s}.cap")) 
+                                  if (!File.size("#{INPUT_DIR}\\in\\#{res.resolution}\\#{clip_hash[clip].to_s}.yuv")) 
                                     raise "Error: ### Clip not found"
                                   end
                               end
@@ -987,8 +987,11 @@ def set_codec_cfg(dut,codec,res,multislice,type,template,var_type,default_params
         dut.send_cmd("dimt set template  #{template} video video_mode img_width #{width}",/OK/,2)
         dut.send_cmd("dimt set template #{template} video video_mode img_height #{height}",/OK/,2)
     when "enc_dyn"
-        dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputht_lsb #{height} ",/OK/,2)
-        dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputwdth_lsb #{width} ",/OK/,2)
+      dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputht_lsb #{height} ",/OK/,10)
+      dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputwdth_lsb #{width} ",/OK/,10)
+      if(codec == "h264bp")
+        dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_bottomslline_lsb #{height} ",/OK/,10)
+      end
     end
   end
 end
@@ -1146,9 +1149,9 @@ def get_test_string(params)
 end
 
 def start_profiling(dut,core)
-  dut.send_cmd("cc write_mem2 #{core} 0 0x428E76 0",/OK/,2)
+    dut.send_cmd("cc write_mem2 #{core} 0 0x420002 0",/OK/,10)
 end
 
 def stop_profiling(dut,core)
-  dut.send_cmd("cc write_mem2 {core} 0 0x428E76 0xFFFF",/OK/,2)
+    dut.send_cmd("cc write_mem2 #{core} 0 0x420002 0xFFFF",/OK/,10)
 end

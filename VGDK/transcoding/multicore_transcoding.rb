@@ -144,8 +144,6 @@ def run
     dut = @equipment['dut1']
     @platform_info = Eth_info.new()
     @platform_info.init_eth_info(dut)
-    tsu = false
-
     template = 0
     clip_hash = Hash.new
     @test_params.params_chan.instance_variables.each do |curr_var|
@@ -206,9 +204,7 @@ def run
     default_params = Hash.new
     codec_hash.each_key{|codec| default_params.merge!(initialize_codec_default_params(codec))}
       
-    #set ENC/DEC templates for this codec
-
-       
+      
     core = 0
     res = false
     core_info_hash = Hash.new
@@ -250,9 +246,6 @@ def run
           transcoded_from_codec = (chan_params[i-1].split)[0]
           transized_from_res = (chan_params[i-1].split)[3]
           transized_to_res = (chan_params[i].split)[3]
-          if (transized_from_res == transized_to_res)
-            tsu = true
-          end
           codec_type = "enc"
           if((encoder_template != 0) and master_enc_template.include?(codec_template_hash[chanCodec]+2))
             template =  encoder_template 
@@ -647,7 +640,7 @@ def run
     }
     if(profilemips)
       FileUtils.mkdir("#{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling")
-      pc_udp_port = 0xCE98
+      pc_udp_port = 0x7802
       sprintf("%d", pc_udp_port)
       core_info_hash.keys.sort.each { |key|
         start_profiling(dut,key)
@@ -746,7 +739,7 @@ def run
         if(profilemips)
           system("taskkill /F /IM rcvUdpPackets.exe")
           begin
-            pc_udp_port = 0xCE98
+            pc_udp_port = 0x7802
             sprintf("%d", pc_udp_port)
             core_info_hash.keys.sort.each { |key|
             system("ccperl #{VIDEO_TOOLS_DIR}/parsemips.pl -b64xle #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port}.dat #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port} ")
@@ -755,7 +748,7 @@ def run
           rescue
             raise "ccperl error"
           end
-          pc_udp_port = 0xCE98
+          pc_udp_port = 0x7802
           profileData = []
           sprintf("%d", pc_udp_port)
           core_info_hash.keys.sort.each { |key| 
@@ -1295,11 +1288,11 @@ def get_test_string(params)
 end
 
 def start_profiling(dut,core)
-  dut.send_cmd("cc write_mem2 #{core} 0 0x428E76 0",/OK/,10)
+    dut.send_cmd("cc write_mem2 #{core} 0 0x420002 0",/OK/,10)
 end
 
 def stop_profiling(dut,core)
-  dut.send_cmd("cc write_mem2 {core} 0 0x428E76 0xFFFF",/OK/,10)
+    dut.send_cmd("cc write_mem2 #{core} 0 0x420002 0xFFFF",/OK/,10)
 end
 
 def create_chan(chanCodec,dir,resolution,transcoded_to_codec,transcoded_from_codec,transized_from_res,is_master,template)

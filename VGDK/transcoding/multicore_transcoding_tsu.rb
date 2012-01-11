@@ -669,7 +669,7 @@ def run
     }
     if(profilemips)
       FileUtils.mkdir("#{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling")
-      pc_udp_port = 0xCE98
+      pc_udp_port = 0x7802
       sprintf("%d", pc_udp_port)
       core_info_hash.keys.sort.each { |key|
         start_profiling(dut,key)
@@ -768,7 +768,7 @@ def run
         if(profilemips)
           system("taskkill /F /IM rcvUdpPackets.exe")
           begin
-            pc_udp_port = 0xCE98
+            pc_udp_port = 0x7802
             sprintf("%d", pc_udp_port)
             core_info_hash.keys.sort.each { |key|
             system("ccperl #{VIDEO_TOOLS_DIR}/parsemips.pl -b64xle #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port}.dat #{OUTPUT_DIR}/TC#{test_case_id}/Iter#{iteration_id}/MIPSProfiling/profileinfo#{pc_udp_port} ")
@@ -777,7 +777,7 @@ def run
           rescue
             raise "ccperl error"
           end
-          pc_udp_port = 0xCE98
+          pc_udp_port = 0x7802
           profileData = []
           sprintf("%d", pc_udp_port)
           core_info_hash.keys.sort.each { |key| 
@@ -849,6 +849,10 @@ def run
                                                                         format = [720,480,30]
                                                                   when "d1pal"
                                                                         format = [720,576,30]
+                                                                  when "720p"
+                                                                        format = [1280,720,25]
+                                                                  when "1080p"
+                                                                        format = [1920,1080,25]
                                                                   else
                                                                         format = [176,144,30]
                                                                   end
@@ -1324,11 +1328,11 @@ def get_test_string(params)
 end
 
 def start_profiling(dut,core)
-  dut.send_cmd("cc write_mem2 #{core} 0 0x428E76 0",/OK/,10)
+    dut.send_cmd("cc write_mem2 #{core} 0 0x420002 0",/OK/,10)
 end
 
 def stop_profiling(dut,core)
-  dut.send_cmd("cc write_mem2 {core} 0 0x428E76 0xFFFF",/OK/,10)
+    dut.send_cmd("cc write_mem2 #{core} 0 0x420002 0xFFFF",/OK/,10)
 end
 
 def is_tsu?(codec)

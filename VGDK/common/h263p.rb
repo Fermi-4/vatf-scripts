@@ -141,8 +141,9 @@ module H263PParams
         'h263pvdec_dyn_16_errorconceal_msb'                  =>       0,                 
         'h263pvdec_dyn_17_errorconceal_lsb'                  =>       0,
         'h263pvdec_dyn_18_frlvlbysw_msb'                     =>       0,
-        'h263pvdec_dyn_19_frlvlbysw_lsb'                     =>       1,     
-
+        'h263pvdec_dyn_19_frlvlbysw_lsb'                     =>       1,
+        'h263pvdec_dyn_20_usehiprecidctqp1_msb'              =>       0,     
+        'h263pvdec_dyn_21_usehiprecidctqp1_lsb'              =>       0, 
           
         #h263pvv decoder static parameters    
         'h263pvdec_st_00_maxheight_msb'                      =>        0,

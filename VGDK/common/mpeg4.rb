@@ -141,7 +141,9 @@ module MPEG4Params
         'mpeg4vdec_dyn_17_errorConceal_lsb'                  =>   0,
         'mpeg4vdec_dyn_18_frlvlbysw_msb'                     =>   0,
         'mpeg4vdec_dyn_19_frlvlbysw_lsb'                     =>   1,
-                                           
+        'mpeg4vdec_dyn_20_usehiprecidctqp1_msb'               =>  0,     
+        'mpeg4vdec_dyn_21_usehiprecidctqp1_lsb'               =>  0,  
+        
         #mpeg4vv decoder static parameters      			   
         'mpeg4vdec_st_00_maxheight_msb'                      =>    0,
         'mpeg4vdec_st_01_maxheight_lsb'                      =>    144,

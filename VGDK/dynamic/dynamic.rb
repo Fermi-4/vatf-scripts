@@ -857,8 +857,11 @@ def set_codec_cfg(dut,codec,res,type,template,var_type,dyn_iter,default_params =
       dut.send_cmd("dimt set template  #{template} video video_mode img_width #{width}",/OK/,2)
       dut.send_cmd("dimt set template #{template} video video_mode img_height #{height}",/OK/,2)
     when "enc_dyn"
-      dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputht_lsb #{height} ",/OK/,2)
-      dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputwdth_lsb #{width} ",/OK/,2)
+      dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputht_lsb #{height} ",/OK/,10)
+      dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_inputwdth_lsb #{width} ",/OK/,10)
+      if(codec == "h264bp")
+        dut.send_cmd("dimt set template #{template} video #{config}_video_codec_cfg cfg_param_str  #{codec.upcase}_#{codectype}_bottomslline_lsb #{height} ",/OK/,10)
+      end
     end
   end    
 end
