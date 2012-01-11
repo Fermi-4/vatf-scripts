@@ -43,7 +43,7 @@ def run
             "iperf returned non-zero value. \n",
             perf_data)
   else
-    perfdata = perfdata.concat(@target_sys_stats) if @target_sys_stats 
+    perf_data = perf_data.concat(@target_sys_stats) if @target_sys_stats 
     set_result(FrameworkConstants::Result[:pass],
             "Test passed. iperf returned zero. \n",
             perf_data)
