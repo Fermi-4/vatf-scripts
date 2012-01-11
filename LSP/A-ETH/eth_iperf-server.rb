@@ -52,7 +52,7 @@ def run
 end
 
 # Start collecting system metrics (i.e. cpu load, mem load)
-  def run_start_stats
+  def self.run_start_stats
     @eth_ip_addr = get_ip_addr(@test_params.params_control.iface[0])
     if @eth_ip_addr
       @equipment['dut1'].target.platform_info.telnet_ip = @eth_ip_addr
@@ -74,7 +74,7 @@ end
   end
   
   # Stop collecting system metrics 
-  def run_stop_stats
+  def self.run_stop_stats
     if @eth_ip_addr
       @target_sys_stats = stop_collecting_stats(@collect_stats) do |cmd| 
         if cmd
