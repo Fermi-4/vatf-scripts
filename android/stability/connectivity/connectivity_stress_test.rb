@@ -10,8 +10,11 @@ include NetperfModule
 
 def setup
   #do nothing 
+
+ # ethernet is enable by default now.enable only if it is down
+ # check why enable_ethernet function needed  
  if !@test_params.params_chan.instance_variable_defined?(:@data_video)
-  enable_ethernet
+  #enable_ethernet
  end   
 end
 
@@ -34,10 +37,10 @@ def run
 
  each_iteration_failure = Array.new  
  counter = counter + 1 
- if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
- send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
 
- puts "BEGIN AT HOME SCREEN!"
+if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
+ send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
+ #puts "BEGIN AT HOME SCREEN!"
  sleep 1
  data = send_adb_cmd @test_params.params_chan.cmd[0]
  if !data.to_s.include?("ok")
@@ -51,9 +54,9 @@ def run
   send_events_for(get_events(wireless))
   send_events_for(get_events('top'))
   }
-  puts "wireless  enabled "
+  #puts "wireless  enabled "
   sleep 20
-  puts "Doing wireless setting "
+  #puts "Doing wireless setting "
   sleep 1
   @test_params.params_chan.configure_wireless.each{|config|
   send_events_for(get_events(config))
@@ -62,7 +65,7 @@ def run
   send_events_for(get_events('top'))
   }
  
- puts "wireless configured "
+  #puts "wireless configured "
 
 end  # none wireless stress test lan_data_video 
 
@@ -88,6 +91,7 @@ if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
   @results_html_file.add_paragraph("Counter=#{counter}\nCommand Failed")
  exit
  end 
+
  sleep 1
  @test_params.params_chan.select_wireless.each{|wireless|
  send_events_for(get_events(wireless))
@@ -101,7 +105,8 @@ if @test_params.params_chan.wireless[0].to_s.strip == "wifi"  or  @test_params.p
  puts "CLEARING AP ON COUNTER INCREASE"
 clear_configured_access
 end 
- end # no wireless lan_data_video
+
+end # no wireless lan_data_video
 
 array_sum = 0
 each_iteration_failure.each{|elem|
@@ -126,7 +131,7 @@ if array_sum  > 0
   @results_html_file.add_paragraph("Counter=#{counter}\n#{resp}")
  end
 end 
-end # no wireless lad_data_video 
+end # no wireless lan_data_video 
  puts "Number ot failures so far are: #{number_of_failures.to_f}"
 end  # end for loop
  puts "Total number of failures #{number_of_failures.to_f}"
@@ -138,6 +143,7 @@ end  # end for loop
     set_result(FrameworkConstants::Result[:fail], "Success Wireless Enable Disable Stress Test=#{success_rate}")
  end
 end 
+
 def clear_configured_access
   puts "CLEARING ACCESS POINTS FROM DATABASE" 
  send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
@@ -150,9 +156,10 @@ def clear_configured_access
  sleep 1
   # select wireles interface
  send_events_for(get_events(@test_params.params_chan.select_wireless[0]))
- sleep 1
+ sleep 20
  send_events_for(get_events(@test_params.params_chan.select_setting[0]))
- 
+ sleep 20
+
  #send_adb_cmd("shell am start -a android.settings.WIFI_SETTINGS")
  #send_events_for("__enter__")
  sleep 10
@@ -161,6 +168,7 @@ def clear_configured_access
  nets_info = net_list.lines.to_a
  lists = nets_info.length - 2
  puts nets_info
+ sleep 20
  for i in(1..lists)  
  send_events_for(get_events(@test_params.params_chan.clear_access[0]))
  end 
@@ -189,7 +197,6 @@ def check_wifi_connectivity(counter)
    puts "NAMED WIRELESS ACCESS NOT DETECTED, TRY to CONNECT\n"
    @results_html_file.add_paragraph("Counter=#{counter}\nNAMED WIRELESS ACCESS NOT DETECTED, TRY to CONNECT\n #{resp}\n")
    send_events_for(get_events(@test_params.params_chan.connect_access[0]))
-   #sleep 
    sleep 10
   end 
   if check_access_status(counter) == 1 and check_ping(counter) == 1
@@ -209,9 +216,12 @@ def check_ping(counter)
   net_id = -1 
     nets_info.each do |current_info|
       puts "current_info #{current_info}" 
-      if current_info.include?("wlan0") and current_info.include?("UP") and current_info.include?("255.255")
-       ping_data = `adb shell ping -c3 158.218.106.35`
-       puts ping_data
+      if current_info.include?("wlan0") and current_info.include?("UP")
+       response = send_adb_cmd "shell getprop wifi.interface" 
+       dut_ip = send_adb_cmd "shell getprop dhcp.#{response}.ipaddress"
+       server_lan_ip = get_server_lan_ip(dut_ip)
+       ping_data = send_adb_cmd "shell ping -c3 #{server_lan_ip}"
+       #ping_data = `adb shell ping -c3 192.168.0.8`
        if ping_data.scan(/3\s+packets\s+transmitted,\s+3\s+received/) != nil
         return 1 
        end
@@ -230,7 +240,6 @@ def check_access_status(counter)
   net_id = -1 
     nets_info.each do |current_info|
       if current_info.include?(@test_params.params_chan.wireless_name[0]) and current_info.include?("CURRENT")
-      #puts "TEST TEST #{current_info} #{@test_params.params_chan.wireless_name[0]}"
       return 1 
       end 
    end 
@@ -261,7 +270,6 @@ def check_bluetooth_connectivity(counter)
  #sleep 20
  sleep 5
  check_bluetooth = `hcitool scan`
- puts check_bluetooth
  if !check_bluetooth.to_s.include?(@test_params.params_chan.wireless_name[@test_params.params_chan.wireless_name.length - 1]) 
   puts "DEVICE NOT DETECTED:failure"
   @results_html_file.add_paragraph("Counter=#{counter}\n Bluetooth DEVICE  DETECTION:failure\n")
@@ -346,7 +354,7 @@ def disable_wifi()
  #sleep 20
  sleep 10 
  response = send_adb_cmd cmd
- puts "response #{response}"
+ sleep 5
   if (count > 5)
    puts "couldn't set state to disable"
    break
@@ -369,12 +377,8 @@ def run_stress
     video_test.join
     min_bw = @test_params.params_chan.min_bw[0].to_f
     if bw.to_f  > min_bw and fps > 28 
-    puts "TEST PASS"
-    puts "Resutls are netperf=#{bw} fps=#{fps} "
     return 1 
     end   
-    puts "TEST FAIL"
-    puts "Resutls are netperf=#{bw} fps=#{fps} "
     return 0  
 end 
 

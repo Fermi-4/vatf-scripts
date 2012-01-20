@@ -178,7 +178,7 @@ def enable_ethernet
   puts "LINE LINE LINE #{dut_ip[0][0]}"
   raise "NO IP alocated for dut" if dut_ip.size == 0
   for i in (1..5)
-  system("export ADBHOST=#{dut_ip[0][0]}")
+  ENV['ADBHOST']="#{dut_ip[0][0]}"
   sleep 1
   count = 0
  # for i in (1..5)

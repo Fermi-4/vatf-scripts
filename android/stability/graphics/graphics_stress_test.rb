@@ -56,19 +56,24 @@ end
   counter = 0
   @test_params.params_chan.iterations[0].to_i.times do
   graphics_intents.each{|intent|
+  next if @test_params.params_control.instance_variable_defined?(:@media_stress) and intent.include?("GL")
   counter = counter + 1 
   cmd = "logcat  -d -c"
-  sleep 1
+  response = send_adb_cmd cmd
+  sleep 2
   data = send_adb_cmd  intent
+  sleep 1
   sleep @test_params.params_chan.delay[0].to_i
   cmd = "logcat  -d -s ActivityManager"
   response = send_adb_cmd cmd
   display_time = 0
   time = "" 
   if response.include?("Displayed") 
-    time = response.scan(/Displayed.*:\s*\+([0-9]+\w[0-9]+)ms/)[0][0]
+    #fix to include com.cooliris.media/.MovieView
+    time = response.scan(/Displayed\s+com.*:\s*\+([0-9]+\w[0-9]+)ms/)[0][0]
   else
-   number_of_failures = number_of_failures + 1
+   puts "DISPLAY TIME NOT DETECTED"
+   #number_of_failures = number_of_failures + 1
    @results_html_file.add_paragraph("Intent=#{intent} Not Displayed\n#{response}") 
   end                                                                
   if time.include?("s")
@@ -77,14 +82,12 @@ end
   else 
    display_time =  time.to_i
   end 
-
-  if display_time > 600
+  if display_time > 1000
   number_of_failures = number_of_failures + 1
   end
   sleep 60
   cmd = "logcat -d -s InputDispatcher"
   response = send_adb_cmd cmd
-  puts "response #{response}"
   sleep 1 
   send_events_for(put_screen_home) 
  #At the end let's check if there were exception 
@@ -99,9 +102,9 @@ end
  success_rate = ((total_iteration - number_of_failures.to_f)/ total_iteration)*100.0
  puts "PASS RATE is: #{success_rate}"
  if (success_rate >= @test_params.params_chan.pass_rate[0].to_f)  
-    set_result(FrameworkConstants::Result[:pass], "Web  Browser Stress Test=#{success_rate}")
+    set_result(FrameworkConstants::Result[:pass], "Graphics Stress Test=#{success_rate}")
  else
-    set_result(FrameworkConstants::Result[:fail], "Web  Browser Stress Test=#{success_rate}")
+    set_result(FrameworkConstants::Result[:fail], "Graphics Stress Test=#{success_rate}")
  end
 
 end 

@@ -38,33 +38,25 @@ def run
   put_screen_home = ["__back__","__back__","__back__","__back__"]
   clear_dialog = ["__directional_pad_down__","__enter__"]
   web_address = get_webaddress(@test_params.params_chan.webaddress[0])
-  #puts "Web Address #{web_address}" 
   counter = 0
+  interation_counter = 0
   @test_params.params_chan.iterations[0].to_i.times do
-  #web_address.each{|website|
+  interation_counter  = interation_counter + 1
   @test_params.params_chan.webaddress.each{|website|
-  puts "WEB SITE IS #{website}"
   counter = counter + 1 
   cmd = "logcat  -d -c"
+  data = send_adb_cmd  cmd
   sleep 1 
   cmd = @test_params.params_chan.intent[0] + " -e webaddress " + website + " -e testtype " +  @test_params.params_chan.test_type[0] 
-  puts cmd
   data = send_adb_cmd  cmd
-  puts "response response is: #{data}"
   sleep @test_params.params_chan.delay[0].to_i
   cmd = "logcat  -d -s ActivityManager"
   response = send_adb_cmd cmd
-  puts "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
-  puts response
-  puts "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE"
-  puts "ITERATION ITERATION ITERATION  #{counter}"
   display_time = 0
   time = "" 
   if response.include?("Displayed") 
     time = response.scan(/Displayed\s*com.ti.android.webbrowserstress\/.WebBrowserStressActivity:\s*\+([0-9]+\w[0-9]+)ms/)[0][0]
-     puts "DISPLAY DISPLAY #{display_time}"
   else
-   number_of_failures = number_of_failures + 1
    @results_html_file.add_paragraph("Website=#{website} Not Displayed\n#{response}") 
   end  
   if time.include?("s")
@@ -74,13 +66,12 @@ def run
    display_time =  time.to_i
   end 
 
-  if display_time > 600
+  if display_time > 2000
   number_of_failures = number_of_failures + 1
   end
   sleep 60
   cmd = "logcat -d -s InputDispatcher"
   response = send_adb_cmd cmd
-  puts "response #{response}"
   #if response.scan(/Application\s+is\s+not\s+responding/) == nil 
    send_events_for(clear_dialog) 
   #else
@@ -91,13 +82,12 @@ def run
   if response.include?("Exception") 
   @results_html_file.add_paragraph("Website=#{website} Not Displayed\n#{response}") 
   end 
- puts "DEBUG: END OF ITERATION ONE" 
  }
   
  end 
 
  puts "Total number of failures #{number_of_failures.to_f}"
- total_iteration =  @test_params.params_chan.iterations[0].to_f * web_address.size 
+ total_iteration =  @test_params.params_chan.iterations[0].to_f * @test_params.params_chan.webaddress.length 
  success_rate = ((total_iteration - number_of_failures.to_f)/ @test_params.params_chan.iterations[0].to_f)*100.0
  puts "PASS #{success_rate}"
  if (success_rate >= @test_params.params_chan.pass_rate[0].to_f)  
