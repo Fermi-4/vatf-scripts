@@ -87,20 +87,20 @@ def run_wlan_test(test_seq)
           send_adb_cmd("shell wpa_cli remove_network #{current_id}")
         end
         current_trial = 0
-        while get_wlan_state.downcase != 'stop' && current_trial < 5
-          sleep 5
+        while get_wlan_state.downcase != 'stop' && get_wlan_state.strip != '' && current_trial < 5
+          sleep 10
           current_trial += 1
         end
         raise "Unable to remove configured networks from dut" if current_trial >= 5 
       when 'enable'
         puts "Enabling network #{@test_params.params_chan.ssid[0]}"
+        send_adb_cmd("logcat -c")
         send_adb_cmd("shell wpa_cli enable_network #{net_id}")
 	iface = get_wifi_iface
-        send_adb_cmd("shell netcfg #{iface} up")
         current_trial = 0
-        while get_dut_ip_addr == '0.0.0.0' && current_trial < 5
+        while !send_adb_cmd("logcat -d -s WifiStateTracker").match(Regexp.new("DhcpHandler:\s+DHCP\s+request\s+succeeded",Regexp::MULTILINE | Regexp::IGNORECASE)) && current_trial < 5
           sleep 20
-          puts send_adb_cmd("shell netcfg")
+          puts send_adb_cmd("shell getprop dhcp.#{iface}.ipaddress")
           current_trial += 1
         end
         raise "Unable to enable configured network in dut" if current_trial >= 5
@@ -110,13 +110,13 @@ def run_wlan_test(test_seq)
       when 'select'
         puts "Selecting network #{@test_params.params_chan.ssid[0]}"
         net_id = get_net_id(@test_params.params_chan.ssid[0])
+	send_adb_cmd("logcat -c")
         send_adb_cmd("shell wpa_cli select_network #{net_id}")
 	iface = get_wifi_iface
-        send_adb_cmd("shell netcfg #{iface} up")
         current_trial = 0
-        while get_dut_ip_addr == '0.0.0.0' && current_trial < 5
+        while !send_adb_cmd("logcat -d -s WifiStateTracker").match(Regexp.new("DhcpHandler:\s+DHCP\s+request\s+succeeded",Regexp::MULTILINE | Regexp::IGNORECASE)) && current_trial < 5
           sleep 20
-          puts send_adb_cmd("shell netcfg")
+          puts send_adb_cmd("shell getprop dhcp.#{iface}.ipaddress")
           current_trial += 1
         end
         raise "Unable to select configured networks in dut" if current_trial >= 5 
@@ -301,12 +301,6 @@ end
 
 def get_dut_ip_addr
   iface = get_wifi_iface
-  #addr = ''
-  #nets_ips = send_adb_cmd("shell netcfg")
-  #nets_ips.lines.each do |current_line|
-  #  addr = current_line.split(/\s+/)[2] if current_line.match(/^#{iface}\s+(up)|(down)\s+[\d\.]{7,15}\s+.*/i)
-  #end
-  #addr
   send_adb_cmd("shell getprop dhcp.#{iface}.ipaddress").strip 
 end
 
