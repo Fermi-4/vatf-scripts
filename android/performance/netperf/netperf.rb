@@ -1,6 +1,13 @@
 require File.dirname(__FILE__)+'/../../android_test_module' 
+require File.dirname(__FILE__)+'/../../connectivity_module'
 
 include AndroidTest
+include ConnectivityModule
+def setup
+    #super.setup()
+    self.as(AndroidTest).setup
+    enable_ethernet
+end 
 
 def run
   bw =[]

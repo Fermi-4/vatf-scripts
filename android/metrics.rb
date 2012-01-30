@@ -150,8 +150,9 @@ response = send_adb_cmd cmd
  if line.include?("FPS")
   line = line.scan(/([0-9]*\.[0-9]+)/)
   fps_values << line[0][0]
- end 
+ end  
  }
+ fps_values.delete_at(0)
  return fps_values
 end 
 
