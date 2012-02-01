@@ -74,7 +74,7 @@ def save_results(fps_values,cpu_loads,mem_usage,process_pids)
    perf_data = [];
    perf_data << {'name' => "#{@test_params.params_chan.testname[0]}", 'value' =>fps_values, 'units' => "fps"} if fps_values.length != 0
    perf_data << {'name' => "#{@test_params.params_chan.processes_name[0]} Cpu Load", 'value' =>cpu_loads, 'units' => "%"} if cpu_loads.length != 0
-   perf_data << {'name' =>  "#{@test_params.params_chan.processes_name[0]} Mem Usage(RSS)", 'value' =>mem_usage, 'units' => "%"} if mem_usage.length != 0
+   perf_data << {'name' =>  "#{@test_params.params_chan.processes_name[0]} Mem Usage(RSS)", 'value' =>mem_usage, 'units' => "kb"} if mem_usage.length != 0
 
 #in this loop I will collect all meminfo for all processes 
 #this to be completed 

@@ -91,11 +91,11 @@ def get_android_top_stats(cpu_load_samples,process_name,time)
     #cpu_info = send_adb_cmd("shell top -d #{delay} -n #{cpu_load_samples-1}") # this is not working for now I have to get back to it
     puts "Start collecting samples now please wait ........."
     #cpu_info = `adb shell top -d #{delay} -n #{cpu_load_samples-1}`
-    cpu_info = send_adb_cmd("shell top -d #{delay} -n #{cpu_load_samples-1}")    
-    top_result = cpu_info.scan(/(\d+)%\s+[SR]\s+\d+\s+\d+K\s+(\d+)K\s+fg.*#{process_name}/i)   
+    cpu_info = send_adb_cmd("shell top -d #{delay} -n #{cpu_load_samples-1}")   
+    top_result = cpu_info.scan(/(\d+)%\s+[SR]\s+\d+\s+\d+K\s+(\d+)K\s+fg.*#{process_name}/i)  
     #extract stat
     top_result.each{|t|
-     process_cpu_loads <<  t[0][0]
+     process_cpu_loads <<  t[0]
      process_mem_usage_rss <<  t[1] 
     }
    top_stats['process_cpu_loads'] = process_cpu_loads
