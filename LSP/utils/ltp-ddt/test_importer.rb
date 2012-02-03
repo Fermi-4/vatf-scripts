@@ -97,7 +97,7 @@ class TestImporter
         raise "Invalid tag. Scope is not S, M or L" if !(tag_data[1].match(/[SML]/))
         testcase = {
           'name' => tag[0],
-          'desc' => common['name'] + '<br/>' + common['desc'],
+          'desc' => tag[0] + '<br/>' + common['name'] + '<br/>' + common['desc'],
           'testsuite' => tag_data[0],
           'scope' => tag_data[1],
           'type' => tag_data[2],
