@@ -15,6 +15,7 @@ data = send_adb_cmd cmd
 
 cmd = "push " + @test_params.params_chan.host_file_path[0] + "/" + @test_params.params_chan.file_name[0] +  " " + @test_params.params_chan.target_file_path[0] + "/" + @test_params.params_chan.file_name[0]
 #send file push command
+puts data
 data = send_adb_cmd cmd
 if data.scan(/[0-9]+\s*KB\/s\s*\([0-9]+\s*bytes\s*in/)[0] == nil
   puts "EXITING EXITING EXITING "
@@ -34,13 +35,9 @@ cmd = "logcat  -d -c"
 data = send_adb_cmd  cmd
 
 #construct media command
-cmd = @test_params.params_chan.intent[0] + " " + @test_params.params_chan.target_file_path[0] + "/" + @test_params.params_chan.file_name[0]
+cmd = "shell am start -W -n #{CmdTranslator.get_android_cmd({'cmd'=>'gallery_movie_cmp', 'version'=>@equipment['dut1'].get_android_version })} -a action.intent.anction.VIEW -d"  + " " + @test_params.params_chan.target_file_path[0] + "/" + @test_params.params_chan.file_name[0]
 #send intent command to play the clip
 data = send_adb_cmd  cmd
-#time delay before collecting data
-#to be done check the locat for sign of the process started
-#sleep @test_params.params_chan.sleep_time[0].to_i
-
 
 # read process ids for the given processes.
 process_pids = get_android_process_pids(@test_params.params_chan.processes_name)
@@ -85,5 +82,9 @@ def save_results(fps_values,cpu_loads,mem_usage,process_pids)
 }
 }
   # I have to add pass-fail criteria once known
+if fps_values.length != 0
   [FrameworkConstants::Result[:pass], "Test case PASS.",perf_data]
+else 
+  [FrameworkConstants::Result[:fail], "Test case FAIL.",perf_data]
+end 
 end
