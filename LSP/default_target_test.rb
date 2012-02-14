@@ -132,6 +132,7 @@ module LspTargetTestScript
     log_file = File.new(log_file_name,'w')
     stderr_file  = File.new(File.join(@linux_temp_folder,'stderr.log'),'w')
     stdout_file  = File.new(File.join(@linux_temp_folder,'stdout.log'),'w')
+    @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("cat stdout.log",@equipment['dut1'].prompt,30)
     std_output = @equipment['dut1'].response
     @equipment['dut1'].send_cmd("cat stderr.log",@equipment['dut1'].prompt,30)
