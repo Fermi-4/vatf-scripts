@@ -1,20 +1,29 @@
-require File.dirname(__FILE__)+'/../../android_test_module' 
+require File.dirname(__FILE__)+'/../../android_test_module'
+require File.dirname(__FILE__)+'/../../../lib/multimeter_power'
+require File.dirname(__FILE__)+'/../../../lib/evms_data'  
 require 'gnuplot.rb'
 
 include AndroidTest
+include MultimeterModule
+include EvmData
 
 def setup
   puts "\n====================\nPATH=#{ENV['PATH']}\n"
   super
+  
+  add_equipment('multimeter') do |log_path|
+    KeithleyMultiMeterDriver.new(@equipment['dut1'].params['multimeter'],log_path)
+  end
   # Connect to multimeter
-  @equipment['multimeter1'].connect({'type'=>'serial'})
+  @equipment['multimeter'].connect({'type'=>'serial'})
 
 end
 
 def run
   perf = []
+  #platform_name = @equipment['dut1'].name 
   # Configure multimeter 
-  @equipment['multimeter1'].configure_multimeter(@test_params.params_equip.sample_count[0].to_i)
+  @equipment['multimeter'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name))
   # Set DUT in appropriate state
   puts "\n\n======= Power Domain states info =======\n" + send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state")
   puts "\n\n======= Current CPU Frequency =======\n" +  send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
@@ -35,35 +44,33 @@ def run
       send_adb_cmd("shell \"echo 0 > /debug/pm_debug/#{idle_mode.strip.downcase}\"")
     end
   end
+
   #the timeout must be passed as parameter.  
   if @test_params.params_chan.instance_variable_defined?(:@uart_mode)
-  send_adb_cmd("shell \"echo 5 > /sys/devices/platform/omap/omap_uart.0/#{@test_params.params_chan.uart_mode[0]}\"")
-  send_adb_cmd("shell \"echo 5 > /sys/devices/platform/omap/omap_uart.1/#{@test_params.params_chan.uart_mode[0]}\"")
-  send_adb_cmd("shell \"echo 5 > /sys/devices/platform/omap/omap_uart.2/#{@test_params.params_chan.uart_mode[0]}\"")
+    send_adb_cmd("shell \"echo 5 > /sys/devices/platform/omap/omap_uart.0/#{@test_params.params_chan.uart_mode[0]}\"")
+    send_adb_cmd("shell \"echo 5 > /sys/devices/platform/omap/omap_uart.1/#{@test_params.params_chan.uart_mode[0]}\"")
+    send_adb_cmd("shell \"echo 5 > /sys/devices/platform/omap/omap_uart.2/#{@test_params.params_chan.uart_mode[0]}\"")
   end 
   #I am enabling smart reflex for suspend/resume test area. I am running the others with default smart reflex configuration. 
   if @test_params.params_chan.instance_variable_defined?(:@smart_reflex)
-  if @test_params.params_chan.smart_reflex[0].strip == "enable" 
-  puts "SMART FLEX ENABLED"
-  send_adb_cmd("shell \"echo 1 > /debug/voltage/vdd_core/smartreflex/autocomp\"")
-  send_adb_cmd("shell \"echo 1 > /debug/voltage/vdd_mpu/smartreflex/autocomp\"")
-  end 
-  end 
+    if @test_params.params_chan.smart_reflex[0].strip == "enable" 
+      send_adb_cmd("shell \"echo 1 > /debug/voltage/vdd_core/smartreflex/autocomp\"")
+      send_adb_cmd("shell \"echo 1 > /debug/voltage/vdd_mpu/smartreflex/autocomp\"")
+    end 
+  end
+ 
   if @test_params.params_chan.instance_variable_defined?(:@enabled_cpu_idle_modes)
     @test_params.params_chan.enabled_cpu_idle_modes.each do |idle_mode|
       send_adb_cmd("shell \"echo 1 > /debug/pm_debug/#{idle_mode.strip.downcase}\"")
     end
   end
-  
- #added by Yebio to be review 
   if @test_params.params_chan.instance_variable_defined?(:@intent) 
-  cmd = "push " + @test_params.params_chan.host_file_path[0] + " " +     @test_params.params_chan.target_file_path[0]
-  #send file push command 
-  data = send_adb_cmd cmd
-  if data.scan(/[0-9]+\s*KB\/s\s*\([0-9]+\s*bytes\s*in/)[0] == nil
-   puts "Installed failed: #{data}"
-   exit 
-  end
+    cmd = "push " + @test_params.params_chan.host_file_path[0] + " " +     @test_params.params_chan.target_file_path[0]
+    data = send_adb_cmd cmd
+    if data.scan(/[0-9]+\s*KB\/s\s*\([0-9]+\s*bytes\s*in/)[0] == nil
+      puts "Installed failed: #{data}"
+      exit 
+    end
   end 
 
   if @test_params.params_chan.instance_variable_defined?(:@bypass_dut)
@@ -73,158 +80,83 @@ def run
     sleep @test_params.params_chan.bypass_dut_wait[0].to_i if @test_params.params_chan.instance_variable_defined?(:@bypass_dut_wait)
   else
     dutThread = Thread.new {run_test(@test_params.params_chan.test_option[0]) } if @test_params.params_chan.instance_variable_defined?(:@test_option)
- if @test_params.params_chan.instance_variable_defined?(:@intent)
-    dutThread = Thread.new {run_test(nil, @test_params.params_chan.intent[0]+ " #{@test_params.params_chan.target_file_path[0]}") } 
- end 
+    if @test_params.params_chan.instance_variable_defined?(:@intent)
+      dutThread = Thread.new {run_test(nil, @test_params.params_chan.intent[0]+ " #{@test_params.params_chan.target_file_path[0]}") } 
+    end 
   end
   # Get voltage values for all channels in a hash
-  volt_readings = run_get_multimeter_output      
+  volt_readings = @equipment['multimeter'].get_multimeter_output(@test_params.params_control.loop_count[0].to_i, @test_params.params_equip.timeout[0].to_i) 
   # Calculate power consumption
   power_readings = calculate_power_consumption(volt_readings)
   # Generate the plot of the power consumption for the given application
-  power_consumption_plot(power_readings)
   perf = save_results(power_readings, volt_readings)
-  #puts "\n\n======= Power Domain states info =======\n" + send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state")
-  #puts "\n\n======= Current CPU Frequency =======\n" +  send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
-  #puts "\n\n======= Power Domain transition stats =======\n" + send_adb_cmd("shell cat /debug/pm_debug/count") 
   dutThread.join if dutThread
-ensure
-  if perf.size > 0
-    set_result(FrameworkConstants::Result[:pass], "Power Performance data collected",perf)
-  else
-    set_result(FrameworkConstants::Result[:fail], "Could not get Power Performance data")
-  end
-end
+  ensure 
+    if perf.size > 0
+      set_result(FrameworkConstants::Result[:pass], "Power Performance data collected",perf)
+    else
+      set_result(FrameworkConstants::Result[:fail], "Could not get Power Performance data")
+    end
 
-def save_results(power_consumption,voltage_reading)
+end 
+
+# Function saves power consumption result
+# Input parameters: Hash table populated Power consumptions for all domains.
+# Return Parameter: Performance Array table for all voltages readings and powers consumptions.  
+def save_results(power_consumption,voltage_reading,multimeter=@equipment['multimeter'])
   perf = []; v1=[]; v2=[]; vtotal=[]
-  mygraphfile = @files_dir+"/plot_#{@test_id}\.pdf";
-  mygraphurl= mygraphfile.sub(@session_results_base_directory,@session_results_base_url).sub(/http:\/\//i,"")
-    @results_html_file.add_paragraph("PLEASE CLICK ME TO SEE POWER CONSUMPTION PLOT POINT BY POINT",nil, nil,mygraphurl)
-  @results_html_file.add_paragraph("")
-    res_table = @results_html_file.add_table([["VDD1 and VDD2 , VOLTAGES and  TOTAL POWER CONSUMPTION POINT BY POINT",{:bgcolor => "336666", :colspan => "3"},{:color => "white"}]],{:border => "1",:width=>"20%"})
+  power_plot_path = stat_plot(power_consumption['all_domains'],"POWER CONSUMPTION Vs Time", "Samples", "Power (mw)")
+  mygraphurl = upload_file(power_plot_path)[1]
+  @results_html_file.add_paragraph("PLEASE CLICK ME TO SEE POWER CONSUMPTION PLOT POINT BY POINT",nil, nil,mygraphurl)
   count = 0
-  @results_html_file.add_row_to_table(res_table,["Sample", "VDD1 and VDD2 Power in mw","VDD1 in mw","VDD2 in mw", "VDD1 voltage in V", "VDD1(J6) Cross voltage in V", "VDD2 voltage in V","VDD2(J6) Cross voltage in V"])
-  power_consumption['all_vvd1_vdd2'].each{|power|
-    @results_html_file.add_row_to_table(res_table,[count.to_s, power.to_s,power_consumption['all_vvd1'][count].to_s,power_consumption['all_vvd2'][count].to_s,voltage_reading['chan_4'][count].to_s,voltage_reading['chan_1'][count].to_s,voltage_reading['chan_5'][count].to_s,voltage_reading['chan_2'][count].to_s])
-    v1 << power_consumption['all_vvd1'][count]
-    v2 << power_consumption['all_vvd2'][count]
-    vtotal << power
+  table_title = Array.new()
+  table_title << 'SAMPLE NO'
+  table_title <<  'All domains(mw)'
+  for i in (1..multimeter.number_of_channels/2) 
+   table_title <<   multimeter.dut_power_domains[i - 1] + "(mw)" 
+  end
+  for i in (1..multimeter.number_of_channels/2) 
+   table_title <<   multimeter.dut_power_domains[i -1] + "drop(mv)" 
+  end
+  for i in (1..multimeter.number_of_channels/2) 
+   table_title <<  multimeter.dut_power_domains[i -1] + "(v)" 
+  end
+  @results_html_file.add_paragraph("")
+    res_table = @results_html_file.add_table([["TOTAL,  PER DOMAIN POWER and VOLTAGE CALCULATED POINT BY POINT",{:bgcolor => "336666", :colspan => table_title.length},{:color => "white"}]],{:border => "1",:width=>"20%"})
+  table_title = table_title
+ @results_html_file.add_row_to_table(res_table,table_title)
+  count = 0
+  power_consumption["all_domains"].each{|power|
+  table_data =  Array.new
+  table_data <<  count.to_s    
+  table_data << power.to_s 
+  for i in (1..multimeter.number_of_channels/2)
+   table_data <<  power_consumption["domain_" +  multimeter.dut_power_domains[i - 1] + "_power_readings"] [count].to_s 
+  end
+  for i in (1..multimeter.number_of_channels/2)
+   table_data <<   voltage_reading["domain_" +  multimeter.dut_power_domains[i - 1] + "drop_volt_readings"][count].to_s 
+  end
+  for i in (1..multimeter.number_of_channels/2)
+   table_data <<  voltage_reading["domain_" +  multimeter.dut_power_domains[i - 1] + "_volt_readings"][count].to_s
+  end
+   table_data = table_data 
+    @results_html_file.add_row_to_table(res_table,table_data)
     count += 1
   }
-  perf << {'name' => "VDD1 Power", 'value' => v1, 'units' => "mw"}
-  perf << {'name' => "VDD2 Power", 'value' => v2, 'units' => "mw"}
-  perf << {'name' => "VDD1+VDD2 Power", 'value' => vtotal, 'units' => "mw"}
+ 
+ for i in (1..multimeter.number_of_channels/2)
+  perf << {'name' => get_power_domain_data(@equipment['multimeter'].dut_power_domains[i - 1] + " Power"), 'value' =>power_consumption["domain_" + @equipment['multimeter'].dut_power_domains[i - 1] + "_power_readings"], 'units' => "mw"}
+  end 
+  perf << {'name' => "Total Power", 'value' => power_consumption["all_domains"], 'units' => "mw"}
   return perf
 end
 
-def run_get_multimeter_output
-  sleep 5    # Make sure multimeter is configured and DUT is in the right state
-  volt_reading = []
-  counter=0
-  while counter < @test_params.params_control.loop_count[0].to_i
-    Kernel.print("Collecting sample #{counter}\n")
-    @equipment['multimeter1'].send_cmd("READ?", /.+?,.+?,.+?,.+?,[^\r\n]+/, @test_params.params_equip.timeout[0].to_i, false)
-    d =  @equipment['multimeter1'].response
-    Kernel.print("#{d}\n")
-    volt_reading << @equipment['multimeter1'].response
-    counter += 1
-    #sleep 0.5
-  end
-  return sort_raw_data(volt_reading)
-end
 
-# Procedure to meaasure power on AM37x.
-# chan1= vdrop at vdd1 , chan2=vdrop at vdd2, chan3=ignore, chan4=vdd1, chan5=vdd2
-def sort_raw_data(volt_readings)
-  chan_all_volt_reading = Hash.new
-  chan_1_volt_readings = Array.new
-  chan_2_volt_readings = Array.new
-  chan_3_volt_readings = Array.new
-  chan_4_volt_readings = Array.new
-  chan_5_volt_readings = Array.new
-  chan_1_current_readings = Array.new
-  chan_2_current_readings = Array.new
-  volt_reading_array = Array.new
-  volt_readings.each do |current_line| 
-    current_line_arr = current_line.strip.split(/[,\r\n]+/)
-    if current_line_arr.length == 5 && current_line.match(/([+-]\d+\.\d+E[+-]\d+,){4}[+-]\d+\.\d+E[+-]\d+/)
-      volt_reading_array.concat(current_line_arr)
-    else 
-    puts "NOTHING #{current_line}"
-    end
-  end
-  volt_reading_array.each_index{|array_index|
-   mod = array_index % 5 
-   case mod
-     when  0
-     temp = volt_reading_array[array_index].gsub(/\+/,'').to_f + 0.00029
-     chan_1_volt_readings << temp
-     chan_1_current_readings << temp/0.05
-     when  1
-     temp = volt_reading_array[array_index].gsub(/\+/,'').to_f + 0.00029
-     chan_2_volt_readings << temp
-     chan_2_current_readings << temp/0.1
-     when  2
-     chan_3_volt_readings << volt_reading_array[array_index].gsub(/\+/,'').to_f + 0.00029
-     when  3
-     chan_4_volt_readings << volt_reading_array[array_index].gsub(/\+/,'').to_f + 0.00029
-     when  4
-     chan_5_volt_readings << volt_reading_array[array_index].gsub(/\+/,'').to_f + 0.00029
-   end 
-  }
-  # each reading for each channel
-  chan_all_volt_reading["chan_1"] = chan_1_volt_readings
-  chan_all_volt_reading["chan_2"] = chan_2_volt_readings
-  chan_all_volt_reading["chan_3"] = chan_3_volt_readings
-  chan_all_volt_reading["chan_4"] = chan_4_volt_readings
-  chan_all_volt_reading["chan_5"] = chan_5_volt_readings
-  chan_all_volt_reading["chan_1_current"] = chan_1_current_readings
-  chan_all_volt_reading["chan_2_current"] = chan_2_current_readings
-  
-  return chan_all_volt_reading
- end
 
-def calculate_power_consumption(volt_reading)
-  power_consumption = Hash.new
-  vdd1_power_readings = Array.new
-  vdd2_power_readings = Array.new
-  vdd1_vdd2_power_readings = Array.new
-  
-  volt_reading['chan_1'].each_index{|i|
-    vdd1_power_readings << ((volt_reading['chan_1'][i] * volt_reading['chan_4'][i])/0.05) * 1000
-    vdd2_power_readings  << ((volt_reading['chan_2'][i] * volt_reading['chan_5'][i])/0.1) * 1000
-    vdd1_vdd2_power_readings << vdd1_power_readings[i] + vdd2_power_readings[i]
-  }
-  
-  power_consumption['all_vvd1'] = vdd1_power_readings
-  power_consumption['all_vvd2'] = vdd2_power_readings
-  power_consumption['all_vvd1_vdd2'] = vdd1_vdd2_power_readings
-  return power_consumption
-end 
 
-# This function plots the power consumpotion point by point for the whole clip duration.
-def power_consumption_plot(power_consumption)
-  plot_output = @files_dir+"/plot_#{@test_id}\.pdf"
-  max_range  =  (power_consumption['all_vvd1'].size).to_i - 1
-  puts "\nDEBUG\nmaxrange=#{max_range}=========\nDEBUG"
-  Gnuplot.open { |gp|
-    Gnuplot::Plot.new( gp ) { |plot|
-      plot.terminal "post eps colour size 13cm,10cm"
-      plot.output plot_output
-      plot.title  "POWER CONSUMPTION Vs Time"
-      plot.ylabel "Power (mw)"
-      plot.xlabel "Samples"
-            x = (0..max_range).collect { |v| v.to_f }
-      y = power_consumption['all_vvd1_vdd2'].collect { |v| v }
-      plot.data << Gnuplot::DataSet.new( [x, y]) { |ds|
-        ds.with = "lines"
-        ds.linewidth = 4
-      }
-      
-    }
-  }
-end 
+
+
+
 
 
 
