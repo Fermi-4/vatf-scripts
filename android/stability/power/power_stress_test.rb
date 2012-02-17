@@ -3,30 +3,29 @@ require File.dirname(__FILE__)+'/../../keyevents_module'
 require File.dirname(__FILE__)+'/../../power_events_module'
 require File.dirname(__FILE__)+'/../../power_module'
 require File.dirname(__FILE__)+'/../../../lib/multimeter_power'
+require File.dirname(__FILE__)+'/../../../lib/evms_data'  
 include AndroidTest
 include AndroidKeyEvents
 include PowerEventsModule
 include PowerModule
 include MultimeterModule
-
-require 'gnuplot.rb'
-
-include AndroidTest
+include EvmData
 
 def setup
   puts "\n====================\nPATH=#{ENV['PATH']}\n"
-  #super
   # Connect to multimeter
-  @equipment['multimeter1'].connect({'type'=>'serial'})
+  add_equipment('multimeter') do |log_path|
+    KeithleyMultiMeterDriver.new(@equipment['dut1'].params['multimeter'],log_path)
+  end
+  @equipment['multimeter'].connect({'type'=>'serial'})
   enable_ethernet 
 end
 
 def run
   perf = []
   # Configure multimeter 
-  @equipment['multimeter1'].configure_multimeter(@test_params.params_chan.sample_count[0].to_i)
+  @equipment['multimeter'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name))
   # Set DUT in appropriate state
-
   if @test_params.params_chan.instance_variable_defined?(:@disabled_cpu_idle_modes)
     @test_params.params_chan.disabled_cpu_idle_modes.each do |idle_mode|
       data = send_adb_cmd("shell \"echo 1 > /debug/pm_debug/#{idle_mode.strip.downcase}\"")
@@ -44,13 +43,8 @@ def run
   send_adb_cmd("shell \"sleep 10\"")
   end 
 
-  #I am enabling smart reflex for suspend/resume test area. I am running the others with default smart reflex configuration. 
- 
-  
- #added by Yebio to be review 
   if @test_params.params_chan.instance_variable_defined?(:@intent) 
   cmd = "push " + @test_params.params_chan.host_file_path[0] + " " +     @test_params.params_chan.target_file_path[0]
-  #send file push command 
   data = send_adb_cmd cmd
   if data.scan(/[0-9]+\s*KB\/s\s*\([0-9]+\s*bytes\s*in/)[0] == nil
    puts "Installed failed: #{data}"
@@ -84,24 +78,18 @@ def run
   set_alarm()
   puts "Waiting for suspending message."
   puts @equipment['dut1'].send_cmd("netcfg", /Suspending\s+console/, 100, false)
-  #sleep 80
   sleep 5
   # Get voltage values for all channels in a hash
-  volt_readings = run_get_multimeter_output(@equipment['ti_multimeter'])      
+  #volt_readings = run_get_multimeter_output(@equipment['ti_multimeter'])
+  volt_readings = @equipment['multimeter'].get_multimeter_output(@test_params.params_chan.loop_count[0].to_i, @test_params.params_equip.timeout[0].to_i)       
   # Calculate power consumption
-  power_readings = calculate_mean_power_consumption(volt_readings)
-  puts "MEAN VDD1 POWER READING #{power_readings['all_vvd1']}"
-  puts "MEAN VDD2 POWER READING #{power_readings['all_vvd2']}" 
-  puts "MEAN VDD1 and VDD2 POWER READING #{power_readings['all_vvd1_vdd2']}"    
- 
-  if  power_readings['all_vvd1'] > 0.01  or power_readings['all_vvd2'] > 0.01 or power_readings['all_vvd1_vdd2'] > 0.01
+  power_readings = calculate_power_consumption(volt_readings)
+  if  power_readings['mean_all_domains'] > @test_params.params_chan.pass_value[0].to_f 
    number_of_failures = number_of_failures + 1 #only one is added to per iteration
-   perf = save_results(power_readings)
-  
+   perf = save_results(power_readings, volt_readings)  
   end 
   
   @equipment['dut1'].send_cmd("netcfg", /suspend\s+of\s+devices\s+complete/, 100, false)
-  #sleep 40
   sleep 5
  send_events_for(get_events(@test_params.params_chan.alarm_dismis[0]))
  puts "Total number of failures so far #{number_of_failures.to_f}"
@@ -126,38 +114,54 @@ ensure
 
 end
 
-def save_results(power_consumption)
+
+# Function saves power consumption result
+# Input parameters: Hash table populated Power require File.dirname(__FILE__)+'/../../../lib/evms_data'  consumptions for all domains.
+# Return Parameter: Performance Array table for all voltages readings and powers consumptions.  
+def save_results(power_consumption,voltage_reading,multimeter=@equipment['multimeter'])
   perf = []; v1=[]; v2=[]; vtotal=[]
-  @results_html_file.add_paragraph("")
-    res_table = @results_html_file.add_table([["VDD1 and VDD2 , VOLTAGES and  TOTAL POWER CONSUMPTION POINT BY POINT",{:bgcolor => "336666", :colspan => "3"},{:color => "white"}]],{:border => "1",:width=>"20%"})
   count = 0
-  @results_html_file.add_row_to_table(res_table,["Sample", "VDD1 and VDD2 Power in mw","VDD1 in mw","VDD2 in mw"])
-    @results_html_file.add_row_to_table(res_table,[1, power_consumption['all_vvd1_vdd2'],power_consumption['all_vvd1'],power_consumption['all_vvd2']])
-return perf
-end
-
-
-def calculate_mean_power_consumption(volt_reading)
-  power_consumption = Hash.new
-  vdd1_power_readings = Array.new
-  vdd2_power_readings = Array.new
-  vdd1_vdd2_power_readings = Array.new
-  
-  volt_reading['chan_1'].each_index{|i|
-    vdd1_power_readings << ((volt_reading['chan_1'][i] * volt_reading['chan_4'][i])/0.05) * 1000
-    vdd2_power_readings  << ((volt_reading['chan_2'][i] * volt_reading['chan_5'][i])/0.1) * 1000
-    vdd1_vdd2_power_readings << vdd1_power_readings[i] + vdd2_power_readings[i]
+  table_title = Array.new()
+  table_title << 'SAMPLE NO'
+  table_title <<  'All domains(mw)'
+  for i in (1..multimeter.number_of_channels/2) 
+   table_title <<   multimeter.dut_power_domains[i - 1] + "(mw)" 
+  end
+  for i in (1..multimeter.number_of_channels/2) 
+   table_title <<   multimeter.dut_power_domains[i -1] + "drop(mv)" 
+  end
+  for i in (1..multimeter.number_of_channels/2) 
+   table_title <<  multimeter.dut_power_domains[i -1] + "(v)" 
+  end
+  @results_html_file.add_paragraph("")
+    res_table = @results_html_file.add_table([["TOTAL,  PER DOMAIN POWER and VOLTAGE CALCULATED POINT BY POINT",{:bgcolor => "336666", :colspan => table_title.length},{:color => "white"}]],{:border => "1",:width=>"20%"})
+  table_title = table_title
+ @results_html_file.add_row_to_table(res_table,table_title)
+  count = 0
+  power_consumption["all_domains"].each{|power|
+  table_data =  Array.new
+  table_data <<  count.to_s    
+  table_data << power.to_s 
+  for i in (1..multimeter.number_of_channels/2)
+   table_data <<  power_consumption["domain_" +  multimeter.dut_power_domains[i - 1] + "_power_readings"] [count].to_s 
+  end
+  for i in (1..multimeter.number_of_channels/2)
+   table_data <<   voltage_reading["domain_" +  multimeter.dut_power_domains[i - 1] + "drop_volt_readings"][count].to_s 
+  end
+  for i in (1..multimeter.number_of_channels/2)
+   table_data <<  voltage_reading["domain_" +  multimeter.dut_power_domains[i - 1] + "_volt_readings"][count].to_s
+  end
+   table_data = table_data 
+    @results_html_file.add_row_to_table(res_table,table_data)
+    count += 1
   }
-  vdd1_mean_power_reading =  mean(vdd1_power_readings)
-  vdd2_mean_power_reading =  mean(vdd2_power_readings)
-  vdd1_vdd2_mean_power_readings = mean(vdd1_vdd2_power_readings)
-
-  power_consumption['all_vvd1'] = vdd1_mean_power_reading
-  power_consumption['all_vvd2'] = vdd2_mean_power_reading
-  power_consumption['all_vvd1_vdd2'] = vdd1_vdd2_mean_power_readings
-  return power_consumption
-end 
-
+ 
+ for i in (1..multimeter.number_of_channels/2)
+  perf << {'name' => get_power_domain_data(@equipment['multimeter'].dut_power_domains[i - 1] + " Power"), 'value' =>power_consumption["domain_" + @equipment['multimeter'].dut_power_domains[i - 1] + "_power_readings"], 'units' => "mw"}
+  end 
+  perf << {'name' => "Total Power", 'value' => power_consumption["all_domains"], 'units' => "mw"}
+  return perf
+end
 
 
 
