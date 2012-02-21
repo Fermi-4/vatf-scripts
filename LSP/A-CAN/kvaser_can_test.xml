@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcases>
+<testcase internalid="1645601" name="CAN reception for 1000Kb bitrate">
+	<node_order><![CDATA[4]]></node_order>
+	<externalid><![CDATA[1527]]></externalid>
+	<summary><![CDATA[<p>CAN reception for 1000Kb bitrate</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="s_L"><notes><![CDATA[
+test scope is large or full
+]]></notes></keyword>
+	<keyword name="t_STRESS"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="p_am335x-evm"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[direction=rx,duration=8,baudrate_in_kbps=1000,duration_units=hour,loop_count=100,poll_mode=1
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[LSP/A-CAN/kvaser_can_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",linux];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=30
+]]></value>
+</custom_field>
+</custom_fields>	<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.API.1]]></doc_id>
+			<title><![CDATA[Support for  NAPI for RX operation]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.Functional.6]]></doc_id>
+			<title><![CDATA[Support for CAN2.0B specifications]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.Functional.9]]></doc_id>
+			<title><![CDATA[Support for standard CanOpen specified bit rates]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.UserInterface.4]]></doc_id>
+			<title><![CDATA[Support for bittiming configuration via iproute2 utility]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+
+<testcase internalid="1645741" name="CAN transmission for 1000Kb bitrate">
+	<node_order><![CDATA[5]]></node_order>
+	<externalid><![CDATA[1528]]></externalid>
+	<summary><![CDATA[<p>CAN transmission for 1000Kb bitrate</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="s_L"><notes><![CDATA[
+test scope is large or full
+]]></notes></keyword>
+	<keyword name="t_STRESS"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="p_am335x-evm"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[direction=tx,duration=8,baudrate_in_kbps=1000,duration_units=hour,loop_count=100,poll_mode=1
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[LSP/A-CAN/kvaser_can_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",linux];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=30
+]]></value>
+</custom_field>
+</custom_fields>	<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.API.1]]></doc_id>
+			<title><![CDATA[Support for  NAPI for RX operation]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.Functional.6]]></doc_id>
+			<title><![CDATA[Support for CAN2.0B specifications]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.Functional.9]]></doc_id>
+			<title><![CDATA[Support for standard CanOpen specified bit rates]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.UserInterface.4]]></doc_id>
+			<title><![CDATA[Support for bittiming configuration via iproute2 utility]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+
+<testcase internalid="1645881" name="CAN transmission for 125Kb bitrate">
+	<node_order><![CDATA[6]]></node_order>
+	<externalid><![CDATA[1529]]></externalid>
+	<summary><![CDATA[<p>CAN transmission for 125Kb bitrate</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="s_L"><notes><![CDATA[
+test scope is large or full
+]]></notes></keyword>
+	<keyword name="t_STRESS"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="p_am335x-evm"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[direction=tx,duration=8,baudrate_in_kbps=125,duration_units=hour,loop_count=100,poll_mode=1
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[LSP/A-CAN/kvaser_can_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",linux];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=30
+]]></value>
+</custom_field>
+</custom_fields>	<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.API.1]]></doc_id>
+			<title><![CDATA[Support for  NAPI for RX operation]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.Functional.6]]></doc_id>
+			<title><![CDATA[Support for CAN2.0B specifications]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.Functional.9]]></doc_id>
+			<title><![CDATA[Support for standard CanOpen specified bit rates]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.UserInterface.4]]></doc_id>
+			<title><![CDATA[Support for bittiming configuration via iproute2 utility]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+
+<testcase internalid="1646021" name="CAN reception for 125Kb bitrate">
+	<node_order><![CDATA[7]]></node_order>
+	<externalid><![CDATA[1530]]></externalid>
+	<summary><![CDATA[<p>CAN reception for 125Kb bitrate</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="s_L"><notes><![CDATA[
+test scope is large or full
+]]></notes></keyword>
+	<keyword name="t_STRESS"><notes><![CDATA[
+test type is stress
+]]></notes></keyword>
+	<keyword name="p_am335x-evm"><notes><![CDATA[
+
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[direction=rx,duration=8,baudrate_in_kbps=125,duration_units=hour,loop_count=100,poll_mode=1
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[LSP/A-CAN/kvaser_can_test.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",linux];can_kvaser=["can","kvaser"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[wait_time=30
+]]></value>
+</custom_field>
+</custom_fields>	<requirements>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.API.1]]></doc_id>
+			<title><![CDATA[Support for  NAPI for RX operation]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.Functional.6]]></doc_id>
+			<title><![CDATA[Support for CAN2.0B specifications]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.Functional.9]]></doc_id>
+			<title><![CDATA[Support for standard CanOpen specified bit rates]]></title>
+		</requirement>
+		<requirement>
+			<req_spec_title><![CDATA[can]]></req_spec_title>
+			<doc_id><![CDATA[can.UserInterface.4]]></doc_id>
+			<title><![CDATA[Support for bittiming configuration via iproute2 utility]]></title>
+		</requirement>
+	</requirements>
+</testcase>
+</testcases>

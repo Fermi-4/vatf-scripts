@@ -25,8 +25,7 @@ module LspTestScript
     end
     
     def setup
-      @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)
-      @equipment['server1'].send_cmd("mkdir -p #{@linux_temp_folder}", @equipment['server1'].prompt)
+      @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)    
       @equipment['dut1'].set_api('psp')
       tester_from_cli  = @tester.downcase
       target_from_db   = @test_params.target.downcase
@@ -47,7 +46,7 @@ module LspTestScript
         elsif !@equipment['server1'].target.telnet 
           raise "You need Telnet connectivity to the Linux Server. Please check your bench file" 
         end
-      
+       @equipment['server1'].send_cmd("mkdir -p #{@linux_temp_folder}", @equipment['server1'].prompt)
         if nfs 
           fs = nfs
           fs.gsub!(/\\/,'/')
