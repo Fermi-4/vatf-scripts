@@ -4,7 +4,6 @@ include LspTestScript
 def setup
   #super
   @equipment['dut1'].set_api('psp')
-  connect_to_equipment('dut1')
 end
 
 def run
@@ -12,9 +11,10 @@ def run
   result = 0
   loop_count = @test_params.params_control.loop_count[0].to_i
   while counter < loop_count
-    puts("Inside the loop counter = #{counter}" );
-    @equipment['dut1'].send_cmd("#-----------------counter=#{counter}-----------------", @equipment['dut1'].boot_prompt, 2)
+    puts("Inside the loop counter = #{counter}" )
     @equipment['dut1'].boot_to_bootloader(@power_handler)
+    connect_to_equipment('dut1','serial')
+    @equipment['dut1'].send_cmd("#-----------------counter=#{counter}-----------------", @equipment['dut1'].boot_prompt, 2)
     @equipment['dut1'].send_cmd('printenv', @equipment['dut1'].boot_prompt, 10)
     if @equipment['dut1'].timeout?
       result += 1

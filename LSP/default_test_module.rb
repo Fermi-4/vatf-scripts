@@ -254,9 +254,9 @@ module LspTestScript
       @nfs_root_path_temp   = nfs
     end
     
-    def connect_to_equipment(equipment)
+    def connect_to_equipment(equipment, connection_type=nil)
       this_equipment = @equipment["#{equipment}"]
-      if this_equipment.respond_to?(:telnet_port) && this_equipment.telnet_port != nil  && !this_equipment.target.telnet
+      if this_equipment.respond_to?(:telnet_port) && this_equipment.telnet_port != nil  && !this_equipment.target.telnet && connection_type != 'serial'
         this_equipment.connect({'type'=>'telnet'})
       elsif ((this_equipment.respond_to?(:serial_port) && this_equipment.serial_port != nil ) || (this_equipment.respond_to?(:serial_server_port) && this_equipment.serial_server_port != nil)) && !this_equipment.target.serial
         puts "Connecting to SERIAL console"
