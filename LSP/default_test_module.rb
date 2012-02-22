@@ -86,7 +86,7 @@ module LspTestScript
 		  boot_params['bootargs'] = @test_params.params_chan.bootargs[0] if @test_params.params_chan.instance_variable_defined?(:@bootargs)
           boot_params['primary_bootloader'] = @test_params.primary_bootloader if @test_params.instance_variable_defined?(:@primary_bootloader)
           boot_params['secondary_bootloader'] = @test_params.secondary_bootloader if @test_params.instance_variable_defined?(:@secondary_bootloader)
-		     
+          boot_params['dtb_file'] = @test_params.dtb_file if @test_params.instance_variable_defined?(:@dtb_file)
       	  if !(@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) && !(@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)
       		raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
           end
