@@ -1,6 +1,8 @@
 #initial release - 11-22-2011
+#update #1 - 02-25-2012
+require File.dirname(__FILE__)+'/../../common_test_mod'
 require File.dirname(__FILE__)+'/../../usb_common_mod'
-
+include CommonTestMod
 include UsbCommonModule
 
   ############################################################## run_collect_performance_data ##################################################################
@@ -12,7 +14,7 @@ include UsbCommonModule
   ############################################################## setup_connect_equipment #######################################################################
   def setup_connect_equipment
     puts "\n usb_fn_storage_enum_test::setup_connect_equipment "+ __LINE__.to_s
-    puts "\n -------------------- Initializing the USB Fn Switch Connection-------------------- "+ __LINE__.to_s
+    #puts "\n -------------------- Initializing the USB Fn Switch Connection-------------------- "+ __LINE__.to_s
     init_usb_sw("usb_swfn")
     super
   end
@@ -28,38 +30,24 @@ include UsbCommonModule
   ############################################################## run_call_script ###############################################################################
   def run_call_script
     puts "\n usb_fn_storage_enum_test::usb_run_call_script "+ __LINE__.to_s
-    @data1 = Hash.new
-    @copy_times = Hash.new
-    @path_list = Hash.new
-    @drive_list1 = []
-    @drive_list2 = []
-    @fn_enum_perfdata = Array.new
-    
-    @data1 =  {"fn_success_count" => 0, "fn_fail_count" => 0, "fn_success_rate" => 0, "fn_fail_rate" => 0, 
-              "enum_success_count" => 0, "enum_fail_count" => 0, "@enum_time" => 0, "tot_enum_time" => 0, 
-              "enum_success_rate" => 0, "iteri" => 0, "low_enum_time" => 0, "avg_enum_time" => 0, "high_enum_time" => 0, 
-              "fn_integrity_success_count" => 0, "fn_integrity_fail_count" => 0, "enum_count" => 0, "seconds" => 0, 
-              "minutes" => 0, "hours" => 0, "days" => 0, "run_duration" => 0, "low_write_bw" => 0, 
-              "usb_test_intfc" => @test_params.params_control.usb_test_intfc[0].upcase, "high_write_bw" => 0, 
-              "low_read_bw" => 0, "fn_connect_ok" => 0, "enum_ok" => 0, "enum_fail" => 0 
-              }
-    
-    @copy_times = {"write_to_device_time" => 0, "low_write_to_device_time" => 0, "high_write_to_device_time" => 0, 
-                   "tot_write_to_device_time" => 0, "read_fm_device_time" => 0, "low_read_fm_device_time" => 0, 
-                   "high_read_fm_device_time" => 0, "tot_read_fm_device_time" => 0, "write_to_device_bw" => 0,
-                   "low_write_to_device_bw" => 0, "high_write_to_device_bw" => 0, "tot_write_to_device_bw" => 0,
-                   "avg_write_to_device_bw" => 0, "read_fm_device_bw" => 0, "low_read_fm_device_bw" => 0, 
-                   "high_read_fm_device_bw" => 0, "avg_read_fm_device_bw" => 0, "avg_write_to_device_time" => 0, 
-                   "avg_read_fm_device_time" => 0, "iterations" => 0, "xfer_file_size" => 0
-                  }
-  
+    init_common_hash_arrays("@data1")
+    init_common_hash_arrays("@copy_times")
+    init_common_hash_arrays("@fn_enum_perfdata")
+    init_common_hash_arrays("drive_lists")
+
     @lcl_dsktop_tmp_dir = @test_params.params_equip.instance_variable_defined?(:@lcl_dsktp_tmp_dir) ? @test_params.params_equip.lcl_dsktp_tmp_dir[0] : 'c:\Temp'
     @max_wait_time = (@test_params.params_control.instance_variable_defined?(:@wait_time) ? @test_params.params_control.wait_time[0] : '10')
     @fn_sto_file_name = (@test_params.params_equip.instance_variable_defined?(:@fn_sto_file_name) ? @test_params.params_equip.fn_sto_file_name[0] : 'fntest.bin')
     @lcl_fn_file_name = (@test_params.params_equip.instance_variable_defined?(:@lcl_testfile_name) ? @test_params.params_equip.lcl_testfile_name[0] : 'usbtest.tst')
 
+    # ------------------------ Initialize common network/USB arrays used by this script--------------------
+    init_net_usb_common_vars
+    
     # ------------------------ Initialize script specific variables --------------------
     init_variables
+    
+    # ------------------------ Save the script start time in seconds --------------------
+    save_script_start_time
     
     # ------------------------ Synchronize the time on EVM with current time on PC --------------------
     set_dut_datetime
@@ -82,13 +70,13 @@ include UsbCommonModule
     # ------------------------------------------------------------------------------------------------------------
     create_ftp_binary_file
     
-    # ------------------------ Calculate the script run time and convert it to seconds for later use --------------------
-    calc_test_start_time
-    
     # ------------------------ Get a listing of all drives on the WinXP Host --------------------
     @equipment['server1'].send_cmd("fsutil fsinfo drives", />/)
     @drive_list1 << @equipment['server1'].response.scan(/(\w+\:)\\/i)
 
+    # ------------------------ Calculate the script run time and convert it to seconds for later use --------------------
+    save_test_start_time
+    
     begin
       # ------------------------ Connect the USB switch to the correct USB port --------------------
       conn_usb_func_device
@@ -98,9 +86,6 @@ include UsbCommonModule
       
       # ------------------------ Check if the USB fn storage devicen was successfully enumerated to the host PC --------------------
       wait_for_device_enumeration
-      
-      # ------------------------ Calculate current script run time ------------------------
-      calc_current_script_run_time
       
       # ------------------------ Get a listing of all the drive letters ------------------------
       get_drive_list
@@ -150,12 +135,15 @@ include UsbCommonModule
       # ------------------------ Delete local host copy of the test file ------------------------ 
       @equipment['server1'].send_cmd("del #{@lcl_dsktop_tmp_dir}\\#{@fn_sto_file_name}", />/,15)
       
+      # ------------------------ Calculate current run times ------------------------
+      calc_current_script_run_time
+      calc_current_test_run_time
+      
       # ------------------------ Count each loop ------------------------ 
       @iteri += 1
-    end until (@curr_time_seconds.to_i - @start_time_seconds.to_i) >= @data1['run_duration'].to_i
+    end until (@data_time['curr_test_run_time_seconds'].to_i) >= @data_time['run_duration'].to_i
     
-    calc_test_end_time
-    
+    save_test_end_time
     @avg_write_to_device_bw = 0
     @copy_times['avg_write_to_device_time'] = @copy_times['tot_write_to_device_time'].to_f / @copy_times['iterations'].to_f
     @copy_times['avg_write_to_device_bw'] = "%.3f" % (((@copy_times['xfer_file_size'].to_f / @copy_times['avg_write_to_device_time']).to_f) / 1000000)
@@ -168,13 +156,8 @@ include UsbCommonModule
 
   ############################################################## create_ftp_binary_file ########################################################################
   def create_ftp_binary_file
-    puts "\n usb_fn_storage_integrity_test::create_ftp_binary_file "+ __LINE__.to_s
-    out_file = File.new(File.join(@lcl_dsktop_tmp_dir, 'createfile.bat'),'w') ; out_file.puts("cd #{@lcl_dsktop_tmp_dir}")
-    out_file.puts("dd if=/dev/random of=#{@lcl_dsktop_tmp_dir}" + "\\" + "#{@test_params.params_equip.lcl_testfile_name[0]} bs=1M count=#{@test_params.params_equip.ftp_file_size[0]}")
-    out_file.close
-    @tst_file = "call #{File.join(@lcl_dsktop_tmp_dir, 'createfile.bat')}"                          #dd if=/dev/random of=C:\Temp_dd\test1.bin bs=1M count=20
-    system("call #{@tst_file}")
-    sleep 1
+  
+    super
     
     @equipment['server1'].send_cmd("dir #{@lcl_dsktop_tmp_dir}\\#{@lcl_fn_file_name}", />/)
     @copy_times['xfer_file_size'] = File.size?("#{@lcl_dsktop_tmp_dir}\\#{@lcl_fn_file_name}")
@@ -185,16 +168,15 @@ include UsbCommonModule
   def wait_for_device_enumeration
     puts "\n usb_fn_storage_integrity_test::wait_for_device_enumeration "+ __LINE__.to_s
     # ------------------------ Loop until the device has been enumerated or until the wait_time has been exceeded --------------------
-    @start_enum_loop_time = Time.now.strftime("%s")
+    @data1['start_enum_loop_time'] = Time.now.strftime("%s")
     @data1['enum_ok'] = @data1['enum_fail'] = 0
-    
     begin
       # ------------------------ Check if device has been enumerated and then increment the appropriate counter -------------- "
       @equipment['server1'].send_cmd("#{@lcl_dsktop_tmp_dir}\\devcon listclass volume", /(MEDIA\\8&E615446&0&RM)/,100)
     
       if /(MEDIA\\8&E615446&0&RM)/i.match(@equipment['server1'].response)
         @data1['enum_ok'] = 99
-        @end_enum_loop_time = Time.now.strftime("%s")
+        @data1['end_enum_loop_time'] = Time.now.strftime("%s")
         @data1['enum_success_count'] += 1
         puts "\n ------------------------ fnStorage device enumeration was successful ------ "+ __LINE__.to_s
         break
@@ -202,9 +184,9 @@ include UsbCommonModule
         @data1['enum_ok'] = 0
       end
       
-      @end_enum_loop_time = Time.now.strftime("%s")
+      @data1['end_enum_loop_time'] = Time.now.strftime("%s")
       sleep 1
-    end until (@end_enum_loop_time.to_i - @start_enum_loop_time.to_i) >= @max_wait_time.to_i
+    end until (@data1['end_enum_loop_time'].to_i - @data1['start_enum_loop_time'].to_i) >= @max_wait_time.to_i
     
     # ------------------------ If device was not enumerated, increment the fail counter ---------------- "
     if @data1['enum_ok'] == 0
@@ -215,7 +197,7 @@ include UsbCommonModule
     end
     
     # ------------------------ Determine enumeration time and populate the high or low variable ---------------- "
-    @temp_enum_time = (@end_enum_loop_time.to_i - @start_enum_loop_time.to_i)
+    @temp_enum_time = (@data1['end_enum_loop_time'].to_i - @data1['start_enum_loop_time'].to_i)
     
     if @temp_enum_time.to_i < @data1['low_enum_time'].to_i || @data1['low_enum_time'].to_i == 0
       @data1['low_enum_time'] = @temp_enum_time.to_i
@@ -229,52 +211,6 @@ include UsbCommonModule
     @data1['tot_enum_time'] += @temp_enum_time.to_i
     @data1['avg_enum_time'] = "%.2f" % (@data1['tot_enum_time'] / @data1['enum_count']).to_f
   end
-
-
-  ############################################################## calculate_desired_script_run_time #####################################################################
-  def calculate_desired_script_run_time
-    puts "\n usb_fn_storage_integrity_test::calculate_desired_script_run_time "+ __LINE__.to_s
-    @data1['run_duration'] = 0
-    
-    if @test_params.params_control.instance_variable_defined?(:@test_duration)
-      @specified_test_duration,@units = /(\d+)(\w+)/i.match(@test_params.params_control.test_duration[0]).captures
-    else
-     @specified_test_duration = '1'
-     @units = 'm'
-    end
-    
-    case
-    when @units == "s"
-      @data1['run_duration'] = @specified_test_duration.to_i * 0
-      @test_dur = "#{@specified_test_duration} Seconds"
-    when @units == "m"
-      @data1['run_duration'] = @specified_test_duration.to_i * 60
-      @test_dur = "#{@specified_test_duration} Minutes"
-    when @units == "h"
-      @data1['run_duration'] = @specified_test_duration.to_i * 60 * 60
-      @test_dur = "#{@specified_test_duration} Hours"
-      when @units == "d"
-      @data1['run_duration'] = @specified_test_duration.to_i * 60 * 60 * 24
-      @test_dur = "#{@specified_test_duration} Days"
-    end
-    
-    puts "\n ------------------------ Desired run time in seconds: #{@data1['run_duration']} ------ #{@test_dur} ------------------------ "+ __LINE__.to_s
-  end
-  
-  
-  ############################################################## calc_current_script_run_time ##################################################################
-  def calc_current_script_run_time
-    puts "\n usb_fn_storage_integrity_test::calc_current_script_run_time "+ __LINE__.to_s
-    @curr_time_seconds = Time.now.strftime("%s")
-    @curr_secs = (@curr_time_seconds.to_i - @start_time_seconds.to_i)
-    
-    @data1['seconds'] = @curr_secs % 60
-    @data1['minutes'] = ((@curr_secs / 60 ) % 60)
-    @data1['hours'] = (@curr_secs / (60 * 60) % 60)
-    @data1['days'] = (@curr_secs / (60 * 60 * 24))
-    @test_time = "#{@data1['days']} Days  #{@data1['hours']} Hours  #{@data1['minutes']} Mins. #{@data1['seconds']} Secs."
-    puts "\n ------------ Seconds: #{@curr_secs} ----- Days: #{@data1['days']} ----- Hours: #{@data1['hours']} ----- Mins: #{@data1['minutes']} ----- Secs: #{@data1['seconds']} ------------ "+ __LINE__.to_s 
-	end
 
   
   ############################################################## get_drive_list #####################################################################
@@ -401,27 +337,11 @@ include UsbCommonModule
     
     if /(MEDIA\\8&E615446&0&RM)/i.match(@equipment['server1'].response)
       @data1['enum_ok'] = 99
-      @end_enum_loop_time = Time.now.strftime("%s")
+      @data1['end_enum_loop_time'] = Time.now.strftime("%s")
       @data1['enum_success_count'] += 1
     else
       @data1['enum_ok'] = 0
     end
-  end
-
- 
-  ############################################################## conn_usb_func_device ###########################################################################
-  def conn_usb_func_device
-    puts "\n usb_fn_storage_integrity_test::conn_usb_func_device "+ __LINE__.to_s
-    @equipment['usb_swfn'].select_input(@equipment['dut1'].params['otg_port'])
-    sleep @test_params.params_control.wait_after_connect[0].to_i
-  end
-  
-  
-  ############################################################## disconnect_usb_func_device ##############################################################################
-  def disconnect_usb_func_device
-    puts "\n usb_fn_storage_integrity_test::disconnect_usb_func_device "+ __LINE__.to_s
-    @equipment['usb_swfn'].select_input(0)   					# 0 means don't select any input port.
-    sleep @test_params.params_control.wait_after_disconnect[0].to_i
   end
 
   
