@@ -1,6 +1,8 @@
 #initial release - 11-04-2011
+#updated 02-25-2012
+require File.dirname(__FILE__)+'/../../common_test_mod'
 require File.dirname(__FILE__)+'/../../usb_common_mod'
-
+include CommonTestMod
 include UsbCommonModule
 
   ############################################################## run_collect_performance_data ##################################################################
@@ -11,8 +13,8 @@ include UsbCommonModule
   
   ############################################################## setup_connect_equipment #######################################################################
   def setup_connect_equipment
-    puts "\n usb_fn_storage_enum_test::setup_connect_equipment "+ __LINE__.to_s
-    puts "\n -------------------- Initializing the USB Fn Switch -------------------- "+ __LINE__.to_s
+    puts "\n usb_fn_storage_enum_test::setup_connect_equipment - Initializing the USB Fn Switch Connection "+ __LINE__.to_s
+    #puts "\n -------------------- Initializing the USB Fn Switch -------------------- "+ __LINE__.to_s
     init_usb_sw("usb_swfn")
     super
   end
@@ -28,18 +30,27 @@ include UsbCommonModule
   ############################################################## run_call_script ###############################################################################
   def run_call_script
     puts "\n usb_fn_storage_enum_test::usb_run_call_script "+ __LINE__.to_s
-    @data = Array.new
-    @fn_enum_perfdata = Array.new
+    init_common_hash_arrays("@data1")
+    init_common_hash_arrays("@copy_times")
+    init_common_hash_arrays("@fn_enum_perfdata")
+    init_common_hash_arrays("@data_time")
+
     @TempBuffer = ""
     @start_loop_time = @end_loop_time = @enum_success_count = @enum_fail_count = @fn_connect_ok = 0
-    @fn_connect_ok = @fn_success_count = @fn_fail_count = @enum_ok = @end_loop_time = @enum_time = 0
+    @fn_success_count = @fn_fail_count = @enum_ok = @end_loop_time = @enum_time = 0
     @min_enum_time = @avg_enum_time = @max_enum_time = future = xyz = tmp1 = tmp2 = tmp3 = tmp4 = 0
     
     @max_wait_time = (@test_params.params_control.instance_variable_defined?(:@wait_time) ? @test_params.params_control.wait_time[0] : '10')
   
+    # ------------------------ Initialize common network/USB arrays used by this script--------------------
+    init_net_usb_common_vars
+    
     # ------------------------ Initialize script specific variables ------------------------
     init_variables
   
+    # ------------------------ Save the actual script start time in seconds --------------------
+    save_script_start_time
+    
     # ------------------------ Synchronize the time on EVM with current time on PC ------------------------
     set_dut_datetime
   
@@ -52,8 +63,8 @@ include UsbCommonModule
     # ------------------------ Calculate the desired script run time and convert it to seconds ------------------------
     calculate_desired_script_run_time
   
-    # ------------------------ Calculate the script run time and convert it to seconds for later use ------------------------
-    calc_test_start_time
+    # ------------------------ Save the actual test start time in seconds ------------------------
+    save_test_start_time
     
     begin
       # ------------------------ Connect the USB switch to the correct USB port ------------------------
@@ -62,17 +73,8 @@ include UsbCommonModule
       # ------------------------ Check if the USB fn storage connection was successfully connected to the host PC ------------------------
       ck_if_fn_storage_connected
       
-      # ------------------------ If connect was successful, increment the success_count value. Otherwise, increment the fail_count value ------------------------
-      if @fn_connect_ok == 99
-        puts "\n---------- fn storage successfully connected ------ "+ __LINE__.to_s
-        @fn_success_count += 1
-      else
-        puts "\n---------- fn storage could not be connected successfully ------ "+ __LINE__.to_s
-        @fn_fail_count += 1
-      end
-      
       # ------------------------ Start the enumeration timer ------------------------
-      @start_enum_loop_time = Time.now.strftime("%s")
+      @data1['start_enum_loop_time'] = Time.now.strftime("%s")
       
       # ------------------------ Loop until the device has been enumerated or until the wait_time has been exceeded ------------------------
       begin
@@ -80,31 +82,30 @@ include UsbCommonModule
         
         # ------------------------ Loop until either the device is enumerated or the timeout expires ------------------------
         if @enum_ok == 99
-          @enum_success_count += 1
-          @end_enum_loop_time = Time.now.strftime("%s")
+          @data1['enum_success_count'] += 1
+          @data1['end_enum_loop_time'] = Time.now.strftime("%s")
           break
         end
         
-        @end_enum_loop_time = Time.now.strftime("%s")
-      end until (@end_enum_loop_time.to_i - @start_enum_loop_time.to_i) >= @max_wait_time.to_i
+        @data1['end_enum_loop_time'] = Time.now.strftime("%s")
+      end until (@data1['end_enum_loop_time'].to_i - @data1['start_enum_loop_time'].to_i) >= @max_wait_time.to_i
       
       if @enum_ok == 0
-        @enum_fail_count += 1
+        @data1['enum_fail_count'] += 1
         puts "\n---------- fnStorage device enumeration was not successful ------ "+ __LINE__.to_s
       else
         puts "\n---------- fnStorage device enumeration was successful ------ "+ __LINE__.to_s
       end
       
-      @enum_time = 	(@end_enum_loop_time.to_i - @start_enum_loop_time.to_i)
-      calc_current_script_run_time
+      @enum_time = 	(@data1['end_enum_loop_time'].to_i - @data1['start_enum_loop_time'].to_i)
       
       # ------------------------ Disconnect the USBfn switch --------------------
       disconnect_usb_func_device
       
-      @data << ["#{@fn_success_count.to_i}",
-                "#{@fn_fail_count.to_i}",
-                "#{@enum_success_count.to_i}",
-                "#{@enum_fail_count.to_i}",
+      @data << ["#{@data1['fn_success_count'].to_i}",
+                "#{@data1['fn_fail_count'].to_i}",
+                "#{@data1['enum_success_count'].to_i}",
+                "#{@data1['enum_fail_count'].to_i}",
                 "#{@enum_time.to_i}",
                 "#{@iteri.to_i}",
                 "#{@low_enum_time.to_i}",
@@ -112,10 +113,16 @@ include UsbCommonModule
                 "#{@high_enum_time.to_i}",
                 "#{future.to_i}"]
       
+      # ------------------------ Calculate current run times ------------------------
+      calc_current_script_run_time
+      calc_current_test_run_time
+      
+      # ------------------------ Count each loop ------------------------ 
       @iteri += 1
-    end until (@curr_time_seconds.to_i - @start_time_seconds.to_i) >= @run_duration.to_i
+      
+    end until (@data_time['curr_test_run_time_seconds'].to_i) >= @data_time['run_duration'].to_i
     
-    calc_test_end_time
+    save_test_end_time
     
     # ------------------------ Determine the high, low and the average enumeration times --------------------
     until xyz >= (@data.length) do
@@ -144,17 +151,22 @@ include UsbCommonModule
 
   ############################################################## ck_if_fn_storage_connected #####################################################################
   def ck_if_fn_storage_connected
-    puts "\n usb_fn_storage_enum_test::ck_if_fn_storage_connected "+ __LINE__.to_s
-    @fn_connect_ok = 0
+    puts "\n usb_fn_storage_integrity_test::ck_if_fn_storage_connected "+ __LINE__.to_s
+    @data1['fn_connect_ok'] = 0
     @equipment['server1'].send_cmd("#{@lcl_dsktop_tmp_dir}\\devcon listclass usb", />/)
-    
+  
+    # ------------------------ If connect was successful, increment the success_count value. Otherwise, increment the fail_count value --------------------
     if /VID\_(045e)\&PID\_(FFFF)/i.match(@equipment['server1'].response)
-      @fn_connect_ok = 99
+      @data1['fn_connect_ok'] = 99
+      @data1['fn_success_count'] += 1
     else
-      @fn_connect_ok = 0
+      @data1['fn_connect_ok'] = 0
+      @data1['fn_fail_count'] += 1
     end
+    
+    @tot_fn_success_rate = "%.2f" % (@data1['fn_success_count'].to_f / (@data1['fn_success_count'] + @data1['fn_fail_count']).to_f * 100) 
   end
-
+  
   
   ############################################################## ck_if_fn_storage_enumerated #####################################################################
   def ck_if_fn_storage_enumerated
@@ -169,22 +181,6 @@ include UsbCommonModule
     end
     
     sleep 1
-  end
-
-  
-  ############################################################## conn_usb_func_device ###########################################################################
-  def conn_usb_func_device
-    puts "\n usb_fn_storage_enum_test::conn_usb_func_device "+ __LINE__.to_s
-    @equipment['usb_swfn'].select_input(@equipment['dut1'].params['otg_port'])
-    sleep @test_params.params_control.wait_after_connect[0].to_i
-  end
-  
-  
-  ############################################################## disconnect_usb_func_device ##############################################################################
-  def disconnect_usb_func_device
-    puts "\n usb_fn_storage_enum_test::disconnect_rndis "+ __LINE__.to_s
-    @equipment['usb_swfn'].select_input(0)   					# 0 means don't select any input port.
-    sleep @test_params.params_control.wait_after_disconnect[0].to_i
   end
 
   
@@ -213,37 +209,24 @@ include UsbCommonModule
   end
 
   
-  ############################################################## calc_current_script_run_time ##################################################################
-  def calc_current_script_run_time
-    puts "\n usb_common_module::calc_current_script_run_time "+ __LINE__.to_s
-    @curr_time_seconds = Time.now.strftime("%s")
-    @curr_secs = (@curr_time_seconds.to_i - @start_time_seconds.to_i)
-    @seconds = @curr_secs % 60
-    @minutes = ((@curr_secs / 60 ) % 60)
-    @hours = (@curr_secs / (60 * 60) % 60)
-    @days = (@curr_secs / (60 * 60 * 24))
-    puts "\n ------------ Seconds: #{@curr_secs} ----- Days: #{@days} ----- Hours: #{@hours} ----- Mins: #{@minutes} ----- Secs: #{@seconds} ------------ "+ __LINE__.to_s 
-  end
-
-  
   #[@fn_success_count.to_i, @fn_fail_count.to_i, @enum_success_count.to_i, @enum_fail_count.to_i}, @enum_time.to_i, @iteri.to_i, low_enum_time.to_i, high_enum_time.to_i
   ############################################################## run_determine_test_outcome ####################################################################
   def run_determine_test_outcome
     puts "\n usb_fn_storage_enum_test::run_determine_test_outcome "+ __LINE__.to_s
     x=0
-    @tot_fn_success_rate = @fn_success_count.to_i / (@fn_success_count.to_i + @fn_fail_count.to_i)*100
-    @fn_enum_perfdata << {'name'=> "Total Fn Storage Connects", 'value'=> "#{@fn_success_count.to_i + @fn_fail_count.to_i}".to_i, 'units' => "Connects"}
-    @fn_enum_perfdata << {'name'=> "Successful Fn Storage Connects", 'value'=> "#{@fn_success_count.to_i}", 'units' => "Connects"}
-    @fn_enum_perfdata << {'name'=> "Failed Fn Storage Connects", 'value'=> "#{@fn_fail_count.to_i}", 'units' => "Connects"}
+    @tot_fn_success_rate = @data1['fn_success_count'].to_i / (@data1['fn_success_count'].to_i + @data1['fn_fail_count'].to_i)*100
+    @fn_enum_perfdata << {'name'=> "Total Fn Storage Connects", 'value'=> "#{@data1['fn_success_count'].to_i + @data1['fn_fail_count'].to_i}".to_i, 'units' => "Connects"}
+    @fn_enum_perfdata << {'name'=> "Successful Fn Storage Connects", 'value'=> "#{@data1['fn_success_count'].to_i}", 'units' => "Connects"}
+    @fn_enum_perfdata << {'name'=> "Failed Fn Storage Connects", 'value'=> "#{@data1['fn_fail_count'].to_i}", 'units' => "Connects"}
     @fn_enum_perfdata << {'name'=> "Fn Storage Connect Success Rate %", 'value'=> "#{@tot_fn_success_rate.to_i}", 'units' => "Percent"}
 
-    @tot_enum_success_rate = @enum_success_count.to_i / (@enum_success_count.to_i + @enum_fail_count.to_i)*100
-    @fn_enum_perfdata << {'name'=> "Total Fn Storage Enumerations", 'value'=> "#{@enum_success_count.to_i + @enum_fail_count.to_i}", 'units' => "Pings"}
-    @fn_enum_perfdata << {'name'=> "Successful Fn Storage Enumerations", 'value'=> "#{@enum_success_count.to_i}", 'units' => "Pings"}
-    @fn_enum_perfdata << {'name'=> "Failed Fn Storage Enumerations", 'value'=> "#{@enum_fail_count.to_i}", 'units' => "Pings"}
+    @tot_enum_success_rate = @data1['enum_success_count'].to_i / (@data1['enum_success_count'].to_i + @data1['enum_fail_count'].to_i)*100
+    @fn_enum_perfdata << {'name'=> "Total Fn Storage Enumerations", 'value'=> "#{@data1['enum_success_count'].to_i + @data1['enum_fail_count'].to_i}", 'units' => "Pings"}
+    @fn_enum_perfdata << {'name'=> "Successful Fn Storage Enumerations", 'value'=> "#{@data1['enum_success_count'].to_i}", 'units' => "Pings"}
+    @fn_enum_perfdata << {'name'=> "Failed Fn Storage Enumerations", 'value'=> "#{@data1['enum_fail_count'].to_i}", 'units' => "Pings"}
     @fn_enum_perfdata << {'name'=> "Fn Storage Enumerations Success Rate %", 'value'=> "#{@tot_enum_success_rate.to_i}", 'units' => "Percent"}
     
-    if @fn_fail_count.to_i == 0 && @enum_fail_count.to_i == 0
+    if @data1['fn_fail_count'].to_i == 0 && @data1['enum_fail_count'].to_i == 0
       return [FrameworkConstants::Result[:pass], "This test pass.", @fn_enum_perfdata]
     puts "\n -------------------- Marker Pass -------------------- "+ __LINE__.to_s
     else
@@ -263,17 +246,19 @@ include UsbCommonModule
                 ["Failed Fn Storage Connects",{:bgcolor => "white", :align => "center"},{:color => "blue", :size => "3"}],
                 ["Fn Storage Connect Success Rate %",{:bgcolor => "white", :align => "center"},{:color => "blue", :size => "3"}]])
     
-    if @fn_fail_count.to_i == 0
+    if @data1['fn_fail_count'].to_i == 0
       status_color = "#00FF00"
     else
       status_color = "#FF0000"
     end
     
-    @tot_fn_success_rate = @fn_success_count.to_i / (@fn_success_count.to_i + @fn_fail_count.to_i)*100
     
-    @results_html_file.add_rows_to_table(res_table,[[["#{@fn_success_count.to_i + @fn_fail_count.to_i}",{:bgcolor => "white"},{:size => "2"}],
-                ["#{@fn_success_count.to_i}",{:bgcolor => "white"},{:size => "2"}],
-                ["#{@fn_fail_count}",{:bgcolor => "white"},{:size => "2"}],
+    
+    @tot_fn_success_rate = @data1['fn_success_count'].to_i / (@data1['fn_success_count'].to_i + @data1['fn_fail_count'].to_i)*100
+    
+    @results_html_file.add_rows_to_table(res_table,[[["#{@data1['fn_success_count'].to_i + @data1['fn_fail_count'].to_i}",{:bgcolor => "white"},{:size => "2"}],
+                ["#{@data1['fn_success_count'].to_i}",{:bgcolor => "white"},{:size => "2"}],
+                ["#{@data1['fn_fail_count']}",{:bgcolor => "white"},{:size => "2"}],
                 ["#{@tot_fn_success_rate}",{:bgcolor => status_color},{:size => "2"}]]])
     
     res_table = @results_html_file.add_table([["USB Fn Enumeration Test Results",{:bgcolor => "#008080", :align => "center", :colspan => "2"}, {:color => "white", :size => "4"}]])
@@ -285,24 +270,24 @@ include UsbCommonModule
                 ["Maximum Enumeration Time",{:bgcolor => "white", :align => "center"},{:color => "blue", :size => "3"}],
                 ["Fn Storage Enumeration Success Rate %",{:bgcolor => "white", :align => "center"},{:color => "blue", :size => "3"}]])
       
-    if @enum_fail_count.to_i == 0
+    if @data1['enum_fail_count'].to_i == 0
       status_color = "#00FF00"
     else
       status_color = "#FF0000"
     end
     
-    @tot_enum_success_rate = @enum_success_count.to_i / (@enum_success_count.to_i + @enum_fail_count.to_i)*100
+    @tot_enum_success_rate = @data1['enum_success_count'].to_i / (@data1['enum_success_count'].to_i + @data1['enum_fail_count'].to_i)*100
     
-    @results_html_file.add_rows_to_table(res_table,[[["#{@enum_success_count.to_i + @enum_fail_count.to_i}",{:bgcolor => "white"},{:size => "2"}],
-                ["#{@enum_success_count}",{:bgcolor => "white"},{:size => "2"}],
-                ["#{@enum_fail_count}",{:bgcolor => "white"},{:size => "2"}],
+    @results_html_file.add_rows_to_table(res_table,[[["#{@data1['enum_success_count'].to_i + @data1['enum_fail_count'].to_i}",{:bgcolor => "white"},{:size => "2"}],
+                ["#{@data1['enum_success_count']}",{:bgcolor => "white"},{:size => "2"}],
+                ["#{@data1['enum_fail_count']}",{:bgcolor => "white"},{:size => "2"}],
                 ["#{@min_enum_spd}",{:bgcolor => "white"},{:size => "2"}],
                 ["#{@avg_enum_spd}",{:bgcolor => "white"},{:size => "2"}],
                 ["#{@max_enum_spd}",{:bgcolor => "white"},{:size => "2"}],
                 ["#{@tot_enum_success_rate}", {:bgcolor => status_color},{:size => "2"}]]])
       
     res_table = @results_html_file.add_table([["NOTES",{:bgcolor => "#008080", :align => "center", :colspan => "2"}, {:color => "white", :size => "4"}]])
-    res_table = @results_html_file.add_table([["01. Each time the USB Fn device connects successfully, #{@pings_per_iteration} pings are sent to the EVM to verify network connectivity has been established.",{:bgcolor => "white", :align => "left", :colspan => "1"}, {:color => "blue", :size => "2"}]])		
+    res_table = @results_html_file.add_table([["01. Each time the USB Fn device connects successfully, #{@pings_per_iteration} pings are sent to the EVM to verify network connectivity has been established.",{:bgcolor => "white", :align => "left", :colspan => "1"}, {:color => "blue", :size => "2"}]])
   end
 
   
