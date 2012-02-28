@@ -4,8 +4,10 @@
 require File.dirname(__FILE__)+'/boot'
 require File.dirname(__FILE__)+'/kernel_module_names'
 require File.dirname(__FILE__)+'/metrics'
+require File.dirname(__FILE__)+'/../lib/plot'
 
 include Metrics
+include TestPlots
 
 # Default Server-Side Test script implementation for LSP releases
 module LspTestScript 
