@@ -85,7 +85,7 @@ class TestImporter
       return []
     end
   
-    if /^\s*#\s*@setup_requires\s+([-\w]+)/ =~ data
+    if /^\s*#\s*@setup_requires\s+([-\w]+)$/ =~ data
       common['setup_requires'] = $1.strip
     end
     testcases = []
