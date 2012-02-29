@@ -32,7 +32,6 @@ include CommonTestMod
  ############################################################## run_call_script #######################################################################
   def run_call_script
     puts "\n ws2perf_eth_test::run_call_script "+ __LINE__.to_s
-    init_common_hash_arrays("@data1")
     init_common_hash_arrays("@copy_times")
     
     # ------------------------ Initialize common network/USB variables/arrays --------------------
