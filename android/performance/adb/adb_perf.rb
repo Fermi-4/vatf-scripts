@@ -11,10 +11,10 @@ def run
   
   send_host_cmd "dd if=/dev/urandom of=./adb_test_file bs=1M count=#{file_size}"
   iterations.times do
-    data = send_adb_cmd "push ./adb_test_file /sdcard/"
+    data = send_adb_cmd "push ./adb_test_file /mnt/sdcard/"
     tx_bw << /^(\d+)\s+KB\/s\s+/m.match(data).captures[0].to_i
     puts data
-    data = send_adb_cmd "pull /sdcard/adb_test_file ./adb_test_file-rx"
+    data = send_adb_cmd "pull /mnt/sdcard/adb_test_file ./adb_test_file-rx"
     rx_bw << /^(\d+)\s+KB\/s\s+/.match(data).captures[0].to_i
     puts data
     i = i+1

@@ -87,7 +87,7 @@ def run_wlan_test(test_seq)
           send_adb_cmd("shell wpa_cli remove_network #{current_id}")
         end
         current_trial = 0
-        while get_wlan_state.downcase != 'stop' && get_wlan_state.strip != '' && current_trial < 5
+        while !get_wlan_state.include?('stop') && !get_wlan_state.include?('') && !get_wlan_state.include?('failed') && current_trial < 5
           sleep 10
           current_trial += 1
         end
@@ -96,13 +96,7 @@ def run_wlan_test(test_seq)
         puts "Enabling network #{@test_params.params_chan.ssid[0]}"
         send_adb_cmd("logcat -c")
         send_adb_cmd("shell wpa_cli enable_network #{net_id}")
-	iface = get_wifi_iface
-        current_trial = 0
-        while !send_adb_cmd("logcat -d -s WifiStateTracker").match(Regexp.new("DhcpHandler:\s+DHCP\s+request\s+succeeded",Regexp::MULTILINE | Regexp::IGNORECASE)) && current_trial < 5
-          sleep 20
-          puts send_adb_cmd("shell getprop dhcp.#{iface}.ipaddress")
-          current_trial += 1
-        end
+	      current_trial = check_wifi_connected
         raise "Unable to enable configured network in dut" if current_trial >= 5
       when 'disable'
         puts "Disabling network #{@test_params.params_chan.ssid[0]}"
@@ -110,15 +104,9 @@ def run_wlan_test(test_seq)
       when 'select'
         puts "Selecting network #{@test_params.params_chan.ssid[0]}"
         net_id = get_net_id(@test_params.params_chan.ssid[0])
-	send_adb_cmd("logcat -c")
+	      send_adb_cmd("logcat -c")
         send_adb_cmd("shell wpa_cli select_network #{net_id}")
-	iface = get_wifi_iface
-        current_trial = 0
-        while !send_adb_cmd("logcat -d -s WifiStateTracker").match(Regexp.new("DhcpHandler:\s+DHCP\s+request\s+succeeded",Regexp::MULTILINE | Regexp::IGNORECASE)) && current_trial < 5
-          sleep 20
-          puts send_adb_cmd("shell getprop dhcp.#{iface}.ipaddress")
-          current_trial += 1
-        end
+	      current_trial = check_wifi_connected
         raise "Unable to select configured networks in dut" if current_trial >= 5 
       when 'scan_results'
         send_adb_cmd("shell wpa_cli scan_results")
@@ -306,7 +294,10 @@ end
 
 def get_wlan_state
   iface = get_wifi_iface
-  send_adb_cmd("shell getprop dhcp.#{iface}.reason").strip
+  result = []
+  result << send_adb_cmd("shell getprop dhcp.#{iface}.reason").strip.downcase
+  result << send_adb_cmd("shell getprop dhcp.#{iface}.result").strip.downcase
+  result
 end
 
 def get_server_lan_ip(dut_ip)
@@ -325,13 +316,25 @@ def mean(a)
  a.sum.to_f / a.size
 end
 
+def check_wifi_connected
+  iface = get_wifi_iface
+  current_trial = 0
+  wifi_connected_comp, wifi_connected_regex = CmdTranslator.get_android_cmd({'cmd'=>'wifi_connected_ack_info', 'version'=>@equipment['dut1'].get_android_version })
+  while !send_adb_cmd("logcat -d -s #{wifi_connected_comp}").match(wifi_connected_regex) && current_trial < 5
+    sleep 20
+    puts send_adb_cmd("shell getprop dhcp.#{iface}.ipaddress")
+    current_trial += 1
+  end
+  current_trial
+end
+
 def enable_wlan
   send_events_for(['__menu__', '__home__'])
   send_adb_cmd("shell am start -a android.settings.WIFI_SETTINGS")
   netcfg = send_adb_cmd("shell netcfg")
   iface = get_wifi_iface.split(':')[0]
   if !netcfg.match(/#{iface}/i) 
-    send_events_for(['__directional_pad_up__', '__directional_pad_center__'])
+    send_events_for(CmdTranslator.get_android_cmd({'cmd'=>'wifi_settings_enable_wifi', 'version'=>@equipment['dut1'].get_android_version }))
     sleep 5
   end
   netcfg_up = send_adb_cmd("shell netcfg")
