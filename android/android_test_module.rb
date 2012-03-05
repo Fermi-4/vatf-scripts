@@ -55,7 +55,8 @@ module AndroidTest
         end
         @equipment['dut1'].boot(boot_params)
     end
-    connect_to_equipment()  
+    connect_to_equipment()
+    send_adb_cmd("shell svc power stayon true") 
     send_events_for('__menu__') 
     setupTest(:@test_libs,:@var_test_libs_root)
   end
