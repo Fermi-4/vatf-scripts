@@ -25,10 +25,10 @@ def run_determine_test_outcome(return_non_zero)
 end
 
 def get_detailed_info
-  summary_data = get_std_output.match(/(^\s+Done executing testcases.\n.+^Total Failures:\s*\d+)/m).captures[0]
+  summary_data = get_std_output.match(/(^\s+Done executing testcases\..+^Total Failures:\s*\d+)/m).captures[0]
   all_lines = ''
   all_lines << summary_data.match(/Total Tests.+/).to_s + ", "
-  all_lines << summary_data.match(/Total Failures.+/).to_s + "\n"
+  all_lines << summary_data.match(/Total Failures.+/).to_s + ". \n"
   summary_data.scan(/^([\w\d_\-]+)\s+FAIL\s+\d+/) {|t| all_lines << "#{t[0]}, "}
   return all_lines
 end
