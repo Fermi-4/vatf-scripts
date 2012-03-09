@@ -1,14 +1,12 @@
-require File.dirname(__FILE__)+'/../../android_test_module'
+require File.dirname(__FILE__)+'/android_test_module'
 
+
+module WlanModule
 include AndroidTest
 
-# Note: If testing 802.1x a radius server must be configured install and configured in the TEE and the access point
-def setup
-  self.as(AndroidTest).setup
-  enable_wlan
-end
-
-def run_wlan_test(test_seq)
+def run_wlan_test(test_seq, server = @equipment['server1'],initial_bw,flag)
+  pass_fail = 0
+  mean_bw  = 0
   send_events_for("__home__")
   net_id = -1
   test_seq.each do |action|
@@ -22,7 +20,7 @@ def run_wlan_test(test_seq)
          # recommended for normal use.
 
          # ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=wheel
-         # network={
+         # network={pass_fail
          #      ssid="example"
          #      scan_ssid=1
          #      key_mgmt=WPA-EAP WPA-PSK IEEE8021X NONE
@@ -56,12 +54,12 @@ def run_wlan_test(test_seq)
         send_adb_cmd("shell wpa_cli set_network #{net_id} wep_key2 #{@test_params.params_chan.wep_key2[0].strip}") if @test_params.params_chan.instance_variable_defined?(:@wep_key2)
         send_adb_cmd("shell wpa_cli set_network #{net_id} wep_key3 #{@test_params.params_chan.wep_key3[0].strip}") if @test_params.params_chan.instance_variable_defined?(:@wep_key3)
         send_adb_cmd("shell wpa_cli set_network #{net_id} wep_tx_keyidx #{@test_params.params_chan.wep_tx_keyidx[0].strip}") if @test_params.params_chan.instance_variable_defined?(:@wep_tx_keyidx)
-
+ 
 # Commented out since 820.1x is not required
 #        if (@test_params.params_chan.sec_type[0].strip.downcase == "802.1x")
-#          send_adb_cmd("shell wpa_cli set_network #{net_id} pairwise CCMP TKIP")
+#          send_adb_cmd("she#{iface}ll wpa_cli set_network #{net_id} pairwise CCMP TKIP")
 #          send_adb_cmd("shell wpa_cli set_network #{net_id} group CCMP TKIP WEP104 WEP40")
-#          send_adb_cmd("shell wpa_cli set_network #{net_id} eap TTLS PEAP TLS MSCHAPV2 GTC")
+#          send_adb_cmd("shewpa_cli set_network 0 scan_ssid 1 2>ll wpa_cli set_network #{net_id} eap TTLS PEAP TLS MSCHAPV2 GTC")
 #          send_adb_cmd("shell wpa_cli set_network #{net_id} identity \"#{@test_params.params_chan.identity[0].strip}\"")
 #          send_adb_cmd("shell wpa_cli set_network #{net_id} anonymous_identity  \"#{@test_params.params_chan.identity[0].strip}\"")
 #          send_adb_cmd("shell wpa_cli set_network #{net_id} password \"#{@test_params.params_chan.password[0].strip}\"")
@@ -94,7 +92,7 @@ def run_wlan_test(test_seq)
         puts "Enabling network #{@test_params.params_chan.ssid[0]}"
         send_adb_cmd("logcat -c")
         send_adb_cmd("shell wpa_cli enable_network #{net_id}")
-	      current_trial = check_wifi_connected
+        current_trial = check_wifi_connected
         raise "Unable to enable configured network in dut" if current_trial >= 5
       when 'disable'
         puts "Disabling network #{@test_params.params_chan.ssid[0]}"
@@ -108,22 +106,23 @@ def run_wlan_test(test_seq)
         raise "Unable to select configured networks in dut" if current_trial >= 5 
       when 'scan_results'
         send_adb_cmd("shell wpa_cli scan_results")
+      when 'scan_results'
+        send_adb_cmd("shell wpa_cli scan_results")
       when 'test'
-        begin
+          begin 
           bw =[]
           time        = @test_params.params_control.time[0]
           port_number = @test_params.params_control.port_number[0].to_i
           ip_ver      = @test_params.params_control.ip_version[0]
-          cpu_load_samples = @test_params.params_control.cpu_load_samples[0].to_i
           # Start netserver on the Host on a tcp port with following conditions:
           #   1) It is equal or higher that port_number specified in the test matrix
           #   2) It is not being used
           while /^tcp.*:#{port_number}/im.match(send_host_cmd "netstat -a | grep #{port_number}") do
             port_number = port_number + 2
           end
-                   puts "STARTING NETSERVER ........"
+          puts "STARTING NETSERVER ........"
           puts "netserver -p #{port_number} -#{ip_ver}"
-          @equipment['server1'].send_sudo_cmd("netserver -p #{port_number} -#{ip_ver}")
+          server.send_sudo_cmd("netserver -p #{port_number} -#{ip_ver}")
           
           dut_ip = get_dut_ip_addr
           raise 'Dut does not have an IP address configured for the wifi interface' if dut_ip == '' || dut_ip == '0.0.0.0'
@@ -131,7 +130,6 @@ def run_wlan_test(test_seq)
           raise 'Server/TEE does not have and ip address configured in the wifi LAN' if server_lan_ip == ''
           
           # Start netperf on the Target
-          cpu_loads = nil
           sys_stats = nil
           0.upto(1) do |iter|
             netperf_thread = Thread.new {
@@ -140,89 +138,49 @@ def run_wlan_test(test_seq)
                 bw << /^\s*\d+\s+\d+\s+\d+\s+[\d\.]+\s+([\d\.]+)/m.match(data).captures[0].to_f if iter == 0
               end
             }
-            
-            if iter > 0 && @test_params.params_control.instance_variable_defined?(:@collect_stats)
-              
-              start_collecting_stats(@test_params.params_control.collect_stats,2){|cmd| send_adb_cmd("shell #{cmd}")}
-              # Start top on target
-              cpu_loads = []
-              if @test_params.params_control.instance_variable_defined?(:@wlan_comp)
-                cpu_info = ''
-                cpu_load_samples = @test_params.params_control.cpu_load_samples[0].to_i
-                delay = [time.to_i/cpu_load_samples,1].max
-                cpu_info = send_adb_cmd("shell top -d #{delay} -n #{cpu_load_samples-1}")
-                cpu_load_items = '(?:' + @test_params.params_control.wlan_comp[0] + ')'
-                @test_params.params_control.wlan_comp[1..-1].each do |curr_comp|
-                  cpu_load_items += '|(?:' + curr_comp + ')'
-                end
-                cpu_loads = cpu_info.scan(/\d+\s+(\d+)(%)\s+\w+\s+\d+\s+\d+K\s+\d+K\s+\w+\s+\w+\s+(#{cpu_load_items})/im)
-              end
-              sys_stats = stop_collecting_stats(@test_params.params_control.collect_stats)
-            end
-            netperf_thread.join
-          end
-          ensure
-            if bw.length == 0 || (@test_params.params_control.instance_variable_defined?(:@wlan_comp) && cpu_loads.length == 0)
-              set_result(FrameworkConstants::Result[:fail], 'Netperf data could not be calculated or cpu load could not be obtained. Verify that you have netperf installed in your host machine by typing: netperf -h. If you get an error, you need to install netperf. On a ubuntu system, you may type: sudo apt-get install netperf. Also verify that top includes the values specified in test parameter wlan_comp if wlan_comp was specified')
-              puts 'Test failed: Netperf data could not be calculated, make sure Host PC has netperf installed and that the DUT is running'
-            else
-              min_bw = @test_params.params_control.min_bw[0].to_f
-              pretty_str, perfdata = get_perf_pretty_str(bw)
-              
-              if @test_params.params_control.instance_variable_defined?(:@wlan_comp)
-                loads_results = Hash.new {|h,k| h[k] = {'name' => k+'_load', 'value' => [], 'units' => ''}}
-                cpu_loads.each do |current_load|
-                  loads_results[current_load[-1]]['value'] << current_load[0]
-                  loads_results[current_load[-1]]['units'] = current_load[1]
-                end
-                perfdata = perfdata + loads_results.values
-              end
-              perfdata.concat(sys_stats)
-              @results_html_file.add_paragraph("")
-              systat_names = []
-              systat_vals = []
-              sys_stats.each do |current_stat|
-                systat_vals << current_stat['value']
-                current_stat_plot = stat_plot(current_stat['value'], current_stat['name']+" plot", "sample", current_stat['units'], current_stat['name'], current_stat['name'], "system_stats")
-                plot_path, plot_url = upload_file(current_stat_plot)
-                systat_names << [current_stat['name']+' ('+current_stat['units']+')',nil,nil,plot_url]
-              end
-              @results_html_file.add_paragraph("")
-              res_table2 = @results_html_file.add_table([["Sytem Stats",{:bgcolor => "336666", :colspan => "#{systat_names.length}"},{:color => "white"}]],{:border => "1",:width=>"20%"})
-              @results_html_file.add_row_to_table(res_table2, systat_names)
-              @results_html_file.add_rows_to_table(res_table2,systat_vals.transpose)
-              if mean(bw) > min_bw 
-                set_result(FrameworkConstants::Result[:pass], pretty_str, perfdata)
-                puts "Test Passed: AVG Throughput=#{mean(bw)} \n #{pretty_str}"
+           netperf_thread.join
+         end
+         ensure
+         if bw.length == 0 
+            set_result(FrameworkConstants::Result[:fail], 'Netperf data could not be calculated  Verify that you have netperf installed in your host machine by typing: netperf -h. If you get an error, you need to install netperf. On a ubuntu system, you may type: sudo apt-get install netperf. Or System resume failed ')
+             puts 'Test failed: Netperf data could not be calculated, make sure Host PC has netperf installed and that the DUT is running'
+         else
+            mean_bw = mean(bw)
+            if flag == true 
+               if mean_bw > initial_bw  
+                puts "Test Passed: On presuspend BW=#{mean_bw} greater than minimum  BW=#{initial_bw} " 
+                pass_fail = 1 
               else
-                set_result(FrameworkConstants::Result[:fail], "Performance is less than #{min_bw} Mb/s. AVG Throughput=#{mean(bw)} \n #{pretty_str}", perfdata)
-                puts "Test Failed: Performance is less than #{min_bw} Mb/s. AVG Throughput=#{mean(bw)} \n #{pretty_str}"
+               puts "Test Fail: On presuspend BW=#{mean_bw} less than minimum  BW=#{initial_bw} " 
               end
-            end
-            # Kill netserver process on the host
-            procs = send_host_cmd "ps ax | grep netserver"
-            procs.scan(/^\s*(\d+)\s+.+?netserver\s+\-p\s+#{port_number}\s+\-#{ip_ver}/i) {|pid|
-              @equipment['server1'].send_sudo_cmd("kill -9 #{pid[0]}") 
-            }
-        end  
-      else
-        raise "Action #{action} is not supported"
-    end
-  end
-   
-ensure
-  
+          else 
+              if mean_bw > (initial_bw - 2)  
+                puts "Test Passed: On resume BW=#{mean_bw} equal presuspend BW=#{initial_bw} " 
+                pass_fail = 1 
+              else
+               puts puts "Test Fail: On resume BW=#{mean_bw} is less than presuspend BW=#{initial_bw} "
+              end
+          end 
+         end
+        # Kill netserver process on the host
+        procs = send_host_cmd "ps ax | grep netserver"
+        procs.scan(/^\s*(\d+)\s+.+?netserver\s+\-p\s+#{port_number}\s+\-#{ip_ver}/i) {|pid|
+        server.send_sudo_cmd("kill -9 #{pid[0]}") 
+        }
+      end 
+   else 
+     raise "Action #{action} is not supported"
+  end 
+ end 
+ ensure
+  return [mean_bw,pass_fail]
 end
 
-def run
-  run_wlan_test(@test_params.params_chan.test_sequence)
-end
 
 def get_available_networks
   results = {}
   net_results = send_adb_cmd("shell wpa_cli scan_results").lines
   net_results.each do |current_line|
-    puts current_line
     if current_line.match(/[\w:]+\s+\d+\s+\d+\s+([\w\-\+\[\]]+)*\s+(.*)/)
       net_info = current_line.split(/\s+/)
       if net_info.length > 4
@@ -293,15 +251,13 @@ end
 
 def get_wlan_state
   iface = get_wifi_iface
-  result = []
-  result << send_adb_cmd("shell getprop dhcp.#{iface}.reason").strip.downcase
-  result << send_adb_cmd("shell getprop dhcp.#{iface}.result").strip.downcase
-  result
+  send_adb_cmd("shell getprop dhcp.#{iface}.reason").strip
 end
 
 def get_server_lan_ip(dut_ip)
 ip_addr = ''
   @equipment['server1'].send_cmd("ifconfig")
+  #          inet addr:158.218.103.11  Bcast:158.218.103.255  Mask:255.255.254.0
    @equipment['server1'].response.lines.each do |current_line|
     if (line_match = current_line.match(/^\s+inet\s+addr:(#{dut_ip.gsub('.','\.').sub(/\d+$/,'\d+')})\s+Bcast:.*/))
       ip_addr = line_match.captures[0]
@@ -326,6 +282,7 @@ def check_wifi_connected
   current_trial
 end
 
+
 def enable_wlan
   send_events_for(['__menu__', '__home__'])
   send_adb_cmd("shell am start -a android.settings.WIFI_SETTINGS")
@@ -338,3 +295,5 @@ def enable_wlan
   netcfg_up = send_adb_cmd("shell netcfg")
   raise "Unable to turn on wifi" if !netcfg_up.match(/#{iface}/i) 
 end
+
+end 

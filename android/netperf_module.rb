@@ -13,7 +13,6 @@ def start_netperf()
           @equipment['server1'].send_sudo_cmd("netserver -p #{port_number} -#{ip_ver}")
           
           dut_ip = get_dut_ip_addr
-          puts "DUT DUT DUT DUT #{dut_ip}"
           raise 'Dut does not have an IP address configured for the wifi interface' if dut_ip == '' || dut_ip == '0.0.0.0'
           server_lan_ip = get_server_lan_ip(dut_ip)
           raise 'Server/TEE does not have and ip address configured in the wifi LAN' if server_lan_ip == ''
@@ -21,6 +20,7 @@ def start_netperf()
           # Start netperf on the Target
    #       netperf_thread = Thread.new {
             @test_params.params_chan.buffer_size.each do |bs|
+              puts "shell netperf -H #{server_lan_ip} -l #{time} -p #{port_number} -- -s #{bs}"
               data = send_adb_cmd "shell netperf -H #{server_lan_ip} -l #{time} -p #{port_number} -- -s #{bs}"
               bw << /^\s*\d+\s+\d+\s+\d+\s+[\d\.]+\s+([\d\.]+)/m.match(data).captures[0].to_f
             end
@@ -86,13 +86,13 @@ end
 def get_server_lan_ip(dut_ip)
   ip_addr = ''
    @equipment['server1'].send_cmd("ifconfig")
-  #          inet addr:158.218.103.11  Bcast:158.218.103.255  Mask:255.255.254.0
    @equipment['server1'].response.lines.each do |current_line|
     if (line_match = current_line.match(/^\s+inet\s+addr:/))
       host_ip = current_line.scan(/inet\s+addr:([0-9]+.[0-9]+.[0-9]+.[0-9]+)/)[0][0]
-      ping_data = `adb shell ping -c3 #{host_ip}`
+      cmd = "shell ping -c3 #{host_ip}"
+      ping_data = send_adb_cmd cmd
       if ping_data.scan(/3\s+packets\s+transmitted,\s+3\s+received/).to_s != nil 
-        return host_ip 
+       return host_ip 
        end
     end
   end
@@ -100,36 +100,35 @@ def get_server_lan_ip(dut_ip)
 end
 
 def play_video 
-fps_values = Array.new()
-endable_fps = "setprop debug.video.showfps 1"
-cmd = "shell " + endable_fps
-#send fps enable command 
-data = send_adb_cmd cmd
-cmd = "push " + @test_params.params_chan.host_file_path[0] + "/" + @test_params.params_chan.file_name[0] +  " " + @test_params.params_chan.target_file_path[0] + "/" + @test_params.params_chan.file_name[0]
-#send file push command 
-data = send_adb_cmd cmd
-if data.scan(/[0-9]+\s*KB\/s\s*\([0-9]+\s*bytes\s*in/)[0] == nil
-  puts "#{data}"
-  exit 
-end
-i = 0
-while  i <  @test_params.params_chan.time[0].to_i
-cmd = "logcat -c "
-response = send_adb_cmd cmd 
-cmd = @test_params.params_chan.intent[0] + " " + @test_params.params_chan.target_file_path[0] + "/" + @test_params.params_chan.file_name[0]
-#send intent command to play the clip
-data = send_adb_cmd  cmd
-sleep 180
-i  =  i  + 180
-
- cmd  = "logcat -d "
- response = send_adb_cmd cmd 
- count = 0
- response .split("\n").each{|line|
- if line.include?("FPS")
-  if count != 0  
-  line = line.scan(/([0-9]*\.[0-9]+)/)
-  fps_values << line[0][0]
+  fps_values = Array.new()
+  endable_fps = "setprop debug.video.showfps 1"
+  cmd = "shell " + endable_fps
+  #send fps enable command 
+  data = send_adb_cmd cmd
+  cmd = "push " + @test_params.params_chan.host_file_path[0] + "/" + @test_params.params_chan.file_name[0] +  " " + @test_params.params_chan.target_file_path[0] + "/" + @test_params.params_chan.file_name[0]
+  #send file push command 
+  data = send_adb_cmd cmd
+  if data.scan(/[0-9]+\s*KB\/s\s*\([0-9]+\s*bytes\s*in/)[0] == nil
+    puts "#{data}"
+    exit 
+  end
+  i = 0
+  while  i <  @test_params.params_chan.time[0].to_i
+  cmd = "logcat -c "
+  response = send_adb_cmd cmd 
+  cmd = "shell am start -W -n #{CmdTranslator.get_android_cmd({'cmd'=>'gallery_movie_cmp', 'version'=>@equipment['dut1'].get_android_version })} -a action.intent.anction.VIEW -d"  + " " + @test_params.params_chan.target_file_path[0] + "/" + @test_params.params_chan.file_name[0]
+  #send intent command to play the clip
+  data = send_adb_cmd  cmd
+  sleep 180
+  i  =  i  + 180
+  cmd  = "logcat -d "
+  response = send_adb_cmd cmd 
+  count = 0
+  response .split("\n").each{|line|
+  if line.include?("FPS")
+   if count != 0  
+    line = line.scan(/([0-9]*\.[0-9]+)/)
+    fps_values << line[0][0]
   end 
  end
  count = count + 1 
@@ -137,71 +136,80 @@ i  =  i  + 180
 
 end 
 
-#puts fps_values
 return  mean(fps_values)
-#return fps_values.min 
 end 
 
 def mean(a)
  array_sum = 0.0
  a.each{|elem|
- array_sum = array_sum + elem.to_f
-}
-mean = array_sum/a.size
-return mean
+  array_sum = array_sum + elem.to_f
+ }
+ mean = array_sum/a.size
+ return mean
 end
 
+def get_down_ifaces_info(equipment)
+  result = []
+  if_info=equipment.send_cmd("netcfg", equipment.prompt).split("\n")
+  result = if_info.to_s.scan(/^eth[0-9]+\s*[a-zA-Z]+\s*[0-9]+.[0-9]+.[0-9]+.[0-9]+/)
+end
 
-def enable_ethernet 
-  @equipment['dut1'].connect({'type'=>'serial'})
-  puts "Connected to Serial ..."
-  sleep 0.5
-  @equipment['dut1'].send_cmd("netcfg eth0 up")
-  puts "Enabled ETH ..."
-  sleep 10
-  @equipment['dut1'].send_cmd("netcfg eth0 dhcp")
-  puts "Enabled DHCP ..."
+def enable_ethernet(equipment)
+  ifaces = get_down_ifaces_info(equipment)
+  puts ifaces
+  cur_ifaces = []
+  ifaces.each do |cur_iface|
+      cur_iface = cur_iface.scan(/(eth[0-9]+)\s*[a-zA-Z]+\s*[0-9]+.[0-9]+.[0-9]+.[0-9]+/)[0][0]
+      cur_ifaces << cur_iface.to_s
+      next if cur_iface.include?("UP")
+      equipment.send_cmd("netcfg #{cur_iface} up", equipment.prompt)
+      sleep 6
+      equipment.send_cmd("netcfg #{cur_iface} dhcp", equipment.prompt)
+      sleep 6
+  end
+  return cur_ifaces
+end
+
+def configure_adb_over_ethernet(equipment=@equipment['dut1'], port)
+  ifaces = enable_ethernet(equipment)
   sleep 2
-  @equipment['dut1'].send_cmd("setprop service.adb.tcp.port 5555")
+  equipment.send_cmd("setprop service.adb.tcp.port #{port}", equipment.prompt)
   puts "Configured PORT ..."
   sleep 2
-  @equipment['dut1'].send_cmd("stop adbd")
+  equipment.send_cmd("stop adbd", equipment.prompt)
   puts "Stop ADBD  ..."
   sleep 2
-  @equipment['dut1'].send_cmd("start adbd")
+  equipment.send_cmd("start adbd", equipment.prompt)
   puts "Start ADBD  ..."
-  #@equipment['dut1'].send_cmd("netcfg")
-  @equipment['dut1'].send_cmd("netcfg", /eth0\s+UP\s*[0-9]+.[0-9]+.[0-9]+.[0-9]+/, 10, false)
-  response = @equipment['dut1'].response
-  puts "response #{response}\n"
-  dut_ip = response.to_s.scan(/eth0\s+UP\s*([0-9.]+)/) 
-  puts "LINE LINE LINE #{dut_ip[0][0]}"
+  puts ifaces[0]
+  equipment.send_cmd("netcfg", /#{ifaces[0]}\s+UP\s*[0-9]+.[0-9]+.[0-9]+.[0-9]+/)
+  response = equipment.response
+  dut_ip = response.to_s.scan(/#{ifaces[0]}\s+UP\s*([0-9.]+)/)
+  dut_ip.each{|ip|
+   next if ip.include?("127")
+    dut_ip = ip
+  }
   raise "NO IP alocated for dut" if dut_ip.size == 0
-  for i in (1..5)
-  ENV['ADBHOST']="#{dut_ip[0][0]}"
-  sleep 1
   count = 0
- # for i in (1..5)
-  count = count + 1 
-  puts "killing adb server"
-  puts system("adb kill-server")
-  #sleep 10
-  puts "Starting adb server"
-  puts system("adb start-server")
-  #sleep 20
-  device = `adb devices`
-  puts device
-  if device.to_s.include?("emulator-5554") 
-  break 
-  end 
+  for i in (1..5)
+   ENV['ADBHOST']="#{dut_ip}"
+   sleep 1
+   puts "killing adb server"
+   equipment.send_host_cmd "adb kill-server"
+   puts "Starting adb server"
+   equipment.send_host_cmd "adb start-server"
+   sleep 10
+   device = `adb devices`
+   puts device
+   count = count + 1 
+   if device.to_s.include?("emulator-5554") 
+    break 
+   end 
  end 
-  if count >= 5 
+ if count >= 5 
   raise "Device is not listed for ADB connection."
-  end 
-  
-
+ end 
 end 
-
 
 
 end 

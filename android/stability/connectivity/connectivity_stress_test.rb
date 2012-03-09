@@ -9,128 +9,124 @@ include NetperfModule
 
 
 def setup
-  #do nothing 
-
- # ethernet is enable by default now.enable only if it is down
- # check why enable_ethernet function needed  
- if !@test_params.params_chan.instance_variable_defined?(:@data_video)
-  #enable_ethernet
- end   
+  @equipment['dut1'].connect({'type' => 'serial'})  
+  send_adb_cmd("shell svc power stayon true") 
+  send_events_for('__menu__') 
 end
 
 def run
- counter = 0  
- if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
- disable_bluetooth() if @test_params.params_chan.wireless[0] == "bluetooth"  or @test_params.params_chan.wireless[0] == "both"
- disable_wifi()  if @test_params.params_chan.wireless[0] == "wifi"  or @test_params.params_chan.wireless[0] == "both"
- clear_configured_access if @test_params.params_chan.wireless[0] == "wifi" or @test_params.params_chan.wireless[0] == "both"
- end 
-#the wireless device is disabled, now let's start the test  for the number of iterations given in the test case. 
- number_of_failures = 0
- @test_params.params_chan.iterations[0].to_i.times do
- puts "Number ot iterations excuted so far #{counter}"
-
- #Added to trackdown the failures, for each iteration.   
- cmd = "logcat  -c"
- #clear old logs 
- send_adb_cmd cmd
-
- each_iteration_failure = Array.new  
- counter = counter + 1 
-
-if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
- send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
- #puts "BEGIN AT HOME SCREEN!"
- sleep 1
- data = send_adb_cmd @test_params.params_chan.cmd[0]
- if !data.to_s.include?("ok")
- puts "command  enable failed!"
-  @results_html_file.add_paragraph("Counter=#{counter}\nCommand enable failed")
- exit
- end
- puts "Launch wireless setup Intent"
- # select wireles interface
-  @test_params.params_chan.select_wireless.each{|wireless|
-  send_events_for(get_events(wireless))
-  send_events_for(get_events('top'))
-  }
-  #puts "wireless  enabled "
-  sleep 20
-  #puts "Doing wireless setting "
-  sleep 1
-  @test_params.params_chan.configure_wireless.each{|config|
-  send_events_for(get_events(config))
-  sleep 2
-  send_events_for("__back__")
-  send_events_for(get_events('top'))
-  }
- 
-  #puts "wireless configured "
+  counter = 0  
+  if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
+    disable_bluetooth() if @test_params.params_chan.wireless[0] == "bluetooth"  or @test_params.params_chan.wireless[0] == "both"
+    disable_wifi()  if @test_params.params_chan.wireless[0] == "wifi"  or @test_params.params_chan.wireless[0] == "both"
+    clear_configured_access if @test_params.params_chan.wireless[0] == "wifi" or @test_params.params_chan.wireless[0] == "both"
+  end 
+  #the wireless device is disabled, now let's start the test  for the number of iterations given in the test case. 
+  number_of_failures = 0
+  @test_params.params_chan.iterations[0].to_i.times do
+  #Added to trackdown the failures, for each iteration.  
+  puts "Iteration Number is: #{counter}" 
+  cmd = "logcat  -c"
+  #clear old logs 
+  send_adb_cmd cmd
+  each_iteration_failure = Array.new  
+  counter = counter + 1 
+  if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
+    send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
+    sleep 1
+    data = send_adb_cmd @test_params.params_chan.cmd[0]
+    if !data.to_s.include?("ok")
+      @results_html_file.add_paragraph("Counter=#{counter}\nCommand enable failed")
+      exit
+    end
+    @test_params.params_chan.select_wireless.each{|wireless|
+   send_events_for(CmdTranslator.get_android_cmd({'cmd'=>wireless, 'version'=>@equipment['dut1'].get_android_version }))
+    if @test_params.params_chan.wireless[0] == "both"
+      send_events_for(get_events('top'))
+    else 
+      send_events_for(get_events('top_gb'))
+    end    
+   }
+  
+   if @test_params.params_chan.wireless[0] == "both"
+     send_events_for(get_events('adjust'))
+   end 
+   sleep 2
+   puts "configuring  wireless interface ............"
+   sleep 10
+   @test_params.params_chan.configure_wireless.each{|config|
+    send_events_for(CmdTranslator.get_android_cmd({'cmd'=>config, 'version'=>@equipment['dut1'].get_android_version }))
+    if @test_params.params_chan.wireless[0] == "both" and config.include?("bluetooth")
+     send_events_for(CmdTranslator.get_android_cmd({'cmd'=>config, 'version'=>@equipment['dut1'].get_android_version }))
+    end  
+    sleep 20
+    if @test_params.params_chan.wireless[0] == "both"
+     send_events_for(get_events('top'))
+    else 
+    send_events_for(get_events('top_gb'))
+    end 
+    sleep 5
+   }
 
 end  # none wireless stress test lan_data_video 
 
-if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
- #check for connectivity 
- each_iteration_failure <<  check_bluetooth_connectivity(counter) if @test_params.params_chan.wireless[0] == "bluetooth"   or @test_params.params_chan.wireless[0] == "both"
- each_iteration_failure <<   check_wifi_connectivity(counter) if @test_params.params_chan.wireless[0] == "wifi"  or @test_params.params_chan.wireless[0] == "both"
-end 
- #number_of_failures = number_of_failures + each_iteration_failure
+  if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
+    each_iteration_failure <<  check_bluetooth_connectivity(counter) if @test_params.params_chan.wireless[0] == "bluetooth"   or    @test_params.params_chan.wireless[0] == "both"
+   each_iteration_failure <<   check_wifi_connectivity(counter) if @test_params.params_chan.wireless[0] == "wifi"  or @test_params.params_chan.wireless[0] == "both"
+  end 
 
- if @test_params.params_chan.instance_variable_defined?(:@data_video) or @test_params.params_chan.instance_variable_defined?(:@lan_data_video)
-  #each_iteration_failure <<  run_stress # this is the final asigment 
-  stress_result = run_stress 
- end
+  if @test_params.params_chan.instance_variable_defined?(:@data_video) or @test_params.params_chan.instance_variable_defined?(:@lan_data_video)
+    stress_result = run_stress 
+  end
  
-if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
+  if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
+   send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
+   sleep 1
+   data = send_adb_cmd @test_params.params_chan.cmd[0]
+   if !data.to_s.include?("ok")
+   puts "command failed!"
+   @results_html_file.add_paragraph("Counter=#{counter}\nCommand Failed")
+   exit
+  end 
+  sleep 1
+  @test_params.params_chan.select_wireless.each{|wireless|
+   send_events_for(CmdTranslator.get_android_cmd({'cmd'=>wireless, 'version'=>@equipment['dut1'].get_android_version }))
+   send_events_for(get_events('top'))
+  }
 
- send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
- sleep 1
- data = send_adb_cmd @test_params.params_chan.cmd[0]
- if !data.to_s.include?("ok")
- puts "command failed!"
-  @results_html_file.add_paragraph("Counter=#{counter}\nCommand Failed")
- exit
- end 
+  each_iteration_failure <<  1 if  check_bluetooth_connectivity(counter) == 0 and ( @test_params.params_chan.wireless[0] == "bluetooth" or @test_params.params_chan.wireless[0] == "both")
+  each_iteration_failure <<   check_wlan_status(counter) if  @test_params.params_chan.wireless[0] == "wifi" or @test_params.params_chan.wireless[0] == "both"
 
- sleep 1
- @test_params.params_chan.select_wireless.each{|wireless|
- send_events_for(get_events(wireless))
-  send_events_for(get_events('top'))
- }
+  if @test_params.params_chan.wireless[0].to_s.strip == "wifi"  or  @test_params.params_chan.wireless[0].to_s.strip == "both" 
+   puts "CLEARING AP ON COUNTER INCREASE"
+   clear_configured_access
+  end 
 
- each_iteration_failure <<   check_bluetooth_disconnectivity(counter) if  @test_params.params_chan.wireless[0] == "bluetooth" or @test_params.params_chan.wireless[0] == "both"
- each_iteration_failure <<   check_wlan_status(counter) if  @test_params.params_chan.wireless[0] == "wifi" or @test_params.params_chan.wireless[0] == "both"
+ end # no wireless lan_data_video
 
-if @test_params.params_chan.wireless[0].to_s.strip == "wifi"  or  @test_params.params_chan.wireless[0].to_s.strip == "both" 
- puts "CLEARING AP ON COUNTER INCREASE"
-clear_configured_access
-end 
-
-end # no wireless lan_data_video
-
-array_sum = 0
-each_iteration_failure.each{|elem|
- array_sum = array_sum +  elem 
+  array_sum = 0
+  each_iteration_failure.each{|elem|
+  array_sum = array_sum +  elem 
 }
 
-# puts  "each_iteration_failure #{each_iteration_failure}"
-if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
-
-if array_sum  > 0
- number_of_failures = number_of_failures + 1 #only one is added to per iteration
- if  @test_params.params_chan.wireless[0] == "bluetooth"  
-  resp = send_adb_cmd "logcat  -d -s  bluedroid"
-  @results_html_file.add_paragraph("Counter=#{counter}\n#{resp}") 
- elsif @test_params.params_chan.wireless[0] == "both"
-  resp = send_adb_cmd "logcat  -d -s  bluedroid"
-  @results_html_file.add_paragraph("Counter=#{counter}\n#{resp}") 
-  resp =send_adb_cmd "logcat  -d -s wpa_supplicant"
-  @results_html_file.add_paragraph("Counter=#{counter}\n#{resp}")
- else 
-  resp =send_adb_cmd "logcat  -d "
-  @results_html_file.add_paragraph("Counter=#{counter}\n#{resp}")
- end
-end 
+ if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
+  if array_sum  > 0
+    number_of_failures = number_of_failures + 1 #only one is added to per iteration
+  if  @test_params.params_chan.wireless[0] == "bluetooth"
+   cmd = cmd = CmdTranslator.get_android_cmd({'cmd'=>'bluetooth_filter', 'version'=>dut1.get_android_version })  
+   resp = send_adb_cmd cmd
+   @results_html_file.add_paragraph("Counter=#{counter}\n#{resp}") 
+  elsif @test_params.params_chan.wireless[0] == "both"
+   cmd = cmd = CmdTranslator.get_android_cmd({'cmd'=>'bluetooth_filter', 'version'=>@equipment['dut1'].get_android_version })  
+   resp = send_adb_cmd cmd
+   @results_html_file.add_paragraph("Counter=#{counter}\n#{resp}") 
+   resp =send_adb_cmd "logcat  -d -s wpa_supplicant"
+   @results_html_file.add_paragraph("Counter=#{counter}\n#{resp}")
+  else 
+   resp =send_adb_cmd "logcat  -d "
+   @results_html_file.add_paragraph("Counter=#{counter}\n#{resp}")
+  end
+ end 
 end # no wireless lan_data_video 
  puts "Number ot failures so far are: #{number_of_failures.to_f}"
 end  # end for loop
@@ -146,64 +142,58 @@ end
 
 def clear_configured_access
   puts "CLEARING ACCESS POINTS FROM DATABASE" 
- send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
+  send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
   data = send_adb_cmd @test_params.params_chan.cmd[0]
- if !data.to_s.include?("ok")
- puts "command failed!"
-  @results_html_file.add_paragraph("Counter=#{counter}\nCommand Failed")
- exit
- end 
- sleep 1
-  # select wireles interface
- send_events_for(get_events(@test_params.params_chan.select_wireless[0]))
- sleep 20
- send_events_for(get_events(@test_params.params_chan.select_setting[0]))
- sleep 20
-
- #send_adb_cmd("shell am start -a android.settings.WIFI_SETTINGS")
- #send_events_for("__enter__")
- sleep 10
- send_events_for(get_events(@test_params.params_chan.two_step_down[0]))
- net_list = send_adb_cmd("shell wpa_cli list_networks")
- nets_info = net_list.lines.to_a
- lists = nets_info.length - 2
- puts nets_info
- sleep 20
- for i in(1..lists)  
- send_events_for(get_events(@test_params.params_chan.clear_access[0]))
- end 
- send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
+  if !data.to_s.include?("ok")
+   puts "command failed!"
+   @results_html_file.add_paragraph("Counter=#{counter}\nCommand Failed")
+   exit
+  end 
+  sleep 1
+  puts "SELECTING WIFI"
+  send_events_for(CmdTranslator.get_android_cmd({'cmd'=>@test_params.params_chan.select_wireless[0], 'version'=>@equipment['dut1'].get_android_version }))
+  sleep 2
+  send_events_for(CmdTranslator.get_android_cmd({'cmd'=>@test_params.params_chan.select_setting[0], 'version'=>@equipment['dut1'].get_android_version }))
+  sleep 2
+  sleep 1
+  send_events_for(get_events(@test_params.params_chan.two_step_down[0]))
+  net_list = send_adb_cmd("shell wpa_cli list_networks")
+  nets_info = net_list.lines.to_a
+  lists = nets_info.length - 2
+  sleep 2
+  for i in(1..lists)  
+   send_events_for(CmdTranslator.get_android_cmd({'cmd'=>@test_params.params_chan.clear_access[0], 'version'=>@equipment['dut1'].get_android_version }))
+  end 
+  send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
   data = send_adb_cmd @test_params.params_chan.cmd[0]
- if !data.to_s.include?("ok")
- puts "command failed!"
-  @results_html_file.add_paragraph("Counter=#{counter}\nCommand Failed")
- exit
+  if !data.to_s.include?("ok")
+   puts "command failed!"
+   @results_html_file.add_paragraph("Counter=#{counter}\nCommand Failed")
+   exit
+  end 
+  sleep 1
+  send_events_for(CmdTranslator.get_android_cmd({'cmd'=>@test_params.params_chan.select_wireless[0], 'version'=>@equipment['dut1'].get_android_version }))
  end 
- sleep 1
-  # select wireles interface
- send_events_for(get_events(@test_params.params_chan.select_wireless[0]))
-
-end 
 
 def check_wifi_connectivity(counter)
  puts "CHECKING WIFI CONNECTIVITY!"
- send_events_for(get_events(@test_params.params_chan.go_top_access[0]))
+ send_events_for(CmdTranslator.get_android_cmd({'cmd'=>@test_params.params_chan.go_top_access[0], 'version'=>@equipment['dut1'].get_android_version }))
  net_list = send_adb_cmd("shell wpa_cli list_networks")
  nets_info = net_list.lines.to_a
  lists = nets_info.length - 2
  for i in(1..lists)
    resp =send_adb_cmd "logcat  -d -s wpa_supplicant"
-   if !resp.include?(@test_params.params_chan.wireless_name[0])
+   if !resp.include?(@test_params.params_chan.wireless_name[0])  and resp.include?("Associated")
    puts "NAMED WIRELESS ACCESS NOT DETECTED, TRY to CONNECT\n"
    @results_html_file.add_paragraph("Counter=#{counter}\nNAMED WIRELESS ACCESS NOT DETECTED, TRY to CONNECT\n #{resp}\n")
-   send_events_for(get_events(@test_params.params_chan.connect_access[0]))
+   send_events_for(CmdTranslator.get_android_cmd({'cmd'=>@test_params.params_chan.connect_access[0], 'version'=>@equipment['dut1'].get_android_version }))
    sleep 10
   end 
   if check_access_status(counter) == 1 and check_ping(counter) == 1
   return 0 
   end 
  end
-@results_html_file.add_paragraph("Counter=#{counter}\nWifi connectivity test failed.")
+ @results_html_file.add_paragraph("Counter=#{counter}\nWifi connectivity test failed.")
  return 1 
 end
 
@@ -215,13 +205,11 @@ def check_ping(counter)
    nets_info = net_list.lines.to_a
   net_id = -1 
     nets_info.each do |current_info|
-      puts "current_info #{current_info}" 
       if current_info.include?("wlan0") and current_info.include?("UP")
        response = send_adb_cmd "shell getprop wifi.interface" 
-       dut_ip = send_adb_cmd "shell getprop dhcp.#{response}.ipaddress"
+       dut_ip = send_adb_cmd "shell getpr/home/gtadwlan001/git_repos/vatf@2_arago-project_org_git_projects_test-automation_execution-engines_vatf-scripts_git_/android/stability/connectivity/connectivity_stress_test.rb:195:inop dhcp.#{response}.ipaddress"
        server_lan_ip = get_server_lan_ip(dut_ip)
        ping_data = send_adb_cmd "shell ping -c3 #{server_lan_ip}"
-       #ping_data = `adb shell ping -c3 192.168.0.8`
        if ping_data.scan(/3\s+packets\s+transmitted,\s+3\s+received/) != nil
         return 1 
        end
@@ -235,7 +223,6 @@ def check_access_status(counter)
  puts "CHECKING ACCESS IS CURRENT!"
   sleep 15
   net_list = send_adb_cmd("shell wpa_cli list_networks")
-  puts net_list
   nets_info = net_list.lines.to_a
   net_id = -1 
     nets_info.each do |current_info|
@@ -249,10 +236,8 @@ end
 
 def check_wlan_status(counter)
  puts "CHECKING WLAN STATUS!"
-   #sleep 20
    sleep 10
-   net_list = send_adb_cmd("shell netcfg")
-   puts net_list
+   net_list = send_adb_cmd("shell inetcfg")
    nets_info = net_list.lines.to_a
   net_id = -1 
   nets_info.each do |current_info|
@@ -267,10 +252,11 @@ end
 
 def check_bluetooth_connectivity(counter)
  puts "CHECKING BLUETOOTH CONNECTIVITY!"
- #sleep 20
  sleep 5
  check_bluetooth = `hcitool scan`
- if !check_bluetooth.to_s.include?(@test_params.params_chan.wireless_name[@test_params.params_chan.wireless_name.length - 1]) 
+ puts check_bluetooth
+ check_bluetooth  = check_bluetooth.downcase
+ if !check_bluetooth.to_s.include?(@equipment['dut1'].params['platform_name']) 
   puts "DEVICE NOT DETECTED:failure"
   @results_html_file.add_paragraph("Counter=#{counter}\n Bluetooth DEVICE  DETECTION:failure\n")
    @results_html_file.add_paragraph("Counter=#{counter}\n#{check_bluetooth}")
@@ -279,48 +265,31 @@ def check_bluetooth_connectivity(counter)
  return 0 
 end
 
-def check_bluetooth_disconnectivity(counter)
- puts "CHECKING BLUETOOTH DISCONNECTIVITY!"
- #sleep 20
- sleep 15
- check_bluetooth = `hcitool scan`
- puts check_bluetooth
- if check_bluetooth.to_s.include?(@test_params.params_chan.wireless_name[@test_params.params_chan.wireless_name.length - 1]) 
-  puts "DEVICE  DETECTED:failure"
-  @results_html_file.add_paragraph("Counter=#{counter}\n WRONG STATE Bluetooth DEVICE  DETECTED:failure\n")
-  @results_html_file.add_paragraph("Counter=#{counter}\n#{check_bluetooth}")
-  return 1  
- end
- return 0  
-end
 
 def disable_bluetooth()
-puts "DISABLING BLUETOOTH!"
- cmd = "logcat  -c"
- #clear old logs 
- send_adb_cmd cmd
- cmd = "logcat  -d -s  bluedroid"
- response = "junk data"
- count = 0
- # in this while loop, make sure to put the bluetooth in the know state 
- while !response.to_s.include?("Stopping")
- count = count + 1
- #Let's put the scree to home  
-  send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
- sleep 1
- data = send_adb_cmd @test_params.params_chan.cmd[0]
- puts data
- if !data.to_s.include?("ok")
- puts "command check failed!"
- @results_html_file.add_paragraph("Counter=#{counter}\ncommand check failed!")
- exit
- end 
- sleep 1
-  send_events_for(get_events(@test_params.params_chan.select_wireless[@test_params.params_chan.wireless_name.length - 1]))
- sleep 20
- response = send_adb_cmd cmd
- 
- puts "response #{response}"
+  puts "DISABLING BLUETOOTH!"
+  puts @equipment['dut1'].params['platform_name']
+  cmd = "logcat  -c"
+  #clear old logs 
+  send_adb_cmd cmd
+  cmd = "logcat -d -s"  + CmdTranslator.get_android_cmd({'cmd'=>'bluetooth_filter', 'version'=>@equipment['dut1'].get_android_version })
+  response = "junk data"
+  count = 0
+  while !response.to_s.include?("13 -> 10")
+    count = count + 1
+    send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
+    sleep 1
+    data = send_adb_cmd @test_params.params_chan.cmd[0]
+    if !data.to_s.include?("ok")
+      puts "command check failed!"
+      exit
+    end 
+    sleep 1
+    select_wireless =  @test_params.params_chan.select_wireless[@test_params.params_chan.wireless_name.length - 1]
+    send_events_for(CmdTranslator.get_android_cmd({'cmd'=>select_wireless, 'version'=>@equipment['dut1'].get_android_version }))
+   sleep 20
+   response = send_adb_cmd cmd
+   puts "response #{response}"
   if (count > 5)
    puts "couldn't set state to disable"
    break
@@ -339,24 +308,22 @@ def disable_wifi()
  response = send_adb_cmd cmd
  # in this while loop, make sure to put the bluetooth in the know state 
  while response.to_s.include?("wlan0")
- count = count + 1
- #Let's put the scree to home  
-  send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
- sleep 1
- data = send_adb_cmd @test_params.params_chan.cmd[0]
- puts data
- if !data.to_s.include?("ok")
- puts "command check failed!"
- exit
- end 
- sleep 1
-  send_events_for(get_events(@test_params.params_chan.select_wireless[0]))
- #sleep 20
- sleep 10 
- response = send_adb_cmd cmd
- sleep 5
+   count = count + 1
+   send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
+   sleep 1
+   data = send_adb_cmd @test_params.params_chan.cmd[0]
+   if !data.to_s.include?("ok")
+     puts "command check failed!"
+     exit
+   end 
+  sleep 1
+  send_events_for(CmdTranslator.get_android_cmd({'cmd'=>@test_params.params_chan.select_wireless[0], 'version'=>@equipment['dut1'].get_android_version }))
+  wlan_test = ""
+  sleep 10 
+  response = send_adb_cmd cmd
+  sleep 5
   if (count > 5)
-   puts "couldn't set state to disable"
+    puts "couldn't set state to disable"
    break
   end 
  end 
@@ -368,9 +335,9 @@ def run_stress
     fps = ""
     wlan_test = ""
     if @test_params.params_chan.instance_variable_defined?(:@lan_data_video)
-    wlan_test   = Thread.new() {bw = start_lan_netperf}
+      wlan_test   = Thread.new() {bw = start_lan_netperf}
     else 
-    wlan_test   = Thread.new() {bw = start_netperf}
+      wlan_test   = Thread.new() {bw = start_netperf}
     end 
     video_test  = Thread.new() {fps = play_video}
     wlan_test.join
