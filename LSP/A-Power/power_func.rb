@@ -27,11 +27,10 @@ def run
   @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name))
   # Set DUT in appropriate state
 
-  
-  	puts "\n\n======= Current CPU Frequency =======\n" 
-  	@equipment['dut1'].send_cmd("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", @equipment['dut1'].prompt, 3)
-   	@equipment['dut1'].send_cmd(" cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies", @equipment['dut1'].prompt, 3)
-  	supported_frequencies = @equipment['dut1'].response.split(/\s+/).select {|v| v =~ /^\d+$/ }
+	puts "\n\n======= Current CPU Frequency =======\n" 
+	@equipment['dut1'].send_cmd("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", @equipment['dut1'].prompt, 3)
+ 	@equipment['dut1'].send_cmd(" cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies", @equipment['dut1'].prompt, 3)
+	supported_frequencies = @equipment['dut1'].response.split(/\s+/).select {|v| v =~ /^\d+$/ }
     
   if @test_params.params_chan.sleep_while_idle[0] != '0' ||  @test_params.params_chan.enable_off_mode[0] != '0'
   	# mount debugfs
@@ -56,31 +55,59 @@ def run
       return
     end
   end
-
-  if @test_params.params_chan.instance_variable_defined?(:@suspend)
-      @equipment['dut1'].send_cmd("echo mem > /sys/power/state", @equipment['dut1'].prompt, 10) if @test_params.params_chan.suspend[0] == '1'
-  end
-  sleep 10
-
-  # Get voltage values for all channels in a hash
-  volt_readings = @equipment['multimeter1'].get_multimeter_output(@test_params.params_control.loop_count[0].to_i, @test_params.params_equip.timeout[0].to_i) 
-  # Calculate power consumption
-  power_readings = calculate_power_consumption(volt_readings, @equipment['multimeter1'])
   
-  # Generate the plot of the power consumption for the given application
-  perf = save_results(power_readings, volt_readings)
-
-  sleep 2
+  volt_readings={}
+  if @test_params.params_chan.instance_variable_defined?(:@suspend) && @test_params.params_chan.suspend[0] == '1'
+    @test_params.params_control.loop_count[0].to_i.times do
+      # Suspend
+      @equipment['dut1'].send_cmd("echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 3)
+      
+      raise "DUT took more than 3 seconds to suspend" if @equipment['dut1'].timeout?
+      #@equipment['dut1'].send_cmd("\x3", @equipment['dut1'].prompt, 1) if @test_params.params_chan.suspend[0] == '1'  # Ctrl^c is required for some reason w/ amsdk fs
+      sleep 2  # wait for suspend to stabilize
+      
+      # Get voltage values for all channels in a hash
+      if (volt_readings.size != 0) 
+        puts "#{volt_readings.size} != 0"
+        new_volt_readings = @equipment['multimeter1'].get_multimeter_output(3, @test_params.params_equip.timeout[0].to_i)
+        volt_readings.each_key {|k|
+          volt_readings[k] << new_volt_readings[k]
+          puts "#{k} have #{volt_readings[k].size} samples"
+        }
+      else
+        puts "#{volt_readings.size} == 0"
+        volt_readings = @equipment['multimeter1'].get_multimeter_output(3, @test_params.params_equip.timeout[0].to_i)
+        puts "volt_readings.size = #{volt_readings.size}"
+      end
+      
+              
+      # Resume from console
+      @equipment['dut1'].send_cmd(" ", @equipment['dut1'].prompt, 3)
+      raise "DUT took more than 3 seconds to resume" if @equipment['dut1'].timeout?
+      #dutThread.join if dutThread
+    end
+    
+    volt_readings.each_key {|k|
+      volt_readings[k].flatten!
+      puts "#{k} have #{volt_readings[k].size} samples"
+    }
+    
+    # Calculate power consumption
+    power_readings = calculate_power_consumption(volt_readings, @equipment['multimeter1'])
+    
+    # Generate the plot of the power consumption for the given application
+    perf = save_results(power_readings, volt_readings)
+  end
+  
   puts "\n\n======= Power Domain states info =======\n"
   @equipment['dut1'].send_cmd(" cat /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state", @equipment['dut1'].prompt, 1)
-	@equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
+  @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
   puts "\n\n======= Current CPU Frequency =======\n"
   @equipment['dut1'].send_cmd(" cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", @equipment['dut1'].prompt, 1)
-	@equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
+  @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
   puts "\n\n======= Power Domain transition stats =======\n"
   @equipment['dut1'].send_cmd(" cat /debug/pm_debug/count", @equipment['dut1'].prompt, 1) 
-	@equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
-  #dutThread.join if dutThread
+  @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
 ensure
   if perf.size > 0
     set_result(FrameworkConstants::Result[:pass], "Power Performance data collected",perf)
