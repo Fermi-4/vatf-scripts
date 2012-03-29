@@ -29,21 +29,23 @@
       sleep(10)
      # connect_to_equipment('dut1')
       @power_handler.switch_on(power_port)
-	  response = connect_to_equipment('dut1',wait_for_string,timeout)
-	  if (response != nil)
-	    result = parse_response(response,wait_for_string)
-		if (result == true)
-		  success_times = success_times+1
-		  boot_arr << 'B'
-		else
-		  fail_times = fail_times+1
-		  boot_arr << 'X'
-		end
-	  else
-		fail_times = fail_times+1
-		boot_failures = boot_failures+1
-		boot_arr << 'X'
-	  end
+      response = connect_to_equipment('dut1',wait_for_string,timeout)
+      if (response != nil)
+        result = parse_response(response,wait_for_string)
+      if (result == true)
+        success_times = success_times+1
+        boot_arr << 'B'
+      else
+        fail_times = fail_times+1
+        boot_arr << 'X'
+      end
+      else
+      fail_times = fail_times+1
+      boot_failures = boot_failures+1
+      boot_arr << 'X'
+      end
+      # To prevent NAND corruption in XDS-560
+      sleep(60)
       }
       if success_times == boot_times
         test_done_result = FrameworkConstants::Result[:pass]

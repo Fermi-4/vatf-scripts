@@ -77,6 +77,8 @@ include Boot
           boot_failures = boot_failures+1
           boot_arr << 'X'
         end
+        # To prevent NAND corruption in XDS-560
+        sleep(60)
       }
       puts "read_fail_caches_on: #{@read_fail_caches_on}"
       puts "read_fail_caches_off1: #{@read_fail_caches_off1}"

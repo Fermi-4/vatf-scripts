@@ -45,6 +45,8 @@
       boot_failures = boot_failures+1
       boot_arr << 'X'
       end
+      # To prevent NAND corruption in XDS-560
+      sleep(60)
       }
       if success_times == boot_times
         test_done_result = FrameworkConstants::Result[:pass]
