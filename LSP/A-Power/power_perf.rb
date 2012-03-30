@@ -58,9 +58,9 @@ def run
   end
 
   if @test_params.params_chan.instance_variable_defined?(:@suspend)
-      @equipment['dut1'].send_cmd("echo mem > /sys/power/state", @equipment['dut1'].prompt, 10) if @test_params.params_chan.suspend[0] == '1'
+      @equipment['dut1'].send_cmd("echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 5) if @test_params.params_chan.suspend[0] == '1'
   end
-  sleep 10
+  sleep 5
 
   # Get voltage values for all channels in a hash
   volt_readings = @equipment['multimeter1'].get_multimeter_output(@test_params.params_control.loop_count[0].to_i, @test_params.params_equip.timeout[0].to_i) 
