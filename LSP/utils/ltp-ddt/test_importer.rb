@@ -89,7 +89,7 @@ class TestImporter
       common['setup_requires'] = $1.strip
     end
     testcases = []
-    data.scan(/^\s*(\w+_\w+_\w+)/) {|tag|
+    data.scan(/^\s*(\w+_\w+_[\w\-]+)/) {|tag|
       next if skip_test?(tag[0])
       begin
         scenario_file = file.match(/.+ltp-ddt\/runtest\/(.+)$/).captures[0]
