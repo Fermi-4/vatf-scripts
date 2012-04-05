@@ -45,7 +45,10 @@ def run
   	@equipment['dut1'].send_cmd("echo 5 > /sys/devices/platform/omap/omap_uart.2/sleep_timeout", @equipment['dut1'].prompt)
   end
  
-  if @test_params.params_chan.cpufreq[0] != '0' && !@test_params.params_chan.instance_variable_defined?(:@suspend)
+  dvfs_governor = @test_params.params_chan.instance_variable_defined?(:@dvfs_governor)? @test_params.params_chan.dvfs_governor[0].strip.downcase : "userspace"
+  @equipment['dut1'].send_cmd("echo #{dvfs_governor} > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor\"", @equipment['dut1'].prompt)
+
+  if @test_params.params_chan.cpufreq[0] != '0' && !@test_params.params_chan.instance_variable_defined?(:@suspend) && dvfs_governor == "userspace"
   	# put device in avaiable OPP states
     raise "This dut does not support #{@test_params.params_chan.dvfs_freq[0]} Hz, supported values are #{supported_frequencies.to_s}" if !supported_frequencies.include?(@test_params.params_chan.dvfs_freq[0])
   	@equipment['dut1'].send_cmd("echo #{@test_params.params_chan.dvfs_freq[0]} > /sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", @equipment['dut1'].prompt)
@@ -55,6 +58,12 @@ def run
       errMessage= "Could not set #{@test_params.params_chan.dvfs_freq[0]} OPP"
       return
     end
+  end
+
+  if @test_params.params_chan.instance_variable_defined?(:@app)
+    cmd = @test_params.params_chan.app[0]
+    cmd_timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_i : 600
+    cmd_thr = start_target_tests(cmd, cmd_timeout)
   end
 
   if @test_params.params_chan.instance_variable_defined?(:@suspend)
@@ -69,6 +78,12 @@ def run
   
   # Generate the plot of the power consumption for the given application
   perf = save_results(power_readings, volt_readings)
+
+  if @test_params.params_chan.instance_variable_defined?(:@app)
+    #cmd_thr.join
+    result = cmd_thr.value
+    set_result(result[0], result[1])
+  end
 
   sleep 2
   puts "\n\n======= Power Domain states info =======\n"
@@ -143,4 +158,36 @@ end
 
 
 
+
+def start_target_tests(cmd, timeout)
+  thr = Thread.new(cmd, timeout) {|c, t|
+    time = Time.now
+    failure = false
+    result = [FrameworkConstants::Result[:pass], "Test completed without errors"]
+
+    target = TelnetEquipmentConnection.new(@equipment['dut1'].target.platform_info)
+    cmd_timeout = t
+    @start_suspend_loop = true
+    while ((Time.now - time) < @test_params.params_control.test_duration[0].to_f && !failure && !@stop_test )
+      begin
+        target.send_cmd(c, @equipment['dut1'].prompt, cmd_timeout)
+      rescue Timeout::Error => e
+        @equipment['dut1'].log_info("Telnet TIMEOUT ERROR. Data START:\n #{target.response}\nTelnet Data END")
+        result = [FrameworkConstants::Result[:fail], "DUT is either not responding or took more that #{cmd_timeout} seconds to run the test"]
+        failure = true
+      end
+      @equipment['dut1'].log_info("Telnet Data START:\n #{target.response}\nTelnet Data END")
+      begin
+        target.send_cmd("echo $?",/^0[\0\n\r]+/m, 10) if !failure
+      rescue Timeout::Error => e
+        @equipment['dut1'].log_info("Telnet TIMEOUT ERROR. Data START:\n #{target.response}\nTelnet Data END")
+        result = [FrameworkConstants::Result[:fail], "Test returned non-zero value"]
+        failure = true
+      end
+    end
+
+    result
+  }
+  return thr
+end
 
