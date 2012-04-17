@@ -109,6 +109,7 @@ def run_wlan_test(test_seq, server = @equipment['server1'],initial_bw,flag)
       when 'scan_results'
         send_adb_cmd("shell wpa_cli scan_results")
       when 'test'
+          puts "RUNNING Wlan test "
           begin 
           bw =[]
           time        = @test_params.params_control.time[0]

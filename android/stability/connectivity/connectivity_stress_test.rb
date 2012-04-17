@@ -1,17 +1,22 @@
 require File.dirname(__FILE__)+'/../../android_test_module' 
 require File.dirname(__FILE__)+'/../../keyevents_module'
 require File.dirname(__FILE__)+'/../../wireless_events_module'
-require File.dirname(__FILE__)+'/../../netperf_module'    
+require File.dirname(__FILE__)+'/../../netperf_module'
+require File.dirname(__FILE__)+'/../../wlan_module'
+    
 include AndroidTest
 include AndroidKeyEvents
 include EventsModule
 include NetperfModule
-
+include WlanModule
 
 def setup
   @equipment['dut1'].connect({'type' => 'serial'})  
   send_adb_cmd("shell svc power stayon true") 
-  send_events_for('__menu__') 
+  send_events_for('__menu__')
+  if @test_params.params_chan.instance_variable_defined?(:@lan_wlan_data_video) 
+   enable_wlan
+  end 
 end
 
 def run
@@ -75,7 +80,7 @@ end  # none wireless stress test lan_data_video
    each_iteration_failure <<   check_wifi_connectivity(counter) if @test_params.params_chan.wireless[0] == "wifi"  or @test_params.params_chan.wireless[0] == "both"
   end 
 
-  if @test_params.params_chan.instance_variable_defined?(:@data_video) or @test_params.params_chan.instance_variable_defined?(:@lan_data_video)
+  if @test_params.params_chan.instance_variable_defined?(:@data_video) or @test_params.params_chan.instance_variable_defined?(:@lan_data_video) or @test_params.params_chan.instance_variable_defined?(:@lan_wlan_data_video)
     stress_result = run_stress 
   end
  
@@ -329,24 +334,32 @@ def disable_wifi()
  end 
 end 
 
-
 def run_stress
-    bw = ""
+    puts "Entering run_stress function"
+    bw_lan = ""
+    bw_wlan = ""
     fps = ""
     wlan_test = ""
+    lan_test = ""
     if @test_params.params_chan.instance_variable_defined?(:@lan_data_video)
-      wlan_test   = Thread.new() {bw = start_lan_netperf}
+      wlan_test   = Thread.new() {bw_lan = start_lan_netperf}
+    elsif @test_params.params_chan.instance_variable_defined?(:@lan_wlan_data_video)
+     puts "running lan and wlan"
+     lan_test   = Thread.new() {bw_lan = start_lan_netperf}
+     wlan_test   = Thread.new() {bw_wlan = run_wlan_test(@test_params.params_chan.test_sequence,server = @equipment['server1'],@test_params.params_control.min_bw[0].to_f,true)[0]}
+  
     else 
-      wlan_test   = Thread.new() {bw = start_netperf}
+      puts "ONLY WLAN"
+      wlan_test   = Thread.new() {bw_wlan = run_wlan_test(@test_params.params_chan.test_sequence,server = @equipment['server1'],@test_params.params_control.min_bw[0].to_f,true)[0]}
     end 
     video_test  = Thread.new() {fps = play_video}
     wlan_test.join
     video_test.join
+    lan_test.join
     min_bw = @test_params.params_chan.min_bw[0].to_f
-    if bw.to_f  > min_bw and fps > 28 
+    
+    if bw_lan.to_f  > min_bw and bw_wlan.to_f  > min_bw and fps > 28 
     return 1 
     end   
     return 0  
 end 
-
-

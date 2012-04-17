@@ -27,7 +27,7 @@ def start_netperf()
     #      }
    #netperf_thread.join
   # I should put the thread in my main file  
-  if bw.length == 0 || (@test_params.params_control.instance_variable_defined?(:@wlan_comp) && cpu_loads.length == 0)
+  if bw.length == 0 
               set_result(FrameworkConstants::Result[:fail], 'Netperf data could not be calculated or cpu load could not be obtained. Verify that you have netperf installed in your host machine by typing: netperf -h. If you get an error, you need to install netperf. On a ubuntu system, you may type: sudo apt-get install netperf. Also verify that top includes the values specified in test parameter wlan_comp if wlan_comp was specified')
               puts 'Test failed: Netperf data could not be calculated, make sure Host PC has netperf installed and that the DUT is running'
 end 
@@ -51,12 +51,11 @@ def start_lan_netperf()
 	  @test_params.params_chan.buffer_size.each do |bs|
 	    data = send_adb_cmd "shell netperf -H #{@equipment['server1'].telnet_ip} -l #{time} -p #{port_number} -- -s #{bs}"
 	    bw << /^\s*\d+\s+\d+\s+\d+\s+[\d\.]+\s+([\d\.]+)/m.match(data).captures[0].to_f
-	    puts data
 	  end
 
    #netperf_thread.join
   # I should put the thread in my main file  
-  if bw.length == 0 || (@test_params.params_control.instance_variable_defined?(:@wlan_comp) && cpu_loads.length == 0)
+  if bw.length == 0 
               set_result(FrameworkConstants::Result[:fail], 'Netperf data could not be calculated or cpu load could not be obtained. Verify that you have netperf installed in your host machine by typing: netperf -h. If you get an error, you need to install netperf. On a ubuntu system, you may type: sudo apt-get install netperf. Also verify that top includes the values specified in test parameter wlan_comp if wlan_comp was specified')
               puts 'Test failed: Netperf data could not be calculated, make sure Host PC has netperf installed and that the DUT is running'
 end 
