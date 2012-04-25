@@ -106,6 +106,32 @@ end
 def suspend_resume_loop
   suspend_time = @test_params.params_chan.suspend_time[0].to_i
   resume_time = @test_params.params_chan.resume_time[0].to_i
+  if(@test_params.params_chan.instance_variable_defined?(:@wakeup_domain) && @test_params.params_chan.wakeup_domain[0].to_s=='rtc')
+    @equipment['dut1'].send_cmd( "[ -e /dev/rtc0 ]; echo $?", /^0[\0\n\r]+/m, 2)
+    raise "DUT does not seem to support rtc wakeup. /dev/rtc0 does not exist"  if @equipment['dut1'].timeout?
+    thr = Thread.new {
+    while (!@stop_test) 
+      #Suspend
+      puts "GOING TO SUSPEND DUT - rtcwake case"
+      @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m mem -s #{suspend_time}", /Freezing remaining freezable tasks/, 60)
+      if @equipment['dut1'].timeout?
+        puts "Timeout while waiting to suspend"
+        raise "DUT took more than 60 seconds to suspend" 
+      end
+      sleep suspend_time  
+      # Verify Resume
+      puts "EXPECTING DUT TO RESUME"
+      @equipment['dut1'].wait_for(/resume of devices complete/,10)
+      @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 5) # just in case resume string was not read, checking to see if prompt is returned indicating that device has resumed
+      if @equipment['dut1'].timeout?
+       puts "Timeout while waiting to resume"
+       raise "DUT took more than #{suspend_time}+10 seconds to resume" 
+      end
+      sleep resume_time 
+    end
+  }
+
+  else
   thr = Thread.new {
     while (!@stop_test) 
       #Suspend
@@ -129,6 +155,7 @@ def suspend_resume_loop
       sleep resume_time 
     end
   }
+  end
   return thr
 end
 
