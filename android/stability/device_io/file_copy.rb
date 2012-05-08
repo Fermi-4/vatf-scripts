@@ -1,8 +1,13 @@
 require File.dirname(__FILE__)+'/../../android_test_module' 
 
 include AndroidTest
+def run 
+  run_device_io_stress
+end 
 
-def run
+def run_device_io_stress
+   puts "ENTIERING run_device_io_stress ...."
+  status = 0;
   #send_adb_cmd("shell am start -W -n #{@test_params.params_chan.file_copy_intent[0]} --activity-single-top")
   devices = {}
   test_result = ''
@@ -29,8 +34,8 @@ def run
     mnt_regex = mnt_string.match(/\/dev\/block\/#{dev_node}\s+.*?\s+(.*?)\s+\w+.+?/i)
     raise device + ' device file system does not match file system required for the test ' if mnt_regex && mnt_regex.captures[0].strip.downcase != fs_type.downcase
     if !mnt_regex
-      send_adb_cmd("shell mkdir /mnt/#{device}_file_cp_tst")
-      mount_resp = send_adb_cmd("shell mount -t  #{fs_type} /dev/block/#{dev_node} /mnt/#{device}_file_cp_tst")
+      send_adb_cmd("shell mkdir -p /mnt/#{device}_file_cp_tst")
+      mount_resp = send_adb_cmd("shell mount -t #{fs_type} /dev/block/#{dev_node} /mnt/#{device}_file_cp_tst")
       raise "Unable to mount " + device + " device for testing\n" + mount_resp if mount_resp.match(/^\w+/)
     end
   end
@@ -43,6 +48,7 @@ def run
   old_iter_dev = ['start']
   dev_per_cycle = @test_params.params_chan.dev_per_cycle[0].to_f 
   begin 
+    puts "DURATION COUNT DURATION COUNT DURATION COUNT"
     send_events_for('__home__')
     default_iter_dev = devices.keys
     iter_dev = []
@@ -91,10 +97,13 @@ def run
   end while cycle_duration > (Time.now - start_time) && test_result == ''
   ensure
     if test_result == ''
+      status = 1
       set_result(FrameworkConstants::Result[:pass], "File copied successfully")
     else
+      status 0
       set_result(FrameworkConstants::Result[:fail], "Problem while copying file:\n"+test_result)
     end
+    return status
 end
 
 def get_md5sum_for(file)

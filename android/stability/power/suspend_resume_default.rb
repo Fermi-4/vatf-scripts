@@ -10,6 +10,7 @@ require File.dirname(__FILE__)+'/../../storage_module'
 require File.dirname(__FILE__)+'/../../accelometer_module'
 require File.dirname(__FILE__)+'/../../netperf_module' 
 require File.dirname(__FILE__)+'/../../wireless_events_module'
+require File.dirname(__FILE__)+'/../device_io/file_copy'
 
 include AndroidTest
 include AndroidKeyEvents
@@ -33,7 +34,9 @@ end
 
 def run
   perf = []
+  file_integrity_status = 0
   initial_value = 0
+  file_integrity_test = ""
   number_of_failures = 0
   if @equipment['dut1'].params['platform_name'] == "am335xevm" 
    @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt) 
@@ -69,9 +72,17 @@ def run
    puts "Alarm Setting "
    set_alarm(@equipment['dut1'])
   end 
-  #if the test case doesn't need on suspend test, donnot override this function. 
-  status = on_suspend_test()
-  #wait a litlebit to collect some fps data
+  #if the test case doesn't need on suspend test, donnot override this function.
+  if @test_params.params_chan.instance_variable_defined?(:@file_integrity) 
+   #status = on_suspend_test()
+   file_integrity_test   = Thread.new() {file_integrity_status = on_suspend_test}
+   sleep 10
+  else 
+   
+    status = on_suspend_test()
+  end 
+  puts "FILE COPY IS RUNNING."
+  #wait a litle bit to collect some fps data
   sleep 5
   #if the test case doesn't need to collect stat before suspend, donnot override this function.  
   initial_stat_value =  before_resume_test()
@@ -80,27 +91,45 @@ def run
    send_adb_cmd("shell svc power stayon false")
   end 
 
+  #this is only for wakeup time add temporarly
+  if !@test_params.params_chan.instance_variable_defined?(:@wakeup)
+  cmd  = "logcat -c"
+  response = send_adb_cmd cmd 
+  end 
+
   #Incase the application aquires wake lock force the system to suspend.
   send_events_for(get_events_sequence(@test_params.params_chan.force_to_suspend[0]))
   puts "Waiting for suspending message."
   sleep 5
   puts @equipment['dut1'].send_cmd("netcfg", /Suspending\s+console/, 100, false)
+  puts "SYSTEM SUSPENDING RIGHT NOW"
   sleep 5
+  time1 = 0
   # While the platfrom is down,  do nothing, used to collect suspend power  
   if @equipment['dut1'].params['platform_name'] == "am335xevm" 
    puts "Send Wakeup console command afer 60 seconds"
-   sleep 60
-   @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt) 
-   sleep 1
+   if !@test_params.params_chan.instance_variable_defined?(:@file_integrity) 
+    #sleep 60
+    sleep 5
+   end 
+   #time1 = Time.now
+   time1 = Time.now.to_f
+   #sleep 1
    send_adb_cmd("shell svc power stayon true")
-   @equipment['dut1'].send_cmd("", /request_suspend_state:\s+wakeup\s+\(3->0\)/, 100, false)
+   puts "WAITING FOR request_suspend_state: wakeup (3->0) massage"
+   
+   @equipment['dut1'].send_cmd("", /request_suspend_state:\s+wakeup\s+\(3->0\)/, 100, false) if !@test_params.params_chan.instance_variable_defined?(:@wakeup)
+   puts "shell svc power stayon true"
   else 
-   @equipment['dut1'].send_cmd("", /suspend\s+of\s+devices\s+complete/, 100, false)
+   @equipment['dut1'].send_cmd("", /suspend\s+of\s+devices\s+complete/, 100, false) if !@test_params.params_chan.instance_variable_defined?(:@wakeup)
   end 
-  
+  puts "SYSTEM IS COMMANDED TO RESUME!!!!!!!"
   if @equipment['dut1'].params['platform_name'] != "am335xevm" 
     #On resume the alarm become foreground, dismiss it so that the test application become foreground.
-    send_events_for(get_events_sequence(@test_params.params_chan.alarm_dismiss[0]))
+    send_events_for( '__menu__')
+    if !@test_params.params_chan.instance_variable_defined?(:@file_integrity) 
+      send_events_for(get_events_sequence(@test_params.params_chan.alarm_dismiss[0]))
+    end
     #Prevent from resuspending again, becsaus we need to do some test on this state. 
     send_adb_cmd("shell svc power stayon true")
     sleep 30 
@@ -109,7 +138,14 @@ def run
   puts "Starting resume test ......"
   send_events_for('__menu__') 
   test_status = on_resume_test(initial_bw_value,initial_stat_value)
-  if test_status == 1
+  puts "******* time wakeup command send is: #{time1}"
+  #time result must be post to wakeul test case.
+  time = 0
+  if !@test_params.params_chan.instance_variable_defined?(:@file_integrity)  
+   time = test_status - time1 
+  end 
+  puts "******* wakeup time is #{time}"
+  if test_status == 1 or file_integrity_status == 1
    puts "On RESUME  TEST PASS!"
   else 
    puts "On RESUME  TEST FAILE!"
@@ -121,13 +157,18 @@ def run
  
  puts "Total number of failures at the end #{number_of_failures.to_f}"
  success_rate = ((@test_params.params_chan.iterations[0].to_f - number_of_failures.to_f)/ @test_params.params_chan.iterations[0].to_f)*100.0
+ #temp for file integrity 
+ file_integrity_test.join
  puts "PASS #{success_rate}"
- if (success_rate >= @test_params.params_chan.pass_rate[0].to_f)  
-    set_result(FrameworkConstants::Result[:pass], "Suspend-Resume Stress Test=#{success_rate}")
- else
-    set_result(FrameworkConstants::Result[:fail], "Suspend-Resume Stress Test=#{success_rate}")
- end
-
+if !@test_params.params_chan.instance_variable_defined?(:@wakeup)
+   if (success_rate >= @test_params.params_chan.pass_rate[0].to_f)  
+     set_result(FrameworkConstants::Result[:pass], "Suspend-Resume Stress Test=#{success_rate}")
+   else
+     set_result(FrameworkConstants::Result[:fail], "Suspend-Resume Stress Test=#{success_rate}")
+   end
+ else 
+   set_result(FrameworkConstants::Result[:pass], "System wake up time =#{time}")
+ end  
   dutThread.join if dutThread
   ensure
 

@@ -150,12 +150,15 @@ end
 def get_down_ifaces_info(equipment)
   result = []
   if_info=equipment.send_cmd("netcfg", equipment.prompt).split("\n")
-  result = if_info.to_s.scan(/^eth[0-9]+\s*[a-zA-Z]+\s*[0-9]+.[0-9]+.[0-9]+.[0-9]+/)
+  if_info.each{|st|
+  next if !st.include?("eth")
+  result << st  
+  } 
+  return result 
 end
 
 def enable_ethernet(equipment)
   ifaces = get_down_ifaces_info(equipment)
-  puts ifaces
   cur_ifaces = []
   ifaces.each do |cur_iface|
       cur_iface = cur_iface.scan(/(eth[0-9]+)\s*[a-zA-Z]+\s*[0-9]+.[0-9]+.[0-9]+.[0-9]+/)[0][0]
@@ -180,18 +183,17 @@ def configure_adb_over_ethernet(equipment=@equipment['dut1'], port)
   sleep 2
   equipment.send_cmd("start adbd", equipment.prompt)
   puts "Start ADBD  ..."
-  puts ifaces[0]
-  equipment.send_cmd("netcfg", /#{ifaces[0]}\s+UP\s*[0-9]+.[0-9]+.[0-9]+.[0-9]+/)
+  equipment.send_cmd("netcfg", /#{ifaces[0]}\s+UP\s*[0-9]+.[0-9]+.[0-9]+.[0-9]+\/23/)
   response = equipment.response
-  dut_ip = response.to_s.scan(/#{ifaces[0]}\s+UP\s*([0-9.]+)/)
+  dut_ip = response.to_s.scan(/#{ifaces[0]}\s+UP\s*([0-9]+.[0-9]+.[0-9]+.[0-9]+)/)
   dut_ip.each{|ip|
    next if ip.include?("127")
     dut_ip = ip
   }
   raise "NO IP alocated for dut" if dut_ip.size == 0
   count = 0
-  for i in (1..5)
-   ENV['ADBHOST']="#{dut_ip}"
+  for i in (1..5) 
+   ENV['ADBHOST']="#{dut_ip[0]}"
    sleep 1
    puts "killing adb server"
    equipment.send_host_cmd "adb kill-server"
