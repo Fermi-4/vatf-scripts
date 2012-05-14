@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test_session>
+   <testplan_id/>
+   <build>
+      <id><![CDATA[95601]]></id>
+      <name><![CDATA[sandbox-tee-86-mmcboot]]></name>
+      <notes><![CDATA[<p>assign_to_tees=vatf@1 on 10.218.103.86;kernel=mmc;platform=am335x-evm</p>]]></notes>
+   </build>
+   <testcase>
+      <id><![CDATA[1999841]]></id>
+      <extid>2012</extid>
+      <params_chan><![CDATA[
+]]></params_chan>
+      <params_equip><![CDATA[
+]]></params_equip>
+      <tee><![CDATA[vatf
+]]></tee>
+      <scripts><![CDATA[LSP/TARGET/dev_test2.rb
+]]></scripts>
+      <hw_assets_config><![CDATA[dut1=["<platform>",linux];server1=["linux_server"]
+]]></hw_assets_config>
+      <params_control><![CDATA[script=cd /usr/share/matrix-gui-2.0/apps;runWhetstone,timeout=60,perf_metrics_file=LSP/arm-benchmarks/whetstone_parser.rb
+]]></params_control>
+      <auto>1</auto>
+      <platform>am335x-evm</platform>
+      <target>sandbox-tee-86-mmcboot</target>
+      <description><![CDATA[<p>Run Whetstone CPU Benchmark test and save performance data.</p>]]></description>
+   </testcase>
+   <command>ruby1.9.1 -C {vatf@1/staf/tee/test_framework_root} atf_run.rb -v {vatf@1/auto/tee/test_scripts_root} -r {vatf@1/STAF/TEE/inFile} -w vatf@1 -f /usr/local/vatf/vatf@1_automation_results.xml -o -x 1
+	</command>
+</test_session>
