@@ -5,4 +5,5 @@
 $FILTER_TAGS = [
 /ETH_[SML]_PERF_IPERF/,
 /WDT_/,
+/GPIO_/,
 ]
