@@ -283,8 +283,10 @@ end
     @eth_ip_addr = get_ip_addr()
     if @eth_ip_addr
       @equipment['dut1'].target.platform_info.telnet_ip = @eth_ip_addr
+      old_telnet_port = @equipment['dut1'].target.platform_info.telnet_port
       @equipment['dut1'].target.platform_info.telnet_port = 23
       @equipment['dut1'].connect({'type'=>'telnet'})
+      @equipment['dut1'].target.platform_info.telnet_port = old_telnet_port
       @equipment['dut1'].target.telnet.send_cmd("pwd", @equipment['dut1'].prompt , 3)    
       start_collecting_stats(@collect_stats, @collect_stats_interval) do |cmd| 
         if cmd
