@@ -6,10 +6,11 @@ def setup
 end
 
 def connect_to_extra_equipment
-  if @equipment['usb_sw'].respond_to?(:serial_port) && @equipment['usb_sw'].serial_port != nil
-    @equipment['usb_sw'].connect({'type'=>'serial'})
-  elsif @equipment['usb_sw'].respond_to?(:serial_server_port) && @equipment['usb_sw'].serial_server_port != nil
-    @equipment['usb_sw'].connect({'type'=>'serial'})
+  usb_switch = @usb_switch_handler.usb_switch_controller[@equipment['dut1'].params['usb_port'].keys[0]]
+  if usb_switch.respond_to?(:serial_port) && usb_switch.serial_port != nil
+    usb_switch.connect({'type'=>'serial'})
+  elsif usb_switch.respond_to?(:serial_server_port) && usb_switch.serial_server_port != nil
+    usb_switch.connect({'type'=>'serial'})
   else
     raise "You need direct or indirect (using Telnet/Serial Switch) serial port connectivity to the USB switch, Please check your bench file"
   end
@@ -29,7 +30,7 @@ def run
   raise "Could not change directory to ltp-ddt root location" if @equipment['dut1'].timeout?
   cmd_timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_i : 600
   
-  start_usb_transitions(@equipment['dut1'].params['usb_port'], @test_params.params_control.cwait[0].to_i, @test_params.params_control.dwait[0].to_i)
+  start_usb_transitions(@test_params.params_control.cwait[0].to_i, @test_params.params_control.dwait[0].to_i)
   @stop_test = false
   while ((Time.now - time) < @test_params.params_control.test_duration[0].to_f && !@stop_test )
     @equipment['dut1'].target.telnet.send_cmd("date", @equipment['dut1'].prompt, 5)
@@ -49,19 +50,19 @@ def run
   set_result(FrameworkConstants::Result[:pass], "No USB errors detected") if !@stop_test
 end
 
-def start_usb_transitions(usb_port, connect_wait, disconnect_wait)
+def start_usb_transitions(connect_wait, disconnect_wait)
   @usb_sw_thread = Thread.new() {
     i=0
     Thread.pass
     Thread.current["stop"]=false
     # Disconnect usb devices
-    @equipment['usb_sw'].select_input(0)   # 0 means don't select any input port
+    @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
     sleep disconnect_wait
     session_data_pointer = @equipment['dut1'].update_response.length
    
     while(!Thread.current["stop"])
       # Connect
-      @equipment['usb_sw'].select_input(usb_port)
+      @usb_switch_handler.select_input(@equipment['dut1'].params['usb_port'])
       sleep connect_wait
       ses_data = @equipment['dut1'].update_response
       enum_data = ses_data[session_data_pointer==0 ? 0: session_data_pointer-1, ses_data.length]
@@ -76,7 +77,7 @@ def start_usb_transitions(usb_port, connect_wait, disconnect_wait)
         return
       end
       # Disconnect
-      @equipment['usb_sw'].select_input(0)   # 0 means don't select any input port
+      @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
       sleep disconnect_wait
       session_data_pointer = @equipment['dut1'].update_response.length
       i += 1

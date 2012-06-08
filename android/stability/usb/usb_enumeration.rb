@@ -4,10 +4,11 @@ include AndroidTest
 
 def connect_to_equipment
   super()
-  if @equipment['usb_sw'].respond_to?(:serial_port) && @equipment['usb_sw'].serial_port != nil
-    @equipment['usb_sw'].connect({'type'=>'serial'})
-  elsif @equipment['usb_sw'].respond_to?(:serial_server_port) && @equipment['usb_sw'].serial_server_port != nil
-    @equipment['usb_sw'].connect({'type'=>'serial'})
+  usb_switch = @usb_switch_handler.usb_switch_controller[@equipment['dut1'].params['usb_port'].keys[0]]
+  if usb_switch.respond_to?(:serial_port) && usb_switch.serial_port != nil
+    usb_switch.connect({'type'=>'serial'})
+  elsif usb_switch.respond_to?(:serial_server_port) && usb_switch.serial_server_port != nil
+    usb_switch.connect({'type'=>'serial'})
   else
     raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the USB switch. Please check your bench file" 
   end
@@ -19,7 +20,7 @@ def run
   session_data_pointer=0
   
   # Start from disconnect state
-  @equipment['usb_sw'].select_input(0)   # 0 means don't select any input port.
+  @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
   
   # Loop for Connect/Disconnect
   @test_params.params_chan.iterations[0].to_i.times do
@@ -28,7 +29,7 @@ def run
     session_data_pointer = @equipment['dut1'].update_response.length
     
     # Connect
-    @equipment['usb_sw'].select_input(@equipment['dut1'].params['usb_port'])
+    @usb_switch_handler.select_input(@equipment['dut1'].params['usb_port'])
     sleep @test_params.params_chan.wait_after_connect[0].to_i
     
     # Check device is enumerated
@@ -38,7 +39,7 @@ def run
     successful_enums = successful_enums + 1 if verify_devices_detected(enum_data) == 1 
     
     # Disconnect
-    @equipment['usb_sw'].select_input(0)   # 0 means don't select any input port.
+    @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
     i = i+1
   end
   
