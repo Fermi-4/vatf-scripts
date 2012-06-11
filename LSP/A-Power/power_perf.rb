@@ -37,8 +37,10 @@ def run
   	# mount debugfs
   	@equipment['dut1'].send_cmd("mkdir /debug", @equipment['dut1'].prompt)
   	@equipment['dut1'].send_cmd("mount -t debugfs debugfs /debug", @equipment['dut1'].prompt)
-  	
-    @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.sleep_while_idle[0]} > /debug/pm_debug/sleep_while_idle", @equipment['dut1'].prompt)
+#smart reflex ENABLE COMMANDS
+        @equipment['dut1'].send_cmd("echo 1 > /debug/voltage/vdd_mpu/smartreflex/autocomp", @equipment['dut1'].prompt)
+        @equipment['dut1'].send_cmd("echo 1 > /debug/voltage/vdd_core/smartreflex/autocomp", @equipment['dut1'].prompt)
+        @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.sleep_while_idle[0]} > /debug/pm_debug/sleep_while_idle", @equipment['dut1'].prompt)
   	@equipment['dut1'].send_cmd("echo #{@test_params.params_chan.enable_off_mode[0]} > /debug/pm_debug/enable_off_mode", @equipment['dut1'].prompt) 
   	@equipment['dut1'].send_cmd("echo 5 > /sys/devices/platform/omap/omap_uart.0/sleep_timeout", @equipment['dut1'].prompt)
   	@equipment['dut1'].send_cmd("echo 5 > /sys/devices/platform/omap/omap_uart.1/sleep_timeout", @equipment['dut1'].prompt)
@@ -46,7 +48,7 @@ def run
   end
  
   dvfs_governor = @test_params.params_chan.instance_variable_defined?(:@dvfs_governor)? @test_params.params_chan.dvfs_governor[0].strip.downcase : "userspace"
-  @equipment['dut1'].send_cmd("echo #{dvfs_governor} > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor\"", @equipment['dut1'].prompt)
+  @equipment['dut1'].send_cmd("echo #{dvfs_governor} > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", @equipment['dut1'].prompt)
 
   if @test_params.params_chan.cpufreq[0] != '0' && !@test_params.params_chan.instance_variable_defined?(:@suspend) && dvfs_governor == "userspace"
   	# put device in avaiable OPP states
