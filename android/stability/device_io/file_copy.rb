@@ -48,7 +48,6 @@ def run_device_io_stress
   old_iter_dev = ['start']
   dev_per_cycle = @test_params.params_chan.dev_per_cycle[0].to_f 
   begin 
-    puts "DURATION COUNT DURATION COUNT DURATION COUNT"
     send_events_for('__home__')
     default_iter_dev = devices.keys
     iter_dev = []
@@ -100,7 +99,7 @@ def run_device_io_stress
       status = 1
       set_result(FrameworkConstants::Result[:pass], "File copied successfully")
     else
-      status 0
+      status = 0
       set_result(FrameworkConstants::Result[:fail], "Problem while copying file:\n"+test_result)
     end
     return status
