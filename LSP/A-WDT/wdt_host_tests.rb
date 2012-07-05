@@ -27,7 +27,7 @@ def watchdog_timer_test
 	@equipment['dut1'].send_cmd("#{@equipment['dut1'].login}", @equipment['dut1'].prompt,1)
 	@equipment['dut1'].send_cmd('uname -a', @equipment['dut1'].prompt,1)
 	response = @equipment['dut1'].response
-	if response.include?("#{@test_params.platform}")
+	if response.include?("Linux")
 		puts "Test PASS"
 		set_result(FrameworkConstants::Result[:pass], "Test Passed.")
 	else
