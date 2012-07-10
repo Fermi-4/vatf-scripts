@@ -12,7 +12,7 @@ def get_metrics
   perf_metrics = [
    {'name' => 'udp_datagrams',
     'regex' => '^\[[\s\d]+\]\s+Sent\s+(\d+)\s+datagrams',
-    'units' => 'num_datagrams',
+    'units' => 'datagrams',
    },
    {'name' => 'udp_bandwidth',
     'regex' => '^\[[\s\d]+\]\sServer\s+Report:.+?sec[\s\d\.]+[KMG]Bytes\s+([\d\.]+)\s+([\w\/]+)',
