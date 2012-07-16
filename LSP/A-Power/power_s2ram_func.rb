@@ -11,6 +11,7 @@ def run
   run_transfer_script
   @stop_test = false
   @start_suspend_loop = false
+  @dut_is_sleeping = false
   query_pm_stats
   test_thr = start_target_tests
   while !@start_suspend_loop
@@ -77,22 +78,27 @@ def start_target_tests
     cmd_timeout *= ((suspend_time + resume_time + 15) / resume_time)       #15 is approx max observed wait time to suspend
     @start_suspend_loop = true
     
-    #while ((elapsed = Time.now - time) < @test_params.params_control.test_duration[0].to_f && !failure && !@stop_test )
-    while ((elapsed = Time.now - time) < 10800 && !failure && !@stop_test )
+    while ((elapsed = Time.now - time) < @test_params.params_control.test_duration[0].to_f && !failure && !@stop_test )
       begin
-        #puts "At least #{@test_params.params_control.test_duration[0].to_f - elapsed} seconds to go"
-        puts "At least #{10800 - elapsed} seconds to go"
+        puts "At least #{@test_params.params_control.test_duration[0].to_f - elapsed} seconds to go"
+        # Don't try to start test while DUT is sleeping
+        while @dut_is_sleeping 
+          sleep 0.1
+        end
+        @equipment['dut1'].log_info("STARTING TEST with cmd: ./test.sh 2> stderr.log > stdout.log 3> result.log")
         @equipment['dut1'].target.telnet.send_cmd("./test.sh 2> stderr.log > stdout.log 3> result.log",@equipment['dut1'].prompt, cmd_timeout)
       rescue Timeout::Error => e
         @equipment['dut1'].log_info("Telnet TIMEOUT ERROR. Data START:\n #{@equipment['dut1'].target.telnet.response}\nTelnet Data END")
         result = [FrameworkConstants::Result[:fail], "DUT is either not responding or took more that #{cmd_timeout} seconds to run the test"]
         failure = true
       end
-      @equipment['dut1'].log_info("Telnet Data START:\n #{@equipment['dut1'].target.telnet.response}\nTelnet Data END")
+      @equipment['dut1'].log_info("Telnet Session Data START:\n #{@equipment['dut1'].target.telnet.response}\nTelnet Data END")
       begin
+        @equipment['dut1'].log_info("Telnet Session get return value")
         @equipment['dut1'].target.telnet.send_cmd("echo $?",/^0[\0\n\r]+/m, suspend_time + 10) if !failure  
+        @equipment['dut1'].log_info("Telnet Session Return Value:\n #{@equipment['dut1'].target.telnet.response}\nTelnet Return value END")
       rescue Timeout::Error => e
-        @equipment['dut1'].log_info("Telnet TIMEOUT ERROR. Data START:\n #{@equipment['dut1'].target.telnet.response}\nTelnet Data END")
+        @equipment['dut1'].log_info("Telnet Session TIMEOUT ERROR. Data START:\n #{@equipment['dut1'].target.telnet.response}\nTelnet Data END")
         result = [FrameworkConstants::Result[:fail], "Test returned non-zero value"]
         failure = true
       end
@@ -112,6 +118,7 @@ def suspend_resume_loop
     thr = Thread.new {
     while (!@stop_test) 
       #Suspend
+      @dut_is_sleeping = true
       puts "GOING TO SUSPEND DUT - rtcwake case"
       @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m mem -s #{suspend_time}", /Freezing remaining freezable tasks/, 60)
       if @equipment['dut1'].timeout?
@@ -127,6 +134,7 @@ def suspend_resume_loop
        puts "Timeout while waiting to resume"
        raise "DUT took more than #{suspend_time}+10 seconds to resume" 
       end
+      @dut_is_sleeping = false
       sleep resume_time 
     end
   }
@@ -135,6 +143,7 @@ def suspend_resume_loop
   thr = Thread.new {
     while (!@stop_test) 
       #Suspend
+      @dut_is_sleeping = true
       puts "GOING TO SUSPEND DUT"
       @equipment['dut1'].send_cmd("sync; echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 60)
       if @equipment['dut1'].timeout?
@@ -152,6 +161,7 @@ def suspend_resume_loop
         puts "Timeout while waiting to resume"
         raise "DUT took more than 15 seconds to resume" 
       end
+      @dut_is_sleeping = false
       sleep resume_time 
     end
   }
