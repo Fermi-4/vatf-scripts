@@ -5,6 +5,7 @@ def setup
 end
 
 def run
+  @mutex = Mutex.new
   get_ip
   configure_dut
   run_generate_script
@@ -74,6 +75,8 @@ def start_target_tests
     @equipment['dut1'].log_info("Telnet Data: \n #{@equipment['dut1'].target.telnet.response}")
     @equipment['dut1'].target.telnet.send_cmd("chmod +x test.sh",@equipment['dut1'].prompt)
     @equipment['dut1'].log_info("Telnet Data: \n #{@equipment['dut1'].target.telnet.response}")
+    @equipment['dut1'].target.telnet.send_cmd("export IPERFHOST=#{@equipment['server1'].telnet_ip}", @equipment['dut1'].prompt) if @equipment['server1'].respond_to?(:telnet_ip)
+    @equipment['dut1'].log_info("Telnet Data: \n #{@equipment['dut1'].target.telnet.response}")
     cmd_timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_i : 600
     cmd_timeout *= ((suspend_time + resume_time + 15) / resume_time)       #15 is approx max observed wait time to suspend
     @start_suspend_loop = true
@@ -95,7 +98,9 @@ def start_target_tests
       @equipment['dut1'].log_info("Telnet Session Data START:\n #{@equipment['dut1'].target.telnet.response}\nTelnet Data END")
       begin
         @equipment['dut1'].log_info("Telnet Session get return value")
-        @equipment['dut1'].target.telnet.send_cmd("echo $?",/^0[\0\n\r]+/m, suspend_time + 10) if !failure  
+        @mutex.synchronize do
+          @equipment['dut1'].target.telnet.send_cmd("echo $?",/^0[\0\n\r]+/m, suspend_time + 10) if !failure  
+        end
         @equipment['dut1'].log_info("Telnet Session Return Value:\n #{@equipment['dut1'].target.telnet.response}\nTelnet Return value END")
       rescue Timeout::Error => e
         @equipment['dut1'].log_info("Telnet Session TIMEOUT ERROR. Data START:\n #{@equipment['dut1'].target.telnet.response}\nTelnet Data END")
@@ -120,7 +125,9 @@ def suspend_resume_loop
       #Suspend
       @dut_is_sleeping = true
       puts "GOING TO SUSPEND DUT - rtcwake case"
-      @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m mem -s #{suspend_time}", /Freezing remaining freezable tasks/, 60)
+      @mutex.synchronize do
+        @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m mem -s #{suspend_time}", /Freezing remaining freezable tasks/, 60)
+      end
       if @equipment['dut1'].timeout?
         puts "Timeout while waiting to suspend"
         raise "DUT took more than 60 seconds to suspend" 
@@ -145,7 +152,9 @@ def suspend_resume_loop
       #Suspend
       @dut_is_sleeping = true
       puts "GOING TO SUSPEND DUT"
-      @equipment['dut1'].send_cmd("sync; echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 60)
+      @mutex.synchronize do
+        @equipment['dut1'].send_cmd("sync; echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 60)
+      end
       if @equipment['dut1'].timeout?
         puts "Timeout while waiting to suspend"
         raise "DUT took more than 60 seconds to suspend" 
