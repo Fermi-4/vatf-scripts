@@ -34,6 +34,7 @@ power_data['am335x-evm'] =  {'power_domains' => ['VDD_CORE', 'VDD_MPU', 'VDDS_RT
 #VDD1                                    J6
 #VDD2                                    J5
 power_data['am37x-evm'] = {'power_domains' => ['VDD1', 'VDD2'], 'domain_resistors' => {'VDD1'=>'0.05', 'VDD2'=>'0.1'}}
+power_data['am335x-sk'] = {'power_domains' => ['VDD_MPU', 'VDDS_DDR3'], 'domain_resistors' => {'VDD_MPU'=>'0.1', 'VDDS_DDR3'=>'0.24'}}
 
 return power_data[key]
 end
