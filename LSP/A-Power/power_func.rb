@@ -68,14 +68,12 @@ def run
       
       # Get voltage values for all channels in a hash
       if (volt_readings.size != 0) 
-        puts "#{volt_readings.size} != 0"
         new_volt_readings = @equipment['multimeter1'].get_multimeter_output(3, @test_params.params_equip.timeout[0].to_i)
         volt_readings.each_key {|k|
           volt_readings[k] << new_volt_readings[k]
           puts "#{k} have #{volt_readings[k].size} samples"
         }
       else
-        puts "#{volt_readings.size} == 0"
         volt_readings = @equipment['multimeter1'].get_multimeter_output(3, @test_params.params_equip.timeout[0].to_i)
         puts "volt_readings.size = #{volt_readings.size}"
       end

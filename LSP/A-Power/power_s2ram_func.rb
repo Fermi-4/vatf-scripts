@@ -126,20 +126,11 @@ def suspend_resume_loop
       @dut_is_sleeping = true
       puts "GOING TO SUSPEND DUT - rtcwake case"
       @mutex.synchronize do
-        @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m mem -s #{suspend_time}", /Freezing remaining freezable tasks/, 60)
+        @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m mem -s #{suspend_time}", /Freezing remaining freezable tasks.+resume of devices complete/, suspend_time+10)
       end
       if @equipment['dut1'].timeout?
-        puts "Timeout while waiting to suspend"
-        raise "DUT took more than 60 seconds to suspend" 
-      end
-      sleep suspend_time  
-      # Verify Resume
-      puts "EXPECTING DUT TO RESUME"
-      @equipment['dut1'].wait_for(/resume of devices complete/,10)
-      @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 5) # just in case resume string was not read, checking to see if prompt is returned indicating that device has resumed
-      if @equipment['dut1'].timeout?
-       puts "Timeout while waiting to resume"
-       raise "DUT took more than #{suspend_time}+10 seconds to resume" 
+        puts "Timeout while waiting for RTC suspend/resume completion"
+        raise "DUT took more than #{suspend_time+10} seconds to suspend/resume" 
       end
       @dut_is_sleeping = false
       sleep resume_time 
