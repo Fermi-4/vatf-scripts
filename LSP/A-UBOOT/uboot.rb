@@ -23,22 +23,6 @@ def setup
   @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 2)
   raise 'Bootloader was not loaded properly. Failed to get bootloader prompt' if @equipment['dut1'].timeout?
   
-  
-  if @test_params.instance_variable_defined?(:@kernel)
-		tester_from_cli = @tester.downcase
-		target_from_db = @test_params.target
-		platform_from_db = @test_params.platform
-		image_path = @test_params.kernel
-	
-		tmp_path = File.join(tester_from_cli.downcase.strip,target_from_db.downcase.strip,platform_from_db.downcase.strip)
-		if image_path != nil && File.exists?(image_path) && @equipment['dut1'].get_image(image_path, @equipment['server1'], tmp_path) then
-			puts "uImage copied to  #{tmp_path}"
-			bootfile_path = File.join(tmp_path,File.basename(image_path))
-		else
-			raise "image #{image_path} does not exist, unable to copy"
-		end
-	end
-
 end
 
 def run
