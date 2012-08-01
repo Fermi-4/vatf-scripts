@@ -4,6 +4,8 @@ include ParsePerfomance
 
 def setup
   self.as(LspTargetTestScript).setup
+  # Enable interrupts on MUSB port for am180x
+  @equipment['dut1'].send_cmd("insmod /lib/modules/`uname -a | cut -d' ' -f 3`/kernel/drivers/usb/gadget/g_ether.ko", /#{@equipment['dut1'].prompt}/, 30) if @equipment['dut1'].name.match(/am180x/i)
 end
 
 # Default implementation to return empty array

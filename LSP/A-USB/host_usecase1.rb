@@ -1,8 +1,11 @@
 require File.dirname(__FILE__)+'/../TARGET/dev_test2'
 
 def setup
+  @equipment['dut1'].set_api('psp')
   connect_to_extra_equipment()
   self.as(LspTargetTestScript).setup
+  # Enable interrupts on MUSB port for am180x
+  @equipment['dut1'].send_cmd("insmod /lib/modules/`uname -a | cut -d' ' -f 3`/kernel/drivers/usb/gadget/g_ether.ko", /#{@equipment['dut1'].prompt}/, 30) if @equipment['dut1'].name.match(/am180x/i)
 end
 
 def connect_to_extra_equipment
@@ -67,11 +70,11 @@ def start_usb_transitions(connect_wait, disconnect_wait)
       ses_data = @equipment['dut1'].update_response
       enum_data = ses_data[session_data_pointer==0 ? 0: session_data_pointer-1, ses_data.length]
       @equipment['dut1'].log_info("Iteration #{i}: \n #{enum_data}")
-      if ( enum_data.match(/(kernel NULL pointer dereference)|(reset high-speed USB device number \d+ using musb-hdrc)/m) )
+      if ( enum_data.match(/(kernel NULL pointer dereference)|(reset \w+-speed USB device number \d+)/m) )
         @stop_test = true
         set_result(FrameworkConstants::Result[:fail], "Kernel crash or USB reset errors detected")
         return
-      elsif (!enum_data.match(/New USB device found/))
+      elsif (!enum_data.match(/new \w+-speed USB device number \d+/i))
         @stop_test = true
         set_result(FrameworkConstants::Result[:fail], "DUT is no longer detecting USB devices")  
         return
