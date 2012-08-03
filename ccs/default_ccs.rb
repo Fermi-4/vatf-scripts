@@ -16,6 +16,13 @@ end
 def clean
 end
 
+def get_autotest_env(param)
+  x=`cat #{@jsAutoArgsFile} | grep autotestEnv.#{param}`
+  y = x.match(/autotestEnv.#{param}\s*=\s*([\w\d\.\-\+\_\\\/]+)/)
+  y ? y.captures[0] : nil
+end
+
+
 # Create file to pass parameters to javascript
 def create_autotest_env
   FileUtils.mkdir_p @linux_temp_folder
