@@ -83,6 +83,19 @@ def usb_dev_msc()
 
 	system ("sleep 2")
 
+def create_share_memory(command, response_pattern, next_command, timeout)
+
+                        @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt, timeout)
+                        response = @equipment['dut1'].response
+                        if response.include?("#{response_pattern}")
+                        return next_command
+                        else
+                                $result = 1
+                                set_result(FrameworkConstants::Result[:fail], "#{command} command could not execute")
+                        return
+                        end
+end
+
 #	Insert the msc gadget module
 	
 	case 
@@ -97,6 +110,22 @@ def usb_dev_msc()
 			command = "umount /media/sda1"
 			@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
 			command = "modprobe g_file_storage file=/dev/sda1 stall=0 removable=1"
+
+		when $cmd.match(/_msc_slave/)
+
+			command = create_share_memory("dd if=/dev/zero of=/dev/shm/disk bs=1M count=52", "records", "fdisk /dev/shm/disk", 10)
+                        command = create_share_memory(command, "m for help", "x", 1)
+                        command = create_share_memory(command, "Expert command", "b", 1)
+                        command = create_share_memory(command, "Partition", "1", 1)
+                        command = create_share_memory(command, "You must set cylinders", "c", 1)
+                        command = create_share_memory(command, "Number of cylinders", "1-1047000", 1)
+                        command = create_share_memory(command, "Expert command", "w", 1)
+                        command = create_share_memory(command, "Syncing disks", "mkfs.vfat /dev/shm/disk", 10)
+
+			@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+			
+			command = "modprobe g_file_storage file=/dev/shm/disk stall=0 removable=1"
+
 
 		else
 			$result = 1
@@ -138,6 +167,15 @@ def usb_dev_msc()
 
 
 	MSC_Format_Device("#{mscdev}","#{mscmount}")
+case
+	when $cmd.match(/_msc_slave/)	
+		MSC_Mount_Device("#{mscdev}","#{mscmount}")
+		MSC_Raw_Write("#{mscmount}","50")
+		
+		MSC_Mount_Device("#{mscdev}","#{mscmount}")  
+		MSC_Raw_Read("#{mscmount}","50")
+
+	else
 	
 	MSC_Mount_Device("#{mscdev}","#{mscmount}")
 	MSC_Raw_Write("#{mscmount}","100")
@@ -160,7 +198,7 @@ def usb_dev_msc()
 	MSC_Mount_Device("#{mscdev}","#{mscmount}")  
 	MSC_Raw_Read("#{mscmount}", "500")
 
-	
+end
 
 	# Remove the msc gadget module
 	
