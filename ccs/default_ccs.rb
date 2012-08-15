@@ -1,30 +1,31 @@
 require 'timeout'
 
-def setup
+module CcsTestScript
+  def setup
   @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)
   @jsAutoArgsFile    = File.join(@linux_temp_folder, 'getAutoArgs.js')
   connect()
   create_autotest_env()
   @equipment['dut1'].target.ccs.jsEnvArgsFile = @jsAutoArgsFile
   @equipment['dut1'].target.ccs.tempdir = @linux_temp_folder
-end
+  end
 
-def run
+  def run
   set_result(FrameworkConstants::Result[:nry], "You need to implement run() method")
-end
+  end
 
-def clean
-end
+  def clean
+  end
 
-def get_autotest_env(param)
+  def get_autotest_env(param)
   x=`cat #{@jsAutoArgsFile} | grep autotestEnv.#{param}`
-  y = x.match(/autotestEnv.#{param}\s*=\s*([\w\d\.\-\+\_\\\/]+)/)
+    y = x.match(/autotestEnv.#{param}\s*=\s*\"([\w\d\.\-\+\_\\\/]+)\"/)
   y ? y.captures[0] : nil
-end
+  end
 
 
-# Create file to pass parameters to javascript
-def create_autotest_env
+  # Create file to pass parameters to javascript
+  def create_autotest_env
   FileUtils.mkdir_p @linux_temp_folder
   out_file = File.new(@jsAutoArgsFile, 'w')
   # Create input/output pipes for IPC w/ javascript
@@ -64,9 +65,9 @@ def create_autotest_env
     out_file.puts("autotestEnv.#{name.to_s} = #{val};")
   }
   out_file.close
-end
+  end
 
-def connect
+  def connect
   @equipment['dut1'].connect({'type' => 'ccs'})
   if @equipment.has_key?('server1')
     if @equipment['server1'].kind_of? LinuxLocalHostDriver
@@ -76,6 +77,7 @@ def connect
     elsif !@equipment['server1'].target.telnet 
       raise "You need Telnet connectivity to the Linux Server, Please check your bench file" 
     end
+  end
   end
 end
 
