@@ -108,13 +108,7 @@ def run
 end 
 
 def get_readkernel_regexp()
-  #tftp_kernel = @test_params.params_control.kernel_from_tftp[0]
-  tftp_kernel = '0'
-  if tftp_kernel == '1'
-    rtn = /TFTP\s*from\s*server/
-  else
-    rtn = /reading\s*uImage/
-  end
+  rtn = /TFTP\s*from\s*server|reading\s*uImage/
   rtn
 end
 
