@@ -69,10 +69,7 @@ module C6xTestScript
       end
       nfs_root_path = @equipment['dut1'].nfs_root_path
       nfs_root_path_temp 	= nfs_root_path
-      if @equipment.has_key?('server1')
-        @samba_root_path = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}"
-      end
-      samba_root_path_temp = @samba_root_path
+
       # Telnet to Linux server
       if @equipment['server1'].respond_to?(:telnet_port) and @equipment['server1'].respond_to?(:telnet_ip) and !@equipment['server1'].target.telnet
         @equipment['server1'].connect({'type'=>'telnet'})
@@ -93,6 +90,10 @@ module C6xTestScript
       puts "+++++++++++++++++++++++"
       # call bootscript if required
       if Boot::boot_required?(@old_keys, @new_keys) 
+        if @equipment.has_key?('server1')
+        @samba_root_path = "\\\\#{@equipment['server1'].telnet_ip}\\#{@equipment['dut1'].samba_root_path}"
+        end
+        samba_root_path_temp = @samba_root_path
         power_port = @equipment['dut1'].power_port
         if power_port !=nil
            debug_puts 'Switching off @using power switch'
