@@ -16,7 +16,8 @@ module PlatformSpecificVarNames
 			'am389x-evm'=>'0x81000000',
 			'am17x-evm'=>'0xC0000000',  
 			'beagle'=>'0x80200000',
-			'da850-omapl138-evm'=>'0xc0700000'
+			'da850-omapl138-evm'=>'0xc0700000',
+			'tci6614-evm' => '0x80000100'
 			},
 		'nanderaseforramdisk' => {
 			'dm644x-evm'=>'nand erase 0x460000 0x300000', 
@@ -68,7 +69,8 @@ module PlatformSpecificVarNames
 			'am389x-evm'=>'81000004',
 			'am17x-evm' => 'C0000004',
 			'beagle' =>'80200004',
-			'da850-omapl138-evm'=>'C0700004'
+			'da850-omapl138-evm'=>'C0700004',
+			'tci6614-evm' => '0x80000200'
 			},
 		'ramaddressfornm'	=> {
 			'dm644x-evm'=>'',
@@ -104,7 +106,8 @@ module PlatformSpecificVarNames
 			'am389x-evm'=>'0x0000A5A5',
 			'am17x-evm' => '0x0000A5A5',
 			'beagle' =>'0x0000A5A5',
-			'da850-omapl138-evm'=>'0x0000A5A5'
+			'da850-omapl138-evm'=>'0x0000A5A5',
+			'tci6614-evm' => '0x0000A5A5'
 			},
 		'bootcmd' => {	
 			'dm644x-evm'=>'dhcp;tftp;bootm',
@@ -392,7 +395,8 @@ module PlatformSpecificVarNames
 			'am389x-evm'=>'0',
 			'am17x-evm' => '',
 			'beagle' =>'0',
-			'da850-omapl138-evm'=>''
+			'da850-omapl138-evm'=>'',
+			'tci6614-evm' => '0'
 			},
 		'i2coff2' => {	
 			'dm644x-evm'=>'2',
@@ -408,7 +412,8 @@ module PlatformSpecificVarNames
 			'am389x-evm'=>'2',
 			'am17x-evm' => '',
 			'beagle' =>'2',
-			'da850-omapl138-evm'=>''
+			'da850-omapl138-evm'=>'',
+			'tci6614-evm' => '2'
 			},
 		'i2cmagicval' => {	
 			'dm644x-evm'=>'55',
@@ -424,7 +429,8 @@ module PlatformSpecificVarNames
 			'am389x-evm'=>'55',
 			'am17x-evm' => '',
 			'beagle' =>'55',
-			'da850-omapl138-evm'=>''
+			'da850-omapl138-evm'=>'',
+			'tci6614-evm' => '55'
 			},
 		'i2caddrprmpt' => {	
 			'dm644x-evm'=>'00000000',
@@ -472,8 +478,9 @@ module PlatformSpecificVarNames
 			'am389x-evm'=>'console=ttyO2,115200n8 noinitrd rw root=/dev/nfs nfsroot=$serverip:$nfspath,nolock mem=120M ip=dhcp',
 			'am17x-evm' => 'console=ttyS2,115200n8 noinitrd rw root=/dev/nfs nfsroot=$serverip:$nfspath,nolock mem=120M ip=dhcp',
 			'beagle' =>'',
-			'da850-omapl138-evm' => 'console=ttyS2,115200n8 noinitrd rw ip=dhcp root=/dev/nfs nfsroot=192.168.247.76:$nfspath ,nolock mem=32M@0xc0000000 mem=64M@0xc4000000 vpif_capture.ch0_bufsize=831488 vpif_display.ch2_bufsize=831488'
-			}
+			'da850-omapl138-evm' => 'console=ttyS2,115200n8 noinitrd rw ip=dhcp root=/dev/nfs nfsroot=192.168.247.76:$nfspath ,nolock mem=32M@0xc0000000 mem=64M@0xc4000000 vpif_capture.ch0_bufsize=831488 vpif_display.ch2_bufsize=831488',
+			'tci6614-evm' => 'console=ttyS0,115200n8 ip=dhcp root=/dev/nfs nfsroot=$nfspath,v3,tcp rw'
+            }
 		}
 	def translate_var_name(platform, var_name)
 		return var_name if !@platform_specific_var_name.include?(var_name)

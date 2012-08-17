@@ -8,8 +8,12 @@ include PlatformSpecificVarNames
 
 def setup
 	@equipment['dut1'].set_api('psp')
+  target_from_db   = @test_params.target.downcase
+  platform_from_db = @test_params.platform.downcase
   boot_params = {'power_handler'=> @power_handler,
-                 'staf_service_name' => @test_params.staf_service_name.to_s}
+                 'staf_service_name' => @test_params.staf_service_name.to_s,
+                 'platform' => platform_from_db,
+                 'target' => target_from_db }
   boot_params['server'] = @equipment['server1'] if  @equipment['server1']
   boot_params['bootargs'] = @test_params.params_chan.bootargs[0] if @test_params.params_chan.instance_variable_defined?(:@bootargs)
   boot_params['image_path'] = @test_params.kernel if @test_params.instance_variable_defined?(:@kernel)
