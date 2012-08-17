@@ -30,7 +30,7 @@ def run_apps(apps, res_table)
                                                              "stop_bits" => stopbits.to_i,
                                                              "parity" => translate_parity(parity)}
     begin
-  @equipment['dut1'].connect({'type' => 'serial'})
+      @equipment['dut1'].connect({'type' => 'serial'})
       expect_cmd_echo=get_cmd_echo(bps, databits, parity)
       @equipment['dut1'].send_cmd("hello world at #{bps}", /.*/, 5, true)   
     
