@@ -23,7 +23,7 @@ def run
   run_start_stats
   @equipment['server1'].send_cmd("iperf -c #{dut_ip_addr} -l #{@test_params.params_control.packet_size[0]} -f M -u -t #{@test_params.params_control.time[0]} -b #{@test_params.params_control.bandwidth[0]} -w 128k", 
                                  @equipment['server1'].prompt,
-                                 @test_params.params_control.timeout[0])
+                                 @test_params.params_control.timeout[0].to_i)
   run_stop_stats                               
   run_data = @equipment['server1'].response                                 
   @equipment['server1'].send_cmd("echo $?",/^0/m, 2)
