@@ -49,14 +49,25 @@ def run_call_script
   @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd("chmod +x test.sh",@equipment['dut1'].prompt)
   cmd_timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_i : 600
-  @equipment['dut1'].send_cmd("./test.sh 3> result.log",@equipment['dut1'].prompt, cmd_timeout)
+  @equipment['dut1'].send_cmd("./test.sh 2>&1 | tee stdout.log 3> result.log",@equipment['dut1'].prompt, cmd_timeout)
   @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
   @equipment['dut1'].timeout?
 end
 
 
 # Collect output from standard output and  standard error in test.log
-def run_get_script_output
-  puts "\n LinuxTestScript::run_get_script_output"
-end
+  def run_get_script_output
+    puts "\n LinuxTestScript::run_get_script_output"
+    log_file_name = File.join(@linux_temp_folder, 'test.log') 
+    log_file = File.new(log_file_name,'w')
+    stdout_file  = File.new(File.join(@linux_temp_folder,'stdout.log'),'w')
+    @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
+    @equipment['dut1'].send_cmd("cat stdout.log",@equipment['dut1'].prompt,60)
+    std_output = @equipment['dut1'].response
+    stdout_file.write(std_output)
+    log_file.write("\n<STD_OUTPUT>\n"+std_output+"</STD_OUTPUT>\n")
+    stdout_file.close
+    log_file.close
+    add_log_to_html(log_file_name)
+  end
 
