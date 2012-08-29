@@ -25,7 +25,7 @@ def run_determine_test_outcome(return_non_zero)
 end
 
 def get_detailed_info
-  summary_data = get_std_output.match(/(^\s+Done executing testcases\..+^Total Failures:\s*\d+)/m).captures[0]
+  summary_data = get_test_output.match(/(^\s+Done executing testcases\..+^Total Failures:\s*\d+)/m).captures[0]
   all_lines = ''
   all_lines << summary_data.match(/Total Tests.+/).to_s + ", "
   all_lines << summary_data.match(/Total Failures.+/).to_s + ". \n"

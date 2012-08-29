@@ -167,6 +167,11 @@ module LspTargetTestScript
     File.new(File.join(@linux_temp_folder,'stderr.log'),'r').read
   end
   
+  # Return standard output of test.sh as a string
+  def get_test_output
+    File.new(File.join(@linux_temp_folder,'test.log'),'r').read
+  end
+
   # Return serial (i.e. console) output of test.sh as a string
   def get_serial_output
     check_serial_port
