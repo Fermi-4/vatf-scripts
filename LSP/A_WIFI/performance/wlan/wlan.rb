@@ -122,6 +122,8 @@ def run_wlan_test(test_seq)
           current_trial += 1
         end
         raise "Unable to enable configured network in dut" if current_trial >= 5
+        # for wlan link power information
+        @equipment['dut1'].send_cmd("iw #{iface} link", @equipment['dut1'].prompt, 30)
         
       when 'disable'
         puts "Disabling network #{@test_params.params_chan.ssid[0]}"
@@ -145,15 +147,15 @@ def run_wlan_test(test_seq)
         
       when 'test'
         begin
+          log_file_name = File.join(@linux_temp_folder, 'test.log') 
+          @equipment['server1'].send_cmd("mkdir -p #{@linux_temp_folder}", @equipment['server1'].prompt)
+          log_file = File.new(log_file_name,'w')
           time      = @test_params.params_control.time[0].to_i
           test_type = @test_params.params_control.type[0]
           dut_ip    = get_dut_ip_addr
           raise 'Dut does not have an IP address configured for the wifi interface' if dut_ip == nil || dut_ip == '0.0.0.0'
           server_lan_ip = get_server_lan_ip(dut_ip)
           raise 'Server/TEE does not have and ip address configured in the wifi LAN' if server_lan_ip == ''
-          
-          log_file_name = File.join(@linux_temp_folder, 'test.log') 
-          log_file = File.new(log_file_name,'w')
           
           # Start iperf on the Target
           if test_type.match(/tcp/i)
@@ -165,7 +167,7 @@ def run_wlan_test(test_seq)
           log_file.write(@equipment['dut1'].response)
           
         ensure
-          log_file.close
+          log_file.close if log_file != nil
            
         end  
       else
