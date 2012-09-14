@@ -112,8 +112,8 @@ def execute_cmd(commands)
 			expect_regex = "(#{cmd.pass_regex}|#{cmd.fail_regex})"
 		end
 	regex = Regexp.new(expect_regex)                                                
-	@equipment['dut1'].send_cmd(cmd.cmd_to_send, regex, dut_timeout)
-	if @equipment['dut1'].timeout?
+	@equipment['dut1'].send_cmd(cmd.cmd_to_send, @equipment['dut1'].boot_prompt, dut_timeout)
+	if @equipment['dut1'].timeout? || ! regex.match(@equipment['dut1'].response)
 	    result = 1
 	    break 
 	elsif cmd.instance_variable_defined?(:@fail_regex) && Regexp.new(cmd.fail_regex).match(@equipment['dut1'].response)
