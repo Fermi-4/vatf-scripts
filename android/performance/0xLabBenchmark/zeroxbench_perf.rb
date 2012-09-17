@@ -3,6 +3,16 @@ require File.dirname(__FILE__)+'/../../android_test_module'
 
 include AndroidTest
 
+def setup
+  super
+  if @test_params.params_chan.test_option[0].include?("testNativeLibMicro ") || @test_params.params_chan.test_option[0].include?("testNativeUnixBench")
+    bins_list = send_host_cmd("find #{File.join(@test_params.var_test_libs_root,"armeabi-v7a/0xBench_binaries/*")}").split(/[\n\r]+/)
+    bins_list.each do |curr_bin|
+      send_adb_cmd("push #{curr_bin} /system/bin/")
+    end
+  end
+end
+
 def run
   response = ''
   test_data = nil
