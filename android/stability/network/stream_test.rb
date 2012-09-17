@@ -31,9 +31,9 @@ def run
       puts "Playing #{current_stream} iteration #{iteration}, estimated time #{duration} sec"
       send_adb_cmd("logcat -c")
       stream_start=Time.now
-      send_adb_cmd("shell am start -W #{@test_params.params_chan.start_stream_intent[0]} -d http://#{@test_params.params_chan.stream_server[0]}/#{current_stream}")
+      send_adb_cmd("shell am start -W #{@test_params.params_chan.start_stream_intent[0]} -e url http://#{@test_params.params_chan.stream_server[0]}/#{current_stream}")
       begin
-        status = Timeout::timeout(duration.to_i+30) { 
+        status = Timeout::timeout(duration.to_i+10) { 
           while !send_adb_cmd("logcat -d -s #{@test_params.params_chan.player_filter[0]}").match(Regexp.new(@test_params.params_chan.player_ended_string[0],Regexp::MULTILINE | Regexp::IGNORECASE))
             sleep 5
           end
