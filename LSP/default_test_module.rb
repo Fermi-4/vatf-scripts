@@ -37,10 +37,14 @@ module LspTestScript
     new_params['secondary_bootloader'] = new_params['secondary_bootloader'] ? new_params['secondary_bootloader'] : 
                              @test_params.instance_variable_defined?(:@secondary_bootloader) ? @test_params.secondary_bootloader : 
                              ''
-    new_params['boot_dev']   = new_params['boot_dev'] ? new_params['boot_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@boot_dev) ? @test_params.params_chan.boot_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_boot_dev) ? @test_params.var_boot_dev : 
+    new_params['primary_bootloader_dev']   = new_params['primary_bootloader_dev'] ? new_params['primary_bootloader_dev'] : 
+                             @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_dev) ? @test_params.params_chan.primary_bootloader_dev[0] : 
+                             @test_params.instance_variable_defined?(:@var_primary_bootloader_dev) ? @test_params.var_primary_bootloader_dev : 
                              new_params['primary_bootloader'] != '' ? 'uart' : 'none'  
+    new_params['secondary_bootloader_dev']   = new_params['secondary_bootloader_dev'] ? new_params['secondary_bootloader_dev'] : 
+                             @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_dev) ? @test_params.params_chan.secondary_bootloader_dev[0] : 
+                             @test_params.instance_variable_defined?(:@var_secondary_bootloader_dev) ? @test_params.var_secondary_bootloader_dev : 
+                             new_params['secondary_bootloader'] != '' ? 'eth' : 'none'  
     new_params['kernel']     = new_params['kernel'] ? new_params['kernel'] : 
                              @test_params.instance_variable_defined?(:@kernel) ? @test_params.kernel : 
                              ''                                
