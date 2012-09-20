@@ -149,7 +149,7 @@ module LspTestScript
     end
   end
   
-  def setup
+  def setup_host_side
     @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)    
     @equipment['dut1'].set_api('psp')
 
@@ -169,6 +169,12 @@ module LspTestScript
 
     copy_sw_assets_to_tftproot translated_boot_params
 
+    return translated_boot_params
+  end
+  
+  def setup
+    translated_boot_params = setup_host_side()
+    
     @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
     if boot_required?(@old_keys, @new_keys) #&& translated_boot_params['kernel'] != ''
 	    if !(@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) && 
