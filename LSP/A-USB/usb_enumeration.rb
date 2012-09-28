@@ -33,7 +33,11 @@ def run
   @test_params.params_control.iterations[0].to_i.times do
     sleep @test_params.params_control.wait_after_disconnect[0].to_i
     session_data_pointer = @equipment['dut1'].update_response.length
-
+    
+    # Enumeration command
+    @equipment['dut1'].send_cmd("if [ -e /proc/driver/musb_hdrc.0 ] ; then echo F > /proc/driver/musb_hdrc.0  ; fi", /#{@equipment['dut1'].prompt}/, 30)
+    @equipment['dut1'].send_cmd("if [ -e /proc/driver/musb_hdrc.1 ] ; then echo F > /proc/driver/musb_hdrc.1  ; fi", /#{@equipment['dut1'].prompt}/, 30)
+    
     # Connect
     @usb_switch_handler.select_input(@equipment['dut1'].params['usb_port'])
     sleep @test_params.params_control.wait_after_connect[0].to_i
