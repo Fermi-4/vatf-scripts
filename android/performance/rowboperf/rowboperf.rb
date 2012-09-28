@@ -28,7 +28,7 @@ def save_results(reading)
    units["whetstone 20000"]= "MIPS"
    units["linpack"]= "Kflops"
    perf_data = [];
-   perf_data << {'name' => @test_params.params_chan.app_name[0], 'value' =>reading, 'units' => units[@test_params.params_chan.app_name[0]]}
+   perf_data << {'name' => @test_params.params_chan.app_name[0].gsub(/\s+/,"_"), 'value' =>reading, 'units' => units[@test_params.params_chan.app_name[0]]}
   # I have to add pass-fail criteria once known
   [FrameworkConstants::Result[:pass], "Test case PASSED.",perf_data]
 end
