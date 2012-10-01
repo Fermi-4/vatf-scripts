@@ -15,13 +15,12 @@ include LspTestScript
 
 $stage1_bootdelay = {'am387x-evm' => 3}
 
+
 def setup
   # if boot media is other media other than MMCSD, more params need to be added to database to 
   #   differeniate different media such as 'kernel_fs_from_mmc','kernel_fs_from_usb',etc.
   @equipment['dut1'].set_api('psp')
-  connect_to_equipment('dut1')
   $bootdelay = @equipment['dut1'].instance_variable_defined?(:@power_port) ? 3 : 0
-
 end
 
 def run
@@ -36,20 +35,17 @@ def run
   regexp2 = /##\s*Booting\s*kernel/
   regexp3 = /\/\s*#|login:/
  
+
+  translated_boot_params = setup_host_side()
+
+  #Start booting  
+  begin 
   loop_count = @test_params.params_control.loop_count[0].to_i
   for i in (1..loop_count)  
-    @equipment['dut1'].boot_to_bootloader(@power_handler)
-    if @test_params.platform != "am335x-sk"
-      # set bootdelay so that it can be deducted from total boottime
-      @equipment['dut1'].send_cmd("setenv bootdelay #{$bootdelay}", @equipment['dut1'].boot_prompt, 10)
-      @equipment['dut1'].get_boot_cmd({'image_path' => 'mmc'}).each {|cmd|
-        @equipment['dut1'].send_cmd("#{cmd}",@equipment['dut1'].boot_prompt, 10)
-        raise "Timeout waiting for bootloader prompt #{@equipment['dut1'].boot_prompt}" if @equipment['dut1'].timeout?
-      }
-      @equipment['dut1'].send_cmd("saveenv", @equipment['dut1'].boot_prompt, 10)
-      @equipment['dut1'].send_cmd("printenv", @equipment['dut1'].boot_prompt, 10)
-    end
-    @equipment['dut1'].send_cmd("boot", /.*/, 1, false)
+      @equipment['dut1'].set_boot_cmd(translated_boot_params)
+      @equipment['dut1'].send_cmd("boot", /.*/, 1)
+      connect_to_equipment('dut1')
+      
     time0 = Time.now
     puts "-----------------------time0 is: "+time0.to_s
 
@@ -91,6 +87,8 @@ def run
     end
     @equipment['dut1'].send_cmd(@equipment['dut1'].login, @equipment['dut1'].prompt, 10) # login to the unit
     raise 'Unable to login' if @equipment['dut1'].timeout?
+  end
+
   end
   
   puts "Boottime-LoadKernel  is #{boottimes_readkernel}"

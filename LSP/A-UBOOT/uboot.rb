@@ -8,21 +8,13 @@ include PlatformSpecificVarNames
 
 def setup
 	@equipment['dut1'].set_api('psp')
-  target_from_db   = @test_params.target.downcase
-  platform_from_db = @test_params.platform.downcase
-  boot_params = {'power_handler'=> @power_handler,
-                 'staf_service_name' => @test_params.staf_service_name.to_s,
-                 'platform' => platform_from_db,
-                 'target' => target_from_db }
-  boot_params['server'] = @equipment['server1'] if  @equipment['server1']
-  boot_params['bootargs'] = @test_params.params_chan.bootargs[0] if @test_params.params_chan.instance_variable_defined?(:@bootargs)
-  boot_params['image_path'] = @test_params.kernel if @test_params.instance_variable_defined?(:@kernel)
-  boot_params['primary_bootloader'] = @test_params.primary_bootloader if @test_params.instance_variable_defined?(:@primary_bootloader)
-  boot_params['secondary_bootloader'] = @test_params.secondary_bootloader if @test_params.instance_variable_defined?(:@secondary_bootloader)
-  if !(@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) && !(@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)
-    raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
-  end
-  @equipment['dut1'].boot_to_bootloader(boot_params) 
+
+  translated_boot_params = setup_host_side()
+  translated_boot_params['dut'].set_bootloader(translated_boot_params) if !@equipment['dut1'].boot_loader
+  translated_boot_params['dut'].set_systemloader(translated_boot_params) if !@equipment['dut1'].system_loader
+
+  translated_boot_params['dut'].boot_to_bootloader translated_boot_params
+  
   @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
   @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 2)
   raise 'Bootloader was not loaded properly. Failed to get bootloader prompt' if @equipment['dut1'].timeout?

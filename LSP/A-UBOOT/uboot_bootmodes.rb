@@ -1,36 +1,32 @@
 # -*- coding: ISO-8859-1 -*-
+require File.dirname(__FILE__)+'/../default_test_module'
 require File.dirname(__FILE__)+'/Platform_Specific_VarNames'
-# Server-Side Test script implementation for LSP releases
    
+include LspTestScript   
 include PlatformSpecificVarNames
-
 
 def setup
 	@equipment['dut1'].set_api('psp')
-	connect_serial('dut1')
 end
 
 def run
-	boot_params = { 
-		'tester_from_cli'  => @tester.downcase,
-		'target_from_db'   => @test_params.target.downcase,
-		'platform_from_db' => @test_params.platform.downcase,
-		'image_path' 		 => @test_params.kernel}
-	#Check if DUT is already at boot_prompt
-	@equipment['dut1'].send_cmd("\n", @equipment['dut1'].boot_prompt,1)
-	#If DUT is not at boot_prompt do reboot with power_controller or soft reboot
-	@equipment['dut1'].boot_to_bootloader(@power_handler) if @equipment['dut1'].timeout?
+  translated_boot_params = setup_host_side()
+  translated_boot_params['dut'].set_bootloader(translated_boot_params) if !@equipment['dut1'].boot_loader
+  translated_boot_params['dut'].set_systemloader(translated_boot_params) if !@equipment['dut1'].system_loader
+  translated_boot_params['dut'].boot_loader.run translated_boot_params
+  
+  @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
 	
 	cmds = @test_params.params_chan.instance_variable_get("@#{'cmd'}").to_s
 	case  
 		when cmds.match(/nfsboot/) 
-			boot_from_nfs(boot_params)
+			boot_from_nfs(translated_boot_params)
 		when cmds.match(/mmcboot/) 
-			boot_from_mmc(boot_params)
+			boot_from_mmc(translated_boot_params)
 		when cmds.match(/nandboot/) 
-			boot_from_nand(boot_params)
+			boot_from_nand(translated_boot_params)
 		when cmds.match(/ramdiskboot/) 
-			boot_from_ramdisk(boot_params)
+			boot_from_ramdisk(translated_boot_params)
 		else
 			puts "#{cmds} Unsupported bootmode\n"
 	end
@@ -38,10 +34,10 @@ end
 
 
 def boot_from_nfs(params)
-	tester_from_cli = params['tester_from_cli']
-	target_from_db = params['target_from_db']
-	platform_from_db = params['platform_from_db']
-	image_path = params['image_path']
+	tester_from_cli = params['tester']
+	target_from_db = params['target']
+	platform_from_db = params['platform']
+	image_path = params['kernel']
 	
 	tmp_path = File.join(tester_from_cli.downcase.strip,target_from_db.downcase.strip,platform_from_db.downcase.strip)
 	if image_path != nil && File.exists?(image_path) && @equipment['dut1'].get_image(image_path, @equipment['server1'], tmp_path) then
@@ -97,10 +93,10 @@ def boot_from_mmc(params)
 end
 
 def boot_from_nand(params)
-	tester_from_cli = params['tester_from_cli']
-	target_from_db = params['target_from_db']
-	platform_from_db = params['platform_from_db']
-	image_path = params['image_path']
+	tester_from_cli = params['tester']
+	target_from_db = params['target']
+	platform_from_db = params['platform']
+	image_path = params['kernel']
 	
 	tmp_path = File.join(tester_from_cli.downcase.strip,target_from_db.downcase.strip,platform_from_db.downcase.strip)
 	if image_path != nil && File.exists?(image_path) && @equipment['dut1'].get_image(image_path, @equipment['server1'], tmp_path) then
@@ -145,10 +141,10 @@ def boot_from_nand(params)
 end
 
 def boot_from_ramdisk(params)
-	tester_from_cli = params['tester_from_cli']
-	target_from_db = params['target_from_db']
-	platform_from_db = params['platform_from_db']
-	image_path = params['image_path']
+	tester_from_cli = params['tester']
+	target_from_db = params['target']
+	platform_from_db = params['platform']
+	image_path = params['kernel']
 	rd_path = @test_params.ramdisk
 	tmp_path = File.join(tester_from_cli.downcase.strip,target_from_db.downcase.strip,platform_from_db.downcase.strip)
 	if image_path != nil && File.exists?(image_path) && @equipment['dut1'].get_image(image_path, @equipment['server1'], tmp_path) then

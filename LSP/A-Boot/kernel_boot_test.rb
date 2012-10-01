@@ -3,11 +3,11 @@ include LspTestScript
 
 def setup
   self.as(LspTestScript).setup
-  @equipment['dut1'].disconnect
+
 end
 
 def run
-  @temp_power_port = @equipment['dut1'].power_port if @equipment['dut1'].instance_variable_defined?(:@power_port)
+  translated_boot_params = setup_host_side()
   counter = 0
   result = 0
   loop_count = @test_params.params_control.loop_count[0].to_i
@@ -17,10 +17,13 @@ def run
       is_soft_boot = @test_params.params_control.is_soft_boot[0] if @test_params.params_control.instance_variable_defined?(:@is_soft_boot)
       if is_soft_boot == 'yes'
         puts "soft-reboot....\n\n"
-        @equipment['dut1'].power_port = nil if @equipment['dut1'].instance_variable_defined?(:@power_port)
+        @equipment['dut1'].send_cmd('reboot', translated_boot_params['dut'].login_prompt, 40)
+        @equipment['dut1'].send_cmd(translated_boot_params['dut'].login, translated_boot_params['dut'].prompt, 10) # login to the unit
+      else
+        @equipment['dut1'].disconnect
+        self.as(LspTestScript).setup
+        @equipment['dut1'].disconnect
       end
-      sleep 3 
-      self.as(LspTestScript).setup
     rescue Exception => e 
       puts "Failed to boot on iteration #{counter}: " + e.to_s + ": " + e.backtrace.to_s
       @equipment['dut1'].log_info("Failed to boot on Iteration #{counter}")
@@ -28,7 +31,6 @@ def run
     ensure
       counter += 1
       @old_keys=''  # Clean boot keys.
-      @equipment['dut1'].disconnect
     end
   end
     
@@ -41,6 +43,5 @@ end
 
 def clean
   super
-  @equipment['dut1'].power_port = @temp_power_port if @equipment['dut1'].instance_variable_defined?(:@power_port)
 end
 

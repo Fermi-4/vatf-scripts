@@ -10,9 +10,12 @@ def run
   counter = 0
   result = 0
   loop_count = @test_params.params_control.loop_count[0].to_i
+  translated_boot_params = setup_host_side()
+  @equipment['dut1'].set_bootloader(translated_boot_params) if !@equipment['dut1'].boot_loader
+  @equipment['dut1'].set_systemloader(translated_boot_params) if !@equipment['dut1'].system_loader
   while counter < loop_count
     puts("Inside the loop counter = #{counter}" )
-    @equipment['dut1'].boot_to_bootloader(@power_handler)
+    @equipment['dut1'].boot_to_bootloader(translated_boot_params)
     connect_to_equipment('dut1','serial')
     @equipment['dut1'].send_cmd("#-----------------counter=#{counter}-----------------", @equipment['dut1'].boot_prompt, 2)
     @equipment['dut1'].send_cmd('printenv', @equipment['dut1'].boot_prompt, 10)
