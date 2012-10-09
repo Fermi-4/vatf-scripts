@@ -41,7 +41,7 @@ def run
   # Set DUT in appropriate state
   puts "\n\n======= Power Domain states info =======\n" + send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state")
   puts "\n\n======= Current CPU Frequency =======\n" +  send_adb_cmd("shell cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
-  puts "\n\n======= Power Domain transition stats =======\n" + send_adb_cmd("shell cat /debug/pm_debug/count") 
+  puts "\n\n======= Power Domain transition stats =======\n" + send_adb_cmd("shell cat /sys/kernel/debug/pm_debug/count") 
   if @test_params.params_chan.instance_variable_defined?(:@dvfs_governor)
     send_adb_cmd("shell \"echo #{@test_params.params_chan.dvfs_governor[i].strip.downcase} > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor\"")
     if @test_params.params_chan.dvfs_governor[i].strip.downcase == 'userspace'
@@ -55,7 +55,7 @@ def run
     
   if @test_params.params_chan.instance_variable_defined?(:@disabled_cpu_idle_modes)
     @test_params.params_chan.disabled_cpu_idle_modes.each do |idle_mode|
-      send_adb_cmd("shell \"echo 0 > /debug/pm_debug/#{idle_mode.strip.downcase}\"")
+      send_adb_cmd("shell \"echo 0 > /sys/kernel/debug/pm_debug/#{idle_mode.strip.downcase}\"")
     end
   end
 
@@ -68,14 +68,14 @@ def run
   #I am enabling smart reflex for suspend/resume test area. I am running the others with default smart reflex configuration. 
   if @test_params.params_chan.instance_variable_defined?(:@smart_reflex)
     if @test_params.params_chan.smart_reflex[0].strip == "enable" 
-      send_adb_cmd("shell \"echo 1 > /debug/voltage/vdd_core/smartreflex/autocomp\"")
-      send_adb_cmd("shell \"echo 1 > /debug/voltage/vdd_mpu/smartreflex/autocomp\"")
+      send_adb_cmd("shell \"echo 1 > /sys/kernel/debug/voltage/vdd_core/smartreflex/autocomp\"")
+      send_adb_cmd("shell \"echo 1 > /sys/kernel/debug/voltage/vdd_mpu/smartreflex/autocomp\"")
     end 
   end
  
   if @test_params.params_chan.instance_variable_defined?(:@enabled_cpu_idle_modes)
     @test_params.params_chan.enabled_cpu_idle_modes.each do |idle_mode|
-      send_adb_cmd("shell \"echo 1 > /debug/pm_debug/#{idle_mode.strip.downcase}\"")
+      send_adb_cmd("shell \"echo 1 > /sys/kernel/debug/pm_debug/#{idle_mode.strip.downcase}\"")
     end
   end
   if @test_params.params_chan.instance_variable_defined?(:@intent) 
@@ -187,7 +187,6 @@ def save_results(power_consumption,voltage_reading,multimeter=@equipment['multim
   for i in (1..multimeter.number_of_channels/2) 
    table_title <<  multimeter.dut_power_domains[i -1] + "(v)" 
   end
-  
    for index in (0..number_of_governor - 1)
   @results_html_file.add_paragraph("")
     res_table = @results_html_file.add_table([["TOTAL,  PER DOMAIN POWER and VOLTAGE CALCULATED POINT BY POINT #{@test_params.params_chan.dvfs_governor[index]}",{:bgcolor => "336666", :colspan => table_title.length},{:color => "white"}]],{:border => "1",:width=>"20%"})
@@ -213,10 +212,10 @@ def save_results(power_consumption,voltage_reading,multimeter=@equipment['multim
   }
   
  for i in (1..multimeter.number_of_channels/2)
-  perf << {'name' => @equipment['multimeter'].dut_power_domains[i - 1] + " Power", 'value' =>power_consumption["domain_" + @equipment['multimeter'].dut_power_domains[i - 1] + "_power_readings"], 'units' => "mw"}
+  perf << {'name' => @equipment['multimeter'].dut_power_domains[i - 1] + " Power", 'value' =>power_consumption[@test_params.params_chan.dvfs_governor[index].strip.downcase]["domain_" + @equipment['multimeter'].dut_power_domains[i - 1] + "_power_readings"], 'units' => "mw"}
   end 
   perf << {'name' => "Total Power", 'value' => power_consumption[@test_params.params_chan.dvfs_governor[index].strip.downcase]['all_domains'], 'units' => "mw"}
- end # end of for loop  
-  return perf
+ end # end of for loop 
+ return perf
 end
 
