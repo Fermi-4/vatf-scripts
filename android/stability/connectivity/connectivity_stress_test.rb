@@ -32,7 +32,6 @@ def run
   number_of_failures = 0
   @test_params.params_chan.iterations[0].to_i.times do
  puts "Number ot iterations excuted so far #{counter}"
-
   cmd = "logcat  -c"
   send_adb_cmd cmd
   each_iteration_failure = Array.new  
@@ -265,9 +264,9 @@ def check_bluetooth_connectivity(counter)
  puts "CHECKING BLUETOOTH CONNECTIVITY!"
  sleep 5
  check_bluetooth = `hcitool scan`
- check_bluetooth  = check_bluetooth.downcase
- puts check_bluetooth
- if !check_bluetooth.to_s.include?(@equipment['dut1'].params["platform_name"]) 
+ model = send_adb_cmd("shell getprop ro.product.model").strip
+ check_bluetooth  = check_bluetooth
+ if !check_bluetooth.to_s.include?(model)  
   puts "DEVICE NOT DETECTED:failure"
   @results_html_file.add_paragraph("Counter=#{counter}\n Bluetooth DEVICE  DETECTION:failure\n")
    @results_html_file.add_paragraph("Counter=#{counter}\n#{check_bluetooth}")
@@ -296,12 +295,11 @@ def disable_bluetooth()
   puts "DISABLING BLUETOOTH!"
   cmd = "logcat  -c"
   send_adb_cmd cmd
-  cmd = "logcat -d -s"  + CmdTranslator.get_android_cmd({'cmd'=>'bluetooth_filter', 'version'=>@equipment['dut1'].get_android_version })
+  cmd = "logcat -d -s "  + CmdTranslator.get_android_cmd({'cmd'=>'bluetooth_filter', 'version'=>@equipment['dut1'].get_android_version })
   response = "junk data"
   count = 0
  # in this while loop, make sure to put the bluetooth in the know state 
   while !response.to_s.include?("13 -> 10")
- puts "LOOOOOOOOOOOOPING"
     count = count + 1
     send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
     sleep 1
@@ -315,8 +313,7 @@ def disable_bluetooth()
     sleep 1
     select_wireless =  @test_params.params_chan.select_wireless[@test_params.params_chan.wireless_name.length - 1]
     send_events_for(CmdTranslator.get_android_cmd({'cmd'=>select_wireless, 'version'=>@equipment['dut1'].get_android_version }))
-   sleep 20
-  puts "Here "
+  sleep 20
    response = send_adb_cmd cmd
    puts "response #{response}"
  
@@ -341,7 +338,6 @@ def disable_wifi()
    send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
    sleep 1
    data = send_adb_cmd @test_params.params_chan.cmd[0]
- puts data
    if !data.to_s.include?("ok")
      puts "command check failed!"
      exit
