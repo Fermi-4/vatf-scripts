@@ -30,6 +30,10 @@ module C6xGELTestScript
         @dss_param_evm_id = "TMDXEVM6670le-le"
         @targetFlag = "evm6670l"
         @ccstargetFlag = "evmc6670l"
+      when "gauss"
+        @dss_param_evm_id = "TMDXEVM6657ls-le"
+        @targetFlag = "evm6657l"
+        @ccstargetFlag = "evmc6657l"
       else
         raise "DDR test not supported on #{@platform}"
       end
@@ -47,6 +51,7 @@ module C6xGELTestScript
       @equipment['server1'].send_cmd("rm -rf #{GEL_TEST_DIR}/logs/*")
       
       # Copy gel, the ccxml that comes with geltest/ points to this GEL file
+      @equipment['server1'].send_sudo_cmd("mkdir -p #{@ccs_gel_dir}", @equipment['server1'].prompt, 10)  
       @equipment['server1'].send_sudo_cmd("cp #{platform_gel_file} #{@ccs_gel_dir}/#{@ccstargetFlag}-geltest.gel", @equipment['server1'].prompt, 10)  
       @power_handler.switch_on(power_port)
     end

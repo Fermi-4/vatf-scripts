@@ -24,17 +24,22 @@ def run
   fail_times = 0
   boot_failures = 0
   boot_arr = [] 
-  @read_fail_caches_on = 0
-  @read_fail_caches_off1 = 0
-  @read_fail_caches_off2 = 0
+  # @read_fail_caches_on = 0
+  # @read_fail_caches_off1 = 0
+  # @read_fail_caches_off2 = 0
 
-  @read_refresh_fail_caches_on = 0
-  @read_refresh_fail_caches_off1 = 0
-  @read_refresh_fail_caches_off2 = 0
+  # @read_refresh_fail_caches_on = 0
+  # @read_refresh_fail_caches_off1 = 0
+  # @read_refresh_fail_caches_off2 = 0
 
-  @write_fail_caches_on = 0
-  @write_fail_caches_off1 = 0
-  @write_fail_caches_off2 = 0
+  # @write_fail_caches_on = 0
+  # @write_fail_caches_off1 = 0
+  # @write_fail_caches_off2 = 0
+  # v1.3
+  @read_fail_caches_off_std = 0
+  @read_fail_caches_off_inv = 0
+  @read_fail_caches_on_std = 0
+  @read_fail_caches_on_inv = 0
  
   response = nil
   local_logs = "#{File.dirname(__FILE__)}/logs"
@@ -53,8 +58,10 @@ def run
   }
 
   @equipment['dut1'].wait_for(wait_for_string, timeout)
+  sleep 10
 
   @equipment['server1'].send_cmd("kill `ps -ef | grep DebugServer | grep -v grep | awk '{print $2}'`",/.*/,10)
+   @equipment['server1'].send_cmd("ps -ef | grep DebugServer" ,/.*/,10)
   if (@equipment['dut1'].timeout?)
     response =  nil
   else
@@ -118,27 +125,40 @@ def disconnect(equipment)
 end
 
 def parse_response(response)
-  read_fail_caches_on = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[0].to_i
-  @read_fail_caches_on = @read_fail_caches_on + read_fail_caches_on
-  read_fail_caches_off1 = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[1].to_i
-  @read_fail_caches_off1 = @read_fail_caches_off1 + read_fail_caches_off1
-  read_fail_caches_off2 = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[2].to_i 
-  @read_fail_caches_off2 = @read_fail_caches_off2 + read_fail_caches_off2    
+  # read_fail_caches_on = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[0].to_i
+  # @read_fail_caches_on = @read_fail_caches_on + read_fail_caches_on
+  # read_fail_caches_off1 = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[1].to_i
+  # @read_fail_caches_off1 = @read_fail_caches_off1 + read_fail_caches_off1
+  # read_fail_caches_off2 = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[2].to_i 
+  # @read_fail_caches_off2 = @read_fail_caches_off2 + read_fail_caches_off2    
 
-  read_refresh_fail_caches_on = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[0].to_i
-  @read_refresh_fail_caches_on = @read_refresh_fail_caches_on + read_refresh_fail_caches_on
-  read_refresh_fail_caches_off1 = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[1].to_i
-  @read_refresh_fail_caches_off1 = @read_refresh_fail_caches_off1 + read_refresh_fail_caches_off1
-  read_refresh_fail_caches_off2 = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[2].to_i  
-  @read_refresh_fail_caches_off2 = @read_refresh_fail_caches_off2 + read_refresh_fail_caches_off2
+  # read_refresh_fail_caches_on = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[0].to_i
+  # @read_refresh_fail_caches_on = @read_refresh_fail_caches_on + read_refresh_fail_caches_on
+  # read_refresh_fail_caches_off1 = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[1].to_i
+  # @read_refresh_fail_caches_off1 = @read_refresh_fail_caches_off1 + read_refresh_fail_caches_off1
+  # read_refresh_fail_caches_off2 = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[2].to_i  
+  # @read_refresh_fail_caches_off2 = @read_refresh_fail_caches_off2 + read_refresh_fail_caches_off2
 
-  write_fail_caches_on = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[0].to_i
-  @write_fail_caches_on = @write_fail_caches_on + write_fail_caches_on
-  write_fail_caches_off1 = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[1].to_i
-  @write_fail_caches_off1 = @read_fail_caches_off1 + write_fail_caches_off1
-  write_fail_caches_off2 = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[2].to_i
-  @write_fail_caches_off2 = @write_fail_caches_off2 + write_fail_caches_off2   
-  if (read_fail_caches_on != 0 || read_fail_caches_off1 != 0 || read_fail_caches_off2 != 0 || read_refresh_fail_caches_on != 0 || read_refresh_fail_caches_off1 != 0 || read_refresh_fail_caches_off2 != 0 || write_fail_caches_on != 0 || write_fail_caches_off1 != 0 || write_fail_caches_off2 != 0)
+  # write_fail_caches_on = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[0].to_i
+  # @write_fail_caches_on = @write_fail_caches_on + write_fail_caches_on
+  # write_fail_caches_off1 = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[1].to_i
+  # @write_fail_caches_off1 = @read_fail_caches_off1 + write_fail_caches_off1
+  # write_fail_caches_off2 = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[2].to_i
+  # @write_fail_caches_off2 = @write_fail_caches_off2 + write_fail_caches_off2   
+  # if (read_fail_caches_on != 0 || read_fail_caches_off1 != 0 || read_fail_caches_off2 != 0 || read_refresh_fail_caches_on != 0 || read_refresh_fail_caches_off1 != 0 || read_refresh_fail_caches_off2 != 0 || write_fail_caches_on != 0 || write_fail_caches_off1 != 0 || write_fail_caches_off2 != 0)
+    
+    # DDR test v1.3
+    
+    read_fail_caches_off_std = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[0].to_i
+    @read_fail_caches_off_std = @read_fail_caches_off_std + read_fail_caches_off_std
+    read_fail_caches_off_inv = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[1].to_i
+    @read_fail_caches_off_inv = @read_fail_caches_off_inv + read_fail_caches_off_inv
+    read_fail_caches_on_std = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[2].to_i 
+    @read_fail_caches_on_std = @read_fail_caches_on_std + read_fail_caches_on_std  
+    read_fail_caches_on_inv = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[3].to_i
+    @read_fail_caches_on_inv = @read_fail_caches_on_inv + read_fail_caches_on_inv
+    
+    if (read_fail_caches_off_std != 0 || read_fail_caches_off_inv != 0 || read_fail_caches_on_std != 0 || read_fail_caches_on_inv != 0)
     return false
   else
     return true 

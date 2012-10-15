@@ -18,17 +18,23 @@ include Boot
       fail_times = 0
       boot_failures = 0
       boot_arr = [] 
-      @read_fail_caches_on = 0
-      @read_fail_caches_off1 = 0
-      @read_fail_caches_off2 = 0
+      # @read_fail_caches_on = 0
+      # @read_fail_caches_off1 = 0
+      # @read_fail_caches_off2 = 0
       
-      @read_refresh_fail_caches_on = 0
-      @read_refresh_fail_caches_off1 = 0
-      @read_refresh_fail_caches_off2 = 0
+      # @read_refresh_fail_caches_on = 0
+      # @read_refresh_fail_caches_off1 = 0
+      # @read_refresh_fail_caches_off2 = 0
 
-      @write_fail_caches_on = 0
-      @write_fail_caches_off1 = 0
-      @write_fail_caches_off2 = 0
+      # @write_fail_caches_on = 0
+      # @write_fail_caches_off1 = 0
+      # @write_fail_caches_off2 = 0
+	  
+	    # v1.3
+        @read_fail_caches_off_std = 0
+        @read_fail_caches_off_inv = 0
+        @read_fail_caches_on_std = 0
+        @read_fail_caches_on_inv = 0
        
       test_done_result = FrameworkConstants::Result[:fail]
       comment = "Test fail"    
@@ -80,18 +86,17 @@ include Boot
         # To prevent NAND corruption in XDS-560
         sleep(60)
       }
-      puts "read_fail_caches_on: #{@read_fail_caches_on}"
-      puts "read_fail_caches_off1: #{@read_fail_caches_off1}"
-      puts "read_fail_caches_off2: #{@read_fail_caches_off2}" 
-      if( @read_fail_caches_on != 0 || @read_fail_caches_off1 != 0 || @read_fail_caches_off2 != 0 || @read_refresh_fail_caches_on != 0 || @read_refresh_fail_caches_off1 != 0 || @read_refresh_fail_caches_off2 != 0 || @write_fail_caches_on != 0 || @write_fail_caches_off1 != 0 || @write_fail_caches_off2 != 0)
-        comment = "Test failed. DDR test completed successfully #{success_times} out of #{boot_times} times. Boot log - #{boot_arr.to_s}"
-      elsif success_times == boot_times
+
+	  if success_times == boot_times
         test_done_result = FrameworkConstants::Result[:pass]
         comment = "Test pass. DDR test completed successfully #{boot_times} out of #{boot_times} times "
+      else
+        comment = "Test failed. DDR test completed successfully #{success_times} out of #{boot_times} times. Boot log - #{boot_arr.to_s}"
+
       end
       if (boot_failures > 0) 
-        comment += "Board failed to boot #{boot_failures} out of #{boot_times} times"
-      end
+        comment += "Board failed to boot #{boot_failures} out of #{boot_times} times. Boot log - #{boot_arr.to_s}"
+      end 
       set_result(test_done_result,comment)
 
    
@@ -131,32 +136,46 @@ include Boot
     end
     
     def parse_response(response)
-      read_fail_caches_on = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[0].to_i
-      @read_fail_caches_on = @read_fail_caches_on + read_fail_caches_on
-      read_fail_caches_off1 = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[1].to_i
-      @read_fail_caches_off1 = @read_fail_caches_off1 + read_fail_caches_off1
-      read_fail_caches_off2 = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[2].to_i 
-      @read_fail_caches_off2 = @read_fail_caches_off2 + read_fail_caches_off2    
+      # read_fail_caches_on = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[0].to_i
+      # @read_fail_caches_on = @read_fail_caches_on + read_fail_caches_on
+      # read_fail_caches_off1 = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[1].to_i
+      # @read_fail_caches_off1 = @read_fail_caches_off1 + read_fail_caches_off1
+      # read_fail_caches_off2 = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[2].to_i 
+      # @read_fail_caches_off2 = @read_fail_caches_off2 + read_fail_caches_off2    
 
-      read_refresh_fail_caches_on = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[0].to_i
-      @read_refresh_fail_caches_on = @read_refresh_fail_caches_on + read_refresh_fail_caches_on
-      read_refresh_fail_caches_off1 = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[1].to_i
-      @read_refresh_fail_caches_off1 = @read_refresh_fail_caches_off1 + read_refresh_fail_caches_off1
-      read_refresh_fail_caches_off2 = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[2].to_i  
-      @read_refresh_fail_caches_off2 = @read_refresh_fail_caches_off2 + read_refresh_fail_caches_off2
+  # read_refresh_fail_caches_on = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[0].to_i
+  # @read_refresh_fail_caches_on = @read_refresh_fail_caches_on + read_refresh_fail_caches_on
+  # read_refresh_fail_caches_off1 = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[1].to_i
+  # @read_refresh_fail_caches_off1 = @read_refresh_fail_caches_off1 + read_refresh_fail_caches_off1
+  # read_refresh_fail_caches_off2 = response.match(/Total\sRead\sRefresh\sFailures:\s+(\d+)/).captures[2].to_i  
+  # @read_refresh_fail_caches_off2 = @read_refresh_fail_caches_off2 + read_refresh_fail_caches_off2
 
-      write_fail_caches_on = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[0].to_i
-      @write_fail_caches_on = @write_fail_caches_on + write_fail_caches_on
-      write_fail_caches_off1 = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[1].to_i
-      @write_fail_caches_off1 = @read_fail_caches_off1 + write_fail_caches_off1
-      write_fail_caches_off2 = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[2].to_i
-      @write_fail_caches_off2 = @write_fail_caches_off2 + write_fail_caches_off2   
-      if (read_fail_caches_on != 0 || read_fail_caches_off1 != 0 || read_fail_caches_off2 != 0 || read_refresh_fail_caches_on != 0 || read_refresh_fail_caches_off1 != 0 || read_refresh_fail_caches_off2 != 0 || write_fail_caches_on != 0 || write_fail_caches_off1 != 0 || write_fail_caches_off2 != 0)
-        return false
-      else
-        return true 
-      end        
-    end
+  # write_fail_caches_on = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[0].to_i
+  # @write_fail_caches_on = @write_fail_caches_on + write_fail_caches_on
+  # write_fail_caches_off1 = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[1].to_i
+  # @write_fail_caches_off1 = @read_fail_caches_off1 + write_fail_caches_off1
+  # write_fail_caches_off2 = response.match(/Total\sWrite\sFailures:\s+(\d+)/).captures[2].to_i
+  # @write_fail_caches_off2 = @write_fail_caches_off2 + write_fail_caches_off2   
+  # if (read_fail_caches_on != 0 || read_fail_caches_off1 != 0 || read_fail_caches_off2 != 0 || read_refresh_fail_caches_on != 0 || read_refresh_fail_caches_off1 != 0 || read_refresh_fail_caches_off2 != 0 || write_fail_caches_on != 0 || write_fail_caches_off1 != 0 || write_fail_caches_off2 != 0)
+    
+    # DDR test v1.3
+    
+    read_fail_caches_off_std = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[0].to_i
+    @read_fail_caches_off_std = @read_fail_caches_off_std + read_fail_caches_off_std
+    read_fail_caches_off_inv = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[1].to_i
+    @read_fail_caches_off_inv = @read_fail_caches_off_inv + read_fail_caches_off_inv
+    read_fail_caches_on_std = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[2].to_i 
+    @read_fail_caches_on_std = @read_fail_caches_on_std + read_fail_caches_on_std  
+    read_fail_caches_on_inv = response.match(/Total\sRead\sFailures:\s+(\d+)/).captures[3].to_i
+    @read_fail_caches_on_inv = @read_fail_caches_on_inv + read_fail_caches_on_inv
+    
+    if (read_fail_caches_off_std != 0 || read_fail_caches_off_inv != 0 || read_fail_caches_on_std != 0 || read_fail_caches_on_inv != 0)
+    return false
+  else
+    return true 
+  end        
+end
+
     
     def debug_puts(message)
       if @show_debug_messages == true

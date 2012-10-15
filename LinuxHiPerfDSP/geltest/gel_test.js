@@ -148,9 +148,17 @@ if (arguments.length > 0 && arguments.length < 4)
     if (board_spec.match(/lx?e$/))
     {
         emul560 = true;
+	emulation_spec = "XDS560 mezzanine";
         board_spec = board_spec.replace(/e$/, "");
     }
-        
+      
+    if (board_spec.match(/ls$/))
+    {
+        xds200 = true;
+	emulation_spec = "XDS200 emulator";
+        board_spec = board_spec.replace(/ls$/, "l");
+    }    
+	
     // for now, use the same software for lx and l variants
     board_spec = board_spec.replace(/lx$/, "l");
     
@@ -163,14 +171,12 @@ if (arguments.length > 0 && arguments.length < 4)
     
     board_binaries = script_binaries + targetFlag + endian_spec + "/";
     targetConfig = java.lang.System.getenv("PROGRAM_EVM_TARGET_CONFIG_FILE");
-    if (!targetConfig) {   
-        targetConfig = script_configs + targetFlag + "/" + targetFlag + (emul560 ? "e" : "") + host_os + ".ccxml";
-    }
-  
+    if (!targetConfig)    
+        targetConfig = script_configs + targetFlag + "/" + targetFlag + (emul560 ? "e" : "") + (xds200 ? "s" : "") + host_os + ".ccxml";
 
     print("board: " + targetFlag);
     print("endian: " + (big_endian ? "Big" : "Little"));
-    print("emulation: " + (emul560 ? "XDS560 mezzanine" : "onboard XDS100"));
+    print("emulation: " + emulation_spec);
     print("binaries: " + board_binaries);
     print("ccxml: " + targetConfig);
 
@@ -226,6 +232,8 @@ switch (targetFlag)
 		break;
 	case "evm6678l":
 		cpu_id = "C66xx_0";
+	case "evm6657l":
+		cpu_id = "C66xx_0";
 		break;
 	default:
 		script.traceWrite("Could not file cpu id for target " + targetFlag + "\n");
@@ -276,4 +284,6 @@ pausecomp(1000);
 		script.traceWrite("Required ddrtest files do not exist in " + board_binaries + "\n");
 	 
 	}
+    
+    script.traceWrite("Now cleanup");
 cleanup_and_exit();
