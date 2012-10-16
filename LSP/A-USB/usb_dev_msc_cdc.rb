@@ -296,6 +296,10 @@ def usb_dev_cdc()
 			#Ping test
 			pingtest_cdc()
 
+                when $cmd.match(/_cdc_floodping/)
+
+                        #Flood ping test
+                        floodpingtest_cdc()
 
 		when $cmd.match(/_cdc_iperf/)
 
@@ -353,6 +357,27 @@ def pingtest_cdc()
 	}
 end
 
+
+# Flood ping test
+def floodpingtest_cdc()
+        packetsize = [64,4096,65500]
+        packetsize.each { |psize|
+
+        #Flood ping from host to DUT
+
+        command="ping -f -c 10 #{@equipment['dut1'].usb_ip} -s #{psize}"
+        @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt,30)
+        response = @equipment['server2'].response
+        if response.include?('0% packet loss')
+                puts "Flood ping from host to DUT is successful "
+                else
+                $result = 1
+                set_result(FrameworkConstants::Result[:fail], "Flood ping from host to DUT is failed.")
+                return
+        end
+
+        }
+end
 
 
 #iperf test
