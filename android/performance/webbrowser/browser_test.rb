@@ -40,13 +40,25 @@ def get_data
    cmd = "logcat  -d -s mWebView:*"
    response = "junk data"
    count = 0
+   flag = 0 
+   time =  Time.now.strftime("%s").to_i
    while !response.to_s.include?("mWebView")
-   count = count + 1 
-   puts "Inside the LOOP #{count}, Waiting for Application log"
-   response = send_adb_cmd cmd
+    count = count + 1 
+    puts "Inside the LOOP #{count}, Waiting for Application log"
+    response = send_adb_cmd cmd
+    time2 =  Time.now.strftime("%s").to_i
+    delta_time = time2 - time
+    if delta_time > 600
+     flag = 1
+     break;
+    end 
    end
-   response = send_adb_cmd cmd
-   set_result(FrameworkConstants::Result[:pass],"Test case PASS.",extract_data(response)) 
+   if flag == 0 
+    response = send_adb_cmd cmd
+    set_result(FrameworkConstants::Result[:pass],"Test case PASS.",extract_data(response)) 
+   else
+    set_result(FrameworkConstants::Result[:fail],"Test case FAIL.","No data") 
+   end 
 end 
 
 def extract_data(response)
