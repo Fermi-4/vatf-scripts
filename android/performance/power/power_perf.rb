@@ -107,7 +107,7 @@ def run
       @equipment['dut1'].send_cmd("", /Suspending\s+console/, 100, false)
     end 
   else
-    dutThread = Thread.new {run_test(@test_params.params_chan.test_option[0]) } if @test_params.params_chan.instance_variable_defined?(:@test_option)
+    dutThread = Thread.new {run_test(@test_params.params_chan.test_option[0], false) } if @test_params.params_chan.instance_variable_defined?(:@test_option)
     if @test_params.params_chan.instance_variable_defined?(:@intent)
       dutThread = Thread.new {run_test(nil, @test_params.params_chan.intent[0]+ " #{@test_params.params_chan.target_file_path[0]}") } 
     end 

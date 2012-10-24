@@ -115,12 +115,17 @@ module AndroidTest
     end
   end
 
-  def run_test(tst_option = nil)
+  def run_test(tst_option = nil, wait=true)
     perf_matches = {}
     res_file = nil
     send_adb_cmd "shell rm #{@test_params.params_chan.res_file[0]}" if @test_params.params_chan.instance_variable_defined?(:@res_file)
-    adb_test_cmd = "shell am instrument -w #{tst_option}"
-    adb_test_cmd = "shell am instrument -w #{@test_params.params_chan.test_option[0]}" if !tst_option
+    if wait
+      adb_test_cmd = "shell am instrument -w #{tst_option}"
+      adb_test_cmd = "shell am instrument -w #{@test_params.params_chan.test_option[0]}" if !tst_option
+    else
+      adb_test_cmd = "shell am instrument #{tst_option}"
+      adb_test_cmd = "shell am instrument #{@test_params.params_chan.test_option[0]}" if !tst_option
+    end
     send_adb_cmd "logcat -c"
     send_adb_cmd adb_test_cmd
     log_option = '*:I *:S'
