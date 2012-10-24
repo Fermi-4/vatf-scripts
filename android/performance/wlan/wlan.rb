@@ -332,7 +332,7 @@ def enable_wlan
   netcfg = send_adb_cmd("shell netcfg")
   iface = get_wifi_iface.split(':')[0]
   if !netcfg.match(/#{iface}/i) 
-    send_events_for(CmdTranslator.get_android_cmd({'cmd'=>'wifi_settings_enable_wifi', 'version'=>@equipment['dut1'].get_android_version }))
+    send_adb_cmd("shell svc wifi enable")
     sleep 5
   end
   netcfg_up = send_adb_cmd("shell netcfg")
