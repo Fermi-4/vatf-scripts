@@ -3,6 +3,15 @@ require File.dirname(__FILE__)+'/../TARGET/dev_test2'
 def setup
   super
   test_type = @test_params.params_control.type[0]
+
+  if (test_type.match(/udp/i))
+    @equipment['dut1'].send_cmd("sysctl -w net.core.rmem_max=33554432", @equipment['dut1'].prompt, 3)
+    @equipment['dut1'].send_cmd("sysctl -w net.core.wmem_max=33554432", @equipment['dut1'].prompt, 3)
+    @equipment['dut1'].send_cmd("sysctl -w net.core.rmem_default=33554432", @equipment['dut1'].prompt, 3)
+    @equipment['dut1'].send_cmd("sysctl -w net.core.wmem_default=33554432", @equipment['dut1'].prompt, 3)
+    @equipment['dut1'].send_cmd("sysctl -w net.ipv4.udp_mem='4096 87380 33554432'", @equipment['dut1'].prompt, 3)
+    @equipment['dut1'].send_cmd("sysctl -w net.ipv4.route.flush=1", @equipment['dut1'].prompt, 3)
+  end
   test_cmd = test_type.match(/udp/i) ? "iperf -s -u -w 128k &" : "iperf -s &"
   if !is_iperf_running?(test_type)
     @equipment['server1'].send_cmd_nonblock(test_cmd, /Server\s+listening.*?#{test_type}\sport.*?/i, 10)
