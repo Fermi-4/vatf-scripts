@@ -5,10 +5,26 @@ require File.dirname(__FILE__)+'/../../lib/parse_perf_data'
 include LspTestScript
 include ParsePerfomance
 
-
+initial_interval=0
 def setup
   super
   test_type = @test_params.params_control.type[0]
+  if (test_type.match(/udp/i))
+    @equipment['dut1'].send_cmd("sysctl -w net.core.rmem_max=33554432", @equipment['dut1'].prompt, 3)
+    @equipment['dut1'].send_cmd("sysctl -w net.core.wmem_max=33554432", @equipment['dut1'].prompt, 3)
+    @equipment['dut1'].send_cmd("sysctl -w net.core.rmem_default=33554432", @equipment['dut1'].prompt, 3)
+    @equipment['dut1'].send_cmd("sysctl -w net.core.wmem_default=33554432", @equipment['dut1'].prompt, 3)
+    @equipment['dut1'].send_cmd("sysctl -w net.ipv4.udp_mem='4096 87380 33554432'", @equipment['dut1'].prompt, 3)
+    @equipment['dut1'].send_cmd("sysctl -w net.ipv4.route.flush=1", @equipment['dut1'].prompt, 3)
+  end
+  if (test_type.match(/tcp/i) && @test_params.params_control.instance_variable_defined?(:@interrupt_pacing_interval)
+)
+   response = @equipment['dut1'].send_cmd("ethtool -c #{@test_params.params_control.iface[0]}",@equipment['dut1'].prompt, 3)
+   # to get the initial setting of rx-usecs if required
+   initial_interval = response.scan(/rx-usecs:*\s\d*/m)[0].split(/:/)[1].strip
+   puts "Initial setting is #{initial_interval}\n"
+   @equipment['dut1'].send_cmd("set_ethtool_coalesce_options.sh -d #{@test_params.params_control.iface[0]} -p 'rx-usecs' -n #{@test_params.params_control.interrupt_pacing_interval[0]}", @equipment['dut1'].prompt, 3)
+  end
   test_cmd = test_type.match(/udp/i) ? "iperf -s -u -w 128k &" : "iperf -s &"
   if !is_iperf_running?(test_type)
     @equipment['dut1'].send_cmd(test_cmd, /Server\s+listening.*?#{test_type}\sport/i, 10)
@@ -21,10 +37,20 @@ end
 def run
   dut_ip_addr = get_ip_addr(@test_params.params_control.iface[0])
   run_start_stats
+  test_type = @test_params.params_control.type[0]
+  if (test_type.match(/udp/i))
   @equipment['server1'].send_cmd("iperf -c #{dut_ip_addr} -l #{@test_params.params_control.packet_size[0]} -f M -u -t #{@test_params.params_control.time[0]} -b #{@test_params.params_control.bandwidth[0]} -w 128k", 
                                  @equipment['server1'].prompt,
                                  @test_params.params_control.timeout[0].to_i)
+  elsif (test_type.match(/tcp/i))
+   direction = @test_params.params_control.direction[0].match(/bi/i)?'-d':''
+   @equipment['server1'].send_cmd("iperf -c #{dut_ip_addr} -m -M  #{@test_params.params_control.packet_size[0]} -f M #{direction} -t #{@test_params.params_control.time[0]} -w  #{@test_params.params_control.window[0]}",@equipment['server1'].prompt,@test_params.params_control.timeout[0].to_i)
+  end
   run_stop_stats                               
+  if (test_type.match(/tcp/i) && @test_params.params_control.instance_variable_defined?(:@interrupt_pacing_interval)
+)
+   @equipment['dut1'].send_cmd("set_ethtool_coalesce_options.sh -d #{@test_params.params_control.iface[0]} -p 'rx-usecs' -n 16", @equipment['dut1'].prompt, 3)
+end
   run_data = @equipment['server1'].response                                 
   @equipment['server1'].send_cmd("echo $?",/^0/m, 2)
   return_non_zero = @equipment['server1'].timeout?
@@ -54,6 +80,9 @@ end
 # Start collecting system metrics (i.e. cpu load, mem load)
   def self.run_start_stats
     @eth_ip_addr = get_ip_addr(@test_params.params_control.iface[0])
+    @collect_stats = @test_params.params_control.collect_stats[0]
+    @collect_stats_interval = @test_params.params_control.collect_stats_interval[0].to_i
+
     if @eth_ip_addr
       @equipment['dut1'].target.platform_info.telnet_ip = @eth_ip_addr
       @equipment['dut1'].target.platform_info.telnet_port = 23
@@ -61,6 +90,7 @@ end
       @equipment['dut1'].target.telnet.send_cmd("pwd", @equipment['dut1'].prompt , 3)    
       start_collecting_stats(@collect_stats, @collect_stats_interval) do |cmd|
         if cmd
+          @equipment['dut1'].log_info("CMD is #{cmd}\n")
           @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
           @equipment['dut1'].target.telnet.response
         end
