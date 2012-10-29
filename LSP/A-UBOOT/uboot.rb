@@ -91,6 +91,7 @@ def execute_cmd(commands)
 	last_cmd = nil
 	result = 0 	#0=pass, 1=timeout, 2=fail message detected 
 	dut_timeout = 10
+	bootcmd_timeout = 25
 	vars = Array.new
 	commands.each {|cmd|
 	last_cmd = cmd
@@ -104,7 +105,11 @@ def execute_cmd(commands)
 			expect_regex = "(#{cmd.pass_regex}|#{cmd.fail_regex})"
 		end
 	regex = Regexp.new(expect_regex)                                                
-	@equipment['dut1'].send_cmd(cmd.cmd_to_send, @equipment['dut1'].boot_prompt, dut_timeout)
+	if (cmd.cmd_to_send == "bootm") || (cmd.cmd_to_send == "bootd")||(cmd.cmd_to_send == "tftpboot")
+	    @equipment['dut1'].send_cmd(cmd.cmd_to_send, regex, bootcmd_timeout)
+	else
+	    @equipment['dut1'].send_cmd(cmd.cmd_to_send, @equipment['dut1'].boot_prompt, dut_timeout)
+	end
 	if @equipment['dut1'].timeout? || ! regex.match(@equipment['dut1'].response)
 	    result = 1
 	    break 
