@@ -376,6 +376,8 @@ module LspTestScript
       @equipment['dut1'].connect({'type'=>'telnet'})
       @equipment['dut1'].target.platform_info.telnet_port = old_telnet_port
       @equipment['dut1'].target.telnet.send_cmd("pwd", @equipment['dut1'].prompt , 3)    
+    @collect_stats = @test_params.params_control.collect_stats[0]
+    @collect_stats_interval = @test_params.params_control.collect_stats_interval[0].to_i
       start_collecting_stats(@collect_stats, @collect_stats_interval) do |cmd| 
         if cmd
           @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
