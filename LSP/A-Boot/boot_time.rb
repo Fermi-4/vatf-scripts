@@ -98,7 +98,7 @@ def run
     perf_data <<  {'name' => "Boottime-LoadKernel", 'value' => boottimes_readkernel, 'units' => "sec"}
     perf_data <<  {'name' => "Boottime-BootKernel", 'value' => boottimes_bootkernel, 'units' => "sec"}
     perf_data <<  {'name' => "Boottime-Total", 'value' => boottimes_total, 'units' => "sec"}
-    set_result(FrameworkConstants::Result[:pass], "Boot Time are collected. Total is #{boottimes_total}",perf_data)
+    set_result(FrameworkConstants::Result[:pass], "Boot Time are collected. Total is #{boottimes_total}. Boottime-LoadKernel  is #{boottimes_readkernel}. Boottime-BootKernel  is #{boottimes_bootkernel}",perf_data)
   else
     set_result(FrameworkConstants::Result[:fail], "Could not get boot time.")
   end
@@ -106,7 +106,7 @@ def run
 end 
 
 def get_readkernel_regexp()
-  rtn = /TFTP\s*from\s*server|reading\s*uImage/
+  rtn = /TFTP\s*from\s*server|reading\s*uImage|Loading file\s'uImage'/
   rtn
 end
 
