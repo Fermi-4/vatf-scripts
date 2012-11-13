@@ -6,25 +6,29 @@ end
 
 def run
   @mutex = Mutex.new
+  time = Time.now
   get_ip
   configure_dut
   run_generate_script
   run_transfer_script
   @stop_test = false
+  @global_stop = false
   @start_suspend_loop = false
-  @dut_is_sleeping = false
+  @queue = Queue.new
   query_pm_stats
   test_thr = start_target_tests
+  test_thr.priority = 1  # Increase its priority compared to suspend/resume thread
   while !@start_suspend_loop
     sleep 1
   end
   sleep 5                           # Give tests thread a 5 secs head start
   suspend_thr = suspend_resume_loop
-  while status = test_thr.status
-    puts "test_thr status=#{status}"
-    puts "suspend_thr status=#{suspend_thr.status.to_s}"
+  while ((elapsed = Time.now - time) < @test_params.params_control.test_duration[0].to_f) && (status = test_thr.status)
+    puts "Elapsed Time: #{elapsed} seconds"
+    puts "test_thr status=#{status}, suspend_thr status=#{suspend_thr.status.to_s}"
     sleep 1
   end
+  @global_stop = true
   result = test_thr.value           # This will block (join) until test_thr completes
   set_result(result[0], result[1]) 
   @stop_test = true
@@ -66,7 +70,7 @@ def start_target_tests
     time = Time.now
     failure = false
     suspend_time = @test_params.params_chan.suspend_time[0].to_i
-    resume_time = @test_params.params_chan.resume_time[0].to_i
+    resume_time = @test_params.params_chan.resume_time[0].to_i + 1 # Give extra second for ethernet bringup
     result = [FrameworkConstants::Result[:pass], "Test completed without errors"]
     @equipment['dut1'].target.platform_info.telnet_ip = @eth_ip_addr
     @equipment['dut1'].target.platform_info.telnet_port = 23
@@ -79,15 +83,13 @@ def start_target_tests
     @equipment['dut1'].log_info("Telnet Data: \n #{@equipment['dut1'].target.telnet.response}")
     cmd_timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_i : 600
     cmd_timeout *= ((suspend_time + resume_time + 15) / resume_time)       #15 is approx max observed wait time to suspend
+    @queue.push(1)  # Just to get this Thread going for the first time w/out waiting for suspend thread
     @start_suspend_loop = true
     
-    while ((elapsed = Time.now - time) < @test_params.params_control.test_duration[0].to_f && !failure && !@stop_test )
+    while ( !failure && !@stop_test && !@global_stop )
       begin
-        puts "At least #{@test_params.params_control.test_duration[0].to_f - elapsed} seconds to go"
         # Don't try to start test while DUT is sleeping
-        while @dut_is_sleeping 
-          sleep 0.1
-        end
+        @queue.pop # Wait for indication from suspend_resume thread
         @equipment['dut1'].log_info("STARTING TEST with cmd: ./test.sh 2> stderr.log > stdout.log 3> result.log")
         @equipment['dut1'].target.telnet.send_cmd("./test.sh 2> stderr.log > stdout.log 3> result.log",@equipment['dut1'].prompt, cmd_timeout)
       rescue Timeout::Error => e
@@ -116,14 +118,12 @@ end
 
 def suspend_resume_loop
   suspend_time = @test_params.params_chan.suspend_time[0].to_i
-  resume_time = @test_params.params_chan.resume_time[0].to_i
+  resume_time = @test_params.params_chan.resume_time[0].to_i + 1 # Give extra second for ethernet bringup
   if(@test_params.params_chan.instance_variable_defined?(:@wakeup_domain) && @test_params.params_chan.wakeup_domain[0].to_s=='rtc')
     @equipment['dut1'].send_cmd( "[ -e /dev/rtc0 ]; echo $?", /^0[\0\n\r]+/m, 2)
     raise "DUT does not seem to support rtc wakeup. /dev/rtc0 does not exist"  if @equipment['dut1'].timeout?
     thr = Thread.new {
     while (!@stop_test) 
-      #Suspend
-      @dut_is_sleeping = true
       puts "GOING TO SUSPEND DUT - rtcwake case"
       @mutex.synchronize do
         @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m mem -s #{suspend_time}", /Freezing remaining freezable tasks.+resume of devices complete/, suspend_time+10)
@@ -132,7 +132,7 @@ def suspend_resume_loop
         puts "Timeout while waiting for RTC suspend/resume completion"
         raise "DUT took more than #{suspend_time+10} seconds to suspend/resume" 
       end
-      @dut_is_sleeping = false
+      @queue.push(1)  # Inform test thread that dut is awake
       sleep resume_time 
     end
   }
@@ -140,8 +140,6 @@ def suspend_resume_loop
   else
   thr = Thread.new {
     while (!@stop_test) 
-      #Suspend
-      @dut_is_sleeping = true
       puts "GOING TO SUSPEND DUT"
       @mutex.synchronize do
         @equipment['dut1'].send_cmd("sync; echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 60)
@@ -156,12 +154,12 @@ def suspend_resume_loop
       @equipment['dut1'].send_cmd("\n\n\n", @equipment['dut1'].prompt, 1)  # Try to resume
       @equipment['dut1'].send_cmd("\n\n\n", @equipment['dut1'].prompt, 1)  # Try to resume 
       @equipment['dut1'].send_cmd("\n\n\n", @equipment['dut1'].prompt, 1)  # Try to resume 
-      @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 15)  # One last time
+      @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 20)  # One last time
       if @equipment['dut1'].timeout?
         puts "Timeout while waiting to resume"
-        raise "DUT took more than 15 seconds to resume" 
+        raise "DUT took more than 20 seconds to resume" 
       end
-      @dut_is_sleeping = false
+      @queue.push(1)  # Inform test thread that dut is awake
       sleep resume_time 
     end
   }
