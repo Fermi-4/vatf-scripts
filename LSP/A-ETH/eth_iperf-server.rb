@@ -43,7 +43,7 @@ def run
                                  @equipment['server1'].prompt,
                                  @test_params.params_control.timeout[0].to_i)
   elsif (test_type.match(/tcp/i))
-   direction = @test_params.params_control.direction[0].match(/bi/i)?'-d':''
+   direction = @test_params.params_control.direction[0].match(/bi/i)? '-d':''
    @equipment['server1'].send_cmd("iperf -c #{dut_ip_addr} -m -M  #{@test_params.params_control.packet_size[0]} -f M #{direction} -t #{@test_params.params_control.time[0]} -w  #{@test_params.params_control.window[0]}",@equipment['server1'].prompt,@test_params.params_control.timeout[0].to_i)
   end
   run_stop_stats                               
