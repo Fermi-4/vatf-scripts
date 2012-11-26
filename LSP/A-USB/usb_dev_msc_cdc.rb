@@ -19,6 +19,12 @@ end
 def run
 
 	$result = 0
+	command = "modprobe -r g_ether"
+	@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+	command = "modprobe -r g_file_storage"
+	@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+	command = "modprobe -r g_mass_storage"
+	@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
 
 	cmds = @test_params.params_chan.instance_variable_get("@#{'cmd'}").to_s
 	$cmd = cmds
@@ -278,7 +284,7 @@ def usb_dev_cdc()
 	system ("sleep  60")
 
 	command ="bash -c 'ifconfig usb0 #{@equipment['server2'].usb_ip} up'"
-	@equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt , 30)
+	@equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt , 5)
 	response = @equipment['server2'].response
         if response.include?('No such device')
 		$result = 1
@@ -321,6 +327,17 @@ def usb_dev_cdc()
 
 end
 
+def assign_server_ip()
+  command ="bash -c 'ifconfig usb0 #{@equipment['server2'].usb_ip} up'"
+  @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt , 5)
+  response = @equipment['server2'].response
+  if response.include?('No such device')
+    $result = 1
+    set_result(FrameworkConstants::Result[:fail], "Linux system ip address is not assigned properlly.")
+    return
+  end
+  system ("sleep 1")
+end
 
 
 #ping test
@@ -330,8 +347,9 @@ def pingtest_cdc()
 	
 	#Ping from DUT to host
 
-	command ="ping -c 2 #{@equipment['server2'].usb_ip} -s #{psize}"
-	@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,4)
+        assign_server_ip() 
+	command ="ping -c 10 #{@equipment['server2'].usb_ip} -s #{psize}"
+	@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,15)
 	response = @equipment['dut1'].response
         if response.include?('bytes from')
 		puts "Ping from DUT to host is successful "
@@ -343,8 +361,9 @@ def pingtest_cdc()
 
 	#Ping from host to DUT
 
+        assign_server_ip()
 	command="ping -c 10 #{@equipment['dut1'].usb_ip} -s #{psize}"
-	@equipment['server2'].send_cmd(command, @equipment['server2'].prompt,1)
+	@equipment['server2'].send_cmd(command, @equipment['server2'].prompt,15)
 	response = @equipment['server2'].response
         if response.include?('bytes from')
 		puts "Ping from host to DUT is successful "
@@ -365,8 +384,9 @@ def floodpingtest_cdc()
 
         #Flood ping from host to DUT
 
+        assign_server_ip()
         command="ping -f -c 10 #{@equipment['dut1'].usb_ip} -s #{psize}"
-        @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt,30)
+        @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt,15)
         response = @equipment['server2'].response
         if response.include?('0% packet loss')
                 puts "Flood ping from host to DUT is successful "
@@ -384,7 +404,7 @@ end
 def iperftest_cdc()
 
 #	iperf test from host to DUT
-	windowsize = [8,16,32,64]
+	windowsize = [8,16,32,64,128]
 	windowsize.each { |wsize|
 
 	command ="kill -9 $(pidof iperf)"
@@ -406,8 +426,9 @@ def iperftest_cdc()
 	end
 
 
-	command="iperf -c #{@equipment['dut1'].usb_ip} -w #{wsize}K -d -t 10"
-	@equipment['server2'].send_cmd(command, @equipment['server2'].prompt,1)
+        assign_server_ip()
+	command="iperf -c #{@equipment['dut1'].usb_ip} -w #{wsize}K -d -t 60"
+	@equipment['server2'].send_cmd(command, @equipment['server2'].prompt,65)
 	response = @equipment['server2'].response
         if response.include?('Connection refused')
 		$result = 1
@@ -425,7 +446,7 @@ def iperftest_cdc()
 #	iperf test from DUT to host
 
 	puts "iperf test from dut to host is going to start"
-	windowsize = [8,16,32,64]
+	windowsize = [8,16,32,64,128]
 	windowsize.each { |wsize|
 
 	system ("kill -9 $(pidof iperf)")
@@ -444,8 +465,9 @@ def iperftest_cdc()
 		return 
 	end
 
-	command="iperf -c #{@equipment['server2'].usb_ip} -w #{wsize}K -d -t 10"
-	@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,15)
+        assign_server_ip()
+	command="iperf -c #{@equipment['server2'].usb_ip} -w #{wsize}K -d -t 60"
+	@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,65)
 	response = @equipment['dut1'].response
         if response.include?('Connection refused')
 		$result = 1
