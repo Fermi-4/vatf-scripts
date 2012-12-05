@@ -60,9 +60,9 @@ def run
   if @test_params.params_chan.instance_variable_defined?(:@suspend) && @test_params.params_chan.suspend[0] == '1'
     @test_params.params_control.loop_count[0].to_i.times do
       # Suspend
-      @equipment['dut1'].send_cmd("echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 3)
+      @equipment['dut1'].send_cmd("echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 10)
       
-      raise "DUT took more than 3 seconds to suspend" if @equipment['dut1'].timeout?
+      raise "DUT took more than 10 seconds to suspend" if @equipment['dut1'].timeout?
       #@equipment['dut1'].send_cmd("\x3", @equipment['dut1'].prompt, 1) if @test_params.params_chan.suspend[0] == '1'  # Ctrl^c is required for some reason w/ amsdk fs
       sleep 2  # wait for suspend to stabilize
       
@@ -80,8 +80,8 @@ def run
       
               
       # Resume from console
-      @equipment['dut1'].send_cmd(" ", @equipment['dut1'].prompt, 3)
-      raise "DUT took more than 3 seconds to resume" if @equipment['dut1'].timeout?
+      @equipment['dut1'].send_cmd(" ", @equipment['dut1'].prompt, 10)
+      raise "DUT took more than 10 seconds to resume" if @equipment['dut1'].timeout?
       #dutThread.join if dutThread
     end
     
