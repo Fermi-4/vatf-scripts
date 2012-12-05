@@ -118,18 +118,14 @@ def usb_dev_msc()
 
     when $cmd.match(/_msc_slave/)
 
-      command = create_share_memory("dd if=/dev/zero of=/dev/shm/disk bs=1M count=52", "records", "fdisk /dev/shm/disk", 10)
-      command = create_share_memory(command, "m for help", "x", 1)
-      command = create_share_memory(command, "Expert command", "b", 1)
-      command = create_share_memory(command, "Partition", "1", 1)
-      command = create_share_memory(command, "You must set cylinders", "c", 1)
-      command = create_share_memory(command, "Number of cylinders", "1-1047000", 1)
-      command = create_share_memory(command, "Expert command", "w", 1)
-      command = create_share_memory(command, "Syncing disks", "mkfs.vfat /dev/shm/disk", 10)
+      command = create_share_memory("dd if=/dev/zero of=/dev/shm/disk bs=1M count=52", "52+0 records", "mknod /dev/loop0 b 7 0", 10)
+      command = create_share_memory(command, "#", "losetup /dev/loop0 /dev/shm/disk", 5)
+      command = create_share_memory(command, "#", "echo $?", 2)
+      command = create_share_memory(command, "0", "mkfs.vfat /dev/loop0", 3)
 
       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
       
-      command = "modprobe g_file_storage file=/dev/shm/disk stall=0 removable=1"
+      command = "modprobe g_file_storage file=/dev/loop0 stall=0 removable=1"
 
     else
       $result = 1
