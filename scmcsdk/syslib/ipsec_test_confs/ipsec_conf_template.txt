@@ -1,0 +1,47 @@
+# ipsec.conf - strongSwan IPsec configuration file
+#  The following variables will have to be replaced by the automation setup:
+#    %LOCAL_IP_ADDRESS%     = IP address for the side where the ipsec.conf file will reside
+#    %CERT_FILE_PATH_NAME%  = Certification file and path name. (alpha side = /home/gguser/ipsec/alphaCert.der, beta side = /etc/ipsec.d/certs/betaCert.der)
+#    %LOCAL_CN%             = Local network name (alpha.test.org or beta.test.org)
+#    %REMOTE_CN%            = Remote network name (beta.test.org or alpha.test.org)
+#    %REMOTE_IP_ADDRESS%    = IP address for the remote side
+#    %IKE_LIFETIME%         = IKE rekey lifetime (48H for 48 hours)
+#    %LIFETIME%             = Rekey lifetime (48H for 48 hours)"
+#    %CONNECTION_SIDE%      = Connection side reference. Alpha  for alpha side, Beta  for beta side
+#    %LOCAL_IPV6_ADDRESS%   = Local side IPV6 address (2000::1)
+#    %REMOTE_IPV6_ADDRESS%  = Remote side IPV6 address (2000::2)
+
+# basic configuration
+config setup
+    strictcrlpolicy=no
+    charondebug=all
+    plutostart=no
+
+# Add connections here.
+conn %default
+    left=%LOCAL_IP_ADDRESS%
+    leftcert=%CERT_FILE_PATH_NAME%
+    leftid="C=US, O=Test, CN=%LOCAL_CN%"
+    right=%REMOTE_IP_ADDRESS%
+    rightid="C=US, O=Test, CN=%REMOTE_CN%"
+    keyexchange=ikev2
+    ike=aes128-sha1-modp2048!
+    type=tunnel
+    pfs=yes
+    esp=aes128ctr-sha1-modp2048-noesn!
+    ikelifetime=%IKE_LIFETIME%
+    lifetime=%LIFETIME%
+
+conn %CONNECTION_SIDE%-Udp1
+    leftprotoport=udp
+    leftsubnet=%LOCAL_IP_ADDRESS%/32
+    rightprotoport=udp
+    rightsubnet=%REMOTE_IP_ADDRESS%/32
+    auto=add
+
+conn %CONNECTION_SIDE%-Udp2
+    leftprotoport=udp
+    leftsubnet=%LOCAL_IPV6_ADDRESS%/64
+    rightprotoport=udp
+    rightsubnet=%REMOTE_IPV6_ADDRESS%/64
+    auto=add
