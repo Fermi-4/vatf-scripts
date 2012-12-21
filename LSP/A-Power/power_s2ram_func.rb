@@ -23,7 +23,7 @@ def run
   end
   sleep 5                           # Give tests thread a 5 secs head start
   suspend_thr = suspend_resume_loop
-  while ((elapsed = Time.now - time) < @test_params.params_control.test_duration[0].to_f) && (status = test_thr.status)
+  while ((elapsed = Time.now - time) < @test_params.params_control.test_duration[0].to_f) && (status = test_thr.status) && !@global_stop
     puts "Elapsed Time: #{elapsed} seconds"
     puts "test_thr status=#{status}, suspend_thr status=#{suspend_thr.status.to_s}"
     sleep 1
@@ -117,7 +117,7 @@ def start_target_tests
 end
 
 def suspend_resume_loop
-  suspend_time = @test_params.params_chan.suspend_time[0].to_i
+  suspend_time = @test_params.params_chan.suspend_time[0].to_i + rand(10)
   resume_time = @test_params.params_chan.resume_time[0].to_i + 1 # Give extra second for ethernet bringup
   if(@test_params.params_chan.instance_variable_defined?(:@wakeup_domain) && @test_params.params_chan.wakeup_domain[0].to_s=='rtc')
     @equipment['dut1'].send_cmd( "[ -e /dev/rtc0 ]; echo $?", /^0[\0\n\r]+/m, 2)
@@ -126,10 +126,12 @@ def suspend_resume_loop
     while (!@stop_test) 
       puts "GOING TO SUSPEND DUT - rtcwake case"
       @mutex.synchronize do
-        @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m mem -s #{suspend_time}", /Freezing remaining freezable tasks.+resume of devices complete/, suspend_time+10)
+        @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m mem -s #{suspend_time}", /resume\s+of\s+devices\s+complete/i, suspend_time+10)
       end
       if @equipment['dut1'].timeout?
         puts "Timeout while waiting for RTC suspend/resume completion"
+        @queue.push(1)  # Inform test thread that dut is awake
+        @global_stop = true
         raise "DUT took more than #{suspend_time+10} seconds to suspend/resume" 
       end
       @queue.push(1)  # Inform test thread that dut is awake
@@ -157,6 +159,8 @@ def suspend_resume_loop
       @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 20)  # One last time
       if @equipment['dut1'].timeout?
         puts "Timeout while waiting to resume"
+        @queue.push(1)  # Inform test thread that dut is awake
+        @global_stop = true
         raise "DUT took more than 20 seconds to resume" 
       end
       @queue.push(1)  # Inform test thread that dut is awake
