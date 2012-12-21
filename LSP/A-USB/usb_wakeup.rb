@@ -8,6 +8,12 @@ def setup
   self.as(LspTestScript).setup
   # Enable interrupts on MUSB port for am180x
   @equipment['dut1'].send_cmd("insmod /lib/modules/`uname -a | cut -d' ' -f 3`/kernel/drivers/usb/gadget/g_ether.ko", /#{@equipment['dut1'].prompt}/, 30) if @equipment['dut1'].name.match(/am180x/i)
+  enable_usb_wakeup
+end
+
+def enable_usb_wakeup
+  @equipment['dut1'].send_cmd("cd /sys/devices/platform/omap/musb-ti81xx || exit 1", /#{@equipment['dut1'].prompt}/, 3)
+  @equipment['dut1'].send_cmd("lst=`find . -name wakeup`; for ent in $lst; do echo $ent; echo enabled > $ent; done", /#{@equipment['dut1'].prompt}/, 10)
 end
 
 def connect_to_extra_equipment
@@ -94,12 +100,16 @@ def run
     ses_data = @equipment['dut1'].update_response
     enum_data = ses_data[session_data_pointer==0 ? 0: session_data_pointer-1, ses_data.length]
     @equipment['dut1'].log_info("Iteration #{i}: \n #{enum_data}")
-    if ( enum_data.match(/(kernel NULL pointer dereference)|(reset \w+-speed USB device number \d+)/m) )
+    #if ( enum_data.match(/(kernel NULL pointer dereference)|(reset \w+-speed USB device number \d+)/m) )   #Temp disabling check for reset msgs
+    if ( enum_data.match(/(kernel NULL pointer dereference)/m) )
       set_result(FrameworkConstants::Result[:fail], "Kernel crash or USB reset errors detected")
       return
     else
       successful_enums = successful_enums + 1 if verify_devices_detected(enum_data, wakeup_event) == 1
     end
+ 
+    # Re-enable usb wakeup in case bable interrupts resetted the controller
+    enable_usb_wakeup
 
     # Prepare for next loop
     if wakeup_event == 'connect'
