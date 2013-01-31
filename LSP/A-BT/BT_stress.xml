@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<testcases>
+<testcase internalid="2321721" name="Bluetooth Init/Scan/Exit Stress">
+	<node_order><![CDATA[0]]></node_order>
+	<externalid><![CDATA[3641]]></externalid>
+	<summary><![CDATA[<p>Bluetooth Stress test for BT_Init/BT_Inquiry/BT_Exit functions</p>]]></summary>
+	<execution_type><![CDATA[2]]></execution_type>
+	<importance><![CDATA[2]]></importance>
+	<steps><![CDATA[<p><br />
+&nbsp; Requirement to have at least one discoverable BT device in the neighborhood. The BT name of that device is mentioned as remote_bt_device in parameters of test case. This is a prerequisite for this test case. If device is not discoverable, please use appropriate commands to make it discoverable. Example: sudo hciconfig hci0 pscan</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>]]></steps>
+	<expectedresults><![CDATA[]]></expectedresults>
+<keywords>	<keyword name="p_am335x-evm"><notes><![CDATA[
+
+]]></notes></keyword>
+	<keyword name="p_am335x-sk"><notes><![CDATA[
+AM335x EVM SK
+]]></notes></keyword>
+</keywords><custom_fields>	<custom_field>
+	<name><![CDATA[params_chan]]></name>
+	<value><![CDATA[bt_script_location="/usr/share/wl1271-demos/bluetooth/scripts"
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_equip]]></name>
+	<value><![CDATA[
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[tee]]></name>
+	<value><![CDATA[vatf
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[scripts]]></name>
+	<value><![CDATA[LSP/A-BT/bt_stress.rb
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[hw_assets_config]]></name>
+	<value><![CDATA[dut1 = ["<platform>",linux]; server1 = ["linux_server"]; bt_device1 = ["bt_device"]
+]]></value>
+</custom_field>
+	<custom_field>
+	<name><![CDATA[params_control]]></name>
+	<value><![CDATA[iterations=2,pass_rate=100
+]]></value>
+</custom_field>
+</custom_fields></testcase>
+</testcases>
