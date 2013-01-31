@@ -21,6 +21,12 @@ module PlatformSpecificVarNames
       'da850-omapl138-evm'=>'0xc0700000',
       'tci6614-evm' => '0x80000100'
       },
+    'ramaddress_2' => {
+      'am335x-evm'=>'0x82000000'
+      },
+    'ramaddress_3' => {
+      'am335x-evm'=>'0x84000000'
+      },
     'nanderaseforramdisk' => {
       'dm644x-evm'=>'nand erase 0x460000 0x300000', 
       'dm365-evm'=>'nand erase 0xC00000  0x300000',
