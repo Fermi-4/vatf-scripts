@@ -85,7 +85,8 @@ def usb_dev_msc()
 
   system ("sleep 1")
 
-  command = "modprobe -l"
+  #command = "modprobe -l"
+  command = "find /lib/modules -name *.ko"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   response = @equipment['dut1'].response
   if response.include?('g_file_storage.ko')
@@ -217,7 +218,8 @@ def usb_dev_cdc()
 
   system ("sleep 1")
 
-  command = "modprobe -l"
+  #command = "modprobe -l"
+  command = "find /lib/modules -name *.ko"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   response = @equipment['dut1'].response
   if response.include?('g_ether.ko')
@@ -319,6 +321,8 @@ def assign_server_ip()
     set_result(FrameworkConstants::Result[:fail], "Linux system ip address is not assigned properlly.")
     return
   end
+  command ="ping -I usb0 #{@equipment['dut1'].usb_ip}"
+  @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt , 5)
   system ("sleep 1")
 end
 
@@ -326,11 +330,11 @@ end
 #ping test
 def pingtest_cdc()
   packetsize = [64,4096,65500]
+  assign_server_ip() 
   packetsize.each { |psize| 
   
   #Ping from DUT to host
 
-  assign_server_ip() 
   command ="ping -c 10 #{@equipment['server2'].usb_ip} -s #{psize}"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,15)
   response = @equipment['dut1'].response
@@ -344,7 +348,6 @@ def pingtest_cdc()
 
   #Ping from host to DUT
 
-  assign_server_ip()
   command="ping -c 10 #{@equipment['dut1'].usb_ip} -s #{psize}"
   @equipment['server2'].send_cmd(command, @equipment['server2'].prompt,15)
   response = @equipment['server2'].response
@@ -363,11 +366,11 @@ end
 # Flood ping test
 def floodpingtest_cdc()
   packetsize = [64,4096,65500]
+  assign_server_ip()
   packetsize.each { |psize|
 
   #Flood ping from host to DUT
 
-  assign_server_ip()
   command="ping -f -c 10 #{@equipment['dut1'].usb_ip} -s #{psize}"
   @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt,15)
   response = @equipment['server2'].response
@@ -408,8 +411,6 @@ def iperftest_cdc()
     return 
   end
 
-
-  assign_server_ip()
   command="iperf -c #{@equipment['dut1'].usb_ip} -w #{wsize}K -d -t 60"
   @equipment['server2'].send_cmd(command, @equipment['server2'].prompt,65)
   response = @equipment['server2'].response
@@ -430,6 +431,7 @@ def iperftest_cdc()
 
   puts "iperf test from dut to host is going to start"
   windowsize = [8,16,32,64,128]
+  assign_server_ip()
   windowsize.each { |wsize|
 
   system ("kill -9 $(pidof iperf)")
@@ -448,7 +450,6 @@ def iperftest_cdc()
     return 
   end
 
-  assign_server_ip()
   command="iperf -c #{@equipment['server2'].usb_ip} -w #{wsize}K -d -t 60"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,65)
   response = @equipment['dut1'].response
