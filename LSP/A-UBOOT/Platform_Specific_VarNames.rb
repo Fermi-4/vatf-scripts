@@ -124,6 +124,7 @@ module PlatformSpecificVarNames
       'tci6614-evm' => '0x0000A5A5'
       },
     'bootcmd' => {  
+      'am335x-evm'=>'dhcp;bootm',
       'dm644x-evm'=>'dhcp;tftp;bootm',
       'dm365-evm'=>'dhcp;tftp;bootm',
       'am37x-evm'=>'dhcp;tftp;bootm',
@@ -156,6 +157,9 @@ module PlatformSpecificVarNames
       'am17x-evm' => '0x2c0000',
       'beagle' =>'0x780000',
       'da850-omapl138-evm' => '0x200000'
+      },
+    'nand_test_addr' => {  
+      'am335x-evm'=>'00400000',
       },
     'nandreadwritesize' => {  
       'dm644x-evm'=>'0x100000',
@@ -386,6 +390,7 @@ module PlatformSpecificVarNames
       'da850-omapl138-evm'=>'fatload mmc 0 0xc0700000 $bootfile;bootm'
       },
     'i2cchipadd' => {  
+      'am335x-evm'=>'0x50',
       'dm644x-evm'=>'0x50',
       'dm365-evm'=>'0x50',
       'am37x-evm'=>'0x48',
@@ -489,6 +494,7 @@ module PlatformSpecificVarNames
       'da850-omapl138-evm'=>''
       },
     'bootargs' => {  
+      'am335x-evm'=>'console=ttyO0,115200n8 noinitrd rw root=/dev/nfs nfsroot=$serverip:$nfspath,nolock ip=dhcp',
       'dm644x-evm'=>'console=ttyS0,115200n8 noinitrd rw root=/dev/nfs nfsroot=$serverip:$nfspath,nolock mem=120M ip=dhcp',
       'dm365-evm'=>'console=ttyS0,115200n8 noinitrd rw root=/dev/nfs nfsroot=$serverip:$nfspath,nolock mem=116M ip=dhcp',
       'am37x-evm'=>'console=ttyS0,115200n8 noinitrd rw root=/dev/nfs nfsroot=$serverip:$nfspath,nolock mem=128M ip=dhcp',
@@ -514,5 +520,4 @@ module PlatformSpecificVarNames
     return @platform_specific_var_name[var_name][platform]
   end
 end
-
 
