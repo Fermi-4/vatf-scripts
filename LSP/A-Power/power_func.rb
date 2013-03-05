@@ -23,6 +23,10 @@ end
 
 def run
   perf = []
+
+  power_state = @test_params.params_chan.instance_variable_defined?(:@power_state) ? @test_params.params_chan.power_state[0] : 'mem'
+  wakeup_domain = @test_params.params_chan.instance_variable_defined?(:@wakeup_domain) ? @test_params.params_chan.wakeup_domain[0] : 'uart'
+
   # Configure multimeter 
   @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name))
   # Set DUT in appropriate state
@@ -56,11 +60,18 @@ def run
     end
   end
   
+  # set uart to gpio in standby_gpio_pad_conf so that uart can wakeup from standby
+  if power_state == 'standby' && wakeup_domain == 'uart'
+    @equipment['dut1'].send_cmd("cd /debug/omap_mux/board", @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'set_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})}" , @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'get_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})}", @equipment['dut1'].prompt, 10)
+  end
+
   volt_readings={}
   if @test_params.params_chan.instance_variable_defined?(:@suspend) && @test_params.params_chan.suspend[0] == '1'
     @test_params.params_control.loop_count[0].to_i.times do
       # Suspend
-      @equipment['dut1'].send_cmd("echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 10)
+      @equipment['dut1'].send_cmd("echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, 10)
       
       raise "DUT took more than 10 seconds to suspend" if @equipment['dut1'].timeout?
       #@equipment['dut1'].send_cmd("\x3", @equipment['dut1'].prompt, 1) if @test_params.params_chan.suspend[0] == '1'  # Ctrl^c is required for some reason w/ amsdk fs

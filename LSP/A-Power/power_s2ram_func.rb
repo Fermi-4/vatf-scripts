@@ -43,6 +43,9 @@ def get_ip
 end
 
 def configure_dut
+  power_state = @test_params.params_chan.instance_variable_defined?(:@power_state) ? @test_params.params_chan.power_state[0] : 'mem'
+  wakeup_domain = @test_params.params_chan.instance_variable_defined?(:@wakeup_domain) ? @test_params.params_chan.wakeup_domain[0] : 'uart'
+
   @equipment['dut1'].send_cmd("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", @equipment['dut1'].prompt, 3)
   @equipment['dut1'].send_cmd(" cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies", @equipment['dut1'].prompt, 3)
   supported_frequencies = @equipment['dut1'].response.split(/\s+/).select {|v| v =~ /^\d+$/ }
@@ -62,8 +65,14 @@ def configure_dut
     new_opp = @equipment['dut1'].response.split(/\s+/).select {|v| v =~ /^\d+$/ }
     raise "Could not set #{@test_params.params_chan.dvfs_freq[0]} OPP" if !new_opp.include?(@test_params.params_chan.dvfs_freq[0])
   end
-end
 
+  # set uart to gpio in standby_gpio_pad_conf so that uart can wakeup from standby
+  if power_state == 'standby' && wakeup_domain == 'uart'
+    @equipment['dut1'].send_cmd("cd /debug/omap_mux/board", @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'set_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})}" , @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'get_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})}", @equipment['dut1'].prompt, 10)
+  end
+end
 
 def start_target_tests
   thr = Thread.new {
@@ -101,7 +110,7 @@ def start_target_tests
       begin
         @equipment['dut1'].log_info("Telnet Session get return value")
         @mutex.synchronize do
-          @equipment['dut1'].target.telnet.send_cmd("echo $?",/^0[\0\n\r]+/m, suspend_time + 10) if !failure  
+          @equipment['dut1'].target.telnet.send_cmd("echo $?",/^0[\0\n\r]+/m, suspend_time + 30) if !failure  
         end
         @equipment['dut1'].log_info("Telnet Session Return Value:\n #{@equipment['dut1'].target.telnet.response}\nTelnet Return value END")
       rescue Timeout::Error => e
@@ -119,6 +128,8 @@ end
 def suspend_resume_loop
   suspend_time = @test_params.params_chan.suspend_time[0].to_i + rand(10)
   resume_time = @test_params.params_chan.resume_time[0].to_i + 1 # Give extra second for ethernet bringup
+  power_state = @test_params.params_chan.instance_variable_defined?(:@power_state) ? @test_params.params_chan.power_state[0] : 'mem'
+
   if(@test_params.params_chan.instance_variable_defined?(:@wakeup_domain) && @test_params.params_chan.wakeup_domain[0].to_s=='rtc')
     @equipment['dut1'].send_cmd( "[ -e /dev/rtc0 ]; echo $?", /^0[\0\n\r]+/m, 2)
     raise "DUT does not seem to support rtc wakeup. /dev/rtc0 does not exist"  if @equipment['dut1'].timeout?
@@ -144,11 +155,11 @@ def suspend_resume_loop
     while (!@stop_test) 
       puts "GOING TO SUSPEND DUT"
       @mutex.synchronize do
-        @equipment['dut1'].send_cmd("sync; echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 60)
+        @equipment['dut1'].send_cmd("sync; echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, 120)
       end
       if @equipment['dut1'].timeout?
         puts "Timeout while waiting to suspend"
-        raise "DUT took more than 60 seconds to suspend" 
+        raise "DUT took more than 120 seconds to suspend" 
       end
       sleep suspend_time    
       # Resume from console
