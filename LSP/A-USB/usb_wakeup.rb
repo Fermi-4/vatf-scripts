@@ -33,6 +33,7 @@ def run
   session_data_pointer=0
   wakeup_event = @test_params.params_control.wakeup_event[0]
   suspend_time = @test_params.params_control.suspend_time[0].to_i
+  power_state = @test_params.params_control.instance_variable_defined?(:@power_state) ? @test_params.params_control.power_state[0] : 'mem'
 
   # Initialize switch state
   if wakeup_event == 'connect'
@@ -46,7 +47,7 @@ def run
     sleep @test_params.params_control.wait_after_disconnect[0].to_i if wakeup_event.match(/connect/)
     
     puts "GOING TO SUSPEND DUT"
-    @equipment['dut1'].send_cmd("sync; echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 60)
+    @equipment['dut1'].send_cmd("sync; echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, 60)
     if @equipment['dut1'].timeout?
       puts "Timeout while waiting to suspend"
       raise "DUT took more than 60 seconds to suspend" 
