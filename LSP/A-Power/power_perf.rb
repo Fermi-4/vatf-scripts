@@ -179,7 +179,7 @@ def start_target_tests(cmd, timeout)
       begin
         @equipment['dut1'].target.telnet.send_cmd(c, @equipment['dut1'].prompt, cmd_timeout)
       rescue Timeout::Error => e
-        @equipment['dut1'].log_info("Telnet TIMEOUT ERROR. Data START:\n #{target.response}\nTelnet Data END")
+        @equipment['dut1'].log_info("Telnet TIMEOUT ERROR. Data START:\n #{@equipment['dut1'].target.telnet.response}\nTelnet Data END")
         result = [FrameworkConstants::Result[:fail], "DUT is either not responding or took more that #{cmd_timeout} seconds to run the test"]
         failure = true
       end
