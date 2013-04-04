@@ -42,26 +42,23 @@ def run
   begin 
   loop_count = @test_params.params_control.loop_count[0].to_i
   for i in (1..loop_count)  
-      @equipment['dut1'].set_boot_cmd(translated_boot_params)
-      @equipment['dut1'].send_cmd("boot", /.*/, 1)
-      connect_to_equipment('dut1')
-      
+    @equipment['dut1'].set_boot_cmd(translated_boot_params)
     time0 = Time.now
-    puts "-----------------------time0 is: "+time0.to_s
+    @equipment['dut1'].log_info( "-----------------------time0 is: "+time0.to_s)
+    @equipment['dut1'].send_cmd("boot", regexp1, 1)
 
-    @equipment['dut1'].wait_for(regexp1,30)
     if !@equipment['dut1'].timeout?
       time1 = Time.now
-      puts "-----------------------time1 is: "+time1.to_s
+      @equipment['dut1'].log_info( "-----------------------time1 is: "+time1.to_s)
     else
       res += 1
       break
     end
 
-    @equipment['dut1'].wait_for(regexp2,60)
+    @equipment['dut1'].wait_for(regexp2,30)
     if !@equipment['dut1'].timeout?
       time2 = Time.now
-      puts "---------------------------time2 is: "+time2.to_s
+      @equipment['dut1'].log_info( "---------------------------time2 is: "+time2.to_s)
     else
       res += 1
       break
@@ -70,7 +67,7 @@ def run
     @equipment['dut1'].wait_for(regexp3,600)
     if !@equipment['dut1'].timeout?
       time3 = Time.now
-      puts "---------------------------time3 is: "+time3.to_s
+      @equipment['dut1'].log_info( "---------------------------time3 is: "+time3.to_s)
     else
       res += 1
       break
@@ -80,7 +77,7 @@ def run
       boottimes_readkernel <<  time2 - time1 
       boottimes_bootkernel <<  time3 - time2
       stage1_delay = $stage1_bootdelay.include?(@test_params.platform) ? $stage1_bootdelay[@test_params.platform] : 0
-      puts "---------------------------stage1_delay is: " + stage1_delay.to_s
+      @equipment['dut1'].log_info( "---------------------------stage1_delay is: " + stage1_delay.to_s)
       # don't need minus bootdelay since we call 'boot' to boot instead of power cycle
       #boottimes_total << time3 - time0 - $bootdelay - stage1_delay
       boottimes_total << time3 - time0 - stage1_delay
@@ -91,9 +88,9 @@ def run
 
   end
   
-  puts "Boottime-LoadKernel  is #{boottimes_readkernel}"
-  puts "Boottime-BootKernel  is #{boottimes_bootkernel}"
-  puts "Boottime-Total is #{boottimes_total}"
+  @equipment['dut1'].log_info( "Boottime-LoadKernel  is #{boottimes_readkernel}")
+  @equipment['dut1'].log_info( "Boottime-BootKernel  is #{boottimes_bootkernel}")
+  @equipment['dut1'].log_info( "Boottime-Total is #{boottimes_total}")
   if res == 0
     perf_data <<  {'name' => "Boottime-LoadKernel", 'value' => boottimes_readkernel, 'units' => "sec"}
     perf_data <<  {'name' => "Boottime-BootKernel", 'value' => boottimes_bootkernel, 'units' => "sec"}
