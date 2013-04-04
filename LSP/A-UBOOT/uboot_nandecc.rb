@@ -37,9 +37,9 @@ def run
   err_byte = 0xFF >> (8 - ecc_bits.to_i) 
 
   @equipment['dut1'].send_cmd("nand erase #{nand_env_part_addr_start} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
-  @equipment['dut1'].send_cmd("save",@equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("saveenv",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("nand dump #{nand_env_part_addr_start} page",@equipment['dut1'].boot_prompt, 5)
-  @equipment['dut1'].send_cmd("nand read.raw #{ramaddress} #{nand_env_part_addr_start} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("nand read.raw #{ramaddress} #{nand_env_part_addr_start} 1",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("md.b #{ramaddress} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
 
   # modify the data
@@ -63,7 +63,7 @@ def run
   @equipment['dut1'].send_cmd("nand write.raw #{ramaddress} #{nand_env_part_addr_start}",@equipment['dut1'].boot_prompt, 5)
 
   # show modified data
-  @equipment['dut1'].send_cmd("nand read.raw #{ramaddress_2} #{nand_env_part_addr_start} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("nand read.raw #{ramaddress_2} #{nand_env_part_addr_start} 1",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("md.b #{ramaddress_2} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
 
   # show corrected data
