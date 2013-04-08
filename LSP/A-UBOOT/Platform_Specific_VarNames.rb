@@ -1,6 +1,9 @@
+# Yan's note: This needs rework!!! Too messy! Need set default value. 
+#             May consider using something like cmd_translator.
 module PlatformSpecificVarNames
   @platform_specific_var_name =  {
     'ramaddress' => {  
+      'omap5-evm' => '0x82000000',
       'dm644x-evm'=>'0x80700000',
       'dm365-evm'=>'0x80700000',
       'am37x-evm'=>'0x80200000', 
@@ -22,9 +25,11 @@ module PlatformSpecificVarNames
       'tci6614-evm' => '0x80000100'
       },
     'ramaddress_2' => {
-      'am335x-evm'=>'0x82000000'
+      'am335x-evm'=>'0x82000000',
+      'omap5-evm' => '0x83000000'
       },
     'ramaddress_3' => {
+      'omap5-evm' => '0x84000000',
       'am335x-evm'=>'0x84000000'
       },
     'nanderaseforramdisk' => {
@@ -44,6 +49,7 @@ module PlatformSpecificVarNames
       'beagle' => '',
       },
     'mtestendaddr'  => {
+      'omap5-evm'=> '0x82100000',
       'dm644x-evm'=>'0x80800000',
       'dm365-evm'=>'0x80800000',
       'am37x-evm'=>'0x80300000',
@@ -64,6 +70,7 @@ module PlatformSpecificVarNames
       'da850-omapl138-evm'  =>  '0xC0800000', 
       },
     'nextramaddress' => {  
+      'omap5-evm'=>'82000004',
       'dm644x-evm'=>'80700004',
       'dm365-evm'=>'80700004',
       'am37x-evm'=>'0x80200004',
@@ -82,9 +89,10 @@ module PlatformSpecificVarNames
       'am17x-evm' => 'C0000004',
       'beagle' =>'80200004',
       'da850-omapl138-evm'=>'C0700004',
-      'tci6614-evm' => '0x80000200'
+      'tci6614-evm' => '0x80000200',
       },
     'ramaddressfornm'  => {
+      'omap5-evm' => '0x82000000',
       'dm644x-evm'=>'',
       'dm365-evm'=>'',
       'am37x-evm'=>'80200000',
@@ -103,6 +111,7 @@ module PlatformSpecificVarNames
       'da850-omapl138-evm'=>'0xc0700000'
       },
     'magicpattern' => {  
+      'omap5-evm'=>'0x0000A5A5',
       'dm644x-evm'=>'0x0000A5A5',
       'dm365-evm'=>'0x0000A5A5',
       'am37x-evm'=>'0x0000A5A5',
@@ -124,6 +133,7 @@ module PlatformSpecificVarNames
       'tci6614-evm' => '0x0000A5A5'
       },
     'bootcmd' => {  
+      'omap5-evm'=>'dhcp;bootm',
       'am335x-evm'=>'dhcp;bootm',
       'dm644x-evm'=>'dhcp;tftp;bootm',
       'dm365-evm'=>'dhcp;tftp;bootm',
@@ -390,6 +400,7 @@ module PlatformSpecificVarNames
       'da850-omapl138-evm'=>'fatload mmc 0 0xc0700000 $bootfile;bootm'
       },
     'i2cchipadd' => {  
+      'omap5-evm'=>'0x50',
       'am335x-evm'=>'0x50',
       'dm644x-evm'=>'0x50',
       'dm365-evm'=>'0x50',
@@ -409,6 +420,7 @@ module PlatformSpecificVarNames
       'da850-omapl138-evm'=>''
       },
     'i2coff1' => {  
+      'omap5-evm'=>'0',
       'dm644x-evm'=>'0',
       'dm365-evm'=>'0',
       'am37x-evm'=>'0',
@@ -428,6 +440,7 @@ module PlatformSpecificVarNames
       'tci6614-evm' => '0'
       },
     'i2coff2' => {  
+      'omap5-evm'=>'2',
       'dm644x-evm'=>'2',
       'dm365-evm'=>'2',
       'am37x-evm'=>'2',
@@ -445,6 +458,7 @@ module PlatformSpecificVarNames
       'tci6614-evm' => '2'
       },
     'i2cmagicval' => {  
+      'omap5-evm'=>'55',
       'dm644x-evm'=>'55',
       'dm365-evm'=>'55',
       'am37x-evm'=>'55',
