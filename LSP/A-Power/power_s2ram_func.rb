@@ -137,7 +137,7 @@ def suspend_resume_loop
     while (!@stop_test) 
       puts "GOING TO SUSPEND DUT - rtcwake case"
       @mutex.synchronize do
-        @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m mem -s #{suspend_time}", /resume\s+of\s+devices\s+complete/i, suspend_time+10)
+        @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m #{power_state} -s #{suspend_time}", /resume\s+of\s+devices\s+complete/i, suspend_time+10)
       end
       if @equipment['dut1'].timeout?
         puts "Timeout while waiting for RTC suspend/resume completion"
