@@ -103,7 +103,7 @@ def run
 end 
 
 def get_readkernel_regexp()
-  rtn = /TFTP\s*from\s*server|reading\s*uImage|Loading file\s'uImage'/
+  rtn = /TFTP\s*from\s*server|reading\s*uImage|Loading file\s'uImage.*'/
   rtn
 end
 

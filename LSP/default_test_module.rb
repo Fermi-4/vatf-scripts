@@ -58,6 +58,18 @@ module LspTestScript
     new_params['kernel_modules'] = new_params['kernel_modules'] ? new_params['kernel_modules'] : 
                              @test_params.instance_variable_defined?(:@kernel_modules) ? @test_params.kernel_modules : 
                              ''  
+    new_params['skern']     = new_params['skern'] ? new_params['skern'] : 
+                             @test_params.instance_variable_defined?(:@skern) ? @test_params.skern : 
+                             @test_params.instance_variable_defined?(:@skern_file) ? @test_params.skern_file : 
+                             ''                               
+    new_params['skern_dev'] = new_params['skern_dev'] ? new_params['skern_dev'] : 
+                             @test_params.params_chan.instance_variable_defined?(:@skern_dev) ? @test_params.params_chan.skern_dev[0] : 
+                             @test_params.instance_variable_defined?(:@var_skern_dev) ? @test_params.var_skern_dev : 
+                             new_params['skern'] != '' ? 'eth' : 'none'   
+    new_params['skern_image_name'] = new_params['skern_image_name'] ? new_params['skern_image_name'] : 
+                             @test_params.instance_variable_defined?(:@var_skern_image_name) ? @test_params.var_skern_image_name : 
+                             new_params['skern'] != '' ? File.basename(new_params['skern']) : 'skern'                     
+
     new_params['dtb']        = new_params['dtb'] ? new_params['dtb'] : 
                              @test_params.instance_variable_defined?(:@dtb) ? @test_params.dtb : 
                              @test_params.instance_variable_defined?(:@dtb_file) ? @test_params.dtb_file : 
@@ -110,8 +122,9 @@ module LspTestScript
           nfs_root_path_temp 	= nfs_root_path_temp + "/autofs/#{build_id}"
           # Untar nfs filesystem if it doesn't exist
           if !File.directory?("#{nfs_root_path_temp}/usr")
+        tar_options = get_tar_options(fs,params)
         params['server'].send_sudo_cmd("mkdir -p  #{nfs_root_path_temp}", params['server'].prompt, 10)    
-        params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} -xvzf #{fs}", params['server'].prompt, 300)
+        params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} #{tar_options} #{fs}", params['server'].prompt, 300)
           end
         end
         
@@ -127,6 +140,16 @@ module LspTestScript
     params['nfs_path'] = nfs_root_path_temp
   end
       
+  def get_tar_options(fs,params)
+    params['server'].send_cmd("file #{fs}", params['server'].prompt)
+    case params['server'].response
+    when /gzip/
+    tar_options = "-xvzf" 
+    when /bzip2/
+    tar_options = "-xvjf"
+    end
+    tar_options
+  end
   def copy_sw_assets_to_tftproot(params)
     tmp_path = File.join(@tester.downcase.strip, @test_params.target.downcase.strip, @test_params.platform.downcase.strip)
     assets = params.select{|k,v| k.match(/_dev/i) && v.match(/eth/i) }.keys.map{|k| k.match(/(.+)_dev/).captures[0] }
