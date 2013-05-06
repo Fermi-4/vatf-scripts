@@ -1,111 +1,171 @@
-# The time measured by this script is time from issuing the 'boot' command
-#   to seeing 'login' prompt when booting from MMCSD.
-# The reason we use 'boot' instead of power cycle the board is that we want to
-#   preserve the uboot env settings accross the boards in case the settings 
-#   can not be saved. It is also because auto power cycle can not be performed
-#   on certain board like bone.
-# If we need measure the time from powercycle, we need revisit this script.
-# Keeping setting bootdelay in case we need measure the time starting from 
-#   powercycle.
-# If the time from powercycle is not needed, then 'bootdelay' related code
-#   could not removed.
+# This script will measure the below time 
+#
+#   "Boottime-LoadSPL": from powercycle to 'SPL'
+#   "Boottime-LoadUboot": from 'U-boot SPL' to 'U-boot'
+#   "Boottime-LoadKernel": from 'boot' cmd to 'Starting Linux...'
+#   "Boottime-InitKernel": from 'Starting' to 'INIT: Version'
+#   "Boottime-InitFS": from 'INIT:" to 'login'
+#   "Boottime-Total": all the time together
+#
 #
 require File.dirname(__FILE__)+'/../default_test_module'
 include LspTestScript
 
 $stage1_bootdelay = {'am387x-evm' => 3}
 
-
 def setup
-  # if boot media is other media other than MMCSD, more params need to be added to database to 
-  #   differeniate different media such as 'kernel_fs_from_mmc','kernel_fs_from_usb',etc.
   @equipment['dut1'].set_api('psp')
-  $bootdelay = @equipment['dut1'].instance_variable_defined?(:@power_port) ? 3 : 0
 end
 
 def run
-  delay = $stage1_bootdelay.include?(@test_params.platform) ? $stage1_bootdelay[@test_params.platform] : 0
   res = 0
   perf_data = []
-  boottimes_readkernel = []
-  boottimes_bootkernel = []
+
+  boottimes_load_spl = []     # from powercycle to 'SPL'
+  boottimes_load_uboot = []   # from 'U-boot SPL' to 'U-boot'
+  boottimes_load_kernel = []  # from 'boot' cmd to 'Starting Linux...'
+  boottimes_initialize_kernel = []  # from 'Starting' to 'INIT: Version'
+  boottimes_initialize_fs = []  # from 'INIT' to 'login'
   boottimes_total = []
 
-  regexp1 = get_readkernel_regexp
-  regexp2 = /##\s*Booting\s*kernel/
-  regexp3 = /\/\s*#|login:/
- 
+  regex_spl = /U-Boot\s+SPL/
+  regex_uboot = /U-Boot\s+[\d.]+/
+  regex_startkernel = /Starting\s+kernel/
+  regex_startfs = /INIT:\s+version/
+  regex_doneboot = /sh[\d+.-]+\s*#|login:/
+
+  delay = $stage1_bootdelay.include?(@test_params.platform) ? $stage1_bootdelay[@test_params.platform] : 0
+  skip_bootloader_time = @test_params.params_control.instance_variable_defined?(:@skip_bootloader_time) ? @test_params.params_control.skip_bootloader_time[0].downcase : 'no'
 
   translated_boot_params = setup_host_side()
+  bootargs_append = translated_boot_params.has_key?('bootargs_append') ? translated_boot_params['bootargs_append'] : ''
+  skip_fs = bootargs_append.include?("init=") ? true : false 
 
   #Start booting  
   begin 
   loop_count = @test_params.params_control.loop_count[0].to_i
   for i in (1..loop_count)  
-    @equipment['dut1'].set_boot_cmd(translated_boot_params)
-    time0 = Time.now
-    @equipment['dut1'].log_info( "-----------------------time0 is: "+time0.to_s)
-    @equipment['dut1'].send_cmd("boot", regexp1, 1)
 
+    @equipment['dut1'].power_cycle(translated_boot_params)
+    connect_to_equipment('dut1')
+  
+    if skip_bootloader_time == 'no'
+      time_start = Time.now
+      #@equipment['dut1'].log_info( "-----------------------time_start is: "+time_start.to_s)
+      @equipment['dut1'].send_cmd("", regex_spl, 60)
+      
+      if !@equipment['dut1'].timeout?
+        time_spl = Time.now
+        puts ( "---------------------------time_spl is: "+time_spl.to_s)
+        #@equipment['dut1'].log_info( "---------------------------time_spl is: "+time_spl.to_s)
+      else
+        res += 1
+        break
+      end
+
+      @equipment['dut1'].send_cmd("", regex_uboot, 60)
+
+      if !@equipment['dut1'].timeout?
+        time_uboot = Time.now
+        puts ( "---------------------------time_uboot is: "+time_uboot.to_s)
+        #@equipment['dut1'].log_info( "---------------------------time_uboot is: "+time_uboot.to_s)
+      else
+        res += 1
+        break
+      end
+    end
+    @equipment['dut1'].stop_boot()
+    set_uboot_env(translated_boot_params)
+
+    time_bootcmd = Time.now
+    #@equipment['dut1'].log_info( "-----------------------time_bootcmd is: "+time_bootcmd.to_s)
+    @equipment['dut1'].send_cmd("boot", regex_startkernel, 30)
     if !@equipment['dut1'].timeout?
-      time1 = Time.now
-      @equipment['dut1'].log_info( "-----------------------time1 is: "+time1.to_s)
+      time_initkernel = Time.now
+      #@equipment['dut1'].log_info( "---------------------------time_initkernel is: "+time_initkernel.to_s)
     else
       res += 1
       break
     end
 
-    @equipment['dut1'].wait_for(regexp2,30)
-    if !@equipment['dut1'].timeout?
-      time2 = Time.now
-      @equipment['dut1'].log_info( "---------------------------time2 is: "+time2.to_s)
-    else
-      res += 1
-      break
+    if !skip_fs 
+      @equipment['dut1'].wait_for(regex_startfs,60)
+      if !@equipment['dut1'].timeout?
+        time_initfs = Time.now
+        #@equipment['dut1'].log_info( "---------------------------time_initfs is: "+time_initfs.to_s)
+      else
+        res += 1
+        break
+      end
     end
 
-    @equipment['dut1'].wait_for(regexp3,600)
+    @equipment['dut1'].wait_for(regex_doneboot,60)
     if !@equipment['dut1'].timeout?
-      time3 = Time.now
-      @equipment['dut1'].log_info( "---------------------------time3 is: "+time3.to_s)
+      time_doneboot = Time.now
+      #@equipment['dut1'].log_info( "---------------------------time_doneboot is: "+time_doneboot.to_s)
     else
       res += 1
       break
     end
 
     if res == 0   
-      boottimes_readkernel <<  time2 - time1 
-      boottimes_bootkernel <<  time3 - time2
+      if skip_bootloader_time == 'no'
+        boottimes_load_spl << time_spl - time_start
+        boottimes_load_uboot << time_uboot - time_spl
+      end
+      boottimes_load_kernel << time_initkernel - time_bootcmd
+      if skip_fs
+        boottimes_initialize_kernel << time_doneboot - time_initkernel
+      else
+        boottimes_initialize_kernel << time_initfs - time_initkernel
+        boottimes_initialize_fs << time_doneboot - time_initfs
+      end
+
       stage1_delay = $stage1_bootdelay.include?(@test_params.platform) ? $stage1_bootdelay[@test_params.platform] : 0
-      @equipment['dut1'].log_info( "---------------------------stage1_delay is: " + stage1_delay.to_s)
-      # don't need minus bootdelay since we call 'boot' to boot instead of power cycle
-      #boottimes_total << time3 - time0 - $bootdelay - stage1_delay
-      boottimes_total << time3 - time0 - stage1_delay
+      #@equipment['dut1'].log_info( "---------------------------stage1_delay is: " + stage1_delay.to_s)
+
+      
+      if skip_bootloader_time == 'no'
+        boottimes_total << (time_doneboot - time_bootcmd) + (time_uboot - time_start) - stage1_delay
+      else
+        boottimes_total << (time_doneboot - time_bootcmd)
+      end
     end
-    @equipment['dut1'].send_cmd(@equipment['dut1'].login, @equipment['dut1'].prompt, 10) # login to the unit
-    raise 'Unable to login' if @equipment['dut1'].timeout?
   end
 
   end
   
-  @equipment['dut1'].log_info( "Boottime-LoadKernel  is #{boottimes_readkernel}")
-  @equipment['dut1'].log_info( "Boottime-BootKernel  is #{boottimes_bootkernel}")
+  if skip_bootloader_time == 'no'
+    @equipment['dut1'].log_info( "Boottime-LoadSPL  is #{boottimes_load_spl}")
+    @equipment['dut1'].log_info( "Boottime-LoadUboot  is #{boottimes_load_uboot}")
+  end
+  @equipment['dut1'].log_info( "Boottime-LoadKernel  is #{boottimes_load_kernel}")
+  @equipment['dut1'].log_info( "Boottime-InitKernel  is #{boottimes_initialize_kernel}")
+  @equipment['dut1'].log_info( "Boottime-InitFS  is #{boottimes_initialize_fs}") if !skip_fs
   @equipment['dut1'].log_info( "Boottime-Total is #{boottimes_total}")
   if res == 0
-    perf_data <<  {'name' => "Boottime-LoadKernel", 'value' => boottimes_readkernel, 'units' => "sec"}
-    perf_data <<  {'name' => "Boottime-BootKernel", 'value' => boottimes_bootkernel, 'units' => "sec"}
+    if skip_bootloader_time == 'no'
+      perf_data <<  {'name' => "Boottime-LoadSPL", 'value' => boottimes_load_spl, 'units' => "sec"}
+      perf_data <<  {'name' => "Boottime-LoadUboot", 'value' => boottimes_load_uboot, 'units' => "sec"}
+    end
+    perf_data <<  {'name' => "Boottime-LoadKernel", 'value' => boottimes_load_kernel, 'units' => "sec"}
+    perf_data <<  {'name' => "Boottime-InitKernel", 'value' => boottimes_initialize_kernel, 'units' => "sec"}
+    perf_data <<  {'name' => "Boottime-InitFS", 'value' => boottimes_initialize_fs, 'units' => "sec"} if !skip_fs
     perf_data <<  {'name' => "Boottime-Total", 'value' => boottimes_total, 'units' => "sec"}
-    set_result(FrameworkConstants::Result[:pass], "Boot Time are collected. Total is #{boottimes_total}. Boottime-LoadKernel  is #{boottimes_readkernel}. Boottime-BootKernel  is #{boottimes_bootkernel}",perf_data)
+    set_result(FrameworkConstants::Result[:pass], "Boot Time are collected. Total is #{boottimes_total}. ",perf_data)
   else
     set_result(FrameworkConstants::Result[:fail], "Could not get boot time.")
   end
 
 end 
 
-def get_readkernel_regexp()
-  rtn = /TFTP\s*from\s*server|reading\s*uImage|Loading file\s'uImage.*'/
-  rtn
+# Set uboot env variable through systemloader and add extraargs if needed
+def set_uboot_env(params)
+    params.each{|k,v| puts "#{k}:#{v}"}
+
+    params['bootargs'] = @equipment['dut1'].boot_args if !params['bootargs']
+    @equipment['dut1'].set_systemloader(params) if !@equipment['dut1'].system_loader
+    @equipment['dut1'].system_loader.remove_step('boot')
+    @equipment['dut1'].system_loader.run params
+
 end
-
-
-
