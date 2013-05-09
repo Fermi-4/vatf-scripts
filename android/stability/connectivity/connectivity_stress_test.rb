@@ -263,9 +263,10 @@ end
 def check_bluetooth_connectivity(counter)
  puts "CHECKING BLUETOOTH CONNECTIVITY!"
  sleep 5
- check_bluetooth = `hcitool scan`
- model = send_adb_cmd("shell getprop ro.product.model").strip
- check_bluetooth  = check_bluetooth
+ check_bluetooth = send_host_cmd('hcitool scan')
+ #model = send_adb_cmd("shell getprop ro.product.model").strip
+ model = send_adb_cmd("shell cat /sys/class/bluetooth/hci0/address").strip()
+ puts check_bluetooth
  if !check_bluetooth.to_s.include?(model)  
   puts "DEVICE NOT DETECTED:failure"
   @results_html_file.add_paragraph("Counter=#{counter}\n Bluetooth DEVICE  DETECTION:failure\n")
@@ -279,10 +280,10 @@ def check_bluetooth_disconnectivity(counter)
  puts "CHECKING BLUETOOTH DISCONNECTIVITY!"
  send_events_for('__menu__') 
  sleep 15
- check_bluetooth = `hcitool scan`
- check_bluetooth  = check_bluetooth.downcase
+ check_bluetooth = send_host_cmd('hcitool scan')
+ model = send_adb_cmd("shell cat /sys/class/bluetooth/hci0/address").strip()
  puts check_bluetooth
- if check_bluetooth.to_s.include?(@test_params.params_chan.wireless_name[@test_params.params_chan.wireless_name.length - 1]) 
+ if check_bluetooth.to_s.include?(model) 
   puts "DEVICE  DETECTED:failure"
   @results_html_file.add_paragraph("Counter=#{counter}\n WRONG STATE Bluetooth DEVICE  DETECTED:failure\n")
   @results_html_file.add_paragraph("Counter=#{counter}\n#{check_bluetooth}")
@@ -299,7 +300,7 @@ def disable_bluetooth()
   response = "junk data"
   count = 0
  # in this while loop, make sure to put the bluetooth in the know state 
-  while !response.to_s.include?("13 -> 10")
+  while !/(?:13\s*->\s*10)|(?:Returning\s*STATE_OFF)/im.match(response)
     count = count + 1
     send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
     sleep 1
@@ -311,8 +312,7 @@ def disable_bluetooth()
       exit
     end 
     sleep 1
-    select_wireless =  @test_params.params_chan.select_wireless[@test_params.params_chan.wireless_name.length - 1]
-    send_events_for(CmdTranslator.get_android_cmd({'cmd'=>select_wireless, 'version'=>@equipment['dut1'].get_android_version }))
+    send_events_for(CmdTranslator.get_android_cmd({'cmd'=>'select_bluetooth', 'version'=>@equipment['dut1'].get_android_version }))
   sleep 20
    response = send_adb_cmd cmd
    puts "response #{response}"
