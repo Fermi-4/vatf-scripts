@@ -34,6 +34,10 @@ module C6xGELTestScript
         @dss_param_evm_id = "TMDXEVM6657ls-le"
         @targetFlag = "evm6657l"
         @ccstargetFlag = "evmc6657l"
+	  when "keystone-evm"
+        @dss_param_evm_id = "evmk2h-le"
+        @targetFlag = "evmk2h"
+        @ccstargetFlag = "evmtci6638k2k"
       else
         raise "DDR test not supported on #{@platform}"
       end

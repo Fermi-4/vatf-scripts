@@ -119,6 +119,7 @@ var big_endian = false;
 var targetFlag = "unknown";
 var targetConfig = "unknown";
 var emul560 = false;
+var xds200 = false;
 
 testEnv.cioFile = null;
 
@@ -148,16 +149,20 @@ if (arguments.length > 0 && arguments.length < 4)
     if (board_spec.match(/lx?e$/))
     {
         emul560 = true;
-	emulation_spec = "XDS560 mezzanine";
+		emulation_spec = "XDS560 mezzanine";
         board_spec = board_spec.replace(/e$/, "");
     }
       
     if (board_spec.match(/ls$/))
     {
         xds200 = true;
-	emulation_spec = "XDS200 emulator";
+		emulation_spec = "XDS200 emulator";
         board_spec = board_spec.replace(/ls$/, "l");
     }    
+	if (board_spec.match(/k2h$/))
+    {
+        emulation_spec = "XDS2xx emulator";
+    }
 	
     // for now, use the same software for lx and l variants
     board_spec = board_spec.replace(/lx$/, "l");
@@ -166,7 +171,7 @@ if (arguments.length > 0 && arguments.length < 4)
     board_spec = board_spec.replace(/evm6618/, "evm6670");
         
     targetFlag = board_spec;
-    
+	print("board: " + targetFlag);
     endian_spec = (big_endian ? "-be" : "");
     
     board_binaries = script_binaries + targetFlag + endian_spec + "/";
@@ -233,6 +238,9 @@ switch (targetFlag)
 	case "evm6678l":
 		cpu_id = "C66xx_0";
 	case "evm6657l":
+		cpu_id = "C66xx_0";
+		break;
+	case "evmk2h":
 		cpu_id = "C66xx_0";
 		break;
 	default:

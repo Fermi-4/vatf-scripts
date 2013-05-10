@@ -58,8 +58,6 @@ def run
   }
 
   @equipment['dut1'].wait_for(wait_for_string, timeout)
-  sleep 10
-
   @equipment['server1'].send_cmd("kill `ps -ef | grep DebugServer | grep -v grep | awk '{print $2}'`",/.*/,10)
    @equipment['server1'].send_cmd("ps -ef | grep DebugServer" ,/.*/,10)
   if (@equipment['dut1'].timeout?)
