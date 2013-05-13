@@ -37,6 +37,7 @@ def run
     each_iteration_failure = Array.new  
     counter = counter + 1 
     if !@test_params.params_chan.instance_variable_defined?(:@lan_data_video)
+      clear_configured_access if @test_params.params_chan.wireless[0] == "wifi" or @test_params.params_chan.wireless[0] == "both"
       send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
       sleep 1
       data = send_adb_cmd @test_params.params_chan.cmd[0]
@@ -230,8 +231,12 @@ end
 
 def check_bluetooth_disconnectivity(counter)
   puts "CHECKING BLUETOOTH DISCONNECTIVITY!"
-  send_events_for('__menu__') 
-  sleep 15
+  send_events_for('__menu__')
+  trials = 0 
+  while get_android_settings(nil,'bluetooth_on') != '0' && trials < 5
+    sleep 3
+    trials += 1
+  end
   check_bluetooth = send_host_cmd('hcitool scan')
   model = send_adb_cmd("shell cat /sys/class/bluetooth/hci0/address").strip()
   puts check_bluetooth
@@ -311,6 +316,33 @@ def run_stress
     return 1 
   end   
   return 0  
+end 
+
+def clear_configured_access
+  puts "CLEARING ACCESS POINTS" 
+  send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
+  data = send_adb_cmd @test_params.params_chan.cmd[0]
+  if !data.to_s.include?("ok")
+   puts "command failed!"
+   @results_html_file.add_paragraph("Counter=#{counter}\nCommand Failed")
+   exit
+  end 
+  send_events_for(CmdTranslator.get_android_cmd({'cmd'=>@test_params.params_chan.select_wireless[0], 'version'=>@equipment['dut1'].get_android_version }))
+  sleep 3
+  puts send_adb_cmd("shell wpa_cli list_networks")
+  while send_adb_cmd("shell wpa_cli list_networks").split(/[\r\n]+/).length() - 2 > 0
+   send_events_for(CmdTranslator.get_android_cmd({'cmd'=>@test_params.params_chan.clear_access[0], 'version'=>@equipment['dut1'].get_android_version }))
+  end 
+  send_events_for(get_events(@test_params.params_chan.put_screen_home[0]))
+  data = send_adb_cmd @test_params.params_chan.cmd[0]
+  if !data.to_s.include?("ok")
+   puts "command failed!"
+   @results_html_file.add_paragraph("Counter=#{counter}\nCommand Failed")
+   exit
+  end 
+  sleep 1
+  send_events_for(CmdTranslator.get_android_cmd({'cmd'=>@test_params.params_chan.select_wireless[0], 'version'=>@equipment['dut1'].get_android_version }))
+  puts "cleared access points"
 end 
 
 
