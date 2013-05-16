@@ -7,7 +7,6 @@ require File.dirname(__FILE__)+'/../../wlan_module'
 require File.dirname(__FILE__)+'/../../ethernet_module'
 require File.dirname(__FILE__)+'/../../bluetooth_module'
 require File.dirname(__FILE__)+'/../../storage_module'
-require File.dirname(__FILE__)+'/../../accelometer_module'
 require File.dirname(__FILE__)+'/../../netperf_module' 
 require File.dirname(__FILE__)+'/../../wireless_events_module'
 require File.dirname(__FILE__)+'/../device_io/file_copy'
@@ -23,7 +22,6 @@ include WlanModule
 include EthernetModule
 include BluetoothModule
 include StorageModule
-include AccelometerModule
 
 def setup
   @equipment['dut1'].connect({'type'=>'serial'})
@@ -38,10 +36,8 @@ def run
   initial_value = 0
   file_integrity_test = ""
   number_of_failures = 0
-  if @equipment['dut1'].params['platform_name'] == "am335xevm" 
-   @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt) 
-   send_adb_cmd("shell svc power stayon true")
-  end 
+  send_adb_cmd("shell svc power stayon true")
+  
   if @test_params.params_chan.instance_variable_defined?(:@bypass_dut)
     # Don't configure DUT, user will set it in the right state
     # before running this test
@@ -57,21 +53,14 @@ def run
   initial_bw_value = pre_suspend_test()
   #Set no wake lock enable_ethernet
   #Delete existing Alaerm setting
-  if @equipment['dut1'].params['platform_name'] != "am335xevm"  
-   puts "Disable wake locke setting"
-   send_adb_cmd("shell svc power stayon false")
-   puts "Alarm Deleting"
-   alarm_delete(@equipment['dut1'])  
-  end 
+  puts "Disable wake locke setting"
+  puts "Alarm Deleting"
+  alarm_delete(@equipment['dut1'])  
   counter = 0
   #Run test for number for iterations
   @test_params.params_chan.iterations[0].to_i.times do
   counter = counter + 1
   puts "Number ot iterations excuted so far #{counter}"
-  if @equipment['dut1'].params['platform_name'] != "am335xevm" 
-   puts "Alarm Setting "
-   set_alarm(@equipment['dut1'])
-  end 
   #if the test case doesn't need on suspend test, donnot override this function.
   if @test_params.params_chan.instance_variable_defined?(:@file_integrity) 
    #status = on_suspend_test()
@@ -87,9 +76,6 @@ def run
   #if the test case doesn't need to collect stat before suspend, donnot override this function.  
   initial_stat_value =  before_resume_test()
   configure_dut_to_suspend()
-  if @equipment['dut1'].params['platform_name'] == "am335xevm"  
-   send_adb_cmd("shell svc power stayon false")
-  end 
 
   #this is only for wakeup time add temporarly
   if !@test_params.params_chan.instance_variable_defined?(:@wakeup)
@@ -106,7 +92,7 @@ def run
   sleep 5
   time1 = 0
   # While the platfrom is down,  do nothing, used to collect suspend power  
-  if @equipment['dut1'].params['platform_name'] == "am335xevm" 
+  if @equipment['dut1'].params['platform_name'].include?("am335xevm") 
    puts "Send Wakeup console command afer 60 seconds"
    if !@test_params.params_chan.instance_variable_defined?(:@file_integrity) 
     #sleep 60
@@ -122,6 +108,7 @@ def run
    puts "shell svc power stayon true"
   else 
    @equipment['dut1'].send_cmd("", /suspend\s+of\s+devices\s+complete/, 100, false) if !@test_params.params_chan.instance_variable_defined?(:@wakeup)
+   send_adb_cmd("shell svc power stayon true")
   end 
   puts "SYSTEM IS COMMANDED TO RESUME!!!!!!!"
   if @equipment['dut1'].params['platform_name'] != "am335xevm" 
@@ -134,6 +121,7 @@ def run
     send_adb_cmd("shell svc power stayon true")
     sleep 30 
   end 
+  send_adb_cmd("shell svc power stayon true")
   test_status = 0
   puts "Starting resume test ......"
   send_events_for('__menu__') 
@@ -158,7 +146,7 @@ def run
  puts "Total number of failures at the end #{number_of_failures.to_f}"
  success_rate = ((@test_params.params_chan.iterations[0].to_f - number_of_failures.to_f)/ @test_params.params_chan.iterations[0].to_f)*100.0
  #temp for file integrity 
- file_integrity_test.join
+ file_integrity_test.join if @test_params.params_chan.instance_variable_defined?(:@file_integrity)
  puts "PASS #{success_rate}"
 if !@test_params.params_chan.instance_variable_defined?(:@wakeup)
    if (success_rate >= @test_params.params_chan.pass_rate[0].to_f)  
@@ -195,8 +183,8 @@ def configure_dut_to_suspend()
   # Set DUT in appropriate state
   if @test_params.params_chan.instance_variable_defined?(:@disabled_cpu_idle_modes)
     @test_params.params_chan.disabled_cpu_idle_modes.each do |idle_mode|
-      data = send_adb_cmd("shell \"echo 1 > /debug/pm_debug/#{idle_mode.strip.downcase}\"")
-        puts "\n\n======= DEBUG =======\n" +  send_adb_cmd("shell cat /debug/pm_debug/#{idle_mode.strip.downcase}")
+      data = send_adb_cmd("shell \"echo 1 > /sys/kernel/debug/pm_debug/#{idle_mode.strip.downcase}\"")
+        puts "\n\n======= DEBUG =======\n" +  send_adb_cmd("shell cat /sys/kernel/debug/pm_debug/#{idle_mode.strip.downcase}")
     end
   end
   
@@ -209,6 +197,8 @@ def configure_dut_to_suspend()
   send_adb_cmd("shell \"echo 5 > /sys/devices/platform/omap/omap_uart.3/#{@test_params.params_chan.uart_mode[0]}\"")
   send_adb_cmd("shell \"sleep 10\"")
   end 
+  send_adb_cmd("shell svc power stayon false")
+  send_adb_cmd("shell input keyevent 26")
 end
 
 
