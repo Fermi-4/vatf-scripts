@@ -22,7 +22,8 @@ module PlatformSpecificVarNames
       'am17x-evm'=>'0xC0000000',  
       'beagle'=>'0x80200000',
       'da850-omapl138-evm'=>'0xc0700000',
-      'tci6614-evm' => '0x80000100'
+      'tci6614-evm' => '0x80000100',
+      'keystone-evm' => '0x80000100'
       },
     'ramaddress_2' => {
       'am335x-evm'=>'0x82000000',
@@ -90,6 +91,7 @@ module PlatformSpecificVarNames
       'beagle' =>'80200004',
       'da850-omapl138-evm'=>'C0700004',
       'tci6614-evm' => '0x80000200',
+      'keystone-evm' => '0x80000200'
       },
     'ramaddressfornm'  => {
       'omap5-evm' => '0x82000000',
@@ -130,7 +132,8 @@ module PlatformSpecificVarNames
       'am17x-evm' => '0x0000A5A5',
       'beagle' =>'0x0000A5A5',
       'da850-omapl138-evm'=>'0x0000A5A5',
-      'tci6614-evm' => '0x0000A5A5'
+      'tci6614-evm' => '0x0000A5A5',
+      'keystone-evm' => '0x0000A5A5'
       },
     'bootcmd' => {  
       'omap5-evm'=>'dhcp;bootm',
@@ -417,7 +420,8 @@ module PlatformSpecificVarNames
       'am389x-evm'=>'0x50',
       'am17x-evm' => '',
       'beagle' =>'0x48',
-      'da850-omapl138-evm'=>''
+      'da850-omapl138-evm'=>'',
+      'keystone-evm' => '0x50'
       },
     'i2coff1' => {  
       'omap5-evm'=>'0',
@@ -437,7 +441,8 @@ module PlatformSpecificVarNames
       'am17x-evm' => '',
       'beagle' =>'0',
       'da850-omapl138-evm'=>'',
-      'tci6614-evm' => '0'
+      'tci6614-evm' => '0',
+      'keystone-evm' => '0'
       },
     'i2coff2' => {  
       'omap5-evm'=>'2',
@@ -455,7 +460,8 @@ module PlatformSpecificVarNames
       'am17x-evm' => '',
       'beagle' =>'2',
       'da850-omapl138-evm'=>'',
-      'tci6614-evm' => '2'
+      'tci6614-evm' => '2',
+      'keystone-evm' => '2'
       },
     'i2cmagicval' => {  
       'omap5-evm'=>'55',
@@ -473,7 +479,8 @@ module PlatformSpecificVarNames
       'am17x-evm' => '',
       'beagle' =>'55',
       'da850-omapl138-evm'=>'',
-      'tci6614-evm' => '55'
+      'tci6614-evm' => '55',
+      'keystone-evm' => '55'
       },
     'i2caddrprmpt' => {  
       'dm644x-evm'=>'00000000',
