@@ -10,15 +10,15 @@ module SystemStats
          Thread.pass
          Thread.current["stop"]=false
          while(!Thread.current["stop"])
-           @system_metrics.each {|k,v|
-             @system_stats[k] << v.call {|cmd| yield cmd}
-           }
            sleep interval
+           @system_metrics.each {|k,v|
+             @system_stats[k] << v.call {|cmd| yield cmd, k}
+           }
          end
        }
      else
        @system_metrics.each {|k,v|
-         @system_stats[k] << v.call {|cmd| yield cmd}
+         @system_stats[k] << v.call {|cmd| yield cmd, k}
        }
      end
   end
@@ -29,7 +29,7 @@ module SystemStats
       @stats_thread["stop"]=true
     else
       @system_metrics.each {|k,v|
-        @system_stats[k] << v.call {|cmd| yield cmd}
+        @system_stats[k] << v.call {|cmd| yield cmd, k}
       }
     end
     parsers.each {|k,v|
