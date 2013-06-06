@@ -8,13 +8,13 @@ module Metrics
   def start_collecting_stats(stats, interval=-1)
     return if !stats
     local_stats = (stats.kind_of?(String) || stats.kind_of?(Hash)) ? [stats] : stats  
-    start_collecting_system_stats(get_function_pointers('collect', local_stats), interval) {|cmd| yield cmd}
+    start_collecting_system_stats(get_function_pointers('collect', local_stats), interval) {|cmd, stat| yield cmd, stat}
   end
   
   def stop_collecting_stats(stats)
     return if !stats
     local_stats = (stats.kind_of?(String) || stats.kind_of?(Hash)) ? [stats] : stats 
-    stop_collecting_system_stats(get_function_pointers('parse', local_stats)) {|cmd| yield cmd}
+    stop_collecting_system_stats(get_function_pointers('parse', local_stats)) {|cmd, stat| yield cmd, stat}
   end
   
   def get_function_pointers(type, stats)
@@ -30,151 +30,145 @@ module Metrics
     }
     fp
   end
-  
-	def Metrics.parse_cpu_stats(data_array)
-    cpu_load = []
-    0.upto(data_array.length - 2) do |i|
-      end_cpu = data_array[i+1]
-      start_cpu = data_array[i]
-      total = end_cpu['total'] - start_cpu['total']
-      idle_time = end_cpu['idle'] + end_cpu['iowait'] - start_cpu['idle'] - start_cpu['iowait']
-      cpu_load << (1-idle_time/total)*100
-    end
-    {'name' => 'cpu_load' , 'value' => cpu_load, 'units' => '%'} 
-  end
 
   def Metrics.collect_cpu_stats()
-    stat_string = (yield 'cat /proc/stat').match(/cpu.*/im)[0]
-    stat_arr = stat_string.split(/[\n\r]+/)
-    cpu_stats = stat_arr[0].split(/\s+/)
-    cpu_hash = {'user'=> cpu_stats[1].to_f, 'nice'=> cpu_stats[2].to_f, 'system' => cpu_stats[3].to_f, 'idle'=> cpu_stats[4].to_f, 'iowait' => cpu_stats[5].to_f, 'irq' => cpu_stats[6].to_f, 'softirq'=> cpu_stats[7].to_f}
-    total = 0
-    cpu_hash.values.each {|v| total+=v}
-    cpu_hash['total'] = total
-    cpu_hash
+    stat_string = yield 'dumpsys cpuinfo'
+    cpu_stats = {}
+    load_string = stat_string.match(/(\w+\s*:\s*[\d\.\/\s]+)/i).captures[0]
+    load_arr = load_string.split(/[\s\/:]+/)
+    1.upto(load_arr.length - 1) do |idx|
+      load_time = case idx
+                    when 1
+                      '1'
+                    when 2
+                      '5'
+                    else
+                      '15'
+                  end
+      cpu_stats['cpu_' + load_arr[0] + '_' + load_time] = {'val' => load_arr[idx].to_f, 'units' => '1'}
+    end
+
+    proc_loads = stat_string.scan(/[\d\.]+%\s*[\d\/]*[^:]+[:\d]+\s*[\d\.]+%*\s*\w+\s*\+\s*[\d\.]+%*\s*\w+.*/)
+    proc_loads[0..-2].each do |current_load|
+      total, units, name, type1_val, type1_name, type2_val, type2_name, extra, extra_val, extra_type = current_load.match(/([\d\.]+)(%)\s*[\d\/]*([^:]+[:\d]+)\s*([\d\.]+)%*\s*(\w+)\s*\+\s*([\d\.]+)%*\s*(\w+)\W*(\w*)[\s:]*(\d*)\s*(\w*)/).captures
+      metric_name = name.gsub(/:$/,'').gsub(/[:\/]+/,'_')
+      metric_name = metric_name[(metric_name.length - 19)..-1] if metric_name.length > 19
+      cpu_stats['cpu_' + metric_name + '_total'] = {'val' => total.to_f, 'units' => units}
+      cpu_stats['cpu_' + metric_name + '_' + type1_name] = {'val' => type1_val.to_f, 'units' => units}
+      cpu_stats['cpu_' + metric_name + '_' + type2_name] = {'val' => type2_val.to_f, 'units' => units}
+      if extra.to_s.strip() != ''
+        cpu_stats['cpu_' + metric_name + '_' + extra] = {'val' => extra_val.to_f, 'units' => extra_type}
+      end
+    end
+    totals = proc_loads[-1].scan(/([\d\.]+)([^\s]+)\s*(\w+)/)
+    total_name_base = 'cpu_'+totals[0][2]
+    cpu_stats[total_name_base] = {'val' => totals[0][0].to_f, 'units' => totals[0][1]}
+    totals[1..-1].each do |current_total|
+      cpu_stats[total_name_base + '_' + current_total[2]] = {'val' => current_total[0].to_f, 'units' => current_total[1]}
+    end
+    cpu_stats
   end
   
-  def Metrics.collect_virtual_memory_stats()
-    #USER     PID   PPID  VSIZE  RSS     WCHAN    PC         NAME                    
-    #root      1     0     316    176   c00cd5b4 0000875c S /init  
-    stat_string = yield 'ps' #send_adb_cmd('shell ps')
-    stat_arr = stat_string.split(/[\n\r]+/)
+  def Metrics.collect_memory_stats()  
+    stat_string = yield 'dumpsys meminfo '
+    sections = stat_string.scan(/^Total\s*PSS.*?:/i)
     mem_stats = {}
-    stat_arr.each do |current_stat|
-      stat = current_stat.split(/[:\s]+/)
-      mem_stats[stat[-1]]=stat[3].to_f
+    0.upto(sections.length - 2) do |idx|
+      next if sections[idx].downcase.include?('process')
+      current_metric = 'mem_' + sections[idx].gsub('by','').gsub(/[\s:]+/,'_').gsub('adjustment','adj').gsub('category','cat')
+      section_data = stat_string.match(/#{Regexp.escape(sections[idx])}(.*)#{Regexp.escape(sections[idx+1])}/m).captures[0]
+      data_lines = section_data.split(/[\r\n]+/)
+      data_lines.each do |current_line|
+        next if current_line.include?('(pid') || !current_line.match(/\s*(\d+)\s*(\w+)\s*:\s+(.+)/)
+        size, units, metric = current_line.match(/\s*(\d+)\s*(\w+)\s*:\s+(.+)/).captures
+        mem_metric = current_metric + metric.gsub(/[\s]+/,'_')
+        mem_stats[mem_metric] = {'val'=>size.to_f, 'units'=>units}
+      end
     end
-    total = 0
-    mem_stats.values.each {|v| total+=v}
-    mem_stats['total'] = total
+    total_metric, total_pss_size, total_pss_units = stat_string.match(/(#{Regexp.escape(sections[-1])})\s*(\d+)\s*(\w+)/).captures
+    mem_stats['mem_' + total_metric[0..-2].gsub(/\s+/,'_')] = {'val'=>total_pss_size.to_f, 'units'=>total_pss_units}
+    mem_stats
+  end
+
+  def Metrics.collect_proc_memory_stats()
+    stat_string = yield 'dumpsys meminfo '
+    sections=stat_string.scan(/^\s{0,1}[^\s].*/)
+    mem_stats = {}
+    units = sections[0].match(/.*?\((\w+)\)/).captures[0]
+    prefix = 'proc_mem'
+    2.upto(sections.length - 1) do |idx|
+      if idx >= sections.length - 1
+        section_data = stat_string.match(/#{Regexp.escape(sections[-1])}(.*)/m).captures[0]
+      else
+        section_data = stat_string.match(/#{Regexp.escape(sections[idx])}(.*)#{Regexp.escape(sections[idx+1])}/m).captures[0]
+      end
+      if idx == 2
+        mem_type, mem_dat = section_data.split(/(?:\s*------)+/)
+        types_l1, types_l2 = mem_type.strip().split(/\s*[\r\n]+\s*/)
+        types_l1 = types_l1.split(/\s+/)
+        types_l2 = types_l2.split(/\s+/)
+        types_l1.insert(0,nil)
+        mem_types = []
+        types_l1.each_index do |i|
+          mem_types[i] = prefix
+          mem_types[i] += '_' + types_l1[i] if types_l1[i]
+          mem_types[i] += '_' + types_l2[i] if types_l2[i]
+        end
+        mem_data = mem_dat.strip().split(/\s*[\r\n]+\s*/)
+        mem_data.each do |current_data|
+          current_data_name = current_data.match(/^([^\d]+)/).captures[0].strip.gsub(/\s+/,'_')
+          current_data_vals = current_data.scan(/\d+/)
+          current_data_vals.each_index do |j|
+            mem_stats[mem_types[j] + '_' + current_data_name] = {'val'=>current_data_vals[j].to_f, 'units'=>units}
+          end
+        end
+      else
+        sections[idx]
+        section_data.scan(/\w+\s*\w*:\s*\d+/).each do |current_data|
+          name, value = current_data.split(/:\s*/)
+          mem_stats[prefix + '_' + sections[idx].strip() + '_' + name.gsub(/\s+/,'_')] = {'val'=>value.to_f, 'units'=>units}
+        end
+      end
+    end
     mem_stats
   end
   
-  def Metrics.parse_virtual_memory_stats(data_array)
-    mem_usage = []
-    0.upto(data_array.length - 2) do |i|
-      mem_usage << data_array[i+1]['total']
+  def Metrics.parse_stats(data_array)
+    data = {}
+    data_array.each do |current_info|
+      current_info.keys.each do |metric|
+          if !data[metric]
+            data[metric] = {'vals' => [], 'units' => current_info[metric]['units']}
+          end
+            data[metric]['vals'] << current_info[metric]['val'].to_f
+      end
     end
-    {'name' => 'virtual_mem_usage', 'value'=> mem_usage, 'units' => "bytes"}
+    result = []
+    data.each do |k,v|
+      result << {'name' => k, 'value'=> v['vals'], 'units' => v['units']}
+    end
+    result
   end
-  
-  # Generic function to collect top query
-def get_android_top_stats(cpu_load_samples,process_name,time)
-    top_stats = Hash.new
-    top_result = Array.new 
-    top_stats['process_cpu_loads'] = Array.new
-    top_stats['process_mem_usage_rss'] = Array.new
-    process_cpu_loads = Array.new
-    process_mem_usage_rss = Array.new
-    cpu_info = ''
-    delay = [time.to_i/cpu_load_samples,1].max
-    #cpu_info = send_adb_cmd("shell top -d #{delay} -n #{cpu_load_samples-1}") # this is not working for now I have to get back to it
-    puts "Start collecting samples now please wait ........."
-    #cpu_info = `adb shell top -d #{delay} -n #{cpu_load_samples-1}`
-    cpu_info = send_adb_cmd("shell top -d #{delay} -n #{cpu_load_samples-1}")   
-    top_result = cpu_info.scan(/(\d+)%\s+[SR]\s+\d+\s+\d+K\s+(\d+)K\s+fg.*#{process_name}/i)  
-    #extract stat
-    top_result.each{|t|
-     process_cpu_loads <<  t[0]
-     process_mem_usage_rss <<  t[1] 
+
+  def get_fps 
+    fps_values = Array.new()
+    cmd  = "logcat -d "
+    response = send_adb_cmd cmd 
+    response.split("\n").each{|line|
+      if line.include?("FPS")
+        line = line.scan(/([0-9]*\.[0-9]+)/)
+        fps_values << line[0][0]
+      end  
     }
-   top_stats['process_cpu_loads'] = process_cpu_loads
-   top_stats['process_mem_usage_rss'] = process_mem_usage_rss
-   return top_stats
-end 
-
-# for certain process name we pass metrics and its process id
-def get_android_process_meminfo(metrics,pid)
-    puts "GETTING MEMINFO"
-    meminfos = Hash.new()
-    #cmd = "logcat  -d -s ProcessMemoryInfoService"
-    #response = send_adb_cmd cmd
-    #response = `adb logcat  -d -s ProcessMemoryInfoService`
-    response = send_adb_cmd("logcat  -d -s ProcessMemoryInfoService")
-    local_metrics = metrics
-    local_metrics = [metrics] if !metrics.kind_of?(Array)
-    local_metrics.each{|metric|
-    metric_values = Array.new
-    meminfo  = response.scan(/#{get_android_meminfo_regex(pid,metric)}/)
-    meminfo.each{|info|
-    metric_values <<  info[0] 
-    } 
-    meminfos[metric]  = metric_values
-    }
-    meminfos
-end 
-
-def get_android_meminfo_regex(pid,metric_name)
-regexs = Hash.new 
-regexs["dalvik_private_dirty"] =  "pid\\s+=\\s+#{pid}\\s+dalvik\\s+private\\s+dirty\\s+(\\d+)"
-regexs["dalvik_pss"] = "pid\\s+=\\s+#{pid}\\s+delvid\\s+pss\\s+(\\d+)"
-regexs["dalvik_shared_dirty"] = "pid\\s+=\\s+#{pid}\\s+delivik\\s+shared\\s+dirty\\s+(\\d+)"
-regexs["native_private_dirty"] = "pid\\s+=\\s+#{pid}\\s+native\\s+private\\s+dirty\\s+(\\d+)"
-regexs["native_pss"] = "pid\\s+=\\s+#{pid}\\s+native\\s+pss\\s+(\\d+)"
-regexs["native_shared_dirty"] = "pid\\s+=\\s+#{pid}\\s+native\\s+shared\\s+dirty\\s+(\\d+)"
-regexs["other_private_dirty"] = "pid\\s+=\\s+#{pid}\\s+other\\s+private\\s+dirty\\s+(\\d+)"
-regexs["other_pss"] = "pid\\s+=\\s+#{pid}\\s+other\\s+pss\\s+(\\d+)"
-regexs["other_shared_dirtyl"] = "pid\\s+=\\s+#{pid}\\s+other\\s+shared\\s+dirtyl\\s+(\\d+)"
-regexs["total_PrivateDirty"] = "pid\\s+=\\s+#{pid}\\s+Total\\s+PrivateDirty\\s+(\\d+)"
-regexs["total_pss"] = "pid\\s+=\\s+#{pid}\\s+total\\s+pss\\s+(\\d+)"
-regexs[metric_name]
-
-end 
-
-
-def get_fps 
-fps_values = Array.new()
-cmd  = "logcat -d "
-response = send_adb_cmd cmd 
- response.split("\n").each{|line|
- if line.include?("FPS")
-  line = line.scan(/([0-9]*\.[0-9]+)/)
-  fps_values << line[0][0]
- end  
- }
- fps_values.delete_at(0)
- return fps_values
-end 
-
-def get_android_process_pids(process_names)
-    processes = Hash.new()
-    pids = "" 
-    #cpu_info =  `adb shell top -n 1`
-    cpu_info = send_adb_cmd("shell top -n 1")
-    process_names.each{|process|    
-    processes[process] = cpu_info.scan(/(\d+)\s+\d+%\s+[SR]\s+\d+\s+\d+K\s+\d+K\s+fg.*#{process}/i)[0][0].to_s
-    puts "PIDS PIDS #{processes[process]}"
-    pids = processes[process]+","
-    }
-   processes["pids"] = pids
-   processes
-end 
+    fps_values.delete_at(0)
+    return fps_values
+  end
 
   
   DEFAULT_METRICS = {
-    'cpu' => {'collect' => self.method(:collect_cpu_stats),  'parse' => self.method(:parse_cpu_stats)}, 
-    'sys_vmem' => {'collect' => self.method(:collect_virtual_memory_stats),  'parse' => self.method(:parse_virtual_memory_stats)}, 
-    
+    'cpu' => {'collect' => self.method(:collect_cpu_stats),  'parse' => self.method(:parse_stats)}, 
+    'sys_mem' => {'collect' => self.method(:collect_memory_stats),  'parse' => self.method(:parse_stats)}, 
+    'proc_mem' => {'collect' => self.method(:collect_proc_memory_stats),  'parse' => self.method(:parse_stats)},
   }
   
 end
