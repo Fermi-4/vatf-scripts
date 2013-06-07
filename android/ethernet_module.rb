@@ -18,15 +18,10 @@ def run_ethernet_test(server = @equipment['server1'],initial_bw,flag)
     port_number = port_number + 2
   end
   server.send_sudo_cmd("netserver -p #{port_number} -#{ip_ver}")
-  sys_stats = nil
-  0.upto(1) do |iter|
-    start_collecting_stats(@test_params.params_control.collect_stats,2){|cmd| send_adb_cmd("shell #{cmd}")} if iter > 0 && @test_params.params_control.instance_variable_defined?(:@collect_stats)
-    # Start netperf on the Target
-    @test_params.params_control.buffer_size.each do |bs|
-      data = send_adb_cmd "shell netperf -H #{server.telnet_ip} -l #{time} -p #{port_number} -- -s #{bs}"
-      bw << /^\s*\d+\s+\d+\s+\d+\s+[\d\.]+\s+([\d\.]+)/m.match(data).captures[0].to_f if iter == 0
-      puts data
-    end
+  @test_params.params_control.buffer_size.each do |bs|
+    data = send_adb_cmd "shell netperf -H #{server.telnet_ip} -l #{time} -p #{port_number} -- -s #{bs}"
+    bw << /^\s*\d+\s+\d+\s+\d+\s+[\d\.]+\s+([\d\.]+)/m.match(data).captures[0].to_f if iter == 0
+    puts data
   end
   ensure
     if bw.length == 0
