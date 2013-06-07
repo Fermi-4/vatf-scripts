@@ -56,20 +56,17 @@ def run
       min_bw = @test_params.params_control.min_bw[0].to_f
       pretty_str, perfdata = get_perf_pretty_str(bw)
       if sys_stats
-        perfdata.concat(sys_stats) 
         @results_html_file.add_paragraph("")
-        systat_names = []
-        systat_vals = []
-        sys_stats.each do |current_stat|
-          systat_vals << current_stat['value']
+        sys_stats.each do |current_stats|
+        perfdata.concat(current_stats)
+        current_stats.each do |current_stat|
           current_stat_plot = stat_plot(current_stat['value'], current_stat['name']+" plot", "sample", current_stat['units'], current_stat['name'], current_stat['name'], "system_stats")
           plot_path, plot_url = upload_file(current_stat_plot)
-          systat_names << [current_stat['name']+' ('+current_stat['units']+')',nil,nil,plot_url]
+          @results_html_file.add_paragraph("")
+          res_table2 = @results_html_file.add_table([[current_stat['name']+' ('+current_stat['units']+')',{:bgcolor => "33CC66", :colspan => "#{current_stat['name'].length}"},{:color => "blue"},plot_url]],{:border => "1",:width=>"20%"})
+          @results_html_file.add_rows_to_table(res_table2,[current_stat['value']].transpose)
+          end
         end
-        @results_html_file.add_paragraph("")
-        res_table2 = @results_html_file.add_table([["Sytem Stats",{:bgcolor => "336666", :colspan => "#{systat_names.length}"},{:color => "white"}]],{:border => "1",:width=>"20%"})
-        @results_html_file.add_row_to_table(res_table2, systat_names)
-        @results_html_file.add_rows_to_table(res_table2,systat_vals.transpose)
       end
       if measured_bw > min_bw 
         set_result(FrameworkConstants::Result[:pass], pretty_str, perfdata)
