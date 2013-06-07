@@ -5,9 +5,11 @@ require File.dirname(__FILE__)+'/boot'
 require File.dirname(__FILE__)+'/kernel_module_names'
 require File.dirname(__FILE__)+'/metrics'
 require File.dirname(__FILE__)+'/../lib/plot'
+require File.dirname(__FILE__)+'/../lib/evms_data'
 
 include Metrics
 include TestPlots
+include EvmData
 
 # Default Server-Side Test script implementation for LSP releases
 module LspTestScript 
@@ -45,6 +47,24 @@ module LspTestScript
                              @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_dev) ? @test_params.params_chan.secondary_bootloader_dev[0] : 
                              @test_params.instance_variable_defined?(:@var_secondary_bootloader_dev) ? @test_params.var_secondary_bootloader_dev : 
                              new_params['secondary_bootloader'] != '' ? 'eth' : 'none'  
+    new_params['primary_bootloader_src_dev']   = new_params['primary_bootloader_src_dev'] ? new_params['primary_bootloader_src_dev'] : 
+                             @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_src_dev) ? @test_params.params_chan.primary_bootloader_src_dev[0] : 
+                             @test_params.instance_variable_defined?(:@var_primary_bootloader_src_dev) ? @test_params.var_primary_bootloader_src_dev : 
+                             new_params['primary_bootloader'] != '' ? 'uart' : 'none'  
+
+    new_params['secondary_bootloader_src_dev']   = new_params['secondary_bootloader_src_dev'] ? new_params['secondary_bootloader_src_dev'] : 
+                             @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_src_dev) ? @test_params.params_chan.secondary_bootloader_src_dev[0] : 
+                             @test_params.instance_variable_defined?(:@var_secondary_bootloader_src_dev) ? @test_params.var_secondary_bootloader_src_dev : 
+                             new_params['secondary_bootloader'] != '' ? 'eth' : 'none'  
+
+    new_params['primary_bootloader_image_name'] = new_params['primary_bootloader_image_name'] ? new_params['primary_bootloader_image_name'] :
+                             @test_params.instance_variable_defined?(:@var_primary_bootloader_image_name) ? @test_params.var_primary_bootloader_image_name :
+                             new_params['primary_bootloader'] != '' ? File.basename(new_params['primary_bootloader']) : 'MLO'
+
+    new_params['secondary_bootloader_image_name'] = new_params['secondary_bootloader_image_name'] ? new_params['secondary_bootloader_image_name'] :
+                             @test_params.instance_variable_defined?(:@var_secondary_bootloader_image_name) ? @test_params.var_secondary_bootloader_image_name :
+                             new_params['secondary_bootloader'] != '' ? File.basename(new_params['secondary_bootloader']) : 'u-boot.img'
+
     new_params['kernel']     = new_params['kernel'] ? new_params['kernel'] : 
                              @test_params.instance_variable_defined?(:@kernel) ? @test_params.kernel : 
                              ''                                
@@ -52,6 +72,12 @@ module LspTestScript
                              @test_params.params_chan.instance_variable_defined?(:@kernel_dev) ? @test_params.params_chan.kernel_dev[0] : 
                              @test_params.instance_variable_defined?(:@var_kernel_dev) ? @test_params.var_kernel_dev : 
                              new_params['kernel'] != '' ? 'eth' : 'mmc'   
+
+    new_params['kernel_src_dev'] = new_params['kernel_src_dev'] ? new_params['kernel_src_dev'] : 
+                             @test_params.params_chan.instance_variable_defined?(:@kernel_src_dev) ? @test_params.params_chan.kernel_src_dev[0] : 
+                             @test_params.instance_variable_defined?(:@var_kernel_src_dev) ? @test_params.var_kernel_src_dev : 
+                             new_params['kernel'] != '' ? 'eth' : 'mmc'   
+
     new_params['kernel_image_name'] = new_params['kernel_image_name'] ? new_params['kernel_image_name'] : 
                              @test_params.instance_variable_defined?(:@var_kernel_image_name) ? @test_params.var_kernel_image_name : 
                              new_params['kernel'] != '' ? File.basename(new_params['kernel']) : 'uImage'                          
@@ -78,6 +104,12 @@ module LspTestScript
                              @test_params.params_chan.instance_variable_defined?(:@dtb_dev) ? @test_params.params_chan.dtb_dev[0] : 
                              @test_params.instance_variable_defined?(:@var_dtb_dev) ? @test_params.var_dtb_dev : 
                              new_params['dtb'] != '' ? 'eth' : 'none'   
+
+    new_params['dtb_src_dev']    = new_params['dtb_src_dev'] ? new_params['dtb_src_dev'] : 
+                             @test_params.params_chan.instance_variable_defined?(:@dtb_src_dev) ? @test_params.params_chan.dtb_src_dev[0] : 
+                             @test_params.instance_variable_defined?(:@var_dtb_src_dev) ? @test_params.var_dtb_src_dev : 
+                             new_params['dtb'] != '' ? 'eth' : 'none'   
+
     new_params['dtb_image_name'] = new_params['dtb_image_name'] ? new_params['dtb_image_name'] : 
                              @test_params.instance_variable_defined?(:@var_dtb_image_name) ? @test_params.var_dtb_image_name : 
                              File.basename(new_params['dtb'])                          
@@ -90,6 +122,10 @@ module LspTestScript
                              @test_params.params_chan.instance_variable_defined?(:@fs_dev) ? @test_params.params_chan.fs_dev[0] : 
                              @test_params.instance_variable_defined?(:@var_fs_dev) ? @test_params.var_fs_dev : 
                              new_params['fs'] != '' ? 'eth' : 'mmc'                                
+    new_params['fs_src_dev']     = new_params['fs_src_dev'] ? new_params['fs_src_dev'] : 
+                             @test_params.params_chan.instance_variable_defined?(:@fs_src_dev) ? @test_params.params_chan.fs_src_dev[0] : 
+                             @test_params.instance_variable_defined?(:@var_fs_src_dev) ? @test_params.var_fs_src_dev : 
+                             new_params['fs'] != '' ? 'eth' : 'mmc'                                
     new_params['fs_type']    = new_params['fs_type'] ? new_params['fs_type'] : 
                              @test_params.params_chan.instance_variable_defined?(:@fs_type) ? @test_params.params_chan.fs_type[0] : 
                              @test_params.instance_variable_defined?(:@var_fs_type) ? @test_params.var_fs_type : 
@@ -99,7 +135,33 @@ module LspTestScript
     new_params['fs_image_name'] = new_params['fs_image_name'] ? new_params['fs_image_name'] : 
                              @test_params.instance_variable_defined?(:@var_fs_image_name) ? @test_params.var_fs_image_name : 
                              new_params['fs_type'] != 'nfs' ? File.basename(new_params['fs']) : ''                             
+
+#new_params.each{|k,v| puts "#{k}:#{v}"}
+    new_params = add_dev_loc_to_params(new_params, 'primary_bootloader')
+    new_params = add_dev_loc_to_params(new_params, 'secondary_bootloader')
+    new_params = add_dev_loc_to_params(new_params, 'kernel')
+    new_params = add_dev_loc_to_params(new_params, 'fs')
+
     new_params
+  end
+
+  def add_dev_loc_to_params(params, part)
+    return params if !params["#{part}_dev"]
+    return params if params["#{part}_dev"] == 'none'
+    
+    new_params = params.clone
+    case params["#{part}_dev"]
+    when 'nand'
+      nand_loc = get_nand_loc(@equipment['dut1'].name)
+      new_params["nand_#{part}_loc"] = nand_loc["#{part}"]
+    when 'spi'
+      spi_loc = get_spi_loc(@equipment['dut1'].name)
+      new_params["spi_#{part}_loc"] = spi_loc["#{part}"]
+    else
+      puts "There is no dev location to be added to params for #{part}_dev: #{params["#{part}_dev"]}"
+    end
+
+    return new_params
   end
 
   def setup_nfs(params)
@@ -150,9 +212,10 @@ module LspTestScript
     end
     tar_options
   end
+
   def copy_sw_assets_to_tftproot(params)
     tmp_path = File.join(@tester.downcase.strip, @test_params.target.downcase.strip, @test_params.platform.downcase.strip)
-    assets = params.select{|k,v| k.match(/_dev/i) && v.match(/eth/i) }.keys.map{|k| k.match(/(.+)_dev/).captures[0] }
+    assets = params.select{|k,v| k.match(/_dev/i) && v.match(/eth/i) }.keys.map{|k| k.match(/(.+?)(?:_src_dev|_dev)/).captures[0] }
     assets.each do |asset|
       next if  params[asset] == ''
       copy_asset(params['server'], params[asset], File.join(params['server'].tftp_path, tmp_path))
@@ -225,7 +288,6 @@ module LspTestScript
         @equipment['dut1'].send_cmd("depmod -a", /#{@equipment['dut1'].prompt}/, 30) 
         if @test_params.params_chan.instance_variable_defined?(:@kernel_modules_list)
           @test_params.params_chan.kernel_modules_list.each {|mod|
-            #puts 'each mod is '+mod.to_s
             mod_name = KernelModuleNames::translate_mod_name(@test_params.platform, mod.strip)
             @equipment['dut1'].send_cmd("modprobe #{mod_name}", /#{@equipment['dut1'].prompt}/, 30)  
           }
@@ -347,9 +409,6 @@ module LspTestScript
                 end
                 regex = Regexp.new(expect_regex)                                                
                 @equipment['dut1'].send_cmd(cmd.cmd_to_send, regex, dut_timeout)
-                #puts ">>>>>>>>>>>>>"
-                #puts "response:" + @equipment['dut1'].response
-                #puts ">>>>>>>>>>>>>>>" 
                 if @equipment['dut1'].timeout?
                     result = 1
                     break 
