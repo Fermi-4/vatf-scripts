@@ -131,66 +131,37 @@ def run_wlan_test(test_seq)
           raise 'Server/TEE does not have and ip address configured in the wifi LAN' if server_lan_ip == ''
           
           # Start netperf on the Target
-          cpu_loads = nil
           sys_stats = nil
           0.upto(1) do |iter|
-            netperf_thread = Thread.new {
-              @test_params.params_control.buffer_size.each do |bs|
-                data = send_adb_cmd "shell netperf -H #{server_lan_ip} -l #{time} -p #{port_number} -- -s #{bs}"
-                bw << /^\s*\d+\s+\d+\s+\d+\s+[\d\.]+\s+([\d\.]+)/m.match(data).captures[0].to_f if iter == 0
-              end
-            }
-            
-            if iter > 0 && @test_params.params_control.instance_variable_defined?(:@collect_stats)
-              
-              start_collecting_stats(@test_params.params_control.collect_stats,2){|cmd| send_adb_cmd("shell #{cmd}")}
-              # Start top on target
-              cpu_loads = []
-              if @test_params.params_control.instance_variable_defined?(:@wlan_comp)
-                cpu_info = ''
-                cpu_load_samples = @test_params.params_control.cpu_load_samples[0].to_i
-                delay = [time.to_i/cpu_load_samples,1].max
-                cpu_info = send_adb_cmd("shell top -d #{delay} -n #{cpu_load_samples-1}")
-                cpu_load_items = '(?:' + @test_params.params_control.wlan_comp[0] + ')'
-                @test_params.params_control.wlan_comp[1..-1].each do |curr_comp|
-                  cpu_load_items += '|(?:' + curr_comp + ')'
-                end
-                cpu_loads = cpu_info.scan(/\d+\s+(\d+)(%)\s+\w+\s+\d+\s+\d+K\s+\d+K\s+\w+\s+\w+\s+(#{cpu_load_items})/im)
-              end
-              sys_stats = stop_collecting_stats(@test_params.params_control.collect_stats)
+            start_collecting_stats(@test_params.params_control.collect_stats,2){|cmd| send_adb_cmd("shell #{cmd}")} if iter > 0 && @test_params.params_control.instance_variable_defined?(:@collect_stats)
+            @test_params.params_control.buffer_size.each do |bs|
+              data = send_adb_cmd "shell netperf -H #{server_lan_ip} -l #{time} -p #{port_number} -- -s #{bs}"
+              bw << /^\s*\d+\s+\d+\s+\d+\s+[\d\.]+\s+([\d\.]+)/m.match(data).captures[0].to_f if iter == 0
             end
-            netperf_thread.join
+            sys_stats = stop_collecting_stats(@test_params.params_control.collect_stats) if iter > 0 && @test_params.params_control.instance_variable_defined?(:@collect_stats)
           end
           ensure
-            if bw.length == 0 || (@test_params.params_control.instance_variable_defined?(:@wlan_comp) && cpu_loads.length == 0)
+            if bw.length == 0
               set_result(FrameworkConstants::Result[:fail], 'Netperf data could not be calculated or cpu load could not be obtained. Verify that you have netperf installed in your host machine by typing: netperf -h. If you get an error, you need to install netperf. On a ubuntu system, you may type: sudo apt-get install netperf. Also verify that top includes the values specified in test parameter wlan_comp if wlan_comp was specified')
               puts 'Test failed: Netperf data could not be calculated, make sure Host PC has netperf installed and that the DUT is running'
             else
               min_bw = @test_params.params_control.min_bw[0].to_f
               pretty_str, perfdata = get_perf_pretty_str(bw)
               
-              if @test_params.params_control.instance_variable_defined?(:@wlan_comp)
-                loads_results = Hash.new {|h,k| h[k] = {'name' => k+'_load', 'value' => [], 'units' => ''}}
-                cpu_loads.each do |current_load|
-                  loads_results[current_load[-1]]['value'] << current_load[0]
-                  loads_results[current_load[-1]]['units'] = current_load[1]
+              if sys_stats
+                @results_html_file.add_paragraph("")
+                sys_stats.each do |current_stats|
+                perfdata.concat(current_stats)
+                current_stats.each do |current_stat|
+                  current_stat_plot = stat_plot(current_stat['value'], current_stat['name']+" plot", "sample", current_stat['units'], current_stat['name'], current_stat['name'], "system_stats")
+                  plot_path, plot_url = upload_file(current_stat_plot)
+                  @results_html_file.add_paragraph("")
+                  res_table2 = @results_html_file.add_table([[current_stat['name']+' ('+current_stat['units']+')',{:bgcolor => "33CC66", :colspan => "#{current_stat['name'].length}"},{:color => "blue"},plot_url]],{:border => "1",:width=>"20%"})
+                  @results_html_file.add_rows_to_table(res_table2,[current_stat['value']].transpose)
+                  end
                 end
-                perfdata = perfdata + loads_results.values
               end
-              perfdata.concat(sys_stats)
-              @results_html_file.add_paragraph("")
-              systat_names = []
-              systat_vals = []
-              sys_stats.each do |current_stat|
-                systat_vals << current_stat['value']
-                current_stat_plot = stat_plot(current_stat['value'], current_stat['name']+" plot", "sample", current_stat['units'], current_stat['name'], current_stat['name'], "system_stats")
-                plot_path, plot_url = upload_file(current_stat_plot)
-                systat_names << [current_stat['name']+' ('+current_stat['units']+')',nil,nil,plot_url]
-              end
-              @results_html_file.add_paragraph("")
-              res_table2 = @results_html_file.add_table([["Sytem Stats",{:bgcolor => "336666", :colspan => "#{systat_names.length}"},{:color => "white"}]],{:border => "1",:width=>"20%"})
-              @results_html_file.add_row_to_table(res_table2, systat_names)
-              @results_html_file.add_rows_to_table(res_table2,systat_vals.transpose)
+              
               if mean(bw) > min_bw 
                 set_result(FrameworkConstants::Result[:pass], pretty_str, perfdata)
                 puts "Test Passed: AVG Throughput=#{mean(bw)} \n #{pretty_str}"
