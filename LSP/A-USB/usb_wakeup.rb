@@ -50,7 +50,7 @@ def run
     @equipment['dut1'].send_cmd("sync; echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, 60)
     if @equipment['dut1'].timeout?
       puts "Timeout while waiting to suspend"
-      raise "DUT took more than 60 seconds to suspend" 
+      raise "DUT took more than 60 seconds to suspend - Iteration #{i}" 
     end
     sleep rand(suspend_time)+1
 
@@ -74,15 +74,15 @@ def run
       puts "\a"   # Generate beep
       sleep 3
     else
-      raise "Unknown USB Wakeup Source: #{wakeup_event}" 
+      raise "Unknown USB Wakeup Source: #{wakeup_event} Iteration #{i}" 
     end
 
     # Give it few secs to wakeup and check it is awake
     sleep @test_params.params_control.wait_after_connect[0].to_i
     @equipment['dut1'].send_cmd("pwd", @equipment['dut1'].prompt, 0.5)
     if @equipment['dut1'].timeout?
-      puts "USB Event did not wakeup the system"
-      raise "USB Event did not wakeup the system" 
+      puts "USB Event did not wakeup the system - Iteration #{i}"
+      raise "USB Event did not wakeup the system - Iteration #{i}" 
     end
 
     # Force enumeration in case of wakeup by disconnect
