@@ -114,7 +114,7 @@ def run_wlan_test(test_seq)
           time        = @test_params.params_control.time[0]
           port_number = @test_params.params_control.port_number[0].to_i
           ip_ver      = @test_params.params_control.ip_version[0]
-          cpu_load_samples = @test_params.params_control.cpu_load_samples[0].to_i
+
           # Start netserver on the Host on a tcp port with following conditions:
           #   1) It is equal or higher that port_number specified in the test matrix
           #   2) It is not being used
