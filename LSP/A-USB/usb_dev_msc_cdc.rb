@@ -21,8 +21,6 @@ def run
   $result = 0
   command = "modprobe -r g_ether"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
-  command = "modprobe -r g_file_storage"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   command = "modprobe -r g_mass_storage"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
 
@@ -45,7 +43,7 @@ def run
     set_result(FrameworkConstants::Result[:fail], "Testcase Result is FAIL.")
     command = "modprobe -r g_ether"
     @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
-    command = "modprobe -r g_file_storage"
+    command = "modprobe -r g_mass_storage"
     @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   end  
 
@@ -89,16 +87,16 @@ def usb_dev_msc()
   command = "find /lib/modules -name *.ko"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   response = @equipment['dut1'].response
-  if response.include?('g_file_storage.ko')
-    puts "g_file_storage USB Module is available"
+  if response.include?('g_mass_storage.ko')
+    puts "g_mass_storage USB Module is available"
   else
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "g_file_storage.ko module is not available.")  
+    set_result(FrameworkConstants::Result[:fail], "g_mass_storage.ko module is not available.")  
     return     
   end
 
   command = "dmesg -c"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,2)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
 
   system ("sleep 2")
 
@@ -109,13 +107,13 @@ def usb_dev_msc()
       
       command = "umount /media/mmcblk0p1"
       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)      
-      command = "modprobe g_file_storage file=/dev/mmcblk0p1 stall=0 removable=1"
+      command = "modprobe g_mass_storage file=/dev/mmcblk0p1 stall=0 removable=1"
     
     when $cmd.match(/_msc_usb/)
 
       command = "umount /media/sda1"
       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
-      command = "modprobe g_file_storage file=/dev/sda1 stall=0 removable=1"
+      command = "modprobe g_mass_storage file=/dev/sda1 stall=0 removable=1"
 
     when $cmd.match(/_msc_slave/)
 
@@ -126,7 +124,7 @@ def usb_dev_msc()
 
       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
       
-      command = "modprobe g_file_storage file=/dev/loop0 stall=0 removable=1"
+      command = "modprobe g_mass_storage file=/dev/loop0 stall=0 removable=1"
 
     else
       $result = 1
@@ -137,7 +135,7 @@ def usb_dev_msc()
   response = @equipment['dut1'].response
   if response.include?('Error')
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "g_file_storage.ko insertion fialed.")  
+    set_result(FrameworkConstants::Result[:fail], "g_mass_storage.ko insertion fialed.")  
     return     
   end
 
@@ -199,7 +197,7 @@ end
   # Remove the msc gadget module
   
   system ("sleep 10")
-  command = "modprobe -r g_file_storage"
+  command = "modprobe -r g_mass_storage"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
 
   @equipment['server2'].send_sudo_cmd("rm -rf  dev_string1.txt", @equipment['server2'].prompt , 30)
@@ -231,7 +229,7 @@ def usb_dev_cdc()
   end
 
   command = "dmesg -c"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,2)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
 
   system ("sleep 2")
 
@@ -245,7 +243,7 @@ def usb_dev_cdc()
   end
 
   command = "dmesg"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,4)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
   response = @equipment['dut1'].response
   if response.include?('usb0')
     puts "g_ether moduel inserted succesfully"
