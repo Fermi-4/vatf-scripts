@@ -23,9 +23,9 @@ end
 def watchdog_timer_test
 	runltp_fail = false
 	dut_timeout = @test_params.params_control.instance_variable_defined?(:@dut_timeout) ? @test_params.params_control.dut_timeout[0].to_i : 600
-	@equipment['dut1'].send_cmd('cd /opt/ltp', @equipment['dut1'].prompt,1)
-	@equipment['dut1'].send_cmd("./runltp -P #{@test_params.platform} -s #{@test_params.params_chan.cmd[0].to_s}", @equipment['dut1'].login_prompt, dut_timeout)
-
+	runtest_cmd = @test_params.params_control.script.join(";")
+	cmd = eval(('"'+runtest_cmd.gsub("\\","\\\\\\\\").gsub('"','\\"')+'"')+"\n")
+	@equipment['dut1'].send_cmd(cmd, @equipment['dut1'].login_prompt, dut_timeout)
   if @equipment['dut1'].timeout?
     # For cases where the board is not rebooted after the test
 	  @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
