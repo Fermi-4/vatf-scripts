@@ -172,8 +172,8 @@ module LspTestScript
     elsif params['server'].respond_to?(:telnet_port) and params['server'].respond_to?(:telnet_ip) and !params['server'].target.telnet
       params['server'].connect({'type'=>'telnet'})
     elsif !params['server'].target.telnet 
-          raise "You need Telnet connectivity to the Linux Server. Please check your bench file" 
-        end
+      raise "You need Telnet connectivity to the Linux Server. Please check your bench file" 
+    end
    
     params['server'].send_cmd("mkdir -p #{@linux_temp_folder}", params['server'].prompt)
     if params['fs_type'] == 'nfs' and !params.has_key?('var_nfs')
@@ -181,22 +181,23 @@ module LspTestScript
           fs.gsub!(/\\/,'/')
           build_id = /\/([^\/\\]+?)\/[\w\.\-]+?$/.match("#{fs.strip}").captures[0]
       params['server'].send_sudo_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/autofs", params['server'].prompt, 10)  if !File.directory?("#{nfs_root_path_temp}/autofs")   
-          nfs_root_path_temp 	= nfs_root_path_temp + "/autofs/#{build_id}"
-          # Untar nfs filesystem if it doesn't exist
-          if !File.directory?("#{nfs_root_path_temp}/usr")
+      nfs_root_path_temp 	= nfs_root_path_temp + "/autofs/#{build_id}"
+      # Untar nfs filesystem if it doesn't exist
+      if !File.directory?("#{nfs_root_path_temp}/usr")
         tar_options = get_tar_options(fs,params)
         params['server'].send_sudo_cmd("mkdir -p  #{nfs_root_path_temp}", params['server'].prompt, 10)    
         params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} #{tar_options} #{fs}", params['server'].prompt, 300)
-          end
-        end
+      end
+    end
         
     if params['kernel_modules'] != '' and params['fs_type'] == 'nfs' and !params.has_key?('var_nfs')
-      params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} -xvzf #{params['kernel_modules']}", params['server'].prompt, 30)
-    		end
+      tar_options = get_tar_options(params['kernel_modules'], params)
+      params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} #{tar_options} #{params['kernel_modules']}", params['server'].prompt, 30)
+    end
       
     params['server'].send_sudo_cmd("mkdir -p -m 777 #{nfs_root_path_temp}/test", params['server'].prompt) if !(params.has_key? 'var_nfs')
       
-        LspTestScript.set_paths(nfs_root_path_temp, nfs_root_path_temp) 
+    LspTestScript.set_paths(nfs_root_path_temp, nfs_root_path_temp) 
     nfs_root_path_temp = "#{params['server'].telnet_ip}:#{nfs_root_path_temp}"
     nfs_root_path_temp = params['var_nfs']  if params.has_key? 'var_nfs'   # Optionally use external nfs server
     params['nfs_path'] = nfs_root_path_temp
@@ -206,9 +207,11 @@ module LspTestScript
     params['server'].send_cmd("file #{fs}", params['server'].prompt)
     case params['server'].response
     when /gzip/
-    tar_options = "-xvzf" 
+      tar_options = "-xvzf" 
     when /bzip2/
-    tar_options = "-xvjf"
+      tar_options = "-xvjf"
+    when /tar archive/i
+      tar_options = "-xvf"
     end
     tar_options
   end
