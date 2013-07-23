@@ -1,7 +1,7 @@
 ###########################
 ## FOR THE NIGHTLY BUILD ##
 ###########################
-## Date: July 17, 2013
+## Date: July 22, 2013
 #From the set of three inputs, run the test specified by the first command, after setting up the environment for it to run. Upon running a test, check the output for specified terms to check test completion and success.
 #A build parameter @test_params.lld_test_archive, is a tar.gz archive transferred from an ftp server, specified in build
 #Look below at internally_consistent? to see about constraint options that are not literal matches
@@ -57,21 +57,19 @@ def run
 	
 	##see if test passes and satisfies criteria
 	if @show_debug_messages  #FOR MORE COMMENTS#
-		comment += "\nRunning Test.\n" 
+		comment += "Running Test.\n" 
 	else #FOR LESS COMMENTS#
-		comment = "\nRunning Test.\n" 
+		comment = "Running Test.\n" 
 	end
 	iterations.times do |count|
 		#send_cmd, store buffer into std_response
 		@equipment['dut1'].send_cmd(test_cmd, /#{criteria[0]}/i, 20)
-		puts "Command Sent"
-		std_response = @equipment['dut1'].response.to_s
 		if @equipment['dut1'].timeout?
 			puts comment += "**On iteration #{count +1}, FAILURE to meet end criteria**"
 		else
 			puts "send_cmd finished iteration #{count +1}" 
 		end
-
+		std_response = @equipment['dut1'].response.to_s
 		#use regEx to pattern-match literal constraints
 #!! currently searches for first instance of criterion. may need to change
 		criteria.each do |criterion|
@@ -85,7 +83,7 @@ def run
 				c_result = internally_consistent?(std_response, type_of_check, new_criterion)
 				#this is the format of c_result = [consistent?, comments]
 				if !c_result[0]
-					comment += "Fail #{test_cmd} for output inconsistency." 
+					comment += "Fail " + test_cmd.to_s + " for output inconsistency." 
 					set_result(test_done_result,comment + c_result[1])
 					return
 				end
@@ -94,7 +92,7 @@ def run
 				puts "Output has criterion #{criterion}"
 				comment += "Iteration #{count+1}: Output has criterion \"#{criterion}\".\n"
 			else
-				comment += "Fail #{test_cmd} on iteration #{count +1}. Criterion \"#{criterion}\" not met."
+				comment += "Fail " + test_cmd.to_s + " on iteration #{count +1}. Criterion \"#{criterion}\" not met."
 				@equipment['dut1'].send_cmd("cd",@equipment['dut1'].prompt, 10)
 				set_result(test_done_result,comment)
 				return
@@ -115,9 +113,10 @@ def run
 	end
 #still need to check the output of the rmServer... maybe a user commmand?
 	
-	@equipment['dut1'].send_cmd("echo Done with #{test_cmd}\n#{test_cmd} *TEST PASSED*", @equipment['dut1'].prompt, 10)
+	@equipment['dut1'].send_cmd("echo *TEST PASSED*", @equipment['dut1'].prompt, 10)
+	@equipment['dut1'].send_cmd("cd", @equipment['dut1'].prompt, 10)
 	##DONE
-	comment += "\n#{test_cmd} *TEST PASSED*"
+	comment += "\n" + test_cmd.to_s + " *TEST PASSED*"
 	test_done_result = FrameworkConstants::Result[:pass]
 	set_result(test_done_result,comment)
 end
@@ -133,20 +132,19 @@ def prepare_for_test(test_folder_location,commands)
 	files_result = good_files_specified?(commands)
 	if files_result[0]
 		file_list = files_result[2]
-		@equipment['dut1'].send_cmd("echo good files specified: \n#{files_result[1]}",@equipment['dut1'].prompt, 20)
+		@equipment['dut1'].send_cmd("echo good files specified: \n#{files_result[1]}\n",@equipment['dut1'].prompt, 20)
 	else
 		comment += files_result[1] + "Files requested not consistent with those available. "
 		return [false, comment]
 	end	
 	other_cmds = commands[1...commands.length]
-	@equipment['dut1'].send_cmd("echo Checked input. Preparing for test.\n", @equipment['dut1'].prompt, 20)
+	@equipment['dut1'].send_cmd("echo Checked input. Preparing for test.\n", @equipment['dut1'].prompt, 10)
 	##Run the rmServer when requested
 	if other_cmds[0] and file_list.length > 1 and other_cmds.to_s[/rmServer/]
 		rm_result = rmServer_up?(other_cmds)
 		#rm_result = [up?, comments]
 		if rm_result[0]
-			@equipment['dut1'].send_cmd("echo '#{rm_result[1]} + rmServer up and running. \n'", @equipment['dut1'].prompt, 20)
-			puts "rmServer up and running. "
+			@equipment['dut1'].send_cmd("echo '#{rm_result[1]}'\nrmServer up and running. \n", @equipment['dut1'].prompt, 20)
 		else
 			comment += rm_result[1] + "RmServer did not run. "
 			return [false, comment]
@@ -155,7 +153,7 @@ def prepare_for_test(test_folder_location,commands)
 		other_cmds.each do |cmd| 
 			@equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 20)
 			if @equipment['dut1'].timeout?
-				comment += "cmd #{cmd} not sent correctly. "
+				comment += "cmd " + cmd.to_s + " not sent correctly. "
 				return [false, comment]
 			end
 		end
@@ -173,17 +171,17 @@ def build_files (test_folder_location)
 	
 		#copy the tar from ftp server to a new folder, untar, flatten, tar, move it to tftpboot
 		@equipment['dut1'].send_cmd("echo ***begin server side flattening***",@equipment['dut1'].prompt, 10)
-		@equipment['server1'].send_cmd("cd #{@equipment['server1'].tftp_path}",@equipment['server1'].prompt, 10)
-		@equipment['server1'].send_cmd("mkdir #{@equipment['server1'].response}/unassembles",@equipment['server1'].prompt, 10)
-		@equipment['server1'].send_cmd("cd #{@equipment['server1'].tftp_path}/unassembles",@equipment['dut1'].prompt, 10)
-		unassem_s = "#{@equipment['server1'].tftp_path}/unassembles/"
-		@equipment['server1'].send_cmd("cp #{test_folder_location} #{unassem_s}test_archive.tar.gz",@equipment['server1'].prompt, 20)
-		@equipment['server1'].send_cmd("tar -xvzf #{unassem_s}test_archive.tar.gz --transform=\'s/.*\\///\'",@equipment['server1'].prompt, 20)
-		@equipment['server1'].send_cmd("rm #{unassem_s}test_archive.tar.gz",@equipment['server1'].prompt, 20)
-		@equipment['server1'].send_cmd("tar -cvzf #{unassem_s}test_archive.tar.gz #{unassem_s}*.out #{unassem_s}*.sh #{unassem_s}*.dtb",@equipment['server1'].prompt, 20)
-		@equipment['server1'].send_cmd("cp #{unassem_s}test_archive.tar.gz #{@equipment['server1'].tftp_path}/test_archive.tar.gz",@equipment['server1'].prompt, 10)
+
+		@equipment['server1'].send_cmd("pwd",@equipment['server1'].prompt, 10)
+		location= "#{@equipment['server1'].response}/"
+		@equipment['server1'].send_cmd("cp #{test_folder_location} test_archive.tar.gz",@equipment['server1'].prompt, 20)
+		@equipment['server1'].send_cmd("tar -xvzf test_archive.tar.gz --transform=\'s/.*\\///\'",@equipment['server1'].prompt, 20)
+		@equipment['server1'].send_cmd("ls *.out *.sh *.dtb",@equipment['server1'].prompt, 10)
+		@equipment['server1'].send_cmd("tar -cvzf test_archive.tar.gz *.out *.sh *.dtb",@equipment['server1'].prompt, 20)
+		@equipment['server1'].send_cmd("tar -tvzf test_archive.tar.gz *.out *.sh *.dtb",@equipment['server1'].prompt, 20)
+		@equipment['server1'].send_cmd("cp test_archive.tar.gz #{@equipment['server1'].tftp_path}/test_archive.tar.gz",@equipment['server1'].prompt, 10)
 		
-		@equipment['dut1'].send_cmd("echo #{test_folder_location} > test_archive.tar.gz",@equipment['dut1'].prompt, 20)
+		@equipment['dut1'].send_cmd("echo #{test_folder_location} test_archive.tar.gz",@equipment['dut1'].prompt, 20)
 		@equipment['dut1'].send_cmd("echo tar -xvzf test_archive.tar.gz --transform=\'s/.*\\///\'",@equipment['dut1'].prompt, 20)
 		@equipment['dut1'].send_cmd("echo -cvzf test_archive.tar.gz *.out *.sh *.dtb",@equipment['server1'].prompt, 10)
 		@equipment['dut1'].send_cmd("echo cp test_archive.tar.gz #{@equipment['server1'].tftp_path}/test_archive.tar.gz",@equipment['server1'].prompt, 10)
@@ -191,14 +189,14 @@ def build_files (test_folder_location)
 
 		@equipment['dut1'].send_cmd("cd /usr/bin/",@equipment['dut1'].prompt, 10)
 		@equipment['dut1'].send_cmd("tftp -g -r test_archive.tar.gz #{@equipment['server1'].telnet_ip}", @equipment['dut1'].prompt, 20)
-		@equipment['dut1'].send_cmd("tar -xvzf test_archive.tar.gz",/#{@equipment['dut1'].prompt}/, 20)
+		@equipment['dut1'].send_cmd("tar -xvzf test_archive.tar.gz",@equipment['dut1'].prompt, 20)
 		@equipment['dut1'].send_cmd("echo",@equipment['dut1'].prompt, 10)
 		
 		#--clean up for next run
-		@equipment['server1'].send_cmd("cd #{unassem_s}",@equipment['server1'].prompt, 10)
-		@equipment['server1'].send_cmd("rm #{unassem_s}*",@equipment['server1'].prompt, 10)
-		@equipment['server1'].send_cmd("cd #{@equipment['server1'].tftp_path}",@equipment['server1'].prompt, 10)
-		@equipment['server1'].send_cmd("rm #{unassem_s}",@equipment['server1'].prompt, 10)
+		# @equipment['server1'].send_cmd("rm *.out",@equipment['server1'].prompt, 10)
+		# @equipment['server1'].send_cmd("rm *.dtb",@equipment['server1'].prompt, 10)
+		# @equipment['server1'].send_cmd("rm *.sh",@equipment['server1'].prompt, 10)
+		@equipment['server1'].send_cmd("rm test_archive.tar.gz",@equipment['server1'].prompt, 10)
 		#--
 		
 		@equipment['dut1'].send_cmd("cd",/#{@equipment['dut1'].prompt}/, 10)
@@ -223,7 +221,6 @@ def good_files_specified?(commands)
 				end
 				if file =~ /\.{1}\w+/
 					file_list.push(piece_of_command)
-					comment += "#{file} is a piece of the command. "
 				else
 					#comment += "Ignored #{file}. "
 				end
@@ -233,7 +230,9 @@ def good_files_specified?(commands)
 	
 	##Proceed if all specified files exist, else return <file not found>
 	file_version = ""
+	seen_files = ""
 	file_list.each do |tag|
+		next if seen_files[tag]
 		##parse the folder location
 		folder = tag[/.*\//]
 		if folder
@@ -245,10 +244,10 @@ def good_files_specified?(commands)
 #!! Version parsing may be different
 		##ensure that file versions are the same
 		file_version += tag[/[a-zA-Z]\.{1}\w+/][0]
-		if file_version.length > 1
+		if file_version.length > 1 and !tag[/.txt/]
 			(file_version.length-1).times do |i|
 				if file_version[i] != file_version[i+1]
-					comment += "File versions are different: '#{tag}' in '#{commands}'. " 
+					comment += "File version different: '" + tag.to_s + "'. "
 				end
 			end
 			file_version = file_version[0]
@@ -257,21 +256,23 @@ def good_files_specified?(commands)
 		##check that the file exists, where specified, or in /usr/bin/
 		if file_extension != ".txt"
 			ls_cmd = "ls #{folder}*#{file_extension}"
-			@equipment['dut1'].send_cmd(ls_cmd, /#{file}/i, 5)
-			if @equipment['dut1'].timeout?
-				@equipment['dut1'].send_cmd("echo 'dealing with timeout in usrbin'", @equipment['dut1'].prompt, 10)
-				@equipment['dut1'].send_cmd(ls_cmd.insert(3, "/usr/bin/"), /#{file}/i, 10)
+			@equipment['dut1'].send_cmd(ls_cmd, @equipment['dut1'].prompt, 5)
+			seen_files = seen_files + @equipment['dut1'].response
+			if !seen_files[file]
+				@equipment['dut1'].send_cmd("echo dealing with timeout in /usr/bin", @equipment['dut1'].prompt, 10)
+				@equipment['dut1'].send_cmd(ls_cmd.insert(3, "/usr/bin/"), file, 10)
 				if @equipment['dut1'].timeout?
-					comment += "File #{file} not found. Check input #{@test_params.params_control.commands} for correctness. "
+					comment += "File " + file + "not found. Check input #{@test_params.params_control.commands} for correctness. "
 					return [false, comment, file_list]
 				else
-					@equipment['dut1'].send_cmd("echo 'time out resolved. found in usrbin'", @equipment['dut1'].prompt, 10)
+					@equipment['dut1'].send_cmd("echo 'time out resolved. found in /usr/bin'", @equipment['dut1'].prompt, 10)
 				end
 			end
 		end
+		
 	end
-	@equipment['dut1'].send_cmd("echo Files all checked.\n", @equipment['dut1'].prompt, 10)
-	return [true, comment, file_list]
+	@equipment['dut1'].send_cmd("echo Files all checked.\n " + file_list.to_s, @equipment['dut1'].prompt, 10)
+	return [true, comment + "File_list: " + file_list.to_s + ". ", file_list]
 end
 
 #See if the server is running, and starts it if not up already
@@ -285,13 +286,13 @@ def rmServer_up? (other_cmds = [], file_version = "hk")
 	if @equipment['dut1'].timeout?			#run a new rmServer in the background
 		comment = "rmServer not running initially. "
 		other_cmds.each do |cmd| 
-			comment += "Running '#{cmd}.' "
+			comment += "Running " + cmd.to_s + ". "
 			@equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 20)
 			if @equipment['dut1'].timeout?
-				comment += "cmd #{cmd} not sent correctly. "
+				comment += "cmd " + cmd.to_s + " not sent correctly. "
 				return [false, comment]
 			end
-			comment += "'#{cmd}' run. "
+			comment += "'" + cmd.to_s + "' run. "
 		end
 		#test to see that the rmServer is now running.
 		@equipment['dut1'].send_cmd("ps | grep rmServer", /rmServer_k2[#{file_version}]/i, 10)
@@ -348,18 +349,17 @@ def internally_consistent? (output, type_of_check = "", criterion = "default")
 			puts "does not fit word : pattern"
 		#if there is a number at the end, but different from word_count
 		elsif line[/\d+/] and (line[/\d+/].to_i != 0) and criterion.downcase == "failed"
-			internal_comment += "Failed more than 0 times. #{line}"
+			internal_comment += "Failed more than 0 times. " + line.to_s
 			return [false, internal_comment]
 		elsif wc != 0 and line[/\d+/] and (line[/\d+/].to_i != (wc-1)) 
-			internal_comment = "\n#{criterion.upcase} are not correctly counted. #{line}"
+			internal_comment = "\n#{criterion.upcase} are not correctly counted. " + line.to_s
 			return [false, internal_comment]
 		end
 		#make sure that if the test outputs the String "Failed", it was because nothing Failed
 		if criterion.downcase[/failed/i]
 			line = output[/failed \s* : .* \d+ \S*/ix]
-			#line = line[line[/.*:/].length,line.length]
 			if line != nil and line[/\d+/] and (line[/\d+/].to_i != 0) #if there is a number at the end.
-				internal_comment += ". Failed more than 0 times. #{line}"
+				internal_comment += ". Failed more than 0 times. " + line.to_s
 				return [false, internal_comment]
 			end
 		end
