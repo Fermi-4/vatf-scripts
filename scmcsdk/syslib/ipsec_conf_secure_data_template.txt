@@ -22,10 +22,10 @@ config setup
 # Add connections here.
 conn %default
     left=%LOCAL_IP_ADDRESS%
-    leftcert=%CERT_FILE_PATH_NAME%
-    leftid="%LOCAL_IP_ADDRESS%"
+    %LEFT_CERT_DISABLE%leftcert=%CERT_FILE_PATH_NAME%
+    leftid="C=US, O=Test, CN=%LOCAL_CN%"
     right=%REMOTE_IP_ADDRESS%
-    rightid="%REMOTE_IP_ADDRESS%"
+    rightid="C=US, O=Test, CN=%REMOTE_CN%"
     keyexchange=ikev2
     ike=aes128-sha1-modp2048!
     type=tunnel

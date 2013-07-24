@@ -9,9 +9,13 @@
 #    %REMOTE_IP_SUBNET%     = IP address or the public side NAT address for the remote side
 #    %IKE_LIFETIME%         = IKE rekey lifetime (48H for 48 hours)
 #    %LIFETIME%             = Rekey lifetime (48H for 48 hours)"
-#    %CONNECTION_SIDE%      = Connection side reference. Alpha  for alpha side, Beta  for beta side
 #    %LOCAL_IPV6_ADDRESS%   = Local side IPV6 address (2000::1)
 #    %REMOTE_IPV6_ADDRESS%  = Remote side IPV6 address (2000::2)
+#    %CONNECTION_SIDE%      = Connection side indicator. (Alpha  for alpha side, Beta  for beta side)
+#    %CONNECTION_NAME%      = Connection side name. (Udp, Tcp, Sctp, Link, Conn ...)
+#    %PROTOCOL%             = Protocol to be used for link (udp, tcp, sctp ...)
+#    %ESP_ENCRYPTION%       = Esp encryption to be used (aes128, aes192, 3des ...)
+#    %ESP_INTEGRITY%        = Esp integrity to be used (sha1, aesxcbc ...)
 
 # basic configuration
 config setup
@@ -23,44 +27,44 @@ config setup
 conn %default
     left=%LOCAL_IP_ADDRESS%
     leftcert=%CERT_FILE_PATH_NAME%
-    leftid="%LOCAL_IP_ADDRESS%"
+    leftid="C=US, O=Test, CN=%LOCAL_CN%"
     right=%REMOTE_IP_ADDRESS%
-    rightid="%REMOTE_IP_ADDRESS%"
+    rightid="C=US, O=Test, CN=%REMOTE_CN%"
     keyexchange=ikev2
     ike=aes128-sha1-modp2048!
     type=tunnel
     pfs=yes
-    esp=aes128ctr-sha1-modp2048-noesn!
+    esp=%ESP_ENCRYPTION%-%ESP_INTEGRITY%-modp2048-noesn!
     ikelifetime=%IKE_LIFETIME%
     lifetime=%LIFETIME%
 
-conn %CONNECTION_SIDE%-Udp1
-    leftprotoport=udp
+conn %CONNECTION_SIDE%-%CONNECTION_NAME%1
+    leftprotoport=%PROTOCOL%
     leftsubnet=%LOCAL_IP_SUBNET%/32
-    rightprotoport=udp
+    rightprotoport=%PROTOCOL%
     rightsubnet=%REMOTE_IP_SUBNET%/32
     auto=add
 
-conn %CONNECTION_SIDE%-Udp2
-    leftprotoport=udp
+conn %CONNECTION_SIDE%-%CONNECTION_NAME%2
+    leftprotoport=%PROTOCOL%
     leftsubnet=%LOCAL_IPV6_ADDRESS%/64
-    rightprotoport=udp
+    rightprotoport=%PROTOCOL%
     rightsubnet=%REMOTE_IPV6_ADDRESS%/64
     auto=add
 
-conn %CONNECTION_SIDE%-Udp3
-    leftprotoport=udp
+conn %CONNECTION_SIDE%-%CONNECTION_NAME%3
+    leftprotoport=%PROTOCOL%
     leftsubnet=%LOCAL_IP_SUBNET%/32
-    rightprotoport=udp
+    rightprotoport=%PROTOCOL%
     rightsubnet=%REMOTE_IP_SUBNET%/32
     type=passthrough
     authby=never
     auto=add
     
-conn %CONNECTION_SIDE%-Udp4
-    leftprotoport=udp
+conn %CONNECTION_SIDE%-%CONNECTION_NAME%4
+    leftprotoport=%PROTOCOL%
     leftsubnet=%LOCAL_IPV6_ADDRESS%/64
-    rightprotoport=udp
+    rightprotoport=%PROTOCOL%
     rightsubnet=%REMOTE_IPV6_ADDRESS%/64
     type=passthrough
     authby=never

@@ -2,118 +2,94 @@
 require 'fileutils'
 
 require File.dirname(__FILE__)+'/../../LSP/default_test_module'
+require File.dirname(__FILE__)+'/ipsec_connect_module'
 require File.dirname(__FILE__)+'/utilities.rb'
 
 # Default Server-Side Test script implementation for LSP releases
-  
 include LspTestScript
 
+# IPSEC connection implementation
+include IpsecConnectionScript
+
 def setup
-  @equipment['server1'].send_sudo_cmd("ipsec stop", /#{@equipment['server1'].prompt}/, 20)
-  #super
+  # Stop ipsec running on Linux PC (Server)
+  self.as(IpsecConnectionScript).stop_ipsec(@equipment)
+
   self.as(LspTestScript).setup
-  @equipment['dut1'].send_sudo_cmd("root", /#{@equipment['dut1'].prompt}/, 20)
-end
-
-def test_ipsec_test_ipconfs(ipsecVatf, is_pass_through)
-  result = 0
-  is_clear_previous_result = true
-  result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.FQDN_TUNNEL, "ipsec_test_confs/ipsec_cp_1.conf", is_clear_previous_result, is_pass_through)
-  result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.IP_TUNNEL, "ipsec_test_confs/ipsec_ike_1.conf", is_clear_previous_result, is_pass_through)
-  result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.FQDN_TUNNEL, "ipsec_test_confs/ipsec_ike_2.conf", is_clear_previous_result, is_pass_through)
-  result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.FQDN_TUNNEL, "ipsec_test_confs/ipsec_ike_3.conf", is_clear_previous_result, is_pass_through)
-  result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.FQDN_TUNNEL, "ipsec_test_confs/ipsec_ike_4.conf", is_clear_previous_result, is_pass_through)
-  result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.FQDN_TUNNEL, "ipsec_test_confs/ipsec_ike_5.conf", is_clear_previous_result, is_pass_through)
-  result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.FQDN_TUNNEL, "ipsec_test_confs/ipsec_mp_1.conf", is_clear_previous_result, is_pass_through)
-  result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.FQDN_TUNNEL, "ipsec_test_confs/ipsec_up_1.conf", is_clear_previous_result, is_pass_through)
-  result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.FQDN_TUNNEL, "ipsec_test_confs/ipsec_up_2.conf", is_clear_previous_result, is_pass_through)
-  result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.FQDN_TUNNEL, "ipsec_test_confs/ipsec_up_3.conf", is_clear_previous_result, is_pass_through)
-  result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.FQDN_TUNNEL, "ipsec_test_confs/ipsec_up_4.conf", is_clear_previous_result, is_pass_through)
-  return result
-end
-
-def quick_test_ipsec_test_ipconfs(ipsecVatf, is_pass_through)
-  result = 0
-  is_clear_previous_result = true
-  result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.FQDN_TUNNEL, "ipsec_test_confs/ipsec_cp_1.conf", is_clear_previous_result, is_pass_through)
-  result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.IP_TUNNEL, "ipsec_test_confs/ipsec_ike_1.conf", is_clear_previous_result, is_pass_through)
-  return result
-end
-
-def get_variable_value(string)
-  puts(" string: #{string}\r\n")
-  value = ""
-  items = string.split("=")
-  puts(" items[0]: #{items[0]}\r\n")
-  if (items.length > 1)
-    value = items[1].gsub(">]", "")
-    value = value.gsub('\"', "")
-    value = value.tr("\"", "")
-  end
-  return value
+  # Create keys, certificates and then establish the IPSEC connection between EVM and Linux PC
+  result |= self.as(IpsecConnectionScript).establish_ipsec_connection(@equipment, @test_params)
 end
 
 def run
-  # create ipsec utilities set
-  ipsecVatf = IpsecUtilitiesVatf.new
+  # instantiate iperf utility set
+  iperfUtils = IperfUtilities.new
+  
+  # Set default settings
+  is_clear_previous_result = true
   result = 0
   comments = ""
-  additional_comments = ""
-  ipsec_test_suite = ""
-  
-  test_secs = get_variable_value(parse_cmd('test_secs').to_s).to_i
-  is_pass_through = ( (get_variable_value(parse_cmd('ipsec_conn').to_s).downcase == "pass") ? true : false )
-  ipsec_test_suite = get_variable_value(parse_cmd('ipsec_test_suite').to_s)
-  puts("Test Parameters:\r\n")
-  puts("  test_secs       : #{test_secs}\r\n")
-  puts("  is_pass_through : #{is_pass_through}\r\n")
-  puts("  ipsec test suite: #{ipsec_test_suite}\r\n")
-  #exit
+  connection_comments = ""
+  test_secs = 60
+  udp_bandwidth = "150M"
+  crypto_mode = "" 
+  test_headline = ""
 
-  connection_type = (is_pass_through ? ipsecVatf.PASS_THROUGH : ipsecVatf.IPSEC_CONN)
   
-  # Set result error bit to set if failures occur for IPSEC
-  ipsecVatf.set_error_bit_to_set(0)
-  
-  # Set IPSEC config for alpha side as Linux PC (swan version 5) and beta side as EVM (swan version 4). Use the default input ipsec.conf file.
-  ipsecVatf.ipsec_typical_config(@equipment, ipsecVatf.FQDN_TUNNEL, "")
-  # Dynamically create all keys and certificates and then start IPSEC on the Linux PC and the EVM. Start the ipsec tunnel on the EVM.
-  ipsecVatf.ipsec_typical_start(ipsecVatf.IPV4, connection_type)
-  result |= ipsecVatf.result
-  
-  case ipsec_test_suite
-    when "connections_only_full"
-      result |= test_ipsec_test_ipconfs(ipsecVatf, ipsecVatf.IPSEC_CONN)
-    when "connections_only_quick"
-      result |= quick_test_ipsec_test_ipconfs(ipsecVatf, ipsecVatf.IPSEC_CONN)
-    when "ipsec_bft"
-      # To be done
-    else
-      #
+  # Get IPSEC connection result  (The result will be set from running establish_ipsec_connection in the setup)
+  result |= IpsecConnectionScript.result.to_i
+
+  # Create test headline for IPERF test
+  test_headline = "#{IpsecConnectionScript.protocol}_#{IpsecConnectionScript.esp_encryption}_#{IpsecConnectionScript.esp_integrity}"
+
+  # Run iperf test only if IPSEC connection was successful
+  if result != 0
+    connection_comments += " IPSEC Connection failed for test: #{test_headline}\r\n"
+  else
+    # Get control information from test case
+    test_secs = get_variable_value(@test_params.params_chan.test_secs[0]).to_i if @test_params.params_chan.instance_variable_defined?(:@test_secs)
+    crypto_mode = get_variable_value(@test_params.params_chan.crypto[0])  if @test_params.params_chan.instance_variable_defined?(:@crypto)
+
+    # Set udp bandwith to use with iperf based on crypto_mode
+    case "#{crypto_mode}"
+      when "inflow"
+        udp_bandwidth = "300M"
+      when "hardware", "sideband"
+        udp_bandwidth = "205M"
+      when "software"
+        udp_bandwidth = "150M"
+    end
+
+    # Set IP addresses for iperf to use
+    iperfUtils.iperf_typical_config(@equipment)
+      
+    # Run iperf on established connection and get result
+    result |= iperfUtils.test_linux_to_evm(IpsecConnectionScript.protocol, test_secs, udp_bandwidth, test_headline)
   end
-  
-  # Set overall test result based on result variable
+
+  # Set overall test result and comments text
   if result == 0
-    puts("\r\nAll tests have passed!\r\n")
     test_done_result = FrameworkConstants::Result[:pass]
-    comments += "Test passed."
+    comments += "Test passed. #{iperfUtils.display_memfree_info()}\r\n"
   else
     test_done_result = FrameworkConstants::Result[:fail]
-    comments += "Test failed.\r\n"
-    comments += ".\r\n"
-    comments += "#{error_code_bit_breakdown(result)}"
-    comments += "."
+    comments += "Test failed. #{iperfUtils.display_memfree_info()}\r\n"
+    comments += connection_comments
   end
   comments += "\r\n"
-  # Add result text from each part of the test
-  comments += ipsecVatf.result_text
+  comments += iperfUtils.result_text
   comments += ".\r\n"
-  puts("\r\n\r\n#{comments}\r\n\r\n")
+  comments += IpsecConnectionScript.comment_text
+  comments += ".\r\n"
+
   # Fix dash display for webpage. The dashes are half the size when displayed on the web page so double them to keep the display line size correct.
   comments = comments.gsub("----", "--------")
+
+  # Set test result and result comments
   set_result(test_done_result, comments)
 end
 
 def clean
-  #@equipment['server1'].send_sudo_cmd("ipsec stop", /#{@equipment['server1'].prompt}/, 20)
+  # Stop ipsec on both sides to be friendly to other tests
+  self.as(IpsecConnectionScript).stop_ipsec(@equipment)
+  self.as(IpsecConnectionScript).stop_ipsec_evm(@equipment)
 end
