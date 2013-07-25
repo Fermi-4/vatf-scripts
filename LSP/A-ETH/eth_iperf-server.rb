@@ -135,13 +135,18 @@ def get_perf_metrics
 end
 
 def is_iperf_running?(type)
+  is_iperf_detected = false
   test_regex = type.match(/udp/i) ? /iperf\s+\-s\s+\-u/i : /iperf\s+\-s\s*$/i
   @equipment['dut1'].send_cmd("ps", @equipment['dut1'].prompt, 10)
-  if !(@equipment['dut1'].response.match(test_regex))
-    return false
-  else
-    return true
+  is_iperf_detected = true if (@equipment['dut1'].response.match(test_regex))
+  # If the current method for detecting iperf fails, then try with different method
+  if !is_iperf_detected
+    # Check for iperf running using a different ps command and for TCP a different regex match
+    test_regex = type.match(/udp/i) ? test_regex : /iperf\s+\-s\s/i
+    @equipment['dut1'].send_cmd("ps -f", @equipment['dut1'].prompt, 10)
+    is_iperf_detected = true if (@equipment['dut1'].response.match(test_regex))
   end
+  return is_iperf_detected
 end
 
 # Get ip address assgined to ethernet interface
