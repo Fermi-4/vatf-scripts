@@ -1,13 +1,13 @@
 ###########################
 ## FOR THE NIGHTLY BUILD ##
 ###########################
-## Date: July 24, 2013
+## Date: July 25, 2013
 #From the set of three inputs, run the test specified by the first command, after setting up the environment for it to run. Upon running a test, check the output for specified terms to check test completion and success.
 #A build parameter @test_params.lld_test_archive, is a tar.gz archive transferred from an ftp server, specified in build
 #Look below at internally_consistent? to see about constraint options that are not literal matches
+#'scmcsdk: added functionality to accept commands that can be interpreted as ruby methods; added common_utils.rb'
 
 require 'fileutils'
-
 require File.dirname(__FILE__)+'/../../LSP/default_test_module'
 require File.dirname(__FILE__)+'/common_utils.rb'
 include LspTestScript
@@ -59,7 +59,7 @@ def run
 		#send_cmd, store buffer into std_response
 		@equipment['dut1'].send_cmd(test_cmd, /#{criteria[0]}/i, 25)
 		if @equipment['dut1'].timeout?
-			puts comment += "**On iteration #{count +1}, FAILURE to meet end criteria**"
+			puts comment += "**On iteration #{count +1}, FAILURE to meet end criteria " + test_cmd.to_s + "**"
 			@equipment['dut1'].send_cmd("cd",@equipment['dut1'].prompt, 10)
 			set_result(test_done_result,comment)
 			return
@@ -116,46 +116,6 @@ def run
 	comment += "\n" + test_cmd.to_s + " *TEST PASSED*"
 	test_done_result = FrameworkConstants::Result[:pass]
 	set_result(test_done_result,comment)
-end
-
-##Do most of the preparation for testing: archive building, file checking, and server starting
-def prepare_for_test(test_folder_location,commands)
-	comment = ""
-	##Set up files from archive
-	comment += build_files(test_folder_location) 
-	file_list = Array.new
-	
-	##Parse commands for files needed
-	files_result = good_files_specified?(commands)
-	if files_result[0]
-		file_list = files_result[2]
-		@equipment['dut1'].send_cmd("echo good files specified: \n " + files_result[1].to_s + "\n",@equipment['dut1'].prompt, 20)
-	else
-		comment += files_result[1] + "Files requested not consistent with those available. "
-		return [false, comment]
-	end	
-	other_cmds = commands[1...commands.length]
-	@equipment['dut1'].send_cmd("echo Checked input. Preparing for test.\n", @equipment['dut1'].prompt, 10)
-	##Run the rmServer when requested
-	if other_cmds[0] and file_list.length > 1 and other_cmds.to_s[/rmServer/]
-		rm_result = rmServer_up?(other_cmds)
-		#rm_result = [up?, comments]
-		if rm_result[0]
-			@equipment['dut1'].send_cmd("echo ' "+ rm_result[1] +  "'\nrmServer up and running. \n", @equipment['dut1'].prompt, 10)
-		else
-			comment += rm_result[1] + "RmServer did not run. "
-			return [false, comment]
-		end
-	elsif other_cmds[0] 
-		other_cmds.each do |cmd| 
-			@equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 20)
-			if @equipment['dut1'].timeout?
-				comment += "cmd " + cmd.to_s + " not sent correctly. "
-				return [false, comment]
-			end
-		end
-	end
-	return [true,comment]
 end
 
 ##copy archive from ftp server location "@test_params.lld_test_archive" to linux_host
@@ -220,6 +180,10 @@ def good_files_specified?(commands)
 	##Look through all commands and see if they require files
 	commands.each do |command|
 		if command
+			if command[/\(.*\)/] # to take care of commands that are formatted method()
+				method = command[/.*\(/].to_s.sub('(', '')
+				command = command.sub(method, '').sub('(', '').sub(')', '').sub(":"," ")
+			end
 			command.split(" ").uniq.each do |piece_of_command|
 				folder = piece_of_command[/.*\//]
 				if folder
@@ -235,8 +199,9 @@ def good_files_specified?(commands)
 			end
 		end
 	end
+	@equipment['dut1'].send_cmd("echo File list." + file_list.to_s, @equipment['dut1'].prompt, 10)
 	
-	##Proceed if all specified files exist, else return <file not found>
+	##Check if all specified files exist, else return <file not found>
 	file_version = ""
 	seen_files = ""
 	file_list.each do |tag|
@@ -251,14 +216,16 @@ def good_files_specified?(commands)
 		end
 #!! Version parsing may be different
 		##ensure that file versions are the same
-		file_version += tag[/[a-zA-Z]\.{1}\w+/][0]
-		if file_version.length > 1 and !tag[/.txt/]
-			(file_version.length-1).times do |i|
-				if file_version[i] != file_version[i+1]
-					comment += "File version different: '" + tag.to_s + "'. "
+		if tag[/[a-zA-Z]\.{1}\w+/]
+			file_version += tag[/[a-zA-Z]\.{1}\w+/][0]
+			if file_version.length > 1 and !tag[/.txt/]
+				(file_version.length-1).times do |i|
+					if file_version[i] != file_version[i+1]
+						comment += "File version different: '" + tag.to_s + "'. "
+					end
 				end
+				file_version = file_version[0]
 			end
-			file_version = file_version[0]
 		end
 		file_extension = file[/\.{1}\w+/]
 		##check that the file exists, where specified, or in /usr/bin/
@@ -283,41 +250,6 @@ def good_files_specified?(commands)
 	end
 	@equipment['dut1'].send_cmd("echo Files all checked.\n " + file_list.to_s, @equipment['dut1'].prompt, 10)
 	return [true, comment + "File_list: " + file_list.to_s + ". ", file_list]
-end
-
-#See if the server is running, and starts it if not up already
-# returns [running=true|not_running=false, comments]
-#["cd /usr/bin/","rmServer_k2h.out /usr/bin/global-resource-list_k2h.dtb /usr/bin/policy_dsp_arm_k2h.dtb > output.out &","cd"]
-def rmServer_up? (other_cmds = [], file_version = "hk")
-	comment = ""
-	running = false
-	##test to see that the rmServer is running. Start it if its not running
-	@equipment['dut1'].send_cmd("ps | grep rmServer", /rmServer_k2[#{file_version}]/i, 5)
-	if @equipment['dut1'].timeout?			#run a new rmServer in the background
-		comment = "rmServer not running initially. "
-		other_cmds.each do |cmd| 
-			comment += "Running " + cmd.to_s + ". "
-			@equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 20)
-			if @equipment['dut1'].timeout?
-				comment += "cmd " + cmd.to_s + " not sent correctly. "
-				return [false, comment]
-			end
-			comment += "'" + cmd.to_s + "' run. "
-		end
-		#test to see that the rmServer is now running.
-		@equipment['dut1'].send_cmd("ps | grep rmServer", /rmServer_k2[#{file_version}]/i, 5)
-		if @equipment['dut1'].timeout?
-			comment += "Server did not start. "
-			return [false, comment]
-		end
-		#may need to wait longer for the rmServer to be able to take input
-		comment += "Successfully started rmServer in background. "
-	else
-		comment = "rmServer running initially. "
-	end
-	puts "**SERVER UP**\n"
-	running = true
-	return [running, comment]
 end
 
 #parse output to check consistency of output
@@ -378,6 +310,111 @@ def internally_consistent? (output, type_of_check = "", criterion = "default")
 	#std_response 
 	puts "Internally consistent"
 	return [true, "Passed"]
+end
+
+##Do most of the preparation for testing: archive building, file checking, and server starting
+def prepare_for_test(test_folder_location,commands)
+	comment = ""
+	##Set up files from archive
+	comment += build_files(test_folder_location) 
+	file_list = Array.new
+	
+	##Parse commands for files needed
+	files_result = good_files_specified?(commands)
+	if files_result[0]
+		file_list = files_result[2]
+		@equipment['dut1'].send_cmd("echo good files specified: \n " + files_result[1].to_s + "\n",@equipment['dut1'].prompt, 20)
+	else
+		comment += files_result[1] + "Files requested not consistent with those available. "
+		return [false, comment]
+	end	
+	other_cmds = commands[1...commands.length]
+	@equipment['dut1'].send_cmd("echo Checked input. Preparing for test.\n", @equipment['dut1'].prompt, 10)
+	##Run the rmServer when requested
+	if other_cmds[0] and file_list.length > 1 and other_cmds.to_s[/rmServer/]
+		rm_result = rmServer_up?(other_cmds)
+		#rm_result = [up?, comments]
+		if rm_result[0]
+			@equipment['dut1'].send_cmd("echo ' "+ rm_result[1] +  "'\nrmServer up and running. \n", @equipment['dut1'].prompt, 10)
+		else
+			comment += rm_result[1] + "RmServer did not run. "
+			return [false, comment]
+		end
+	elsif other_cmds[0] 
+		other_cmds.each do |cmd| 
+			if rubify(cmd)
+				#command sent as ruby
+			else
+				@equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 20)
+				if @equipment['dut1'].timeout?
+					comment += "cmd " + cmd.to_s + " not sent correctly. "
+					return [false, comment]
+				end
+			end
+		end
+	end
+	return [true,comment]
+end
+
+#See if the server is running, and starts it if not up already
+# returns [running=true|not_running=false, comments]
+#["cd /usr/bin/","rmServer_k2h.out /usr/bin/global-resource-list_k2h.dtb /usr/bin/policy_dsp_arm_k2h.dtb > output.out &","cd"]
+def rmServer_up? (other_cmds = [], file_version = "hk")
+	comment = ""
+	running = false
+	##test to see that the rmServer is running. Start it if its not running
+	@equipment['dut1'].send_cmd("ps | grep rmServer", /rmServer_k2[#{file_version}]/i, 5)
+	if @equipment['dut1'].timeout?			#run a new rmServer in the background
+		comment = "rmServer not running initially. \n"
+		other_cmds.each do |cmd| 
+			comment += "Running " + cmd.to_s + ". "
+			if rubify(cmd)
+				#command sent as ruby
+			else
+				@equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 20)
+				if @equipment['dut1'].timeout?
+					comment += "cmd " + cmd.to_s + " not sent correctly. "
+					return [false, comment]
+				end
+			end
+			comment += "'" + cmd.to_s + "' run. \n"
+		end
+		#test to see that the rmServer is now running.
+		@equipment['dut1'].send_cmd("ps | grep rmServer", /rmServer_k2[#{file_version}]/i, 5)
+		if @equipment['dut1'].timeout?
+			comment += "Server did not start. "
+			return [false, comment]
+		end
+		#may need to wait longer for the rmServer to be able to take input
+		comment += "Successfully started rmServer in background. "
+	else
+		comment = "rmServer running initially. "
+	end
+	puts "**SERVER UP**\n"
+	running = true
+	return [running, comment]
+end
+
+##parse a string to see if it is a method call, then call it with its arguments
+##does nothing if there are no parentheses.
+##multiple arguments are separated by a colon : 
+#example string "funct(x:y)" will be run, as send(funct, [x,y])
+def rubify(some_string)
+	if some_string[/\(.*\)/]
+		method = some_string[/.*\(/].to_s.sub('(', '')
+		args = some_string.sub(method, '').sub('(', '').sub(')', '')
+		args_array = args.split(":")
+		@equipment['dut1'].send_cmd("echo Method #{method} with Argument(s) #{args_array}", @equipment['dut1'].prompt, 5)
+		begin
+			self.send(method, *args_array)
+		rescue => detail
+			error = detail.backtrace.join("\n")
+			@equipment['dut1'].send_cmd("echo #{error}", @equipment['dut1'].prompt, 5)
+			raise "Error: ruby command not recognized"
+		end
+	else
+		return false
+	end
 end
 
 #to look for passed, failed, etc. and have a noCase count of them
