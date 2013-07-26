@@ -3,6 +3,7 @@ require File.dirname(__FILE__)+'/utilities.rb'
 
 # IPSEC connection script
 module IpsecConnectionScript
+  @equipment = ""
   @ipsecVatf = IpsecUtilitiesVatf.new
   @ipsec_connection_script_comment_text = ""
   @ipsec_connection_script_result = 0
@@ -14,6 +15,13 @@ module IpsecConnectionScript
   @ipsec_connection_script_is_nat_traversal = "(not_set)"
   @ipsec_connection_script_ipsec_template = "(not_set)"
   @is_ipsecVatf_started = false
+
+  def equipment()
+    @equipment
+  end
+  def equipment_set(equipment)
+    @equipment = equipment
+  end
 
   def ipsecVatf
     @ipsecVatf
@@ -122,6 +130,14 @@ module IpsecConnectionScript
     IpsecConnectionScript.ipsecVatf.inflow_stop_offload(IpsecConnectionScript.ipsecVatf.BETA_SIDE())
   end
 
+  def get_ip_addr(dev='dut1', iface_type='eth')
+    equipment = IpsecConnectionScript.equipment
+    this_equipment = equipment["#{dev}"]
+    this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*#{iface_type}.*/{print $1}' | head -1`;ifconfig $eth", this_equipment.prompt)
+    ifconfig_data =/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(this_equipment.response)
+    ifconfig_data ? ifconfig_data[1] : nil
+  end
+  
   def display_ipsec_test_params(ipsec_conf_template, protocol, encryption, integrity, is_pass_through, is_secure_data, is_nat_traversal, alpha_side_nat_public_ip, alpha_side_nat_gateway_ip, beta_side_nat_public_ip, beta_side_nat_gateway_ip)
     params_display = ""
     params_display += "IPSEC Test Parameters:\r\n"
@@ -138,8 +154,11 @@ module IpsecConnectionScript
     end
     return params_display
   end
-  
+
   def establish_ipsec_connection(equipment, test_params)
+    # Set module global equipment variable
+    IpsecConnectionScript.equipment_set(equipment)
+
     # instantiate ipsec utilities set
     if !IpsecConnectionScript.is_ipsecVatf_started
       IpsecConnectionScript.ipsecVatf_set(IpsecUtilitiesVatf.new)
@@ -205,7 +224,7 @@ module IpsecConnectionScript
 
     # Get IP addresses for the alpha and beta side
     alpha_ip = equipment['server1'].telnet_ip
-    beta_ip = equipment['dut1'].telnet_ip
+    beta_ip = IpsecConnectionScript.get_ip_addr() 
     alpha_side_nat_public_ip = get_param_value_local(equipment['server1'], "nat_gateway_public_ip")
     alpha_side_nat_gateway_ip = get_param_value_local(equipment['server1'], "nat_gateway_private_ip")
     beta_side_nat_public_ip = get_param_value_local(equipment['server1'], "nat_gateway_public_ip")

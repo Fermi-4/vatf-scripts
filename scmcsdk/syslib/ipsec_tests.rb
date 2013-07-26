@@ -90,6 +90,7 @@ end
 
 def clean
   # Stop ipsec on both sides to be friendly to other tests
+  self.as(IpsecConnectionScript).stop_offload_indices()
   self.as(IpsecConnectionScript).stop_ipsec(@equipment)
   self.as(IpsecConnectionScript).stop_ipsec_evm(@equipment)
 end
