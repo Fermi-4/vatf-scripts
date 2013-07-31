@@ -30,8 +30,9 @@ def run
   comments = ""
   connection_comments = ""
   test_secs = 60
-  udp_bandwidth = "150M"
   crypto_mode = "" 
+  udp_bandwidth = ""
+  packet_size = "1400"
   test_headline = ""
 
   
@@ -48,22 +49,28 @@ def run
     # Get control information from test case
     test_secs = get_variable_value(@test_params.params_chan.test_secs[0]).to_i if @test_params.params_chan.instance_variable_defined?(:@test_secs)
     crypto_mode = get_variable_value(@test_params.params_chan.crypto[0])  if @test_params.params_chan.instance_variable_defined?(:@crypto)
-
-    # Set udp bandwith to use with iperf based on crypto_mode
-    case "#{crypto_mode}"
-      when "inflow"
-        udp_bandwidth = "300M"
-      when "hardware", "sideband"
-        udp_bandwidth = "205M"
-      when "software"
-        udp_bandwidth = "150M"
+    packet_size = get_variable_value(@test_params.params_chan.pkt_size[0])  if @test_params.params_chan.instance_variable_defined?(:@pkt_size)
+    udp_bandwidth = get_variable_value(@test_params.params_chan.udp_bw[0])  if @test_params.params_chan.instance_variable_defined?(:@udp_bw)
+    if udp_bandwidth == ""
+      # Set udp bandwith to use with iperf based on crypto_mode if not specified in test case
+      case "#{crypto_mode}"
+        when "inflow"
+          udp_bandwidth = "300M"
+        when "hardware", "sideband"
+          #udp_bandwidth = "205M"
+          udp_bandwidth = "300M"
+        when "software"
+          udp_bandwidth = "150M"
+        else
+          udp_bandwidth = "1000M"
+      end
     end
 
     # Set IP addresses for iperf to use
     iperfUtils.iperf_typical_config(@equipment)
       
     # Run iperf on established connection and get result
-    result |= iperfUtils.test_linux_to_evm(IpsecConnectionScript.protocol, test_secs, udp_bandwidth, test_headline)
+    result |= iperfUtils.test_linux_to_evm(IpsecConnectionScript.protocol, test_secs, udp_bandwidth, packet_size, test_headline, crypto_mode)
   end
 
   # Set overall test result and comments text

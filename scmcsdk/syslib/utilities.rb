@@ -63,6 +63,13 @@ def get_param_value_local(equipment_ref, variable)
   return value
 end
 
+def util_get_ip_addr(equipment, dev='dut1', iface_type='eth')
+  this_equipment = equipment["#{dev}"]
+  this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*#{iface_type}.*/{print $1}' | head -1`;ifconfig $eth", this_equipment.prompt)
+  ifconfig_data =/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(this_equipment.response)
+  ifconfig_data ? ifconfig_data[1] : nil
+end
+  
 def convert_string_to_case_insensitive_reg_expression(string)
   reg_exp = ""
   if string.length > 0
@@ -101,8 +108,9 @@ class FileUtilities
   end
   def is_contents_empty(array_to_check)
     is_empty = false
-    arr_to_check = array_to_check
-    arr_to_check = [array_to_check] if array_to_check.kind_of?(String)
+    #arr_to_check = array_to_check
+    #arr_to_check = [array_to_check] if array_to_check.kind_of?(String)
+    arr_to_check = (array_to_check.kind_of?(String) ? [array_to_check] : array_to_check)  
     if (arr_to_check.length == 0)
       is_empty = true
     end
@@ -303,6 +311,7 @@ class VatfHelperUtilities
   end
   def clear_result()
     @result = 0
+    @result_text = ""
   end
   def set_error_bit_to_set(error_bit)
     this_error_bit = 0
@@ -405,18 +414,19 @@ class VatfHelperUtilities
     is_matched = false
     temp = raw_buffer.scan(convert_string_to_case_insensitive_reg_expression(string))
     is_matched = true if (temp.length == count)
+    log_info(BETA_SIDE(), "\r\n##########################\r\n string: #{string}, temp.length: #{temp.length}, count: #{count}, is_matched #{is_matched}, raw_buffer:\r\n#{raw_buffer} \r\n##########################\r\n")
     return is_matched
   end
   def offload_indices_common(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal, offload_command)
     log_info(is_alpha_side, " Policy Indices; In: #{policy_index_in}, Out: #{policy_index_out}\r\n")
-    raw_buffer = smart_send_cmd(is_alpha_side, @normal_cmd, "#{offload_command} --sp_id #{policy_index_in} #{offload_command_post_fix}", "sa_handle", @error_bit, 2)
+    raw_buffer = smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{offload_command} --sp_id #{policy_index_in} #{offload_command_post_fix}", "sa_handle", DONT_SET_ERROR_BIT(), 2, 4)
     # Check to see that we receive the correct number of success messages
     result |= @error_bit if !is_matched_count(raw_buffer, "SUCCESS", 2)
     if (result() != 0)
       @result_text += " #{offload_command} command failed for policy index : #{policy_index_in}\r\n"
       return if is_fatal
     end
-    raw_buffer = smart_send_cmd(is_alpha_side, @normal_cmd, "#{offload_command} --sp_id #{policy_index_out} #{offload_command_post_fix}", "sa_handle", @error_bit, 2)
+    raw_buffer = smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{offload_command} --sp_id #{policy_index_out} #{offload_command_post_fix}", "sa_handle", DONT_SET_ERROR_BIT(), 2, 4)
     # Check to see that we receive the correct number of success messages
     result |= @error_bit if !is_matched_count(raw_buffer, "SUCCESS", 2)
     if (result() != 0)
@@ -1262,7 +1272,7 @@ class NashPalTestBenchVatf
     
     # Get the Server IP (Linux PC) and EVM IP addresses for transferring the executables from the Linux PC to the EVM
     server_ip = equipment[@vatf_helper.vatf_server_ref].telnet_ip
-    dut_ip = equipment[@vatf_helper.vatf_dut_ref].telnet_ip
+    dut_ip = util_get_ip_addr(equipment)
     server_tftp_base_dir = equipment[@vatf_helper.vatf_server_ref].tftp_path
 
     # Set the trigger phrases to be used for determining if the test is running properly
@@ -1732,6 +1742,20 @@ class IperfUtilities
     @normal_cmd = false
     @iperf_cmd = "iperf "
     @error_bit = 5
+    @xfrm_stats_accumulation = 0
+    @xfrm_stat_command = "cat /proc/net/xfrm_stat"
+    @sideband_stat_command = "cat /sys/devices/soc.0/20c0000.crypto/stats/tx_drop_pkts"
+    @first_xfrm_stat = Array.new
+    @next_xfrm_stat = Array.new
+    @first_sideband_stat = Array.new
+    @next_sideband_stat = Array.new
+    clear_stat_arrays()
+  end
+  def clear_stat_arrays()
+    @first_xfrm_stat.clear
+    @next_xfrm_stat.clear
+    @first_sideband_stat.clear
+    @next_sideband_stat.clear
   end
   def ALPHA_SIDE()
     return true
@@ -1798,7 +1822,102 @@ class IperfUtilities
   def display_memfree_info()
     return "[#{@free_mem_start} / #{@free_mem_end}]"
   end
-  def get_proc_info(is_alpha_side)
+  def is_stat_string?(string)
+    temp = string.scan(/[0-9]+/)
+    # Return true if number found in string
+    #puts(" string(len=#{temp.length}): #{string}\r\n")
+    #sleep(1)
+    return true if (temp.length == 1)
+    #puts("   NOT A STAT STRING!\r\n")
+    return false
+  end
+  def push_to_array(command, string, is_still_the_first_push)
+    is_first_push = false
+    case "#{command}"
+      when "#{@xfrm_stat_command}"
+        if !@first_xfrm_stat.any? or is_still_the_first_push
+          @first_xfrm_stat.push(string) if is_stat_string?(string)
+          is_first_push = true
+        else
+          @next_xfrm_stat.push(string) if is_stat_string?(string)
+        end
+      when "#{@sideband_stat_command}"
+        if !@first_sideband_stat.any? or is_still_the_first_push
+          @first_sideband_stat.push(string) if is_stat_string?(string)
+          is_first_push = true
+        else
+          @next_sideband_stat.push(string) if is_stat_string?(string)
+        end
+    end
+    return is_first_push
+  end
+  def stat_count_diff(command, curr_array, prev_array, index)
+    diff_count = 0
+    stat_count = ""
+    # If arrays are different lengths then just use the current array's value
+    if curr_array.length != prev_array.length
+      stat_count = curr_array[index] if (curr_array.length > index)
+    else
+      # Make sure index is within bounds before continuing
+      if (curr_array.length > index) and (prev_array.length > index)
+        curr_stat_name = curr_array[index].scan(/[a-zA-Z\s\t]+/)[0]
+        prev_stat_name = prev_array[index].scan(/[a-zA-Z\s\t]+/)[0]
+        #puts("\r\n@xfrm_stats_accumulation1: #{curr_stat_name} / #{prev_stat_name}")
+        # If it is the same stat name then check the difference
+        if curr_stat_name == prev_stat_name
+          curr_stat_count = curr_array[index].scan(/[0-9]+/)[0].to_i
+          prev_stat_count = prev_array[index].scan(/[0-9]+/)[0].to_i
+          diff_count = curr_stat_count - prev_stat_count
+          stat_count = "#{curr_stat_name}#{diff_count}" if (diff_count != 0)
+          if command == @xfrm_stat_command
+            @xfrm_stats_accumulation += diff_count
+            #puts("\r\n@xfrm_stats_accumulation2(#{curr_stat_name}}: #{@xfrm_stats_accumulation}/#{stat_count}")
+            #sleep(1)
+          end
+        else
+          stat_count = curr_array[index]
+        end
+      end
+      puts("\r\n\r\n")
+    end
+    return stat_count 
+  end
+  def set_error_result_base_on_count_difference_verses_first_stat(command, set_error_bit)
+    # Set current array and previous array to check for differences
+    case command
+      when @xfrm_stat_command
+        @xfrm_stats_accumulation = 0
+        curr_arr_to_check = (@next_xfrm_stat.kind_of?(String) ? [@next_xfrm_stat] : @next_xfrm_stat)
+        prev_arr_to_check = (@first_xfrm_stat.kind_of?(String) ? [@first_xfrm_stat] : @first_xfrm_stat) 
+      when @sideband_stat_command
+        curr_arr_to_check = (@next_sideband_stat.kind_of?(String) ? [@next_sideband_stat] : @next_sideband_stat)
+        prev_arr_to_check = (@first_sideband_stat.kind_of?(String) ? [@first_sideband_stat] : @first_sideband_stat) 
+        @result_text += "Xfrm error count total: #{@xfrm_stats_accumulation}\r\n" if (@xfrm_stats_accumulation != 0)
+    end
+    # Scan arrays for different stat counts and log results if there are differences
+    index = 0
+    curr_arr_to_check.each do |line|
+      stat_line = stat_count_diff(command, curr_arr_to_check, prev_arr_to_check, index)
+      index += 1
+      if stat_line != ""
+        if set_error_bit
+          @result |= @error_bit
+        end
+        @result_text += "Stat Error (#{command}): #{stat_line}\r\n"
+      end
+    end
+  end
+  def set_error_result_for_non_zero_stat(command, raw_buffer, set_error_bit)
+    is_first_push = false
+    temp = raw_buffer.split("\n")
+    temp.each do |stat_line|
+      is_first_push = push_to_array(command, stat_line.strip, is_first_push)
+    end
+    if !is_first_push
+      set_error_result_base_on_count_difference_verses_first_stat(command, set_error_bit)
+    end
+  end
+  def get_proc_info(is_alpha_side, crypto_mode)
     command = "cat /proc/meminfo"
     mem_stat = ""
     raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
@@ -1815,6 +1934,14 @@ class IperfUtilities
     end
     command = "ip -s xfrm state"
     raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
+    command = @xfrm_stat_command
+    raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
+    set_error_result_for_non_zero_stat(command, raw_buffer, false)
+    if (crypto_mode.downcase == "sideband") or (crypto_mode.downcase == "hardware")
+      command = @sideband_stat_command
+      raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
+      set_error_result_for_non_zero_stat(command, raw_buffer, false)
+    end
   end
   def get_top_idle_stat(is_alpha_side)
     lowest = "100"
@@ -1831,19 +1958,18 @@ class IperfUtilities
     result += "\r\n"
     return lowest
   end
-  def get_iperf_stat(is_alpha_side, test_headline, raw_buffer, protocol)
-    test = "[parsing error]"
-    throughput = "[parsing error]"
+  def get_iperf_stat(is_alpha_side, test_headline, raw_buffer, protocol, packet_size)
+    throughput = "[ERROR: iperf measurement is incomplete]"
     cpu_idle_stat = get_top_idle_stat(is_alpha_side)
     result_string = ""
     tput_instance = (protocol.downcase == "udp" ? 2 : 1)
     temp2 = raw_buffer.scan(/[0-9.]* Mbits\/sec/)
     throughput = temp2[temp2.length-1] if temp2.length == tput_instance
-    result_string = "   Test: #{test_headline}, Tput: #{throughput} [Idle%: #{cpu_idle_stat}]\r\n"
-    @result = @error_bit if result_string.downcase.include?("error]")
+    result_string = "   Test: #{test_headline}, Tput: #{throughput}, Pkt_size: #{packet_size} [Idle%: #{cpu_idle_stat}]\r\n"
+    @result = @error_bit if result_string.downcase.include?("error:")
     return result_string
   end
-  def client_run(is_alpha_side, protocol, test_time, udp_bandwidth)
+  def client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
     wait_for_text = "/sec"
     wait_secs = test_time + 10
     command = ""
@@ -1851,7 +1977,8 @@ class IperfUtilities
     command += "-c "
     command += (is_alpha_side ? @beta_ip : @alpha_ip)
     command += " "
-    command += "-u -b #{udp_bandwidth} " if protocol.downcase == "udp"
+    command += "-u -b #{udp_bandwidth} --len #{packet_size} " if protocol.downcase == "udp"
+    command += "-M #{packet_size} -w 128K " if protocol.downcase == "tcp"
     command += "-t #{test_time} "
     command += (is_alpha_side ? @additional_alpha_params : @additional_beta_params)
     return @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", wait_for_text, @error_bit, 0, wait_secs)
@@ -1859,7 +1986,7 @@ class IperfUtilities
   def iperf_typical_config(equipment)
     # Get IP addresses to use on each side of the IPSEC connection
     @alpha_ip = equipment[@vatf_helper.vatf_server_ref].telnet_ip
-    @beta_ip = equipment[@vatf_helper.vatf_dut_ref].telnet_ip
+    @beta_ip = util_get_ip_addr(equipment)
 
     # Use the default vatf linux pc ('server1') and evm ('dut1') reference, but set the equipment variable so we can communicate with them
     set_helper_common(equipment, "", "")
@@ -1902,79 +2029,36 @@ class IperfUtilities
       @vatf_helper.log_info(is_alpha_side, "\r\n\#################### dmesg end ####################\r\n\r\n")
     end
   end
-  def test_evm_to_linux_old(protocol, test_time_secs, udp_bandwidth, test_headline)
-    result = ""
-    server_side = ALPHA_SIDE()
-    evm_side = BETA_SIDE()
-    evm_log_thread = start_log_thread(evm_side, test_time_secs + 20)
-    get_crypto_support(evm_side)
-    server_start(server_side, protocol)
-    # Start logging the DUT's console output for the entire test run
-    run_top(evm_side, test_time_secs)
-    result += "\r\n============================================================\r\n"
-    result += "\r\n EVM to Linux PC transfer stats:\r\n"
-    raw_buffer = client_run(evm_side, protocol, test_time_secs, udp_bandwidth)
-    result += raw_buffer
-    result += "\r\n============================================================\r\n"
-    # Wait for EVM log thread to finish before continuing to preserve reporting sequence
-    wait_on_log_thread_complete(evm_side, evm_log_thread)
-    @result_text += get_iperf_stat(evm_side, test_headline, raw_buffer, protocol)
-    @result_text += result
-    server_kill(server_side)
-    return @result
-  end
-  def test_linux_to_evm_old(protocol, test_time_secs, udp_bandwidth, test_headline)
-    result = ""
-    server_side = ALPHA_SIDE()
-    evm_side = BETA_SIDE()
-    #clear_dmesg(evm_side)
-    #evm_log_thread = start_log_thread(evm_side, test_time_secs + 20)
-    server_thread = server_start(evm_side, protocol, test_time_secs + 10)
-    # Start logging the DUT's console output for the entire test run
-    run_top(evm_side, test_time_secs)
-    result += "\r\n============================================================\r\n"
-    result += "\r\n Linux PC to EVM transfer stats:\r\n"
-    raw_buffer = client_run(server_side, protocol, test_time_secs, udp_bandwidth)
-    result += raw_buffer
-    result += "\r\n============================================================\r\n"
-    wait_on_thread_complete(server_thread)
-    #dmesg_on_error(evm_side, raw_buffer)
-    # Wait for EVM log thread to finish before continuing to preserve reporting sequence
-    #wait_on_log_thread_complete(evm_side, evm_log_thread)
-    @result_text += get_iperf_stat(evm_side, test_headline, raw_buffer, protocol)
-    @result_text += result
-    server_kill(evm_side)
-    return @result
-  end
-  def test_common(protocol, test_time_secs, udp_bandwidth, test_headline, iperf_server_side, iperf_client_side)
+  def test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, iperf_server_side, iperf_client_side, crypto_mode)
+    clear_stat_arrays()
     result = ""
     linux_pc = ALPHA_SIDE()
     evm_side = BETA_SIDE()
-    get_proc_info(evm_side)
+    get_proc_info(evm_side, crypto_mode)
     server_thread = server_start(iperf_server_side, protocol, test_time_secs + 10)
     run_top(evm_side, test_time_secs)
     result += "\r\n============================================================\r\n\r\n"
     result += (iperf_server_side == linux_pc ? " EVM to Linux PC" : " Linux PC to EVM")
     result += " transfer stats:\r\n"
-    raw_buffer = client_run(iperf_client_side, protocol, test_time_secs, udp_bandwidth)
+    raw_buffer = client_run(iperf_client_side, protocol, test_time_secs, udp_bandwidth, packet_size)
     result += raw_buffer
     result += "\r\n============================================================\r\n"
     wait_on_thread_complete(server_thread)
-    @result_text += get_iperf_stat(evm_side, test_headline, raw_buffer, protocol)
+    @result_text += get_iperf_stat(evm_side, test_headline, raw_buffer, protocol, packet_size)
     @result_text += result
     server_kill(iperf_server_side)
-    get_proc_info(evm_side)
+    get_proc_info(evm_side, crypto_mode)
   end
-  def test_evm_to_linux(protocol, test_time_secs, udp_bandwidth, test_headline)
+  def test_evm_to_linux(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode)
     iperf_server_side = ALPHA_SIDE()  # Linux PC
     iperf_client_side = BETA_SIDE()   # EVM
-    test_common(protocol, test_time_secs, udp_bandwidth, test_headline, iperf_server_side, iperf_client_side)
+    test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, iperf_server_side, iperf_client_side, crypto_mode)
     return @result
   end
-  def test_linux_to_evm(protocol, test_time_secs, udp_bandwidth, test_headline)
+  def test_linux_to_evm(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode)
     iperf_server_side = BETA_SIDE()   # EVM
     iperf_client_side = ALPHA_SIDE()  # Linux PC
-    test_common(protocol, test_time_secs, udp_bandwidth, test_headline, iperf_server_side, iperf_client_side)
+    test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, iperf_server_side, iperf_client_side, crypto_mode)
     return @result
   end
 end
@@ -2812,7 +2896,7 @@ class IpsecUtilitiesVatf
     
     # Get IP addresses to use on each side of the IPSEC connection
     alpha_ip = equipment[@vatf_helper.vatf_server_ref].telnet_ip
-    beta_ip = equipment[@vatf_helper.vatf_dut_ref].telnet_ip
+    beta_ip = util_get_ip_addr(equipment)
     @server_ipsec_tftp_path = File.join(equipment[@vatf_helper.vatf_server_ref].tftp_path, "ipsec_files")
 
     # Use the default vatf linux pc ('server1') and evm ('dut1') reference, but set the equipment variable so we can communicate with them
@@ -2924,7 +3008,7 @@ class IpsecUtilitiesVatf
   end
   def ipsec_mgr_start(is_alpha_side)
     string = "IPSECMGR_"
-    count = 3
+    count = 4
     raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "env", "", @vatf_helper.DONT_SET_ERROR_BIT(), 1)
     # Only start the ipsec manager if the variables do not already exist
     if !@vatf_helper.is_matched_count(raw_buffer, string, count)

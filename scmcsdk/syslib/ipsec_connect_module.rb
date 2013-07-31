@@ -130,14 +130,6 @@ module IpsecConnectionScript
     IpsecConnectionScript.ipsecVatf.inflow_stop_offload(IpsecConnectionScript.ipsecVatf.BETA_SIDE())
   end
 
-  def get_ip_addr(dev='dut1', iface_type='eth')
-    equipment = IpsecConnectionScript.equipment
-    this_equipment = equipment["#{dev}"]
-    this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*#{iface_type}.*/{print $1}' | head -1`;ifconfig $eth", this_equipment.prompt)
-    ifconfig_data =/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(this_equipment.response)
-    ifconfig_data ? ifconfig_data[1] : nil
-  end
-  
   def display_ipsec_test_params(ipsec_conf_template, protocol, encryption, integrity, is_pass_through, is_secure_data, is_nat_traversal, alpha_side_nat_public_ip, alpha_side_nat_gateway_ip, beta_side_nat_public_ip, beta_side_nat_gateway_ip)
     params_display = ""
     params_display += "IPSEC Test Parameters:\r\n"
@@ -156,9 +148,6 @@ module IpsecConnectionScript
   end
 
   def establish_ipsec_connection(equipment, test_params)
-    # Set module global equipment variable
-    IpsecConnectionScript.equipment_set(equipment)
-
     # instantiate ipsec utilities set
     if !IpsecConnectionScript.is_ipsecVatf_started
       IpsecConnectionScript.ipsecVatf_set(IpsecUtilitiesVatf.new)
@@ -224,11 +213,16 @@ module IpsecConnectionScript
 
     # Get IP addresses for the alpha and beta side
     alpha_ip = equipment['server1'].telnet_ip
-    beta_ip = IpsecConnectionScript.get_ip_addr() 
+    beta_ip = util_get_ip_addr(equipment) 
+
+    # IMPORTANT NOTICE: To run with NAT you will need to add the nat_gateway_xxx information to your bench.rb file. Please see sample lines below
+    #      linux_server.params = {'@dss_dir' => '/home/systest-s1/ccsv5/ccs_base/scripting/bin/', 'nat_gateway_public_ip' => '10.218.104.139'}   # <== Shown here is the VATF's corporate network IP address
+    #      dut.params = {'nat_gateway_private_ip' => '192.168.1.80', 'nat_gateway_public_ip' => '10.218.104.131'}   # <== Shown here is the NAT gateways IP address for the EVM's local network and the NAT gateways IP address for the corporate network
+    #
     alpha_side_nat_public_ip = get_param_value_local(equipment['server1'], "nat_gateway_public_ip")
     alpha_side_nat_gateway_ip = get_param_value_local(equipment['server1'], "nat_gateway_private_ip")
     beta_side_nat_public_ip = get_param_value_local(equipment['server1'], "nat_gateway_public_ip")
-    beta_side_nat_gateway_ip = get_param_value_local(equipment['server1'], "nat_gateway_private_ip")
+    beta_side_nat_gateway_ip = get_param_value_local(equipment['dut1'], "nat_gateway_private_ip")
 
     # Set IPSEC connection protocol, encryption, authentication and connection name to be used in the ipsec.conf file.
     ipsecVatf.set_protocol_encryption_integrity_name(protocol, esp_encryption, esp_integrity, "Conn")
