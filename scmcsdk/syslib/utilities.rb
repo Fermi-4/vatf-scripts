@@ -414,7 +414,8 @@ class VatfHelperUtilities
     is_matched = false
     temp = raw_buffer.scan(convert_string_to_case_insensitive_reg_expression(string))
     is_matched = true if (temp.length == count)
-    log_info(BETA_SIDE(), "\r\n##########################\r\n string: #{string}, temp.length: #{temp.length}, count: #{count}, is_matched #{is_matched}, raw_buffer:\r\n#{raw_buffer} \r\n##########################\r\n")
+    # log_info(BETA_SIDE(), "\r\n##########################\r\n string: #{string}, temp.length: #{temp.length}, count: #{count}, is_matched #{is_matched}, raw_buffer:\r\n#{raw_buffer} \r\n##########################\r\n")
+    log_info(BETA_SIDE(), "\r\n##### string: #{string}, temp.length: #{temp.length}, count: #{count}, is_matched: #{is_matched} #####\r\n")
     return is_matched
   end
   def offload_indices_common(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal, offload_command)

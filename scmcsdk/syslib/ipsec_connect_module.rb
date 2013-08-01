@@ -219,10 +219,12 @@ module IpsecConnectionScript
     #      linux_server.params = {'@dss_dir' => '/home/systest-s1/ccsv5/ccs_base/scripting/bin/', 'nat_gateway_public_ip' => '10.218.104.139'}   # <== Shown here is the VATF's corporate network IP address
     #      dut.params = {'nat_gateway_private_ip' => '192.168.1.80', 'nat_gateway_public_ip' => '10.218.104.131'}   # <== Shown here is the NAT gateways IP address for the EVM's local network and the NAT gateways IP address for the corporate network
     #
-    alpha_side_nat_public_ip = get_param_value_local(equipment['server1'], "nat_gateway_public_ip")
-    alpha_side_nat_gateway_ip = get_param_value_local(equipment['server1'], "nat_gateway_private_ip")
-    beta_side_nat_public_ip = get_param_value_local(equipment['server1'], "nat_gateway_public_ip")
-    beta_side_nat_gateway_ip = get_param_value_local(equipment['dut1'], "nat_gateway_private_ip")
+    if is_nat_traversal
+        alpha_side_nat_public_ip = get_param_value_local(equipment['server1'], "nat_gateway_public_ip")
+        alpha_side_nat_gateway_ip = get_param_value_local(equipment['server1'], "nat_gateway_private_ip")
+        beta_side_nat_public_ip = get_param_value_local(equipment['server1'], "nat_gateway_public_ip")
+        beta_side_nat_gateway_ip = get_param_value_local(equipment['dut1'], "nat_gateway_private_ip")
+    end
 
     # Set IPSEC connection protocol, encryption, authentication and connection name to be used in the ipsec.conf file.
     ipsecVatf.set_protocol_encryption_integrity_name(protocol, esp_encryption, esp_integrity, "Conn")
