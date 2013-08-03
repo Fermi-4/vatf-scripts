@@ -287,6 +287,8 @@ module IpsecConnectionScript
       comment_text += "IPSEC connection successfully established.\r\n"
     else
       comment_text += "IPSEC connection failed to be established.\r\n"
+      ipsecVatf.trigger_key_and_cert_rebuild(ipsecVatf.ALPHA_SIDE())
+      ipsecVatf.trigger_key_and_cert_rebuild(ipsecVatf.BETA_SIDE())
     end
     comment_text += "\r\n"
     comment_text += ipsecVatf.result_text

@@ -422,14 +422,14 @@ class VatfHelperUtilities
     log_info(is_alpha_side, " Policy Indices; In: #{policy_index_in}, Out: #{policy_index_out}\r\n")
     raw_buffer = smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{offload_command} --sp_id #{policy_index_in} #{offload_command_post_fix}", "sa_handle", DONT_SET_ERROR_BIT(), 2, 4)
     # Check to see that we receive the correct number of success messages
-    result |= @error_bit if !is_matched_count(raw_buffer, "SUCCESS", 2)
+    @result |= @error_bit if !is_matched_count(raw_buffer, "SUCCESS", 2)
     if (result() != 0)
       @result_text += " #{offload_command} command failed for policy index : #{policy_index_in}\r\n"
       return if is_fatal
     end
     raw_buffer = smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{offload_command} --sp_id #{policy_index_out} #{offload_command_post_fix}", "sa_handle", DONT_SET_ERROR_BIT(), 2, 4)
     # Check to see that we receive the correct number of success messages
-    result |= @error_bit if !is_matched_count(raw_buffer, "SUCCESS", 2)
+    @result |= @error_bit if !is_matched_count(raw_buffer, "SUCCESS", 2)
     if (result() != 0)
       @result_text += " #{offload_command} command failed for policy index : #{policy_index_out}\r\n"
       return if is_fatal
@@ -2130,6 +2130,7 @@ class IpsecUtilitiesVatf
     @esp_integrity = "sha1"
     @protocol = "udp"
     @connection_name = "Udp"
+    @trigger_key_and_cert_rebuild_file_name = "/etc/rebuild_certs_trigger.tmp"
     # Static variable settings
     @sudo_cmd = true
     @normal_cmd = false
@@ -2370,6 +2371,7 @@ class IpsecUtilitiesVatf
       @vatf_helper.smart_send_cmd(is_alpha_side_local, @sudo_cmd, "rm #{@alpha_side_temp_file}", "", @error_bit, 0)
       @vatf_helper.smart_send_cmd(is_alpha_side_local, @sudo_cmd, "rm #{@alpha_side_temp_ca_key_file}", "", @error_bit, 0)
       @vatf_helper.smart_send_cmd(is_alpha_side_local, @sudo_cmd, "rm #{@alpha_side_temp_key_file}", "", @error_bit, 0)
+      @vatf_helper.smart_send_cmd(is_alpha_side_local, @sudo_cmd, "rm #{@trigger_key_and_cert_rebuild_file_name}", "", @error_bit, 0)
       
       if @alpha_side_secure_data
         @smart_card.remove_key_set_based_on_file(is_alpha_side, @slot_num, @id_num, @alpha_side_key_file)
@@ -2396,6 +2398,7 @@ class IpsecUtilitiesVatf
       @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "rm #{@beta_side_ca_cert_file}", "", @error_bit, 0)
       @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "rm #{@beta_side_temp_ca_key_file}", "", @error_bit, 0)
       @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "rm #{@beta_side_temp_key_file}", "", @error_bit, 0)
+      @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "rm #{@trigger_key_and_cert_rebuild_file_name}", "", @error_bit, 0)
       
       if @beta_side_secure_data
         @smart_card.remove_key_set_based_on_file(is_alpha_side, @slot_num, @id_num, @beta_side_key_file)
@@ -2983,13 +2986,19 @@ class IpsecUtilitiesVatf
     temp_state = (state ? @lnx_helper.files_exist?(is_alpha_side, directory, filename) : state)
     return temp_state
   end
+  def trigger_key_and_cert_rebuild(is_alpha_side)
+    # Create empty file to flag that keys and certs need to be remade
+    @lnx_helper.create_writeable_empty_file(is_alpha_side, @trigger_key_and_cert_rebuild_file_name)
+  end
   def is_genned_already()
     state = true
     # Check the alpha side keys and certificate existance
+    state = false if verify_ls_dir(ALPHA_SIDE(), File.dirname(@trigger_key_and_cert_rebuild_file_name), File.basename(@trigger_key_and_cert_rebuild_file_name), state)
     state = verify_ls_dir(ALPHA_SIDE(), "/etc/ipsec.d/cacerts/", "caCert.der", state)
     state = verify_ls_dir(ALPHA_SIDE(), "/etc/ipsec.d/certs/", "alphaCert.der;alphaCertIP.der", state)
     state = verify_ls_dir(ALPHA_SIDE(), "/etc/ipsec.d/private/", "alphaKey.der;caKey.der", state)
     # Check the beta side keys and certificate existance
+    state = false if verify_ls_dir(BETA_SIDE(), File.dirname(@trigger_key_and_cert_rebuild_file_name), File.basename(@trigger_key_and_cert_rebuild_file_name), state)
     state = verify_ls_dir(BETA_SIDE(), "/etc/ipsec.d/cacerts/", "caCert.der", state)
     state = verify_ls_dir(BETA_SIDE(), "/etc/ipsec.d/certs/", "betaCert.der;betaCertIP.der", state)
     state = verify_ls_dir(BETA_SIDE(), "/etc/ipsec.d/private/", "betaKey.der;caKey.der", state)
