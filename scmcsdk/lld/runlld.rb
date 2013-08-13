@@ -44,7 +44,7 @@ def run
   criteria = assign_criteria()
   iterations = assign_iterations()
   if @test_params.lld_test_archive
-    test_folder_location = @test_params.lld_test_archive 
+    test_folder_location = @test_params.lld_test_archive
   else #removed for nightly
     test_folder_location = nil
   end
@@ -52,21 +52,21 @@ def run
   ##Prepare for running tests. Bundle up file building, server starting
   prep_results = prepare_for_test(test_folder_location, commands)
   if prep_results[0] == false
+    if @show_debug_messages
+      comment += prep_results[1]
+    end
     set_result(test_done_result,comment)
-    comment += prep_results[1] if @show_debug_messages
-    return    
-  else
-    comment = prep_results[1] if @show_debug_messages
+    return
   end
 
-  if @show_debug_messages == false
-    comment = "Running Test.\n" #FOR LESS COMMENTS#
-  else
+  if @show_debug_messages
     @equipment['dut1'].send_cmd("echo 'Commands to run: \
       #{ commands.to_s }'", @equipment['dut1'].prompt, 5)
     @equipment['server1'].send_cmd("echo 'Commands to run: \
       #{ commands.to_s }'", @equipment['server1'].prompt, 5)
     comment += "Running Test.\n" #FOR MORE COMMENTS#
+  else
+    comment = "Running Test.\n" #FOR LESS COMMENTS#
   end
 
   ##run test_cmd iteration times
@@ -76,11 +76,11 @@ def run
     look_for = /#{ criteria[0] }/i)
     if cmd_result[0] == false
       return [test_done_result, comment + cmd_result[1]]
-    else 
+    else
       comment += cmd_result[1]
     end
     std_response = @equipment['dut1'].response.to_s
-    
+
     puts "'#{ test_cmd }' run. Now to test."
     criteria_result = analyze_criteria(count, test_cmd, std_response, criteria)
     if criteria_result[0] == false
@@ -99,13 +99,13 @@ def run
 end
 
 # Public: Loop through criteria and searches for criteria in std_response.
-# Use regEx to pattern-match literal constraints, 
+# Use regEx to pattern-match literal constraints,
 # Parse if preceded by +/- for pass/fail
 #
 # (Note: Arguments count and test_cmd are only for commenting purposes)
-# (Note: Currently searches for first instance of criterion. 
+# (Note: Currently searches for first instance of criterion.
 #   May need to change to number of times appears.)
-# 
+#
 # Returns false if criteria not found or when special cases fail, with comments
 def analyze_criteria(count, test_cmd, std_response, criteria)
   comment = ""
@@ -115,14 +115,14 @@ def analyze_criteria(count, test_cmd, std_response, criteria)
       set_result(test_done_result,comment + "\nSegmentation fault error. ")
       return
     #if criterion is preceded by a -, fail output contains failure_word
-    elsif criterion[0] == "-" 
+    elsif criterion[0] == "-"
       failure_word = criterion[/\S.+\S/][1, criterion[/\S.+\S/].length]
       if std_response[/#{failure_word}/io]
         puts "**Output contains '#{failure_word}'**"
         return [false, comment]
       end
     #if criterion is preceded by a +, call internally_consistent?
-    elsif criterion[0] == "+" 
+    elsif criterion[0] == "+"
       new_crit = criterion[/\S.+\S/][1, criterion[/\S.+\S/].length]
       puts "consistency testing for #{new_crit}"
       type_of_check = criterion[/\S.+\S/][criterion[/\S.+\S/].length]
@@ -180,7 +180,7 @@ end
 
 # Public: Copy archive from test_folder_location to linux_host.
 #   untar archive in /usr/bin/ directory of EVM, flattening its file structure.
-# Copy dtb files from usr/bin/ti/drv/rm/test/dts_files to /usr/bin, 
+# Copy dtb files from usr/bin/ti/drv/rm/test/dts_files to /usr/bin,
 # Copy dtb files from /usr/bin/device/k2h and rename to have _k2h
 # Copy dtb files from /usr/bin/device/k2k and rename to have _k2k
 #
@@ -192,20 +192,20 @@ def build_files(test_folder_location)
     flat_n_tar = "unassembles"
     @equipment['server1'].send_cmd("mkdir #{ flat_n_tar }",
       @equipment['server1'].prompt, 10)
-    @equipment['server1'].send_cmd("chmod 777 #{ flat_n_tar }", 
+    @equipment['server1'].send_cmd("chmod 777 #{ flat_n_tar }",
       @equipment['server1'].prompt, 10)
     @equipment['server1'].send_cmd("cd #{ flat_n_tar }; \
-      cp #{test_folder_location} test_archive.tar.gz", 
+      cp #{test_folder_location} test_archive.tar.gz",
       @equipment['server1'].prompt, 20)
     @equipment['server1'].send_cmd("cd #{ flat_n_tar }; \
-      tar -xvzf test_archive.tar.gz --transform=\'s/.*\\///\'", 
+      tar -xvzf test_archive.tar.gz --transform=\'s/.*\\///\'",
       @equipment['server1'].prompt, 10)
     @equipment['server1'].send_cmd("cd #{ flat_n_tar }; \
-      tar -cvzf test_archive.tar.gz *.out *.dtb", 
+      tar -cvzf test_archive.tar.gz *.out *.dtb",
       @equipment['server1'].prompt, 20)
-    @equipment['server1'].send_cmd("cd #{ flat_n_tar }; 
+    @equipment['server1'].send_cmd("cd #{ flat_n_tar };
       cp test_archive.tar.gz #{ @equipment['server1'].tftp_path }
-      /test_archive.tar.gz", 
+      /test_archive.tar.gz",
       @equipment['server1'].prompt, 10)
     @equipment['server1'].send_cmd("rm -r #{ flat_n_tar }",
       @equipment['server1'].prompt, 20)
@@ -220,7 +220,7 @@ def build_files(test_folder_location)
   else
     puts "No archive flattening"
   end
-  
+
   ##copy K2k dtb files
   @equipment['dut1'].send_cmd("cd /usr/bin/device/k2k",
     @equipment['dut1'].prompt, 10)
@@ -228,23 +228,23 @@ def build_files(test_folder_location)
   if !@equipment['dut1'].response["_k2k.dtb"]
     @equipment['dut1'].send_cmd("for i in $(ls *.dtb); \
       do cp $i ${i%'.dtb'}'_k2k.dtb'; done", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("cp *.dtb /usr/bin", 
+    @equipment['dut1'].send_cmd("cp *.dtb /usr/bin",
       @equipment['dut1'].prompt, 10)
   end
 
   ##copy K2h dtb files
-  @equipment['dut1'].send_cmd("cd /usr/bin/device/k2h", 
+  @equipment['dut1'].send_cmd("cd /usr/bin/device/k2h",
     @equipment['dut1'].prompt, 10)
   @equipment['dut1'].send_cmd("ls", @equipment['dut1'].prompt, 10)
   if !@equipment['dut1'].response["_k2h.dtb"]
     @equipment['dut1'].send_cmd("for i in $(ls *.dtb); \
       do cp $i ${i%'.dtb'}'_k2h.dtb'; done", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("cp *.dtb /usr/bin", 
+    @equipment['dut1'].send_cmd("cp *.dtb /usr/bin",
       @equipment['dut1'].prompt, 10)
   end
 
   ##copy dtb files
-  @equipment['dut1'].send_cmd("cd /usr/bin/ti/drv/rm/test/dts_files", 
+  @equipment['dut1'].send_cmd("cd /usr/bin/ti/drv/rm/test/dts_files",
     @equipment['dut1'].prompt, 10)
   @equipment['dut1'].send_cmd("ls", @equipment['dut1'].prompt, 10)
   @equipment['dut1'].send_cmd("cp *.dtb /usr/bin",
@@ -256,7 +256,7 @@ end
 # If file has _k2x, see that it matches other files with _k2x.
 #
 # commands - commands variable from TestLink
-# 
+#
 # Returns whether or not good files are specified, with comments
 def good_files_specified?(commands)
   comment = ""
@@ -307,7 +307,7 @@ def good_files_specified?(commands)
       end
     end
     file_extension = file[/\.{1}\w+/]
-    
+
     ##check that the file exists, where specified, or in /usr/bin/
     if file_extension != ".txt"
       ls_cmd = "ls #{folder}*#{file_extension}"
@@ -342,7 +342,7 @@ end
 #   ":" means a comparison between output's summary and body of the output
 #   "=" means a comparison between results printed in the output summary
 #
-# Examples 
+# Examples
 #   If output contains the following line,
 #     failed: 0; passed a, passed b, passed c, total passed=3;
 #   then criterion could be "failed", with type_of_check = ":"
@@ -370,7 +370,7 @@ def internally_consistent?(output, type_of_check = "", criterion = "default")
       line_s = output[/#{ crite } \s+ sent.* #{type_of_check}.* \d+ \S*/ix]
       line_r = output[/#{ crite } \s+ received.* #{type_of_check}.* \d+ \S*/ix]
       #if not nil but there are different numbers at the end, return
-      if line_s != nil && line_r != nil 
+      if line_s != nil && line_r != nil
         if line_s[/\d+/].to_i != line_r[/\d+/].to_i
           internal_comment += "Number of packets does not match up. "
           return [false, internal_comment]
@@ -378,7 +378,7 @@ def internally_consistent?(output, type_of_check = "", criterion = "default")
       end
     end
   elsif type_of_check == ":" && output[/#{ crite }/i]
-  #use String.ind_word_counts to see if it has a "passed", 
+  #use String.ind_word_counts to see if it has a "passed",
   # if it does, -1 that to see if it matches
     line = output[/#{ crite } \s* #{ type_of_check } .* \d+ \S*/ix]
     wc = wc_hash["#{ crite }"]
@@ -397,7 +397,7 @@ def internally_consistent?(output, type_of_check = "", criterion = "default")
     if crite[/failed/i]
       line = output[/failed \s* : .* \d+ \S*/ix]
       #if there is a number at the end, it should be 0
-      if line != nil && line[/\d+/] && (line[/\d+/].to_i != 0) 
+      if line != nil && line[/\d+/] && (line[/\d+/].to_i != 0)
         internal_comment += ". Failed more than 0 times. " + line.to_s
         return [false, internal_comment]
       end
@@ -409,7 +409,7 @@ def internally_consistent?(output, type_of_check = "", criterion = "default")
   [true, "Passed"]
 end
 
-# Public: Do most of the preparation for testing: 
+# Public: Do most of the preparation for testing:
 # archive building, file checking, and server starting
 #
 # Return true is ready to run commands[0], with comments
@@ -426,24 +426,24 @@ def prepare_for_test(test_folder_location, commands)
   else
     puts "good files specified: '#{ files_result[1] }'"
   end
-  
+
   other_cmds = commands[1...commands.length]
   if other_cmds.to_s[/rmServer/] && rmServer_up? == false
     comment = "rmServer not running initially. \n"
   else
     puts comment = "rmServer running initially. "
   end
-  
+
   ##Run other comamds
   if other_cmds[0]
     cmd_result = run_command(other_cmds)
     if cmd_result[0] == false
       return [false, comment + cmd_result[1]]
-    else 
+    else
       comment += cmd_result[1]
     end
   end
-  
+
   if other_cmds.to_s[/rmServer/] and rmServer_up? == false
     comment += "Server did not start in background. "
     return [false, comment]
@@ -451,10 +451,10 @@ def prepare_for_test(test_folder_location, commands)
     comment += "Successfully started rmServer in background. "
     puts "**SERVER UP**\n"
   end
-  
+
   [true,comment]
 end
-    
+
 # Public: If some_string is a ruby method, call as a ruby method
 #   rather than a shell command.
 #
@@ -489,7 +489,8 @@ def rubify(some_string)
 end
 
 # Public: Run commands through ruby, or on the DUT
-# 
+# Similar to .send_cmd, but arg[0] is an Array of String
+#
 # cmds      - An array of commands to run
 # look_for  - Criteria to look for in cmds output
 #
@@ -508,11 +509,11 @@ def run_command(cmds, look_for = @equipment['dut1'].prompt)
         return [false, comment]
       end
     end
-    
+
     std_response = @equipment['dut1'].response.to_s
     if std_response[/Segmentation fault/]
       comment += "\nSeg fault error."
-      return [false, comment] 
+      return [false, comment]
     end
     comment +=  cmd.to_s + " run. \n"
   end
@@ -526,25 +527,25 @@ def clean
   ##close rmServer if up
   if rmServer_up?
     pid_info = @equipment['dut1'].response.to_s[/[0-9]+/].to_i  #find pid here
-    @equipment['dut1'].send_cmd("kill -9 #{pid_info}", 
+    @equipment['dut1'].send_cmd("kill -9 #{pid_info}",
       @equipment['dut1'].prompt, 10) if pid_info != 0
     if !@equipment['dut1'].timeout?
       puts "Successfully closed rmServer. "
     end
   end
   @equipment['dut1'].send_cmd("echo", @equipment['dut1'].prompt, 10)
-  
+
   ##close rmDspClient if up
   if rmDspClient_up?
     pid_info = @equipment['dut1'].response.to_s[/[0-9]+/].to_i  #find pid here
-    @equipment['dut1'].send_cmd("kill -9 #{pid_info}", 
+    @equipment['dut1'].send_cmd("kill -9 #{pid_info}",
       @equipment['dut1'].prompt, 10) if pid_info != 0
     if !@equipment['dut1'].timeout?
       puts "Successfully closed rmDspClient. "
     end
   end
   @equipment['dut1'].send_cmd("echo", @equipment['dut1'].prompt, 10)
-  
+
   ##soft reboot if parameter is true.
   begin
     soft_reboot = false
