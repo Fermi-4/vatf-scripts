@@ -43,11 +43,8 @@ def run
   commands = assign_commands()
   criteria = assign_criteria()
   iterations = assign_iterations()
-  if @test_params.lld_test_archive
-    test_folder_location = @test_params.lld_test_archive
-  else #removed for nightly
-    test_folder_location = nil
-  end
+  test_folder_location = nil
+  #for debugging, test_folder_location = @test_params.lld_test_archive
 
   ##Prepare for running tests. Bundle up file building, server starting
   prep_results = prepare_for_test(test_folder_location, commands)
@@ -75,7 +72,8 @@ def run
     cmd_result = run_command(Array.new.push(test_cmd),
     look_for = /#{ criteria[0] }/i)
     if cmd_result[0] == false
-      return [test_done_result, comment + cmd_result[1]]
+      set_result(test_done_result,comment + cmd_result[1])
+      return
     else
       comment += cmd_result[1]
     end
