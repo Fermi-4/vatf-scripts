@@ -42,13 +42,13 @@ def run
     # IPSEC connection was NOT successfully established so fail the test and set the test comment using the IpsecConnectScript's comment text
     set_result(FrameworkConstants::Result[:fail], "Test Failed.\r\n#{IpsecConnectionScript.comment_text}")
   end
-end
 
-def clean
   # Stop ipsec on both sides to be friendly to other tests
   self.as(IpsecConnectionScript).stop_offload_indices()
   self.as(IpsecConnectionScript).stop_ipsec(@equipment)
   self.as(IpsecConnectionScript).stop_ipsec_evm(@equipment)
+end
 
+def clean
   super
 end

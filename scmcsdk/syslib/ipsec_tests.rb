@@ -93,11 +93,13 @@ def run
 
   # Set test result and result comments
   set_result(test_done_result, comments)
-end
 
-def clean
   # Stop ipsec on both sides to be friendly to other tests
   self.as(IpsecConnectionScript).stop_offload_indices()
   self.as(IpsecConnectionScript).stop_ipsec(@equipment)
   self.as(IpsecConnectionScript).stop_ipsec_evm(@equipment)
+end
+
+def clean
+  super
 end
