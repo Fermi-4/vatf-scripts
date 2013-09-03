@@ -134,8 +134,12 @@ module LspTestScript
                              'mmcfs'
     new_params['fs_image_name'] = new_params['fs_image_name'] ? new_params['fs_image_name'] : 
                              @test_params.instance_variable_defined?(:@var_fs_image_name) ? @test_params.var_fs_image_name : 
-                             new_params['fs_type'] != 'nfs' ? File.basename(new_params['fs']) : ''                             
-
+                             new_params['fs_type'] != 'nfs' ? File.basename(new_params['fs']) : ''  
+    # Optional SW asset to copy binary to rootfs                            
+    new_params['user_bins']  = new_params['user_bins'] ? new_params['user_bins'] : 
+                             @test_params.instance_variable_defined?(:@user_bins) ? @test_params.user_bins : 
+                             ''     
+    
 #new_params.each{|k,v| puts "#{k}:#{v}"}
     new_params = add_dev_loc_to_params(new_params, 'primary_bootloader')
     new_params = add_dev_loc_to_params(new_params, 'secondary_bootloader')
@@ -212,6 +216,8 @@ module LspTestScript
       tar_options = "-xvjf"
     when /tar archive/i
       tar_options = "-xvf"
+    else
+      tar_options = "not tar"
     end
     tar_options
   end
@@ -263,6 +269,48 @@ module LspTestScript
 
     return translated_boot_params
   end
+
+  # modprobe modules specified by @test_params.params_chan.kernel_modules_list.
+  # Please note that preferred way is to let udev install modules instead of using this function
+  def install_modules(translated_boot_params)
+    if translated_boot_params['kernel_modules'] != ''
+      @equipment['dut1'].send_cmd("depmod -a", /#{@equipment['dut1'].prompt}/, 30) 
+      if @test_params.params_chan.instance_variable_defined?(:@kernel_modules_list)
+        @test_params.params_chan.kernel_modules_list.each {|mod|
+          mod_name = KernelModuleNames::translate_mod_name(@test_params.platform, mod.strip)
+          @equipment['dut1'].send_cmd("modprobe #{mod_name}", /#{@equipment['dut1'].prompt}/, 30)  
+        }
+      end
+    end
+  end
+
+  def check_dut_booted
+    raise "UUT may be hanging!" if !is_uut_up?
+    @equipment['dut1'].send_cmd("cat /proc/cmdline", /#{@equipment['dut1'].prompt}/, 10)
+    @equipment['dut1'].send_cmd("uname -a", /#{@equipment['dut1'].prompt}/, 10)
+  end
+
+  # Optionally install binaries provided by user in filesystem 
+  def install_user_binaries(params)
+    if params['user_bins'] != ''
+      @equipment['dut1'].send_cmd("mkdir ~/bin", @equipment['dut1'].prompt, 3)
+      @equipment['dut1'].send_cmd("export PATH=\"$PATH:~/bin\"", @equipment['dut1'].prompt, 3)
+      @equipment['dut1'].send_cmd("scp #{params['server'].telnet_login}@#{params['server'].telnet_ip}:#{params['user_bins']} ~/bin/",
+                                  /(continue connecting|password:|#{@equipment['dut1'].prompt})/, 60, false)
+      if @equipment['dut1'].response.match(/continue connecting/)
+        @equipment['dut1'].send_cmd("y", /(password:|#{@equipment['dut1'].prompt})/, 5, false)
+      end
+      if @equipment['dut1'].response.match(/password:/)
+        @equipment['dut1'].send_cmd("#{params['server'].telnet_passwd}", @equipment['dut1'].prompt, 60, false)
+      end
+      raise "Could not install user binaries #{params['user_bins']}" if !@equipment['dut1'].response.match(@equipment['dut1'].prompt)
+      tar_options = get_tar_options(params['user_bins'], params)
+      if tar_options != 'not tar'
+        filename = File.basename(params['user_bins'])
+        @equipment['dut1'].send_cmd("cd ~/bin; tar #{tar_options} #{filename}", @equipment['dut1'].prompt, 30)
+      end
+    end
+  end
   
   def setup
     translated_boot_params = setup_host_side()
@@ -271,32 +319,18 @@ module LspTestScript
     @new_keys = (@test_params.params_control.instance_variable_defined?(:@booargs_append))? (@new_keys + @test_params.params_control.bootargs_append[0]) : @new_keys
     if boot_required?(@old_keys, @new_keys) #&& translated_boot_params['kernel'] != ''
 	    if !(@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) && 
-         !(@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)
-      		raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
-          end
+      !(@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)
+        raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
+      end
         
       @equipment['dut1'].boot(translated_boot_params) 
-      end
-    
-      connect_to_equipment('dut1')
-      
-      # by now, the dut should already login and is up; if not, dut may hang.
-      raise "UUT may be hanging!" if !is_uut_up?
-      
-      @equipment['dut1'].send_cmd("cat /proc/cmdline", /#{@equipment['dut1'].prompt}/, 10)
-      @equipment['dut1'].send_cmd("uname -a", /#{@equipment['dut1'].prompt}/, 10)
-
-      # modprobe modules specified by test params
-    if translated_boot_params['kernel_modules'] != ''
-        @equipment['dut1'].send_cmd("depmod -a", /#{@equipment['dut1'].prompt}/, 30) 
-        if @test_params.params_chan.instance_variable_defined?(:@kernel_modules_list)
-          @test_params.params_chan.kernel_modules_list.each {|mod|
-            mod_name = KernelModuleNames::translate_mod_name(@test_params.platform, mod.strip)
-            @equipment['dut1'].send_cmd("modprobe #{mod_name}", /#{@equipment['dut1'].prompt}/, 30)  
-          }
-        end
-      end
     end
+    
+    connect_to_equipment('dut1')
+    check_dut_booted()
+    install_modules(translated_boot_params)
+    install_user_binaries(translated_boot_params)
+  end
     
     def run      
         puts "default.run"
