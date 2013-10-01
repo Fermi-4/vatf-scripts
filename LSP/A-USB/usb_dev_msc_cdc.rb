@@ -177,7 +177,7 @@ def usb_dev_msc()
     else
       $result = 1
       puts "#{$cmd} does not match any case\n"
-  end
+    end
 
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   response = @equipment['dut1'].response
@@ -221,7 +221,7 @@ def usb_dev_msc()
   mscmount = "/media/#{mountfolder}"
   @equipment['server2'].send_sudo_cmd("mount #{mscdev} #{mscmount}", @equipment['server2'].prompt , 30)
 
-  MSC_Format_Device("#{mscdev}","#{mscmount}")
+  MSC_Unmount_Device("#{mscdev}","#{mscmount}")
 case
   when $cmd.match(/_msc_slave/)  
     MSC_Mount_Device("#{mscdev}","#{mscmount}")
@@ -515,8 +515,6 @@ def iperftest_cdc(server_usb_interface)
     return 
   end
   
-  system ("sleep 10")
-
   command ="kill -9 $(pidof iperf)"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   system ("sleep 3")
@@ -527,6 +525,7 @@ def iperftest_cdc(server_usb_interface)
   puts "iperf test from dut to host is going to start"
   windowsize = [8,16,32,64,128]
   assign_server_ip(server_usb_interface)
+  output_string = ''
   windowsize.each { |wsize|
 
   system ("kill -9 $(pidof iperf)")
@@ -558,10 +557,12 @@ def iperftest_cdc(server_usb_interface)
 
   system ("kill -9 $(pidof iperf)")
   system ("ps | grep iperf")
-
+  match_string=response.scan(/\d+.\d\sMbits\/sec/)
+  throughput = match_string[0].split(' Mbits/sec')[0].to_f+match_string[1].split(' Mbits/sec')[0].to_f
+  output_string += " Packetsize="+wsize.to_s+"_Throughput="+throughput.to_s
+  puts "Throughput is #{throughput}\n"
   }
-
-
+ return output_string
 end
 
 #Finding /dev point
@@ -615,9 +616,9 @@ return media
 end
 
 
-# MSC Format device
+# MSC Unmount device
 
-def MSC_Format_Device(mscdev,mscmount)
+def MSC_Unmount_Device(mscdev,mscmount)
 
   @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
   
@@ -640,10 +641,12 @@ def MSC_Raw_Write(mscmount, mbsize)
 
   @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
   @equipment['server2'].send_sudo_cmd("time dd of=#{mscmount}/#{mbsize}mb if=/dev/zero bs=1M count=#{mbsize}", @equipment['server2'].prompt , 30)
+  response = @equipment['server2'].response
+  puts "RESPONSE is #{response}\n"
   @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
   @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
   system ("sleep 5")
-
+  return response
 end
 
 
@@ -653,9 +656,11 @@ def MSC_Raw_Read(mscmount, mbsize)
   
   @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
   @equipment['server2'].send_sudo_cmd("time dd if=#{mscmount}/#{mbsize}mb of=/dev/zero bs=1M count=#{mbsize}", @equipment['server2'].prompt , 30)
+  response = @equipment['server2'].response
   @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
   @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
   @equipment['server2'].send_sudo_cmd("sleep 5", @equipment['server2'].prompt , 30)
+  return response
 end
 
 def start_usbhost_test(test_cmd)
