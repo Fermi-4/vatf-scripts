@@ -1,5 +1,6 @@
 require File.dirname(__FILE__)+'/../default_test_module' 
 
+include LspTestScript
 
 def setup
   @equipment['dut1'].connect({'type'=>'serial'})
@@ -7,7 +8,9 @@ def setup
   add_equipment('relay') do |log_path|
     DevantechRelayController.new(@equipment['dut1'].params['relay'].keys[0],log_path)
   end
-  super
+  self.as(LspTestScript).setup
+  # Hack to Install input-utils binaries until there is a yocto package
+  install_input_utils
 end
 
 def run
@@ -128,3 +131,15 @@ end
 def clean
 
 end 
+
+def install_input_utils
+  @equipment['dut1'].send_cmd("which lsinput input-events && echo FOUND", /FOUND/, 2)
+  if @equipment['dut1'].timeout?
+    @equipment['dut1'].send_cmd("wget http://10.218.103.34/anonymous/releases/bins/input-events", @equipment['dut1'].prompt)
+    @equipment['dut1'].send_cmd("wget http://10.218.103.34/anonymous/releases/bins/lsinput", @equipment['dut1'].prompt)
+    @equipment['dut1'].send_cmd("ls lsinput input-events && echo GOOD", /GOOD/, 2)
+    raise "Input utils could not be installed" if @equipment['dut1'].timeout?
+    @equipment['dut1'].send_cmd("chmod +x lsinput; mv lsinput /usr/bin/", @equipment['dut1'].prompt)
+    @equipment['dut1'].send_cmd("chmod +x input-events; mv input-events /usr/bin/", @equipment['dut1'].prompt)
+  end
+end

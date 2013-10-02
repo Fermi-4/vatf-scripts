@@ -1,33 +1,32 @@
 require File.dirname(__FILE__)+'/../default_test_module' 
 
+include LspTestScript
 
 def setup
   # HP wave generator is connected to host through serial connection. 
   # HP wave generator analog autput is connected to jumpers for ADC input.
-  add_equipment('wavegen1') do |log_path|
-    HpWaveGenDriver.new(@equipment['dut1'].params['wavegen1'],log_path)
-  end
   # Connect to multimeter and bench entry should look like the following. 
   #winfo = EquipmentInfo.new("wavegen")
   #winfo.driver_class_name = "HpWaveGenDriver"
   #winfo.serial_port = '/dev/ttyUSB1'
   #winfo.serial_params = {"baud" => 9600, "data_bits" => 8, "stop_bits" => 1,   "parity"=>SerialPort::NONE}
   @equipment['wavegen1'].connect({'type'=>'serial'})
-  @equipment['dut1'].connect({'type'=>'serial'})
-  super
+  # Configure multimeter 
+  @equipment['wavegen1'].configure_wave_gen()
+  self.as(LspTestScript).setup
 end
 
 def run
   perf = []
+  
+  @equipment['dut1'].connect({'type'=>'serial'})
   #vin = 1 # in volt 
   #vref = 1.8 # reference voltage 
   vin = @equipment['dut1'].params['vin'] # in volt 
   vref = @equipment['dut1'].params['vref'] # reference voltage 
   channels = @equipment['dut1'].params['channels']
   #D = Vin * (2^n - 1) / Vref # theoretical digital represention of the input voltage 
-  # Configure multimeter 
-  @equipment['wavegen1'].configure_wave_gen()
-  #This mode configuration is not yet decided on the main kernel
+    #This mode configuration is not yet decided on the main kernel
   mode = 'oneshot' # continuous
   #Configure ADC  
   #config_adc(mode) this function call is for future use. The developers are debating as of now. 
@@ -131,5 +130,5 @@ def oneshot_test(channels, vin, vref)
 end  
 
 def clean
-
+  
 end 
