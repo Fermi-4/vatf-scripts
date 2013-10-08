@@ -228,7 +228,7 @@ module LspTestScript
     assets.each do |asset|
       next if  params[asset] == ''
       copy_asset(params['server'], params[asset], File.join(params['server'].tftp_path, tmp_path))
-      params[asset+'_image_name'] = File.join(tmp_path, File.basename(params[asset]))
+      params[asset+'_image_name'] = File.join(params['server'].tftp_path, File.basename(params[asset]))
     end
   end
 
@@ -238,6 +238,9 @@ module LspTestScript
       server.send_sudo_cmd("mkdir -p -m 777 #{dst_dir}") if !File.exists?(dst_dir)
       if File.file?(src)
         FileUtils.cp(src, dst_dir)
+        filename = File.basename(src)
+        symlink_name = File.join(server.tftp_path,filename)
+        server.send_sudo_cmd("ln -s #{File.join(dst_dir,filename)} #{symlink_name}") if !File.exists?(symlink_name)
       else 
         FileUtils.cp_r(File.join(src,'.'), dst_dir)
       end
