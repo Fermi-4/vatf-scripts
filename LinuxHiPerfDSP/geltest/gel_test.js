@@ -135,6 +135,7 @@ if (arguments.length > 0 && arguments.length < 4)
     var board_spec = arguments[0].toLowerCase();
     board_spec = board_spec.replace(/^tmd(x|s)/, "");
     board_spec = board_spec.replace(/^evmc/, "evm");
+    board_spec = board_spec.replace(/^xtci/, "");
     
     // find endian, user wants
     if (board_spec.match(/-be$/))
@@ -159,7 +160,8 @@ if (arguments.length > 0 && arguments.length < 4)
 		emulation_spec = "XDS200 emulator";
         board_spec = board_spec.replace(/ls$/, "l");
     }    
-	if (board_spec.match(/k2h$/))
+    
+    if (board_spec.match(/k2x$/ ))
     {
         emulation_spec = "XDS2xx emulator";
     }
@@ -237,12 +239,14 @@ switch (targetFlag)
 		break;
 	case "evm6678l":
 		cpu_id = "C66xx_0";
+                break;
 	case "evm6657l":
 		cpu_id = "C66xx_0";
 		break;
-	case "evmk2h":
-		cpu_id = "C66xx_0";
-		break;
+        case "evmk2x":
+                cpu_id = "C66xx_0";            
+                break;
+
 	default:
 		script.traceWrite("Could not file cpu id for target " + targetFlag + "\n");
 
