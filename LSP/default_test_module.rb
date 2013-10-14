@@ -247,17 +247,17 @@ module LspTestScript
     end
   end
   
-  def setup_host_side
+  def setup_host_side(params={})
     @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)    
     @equipment['dut1'].set_api('psp')
 
-    boot_params = {
+    boot_params = params.merge({
        'power_handler'     => @power_handler,
        'platform'          => @test_params.platform.downcase,
        'tester'            => @tester.downcase,
        'target'            => @test_params.target.downcase ,
        'staf_service_name' => @test_params.staf_service_name.to_s
-    }
+    })
     boot_params['bootargs'] = @test_params.params_chan.bootargs[0] if @test_params.params_chan.instance_variable_defined?(:@bootargs)
     boot_params['var_nfs']  = @test_params.var_nfs  if @test_params.instance_variable_defined?(:@var_nfs)
     boot_params['uboot_user_cmds']  = @test_params.params_control.uboot_user_cmds if @test_params.params_control.instance_variable_defined?(:@uboot_user_cmds)
