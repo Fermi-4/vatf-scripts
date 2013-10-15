@@ -34,8 +34,9 @@ module LspTargetTestScript
 
   # Do nothing by default.  Overwrite implementation in test script if required
   def clean
-    puts "\n LinuxTestScript::clean"
+    puts "\n LspTargetTestScript::clean"
     clean_delete_binary_files
+    super
   end
   
   # Do nothing by default.  Overwrite implementation in test script if required to connect test equipment to DUT(s)
@@ -150,7 +151,7 @@ module LspTargetTestScript
   
   # Delete binary files (if any) transfered to the DUT
   def clean_delete_binary_files
-    puts "\n LinuxTestScript::clean_delete_binary_files"
+    puts "\n LspTargetTestScript::clean_delete_binary_files"
     @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
     if @test_params.params_control.instance_variable_defined?(:@test_libs)
       @test_params.params_control.test_libs.each {|lib_file|

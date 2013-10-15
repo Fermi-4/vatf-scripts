@@ -355,7 +355,10 @@ module LspTestScript
     end
     
     def clean
-      puts "default.clean"
+      puts "\nLspTestScript::clean"
+      if @test_result.result == FrameworkConstants::Result[:fail]
+        query_debug_data
+      end
       kernel_modules = @test_params.kernel_modules   if @test_params.instance_variable_defined?(:@kernel_modules)
       if kernel_modules
         #kernel_modules_list = @test_params.params_chan.kernel_modules_list  
@@ -536,7 +539,7 @@ module LspTestScript
      @equipment['dut1'].send_cmd("cat /sys/devices/platform/cpsw.0/net/eth0/hw_stats", @equipment['dut1'].prompt, 3)
   end
 
-    def get_ip_addr(dev='dut1', iface_type='eth')     
+  def get_ip_addr(dev='dut1', iface_type='eth')     
     this_equipment = @equipment["#{dev}"]
     this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*#{iface_type}.*/{print $1}' | head -1`;ifconfig $eth", this_equipment.prompt)
     #eth=`ls /sys/class/net/ | awk '/.*eth.*/{print $1}' | head -1`
@@ -544,6 +547,30 @@ module LspTestScript
     ifconfig_data =/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(this_equipment.response)
     ifconfig_data ? ifconfig_data[1] : nil
   end
+
+  def query_debug_data(e='dut1')
+    return if !@equipment.key?(e)
+    this_equipment = @equipment[e]
+    if is_uut_up?
+      this_equipment.send_cmd("echo '=====================';echo 'START DEBUG DATA';echo '====================='", this_equipment.prompt)
+      this_equipment.send_cmd("dmesg", this_equipment.prompt)
+      this_equipment.send_cmd("cat /var/log/messages", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/cpuinfo", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/meminfo", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/devices", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/diskstats", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/interrupts", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/modules", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/schedstat", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/softirqs", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/stat", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/uptime", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/version", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/vmstat", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/zoneinfo", this_equipment.prompt)
+    end
+  end
+
    
 end
 
