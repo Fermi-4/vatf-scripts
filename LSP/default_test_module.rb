@@ -192,6 +192,12 @@ module LspTestScript
         params['server'].send_sudo_cmd("mkdir -p  #{nfs_root_path_temp}", params['server'].prompt, 10)    
         params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} #{tar_options} #{fs}", params['server'].prompt, 300)
       end
+      # Add workaround for touch screen calibration
+      pointercal_rule_dst = "#{nfs_root_path_temp}/etc/rc5.d/S90-fake-pointercal"
+      if !File.exists?(pointercal_rule_dst)
+        pointercal_rule_src = File.join(File.dirname(__FILE__), 'TARGET', 'S90-fake-pointercal')
+        params['server'].send_sudo_cmd("cp #{pointercal_rule_src} #{pointercal_rule_dst}", params['server'].prompt, 10)
+      end
     end
         
     if params['kernel_modules'] != '' and params['fs_type'] == 'nfs' and !params.has_key?('var_nfs')

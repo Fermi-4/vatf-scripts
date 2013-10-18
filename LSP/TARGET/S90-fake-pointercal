@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Check if mmcblk0p1 is mounted.  If so create a pointercal file there
+if [ -d /media/mmcblk0p1 ]
+then
+  echo "Creating a fake pointercal file in /media/mmcblk0p1"
+  touch /media/mmcblk0p1/pointercal
+else
+  echo "Did not find an SD card mounted.  Current mounts are:"
+  mount
+  touch /etc/pointercal
+fi
