@@ -133,7 +133,7 @@ def clean
 end 
 
 def install_input_utils
-  @equipment['dut1'].send_cmd("which lsinput input-events && echo FOUND", /FOUND/, 2)
+  @equipment['dut1'].send_cmd("which lsinput input-events && echo FOUND", /^FOUND/, 2)
   if @equipment['dut1'].timeout?
     @equipment['dut1'].send_cmd("wget http://10.218.103.34/anonymous/releases/bins/input-events", @equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("wget http://10.218.103.34/anonymous/releases/bins/lsinput", @equipment['dut1'].prompt)
