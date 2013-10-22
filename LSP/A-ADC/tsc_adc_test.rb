@@ -128,10 +128,6 @@ def get_event(str)
     return ""
 end 
 
-def clean
-
-end 
-
 def install_input_utils
   @equipment['dut1'].send_cmd("which lsinput input-events && echo FOUND", /^FOUND/, 2)
   if @equipment['dut1'].timeout?

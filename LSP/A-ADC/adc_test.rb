@@ -129,6 +129,3 @@ def oneshot_test(channels, vin, vref)
   return fail
 end  
 
-def clean
-  
-end 
