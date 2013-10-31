@@ -18,6 +18,9 @@ end
 def clean
   #super
   self.as(LspTestScript).clean
+  translated_boot_params = setup_host_side()
+  @equipment['dut1'].boot(translated_boot_params)
+  
 end
 
 def watchdog_timer_test
@@ -29,12 +32,13 @@ def watchdog_timer_test
         if @equipment['dut1'].timeout?
            runltp_fail = true
         else
-	   @equipment['dut1'].send_cmd(' ', @equipment['dut1'].boot_prompt, dut_timeout)
+           0.upto 20 do
+	     @equipment['dut1'].send_cmd(' ', @equipment['dut1'].boot_prompt, 1)
+           end
            if @equipment['dut1'].timeout?
               runltp_fail = true
            end
         end
-
         if !runltp_fail
            puts "Test PASS"
            set_result(FrameworkConstants::Result[:pass], "Test Passed.")
