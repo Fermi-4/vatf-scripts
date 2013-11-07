@@ -229,12 +229,12 @@ module LspTestScript
   end
 
   def copy_sw_assets_to_tftproot(params)
-    tmp_path = File.join(@tester.downcase.strip, @test_params.target.downcase.strip, @test_params.platform.downcase.strip)
+    tmp_path = @test_params.staf_service_name.to_s.strip.gsub('@','_')
     assets = params.select{|k,v| k.match(/_dev/i) && v.match(/eth/i) }.keys.map{|k| k.match(/(.+?)(?:_src_dev|_dev)/).captures[0] }
     assets.each do |asset|
       next if  params[asset] == ''
       copy_asset(params['server'], params[asset], File.join(params['server'].tftp_path, tmp_path))
-      params[asset+'_image_name'] = File.basename(params[asset])
+      params[asset+'_image_name'] = File.join(tmp_path, File.basename(params[asset]))
     end
   end
 
@@ -244,9 +244,6 @@ module LspTestScript
       server.send_sudo_cmd("mkdir -p -m 777 #{dst_dir}") if !File.exists?(dst_dir)
       if File.file?(src)
         FileUtils.cp(src, dst_dir)
-        filename = File.basename(src)
-        symlink_name = File.join(server.tftp_path,filename)
-        server.send_sudo_cmd("ln -s #{File.join(dst_dir.gsub(server.tftp_path,"."),filename)} #{symlink_name}") if !File.exists?(symlink_name)
       else 
         FileUtils.cp_r(File.join(src,'.'), dst_dir)
       end
