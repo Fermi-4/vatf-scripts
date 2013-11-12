@@ -168,6 +168,23 @@ module LspTestScript
     return new_params
   end
 
+  def install_kernel_modules(params, nfs_root_path_temp)
+    if params['kernel_modules'] != '' and params['fs_type'] == 'nfs' and !params.has_key?('var_nfs')
+    elsif params['kernel_modules'] != '' and params['fs_type'] == 'nfs' and params.has_key?('var_nfs')
+      if params['var_nfs']. match(/^\d+\.\d+\.\d+\.\d+/).to_s.strip == params['server'].telnet_ip.strip
+        nfs_root_path_temp = params['var_nfs'].match(/:(.+)$/).captures[0].to_s
+      else
+        # Not possible to install modules
+        return
+      end
+    else
+      # Not possible to install modules
+      return
+    end 
+    tar_options = get_tar_options(params['kernel_modules'], params)
+    params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} #{tar_options} #{params['kernel_modules']}", params['server'].prompt, 30)
+  end 
+
   def setup_nfs(params)
     nfs_root_path_temp  = params['dut'].nfs_root_path
           
@@ -199,12 +216,9 @@ module LspTestScript
         params['server'].send_sudo_cmd("cp #{pointercal_rule_src} #{pointercal_rule_dst}", params['server'].prompt, 10)
       end
     end
-        
-    if params['kernel_modules'] != '' and params['fs_type'] == 'nfs' and !params.has_key?('var_nfs')
-      tar_options = get_tar_options(params['kernel_modules'], params)
-      params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} #{tar_options} #{params['kernel_modules']}", params['server'].prompt, 30)
-    end
-      
+    
+    install_kernel_modules(params, nfs_root_path_temp)    
+          
     params['server'].send_sudo_cmd("mkdir -p -m 777 #{nfs_root_path_temp}/test", params['server'].prompt) if !(params.has_key? 'var_nfs')
       
     LspTestScript.set_paths(nfs_root_path_temp, nfs_root_path_temp) 
