@@ -516,10 +516,12 @@ module LspTestScript
   def run_start_stats
     @eth_ip_addr = get_ip_addr()
     if @eth_ip_addr
+      old_telnet_ip = @equipment['dut1'].target.platform_info.telnet_ip
       @equipment['dut1'].target.platform_info.telnet_ip = @eth_ip_addr
       old_telnet_port = @equipment['dut1'].target.platform_info.telnet_port
       @equipment['dut1'].target.platform_info.telnet_port = 23
       @equipment['dut1'].connect({'type'=>'telnet'})
+      @equipment['dut1'].target.platform_info.telnet_ip = old_telnet_ip
       @equipment['dut1'].target.platform_info.telnet_port = old_telnet_port
       @equipment['dut1'].target.telnet.send_cmd("pwd", @equipment['dut1'].prompt , 3)    
       @collect_stats = @test_params.collect_stats[0] if @test_params.instance_variable_defined?(:@collect_stats)
