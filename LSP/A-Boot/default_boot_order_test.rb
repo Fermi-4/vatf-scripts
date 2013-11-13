@@ -27,12 +27,7 @@ include BootLoader
 
 def setup
   @equipment['dut1'].connect({'type'=>'serial'})
-  # Add relay 
-  add_equipment('relay') do |log_path|
-    DevantechRelayController.new(@equipment['dut1'].params['relay'].keys[0],log_path)
-  end   
   connect_to_extra_equipment() 
-
 end
 
 
@@ -444,11 +439,30 @@ end
 def get_image
   params={}
   params['primary_bootloader_MLO'] = @test_params.instance_variable_defined?(:@primary_bootloader_MLO) ? @test_params.primary_bootloader_MLO : ''
-  params['primary_bootloader_MLO_dev'] = @test_params.instance_variable_defined?(:@primary_bootloader_MLO_dev) ? @test_params.primary_bootloader_MLO_dev : '' 
+  params['primary_bootloader_MLO_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_mlo_dev) ? @test_params.params_chan.primary_bootloader_mlo_dev[0] : ''
   params['primary_bootloader_SPL'] = @test_params.instance_variable_defined?(:@primary_bootloader_SPL) ? @test_params.primary_bootloader_SPL : ''
-  params['primary_bootloader_SPL_dev'] = @test_params.instance_variable_defined?(:@primary_bootloader_SPL_dev) ? @test_params.primary_bootloader_SPL_dev : ''                               
+  params['primary_bootloader_SPL_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_spl_dev) ? @test_params.params_chan.primary_bootloader_spl_dev[0] : ''                               
   translated_params = setup_host_side(params)
   return translated_params
+end 
+
+# Function erases emmc
+# Input parameters: part (partition), block (starting block), count  
+# Return Parameter: None.  
+
+def erase_emmc_device(part,blocks, count) 
+  # Set device either to EMMC = 1 or MMC = 0
+  uboot_cmd = "mmc dev #{part}"
+  @equipment['dut1'].send_cmd(uboot_cmd, @equipment['dut1'].boot_prompt, 2)
+  current_device = "mmc#{part}"
+  device_set = @equipment['dut1'].response.to_s.scan(/Card\+did\+not\+respond\+to\+voltage\+select/)
+  raise "Device is not selected" if device_set == nil
+  # Ensure we are able to talk with this mmc device
+  uboot_cmd = "mmc erase #{blocks} #{count}"
+  @equipment['dut1'].send_cmd(uboot_cmd, @equipment['dut1'].boot_prompt, 2)
+  mmc_write = @equipment['dut1'].response.to_s.scan(/erase:\s+OK/)
+  raise "MMC erase failed" if mmc_write == nil
+
 end 
 
 
@@ -487,5 +501,4 @@ subnet 192.168.2.0 netmask 255.255.255.0 {
 return dhcp_spl_config 
 end 
 
-def clean
-end 
+

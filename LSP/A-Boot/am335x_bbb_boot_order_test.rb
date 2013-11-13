@@ -4,10 +4,7 @@ def uart_boot()
   puts "turn OFF USB Swtich !!!!!!!!!" 
   @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
   @equipment['dut1'].send_cmd("", @equipment['dut1'].boot_prompt, 2)
-  @equipment['dut1'].wait_for(@equipment['dut1'].boot_prompt,20)
-  if @equipment['dut1'].timeout?
-    invalidate_mmc(1)
-  end
+  erase_emmc_device(1,100, 2800) 
   @equipment['dut1'].disconnect()
   boot_to_bootloader()
   status =  uboot_sanity_test()
@@ -55,6 +52,8 @@ def emmc_boot()
   regexp = /Hit\s+any\s+key\s+to\s+stop\s+autoboot/i 
   reboot_dut(regexp)  
   @equipment['dut1'].send_cmd("", @equipment['dut1'].boot_prompt, 2)
+  @equipment['dut1'].wait_for(@equipment['dut1'].boot_prompt,20)
+  raise "Platform in the wrong state. Must have valid emmc to run this test case" if  @equipment['dut1'].timeout?
   status= uboot_sanity_test()
   return status 
 end 
