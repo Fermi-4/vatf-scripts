@@ -25,7 +25,7 @@ def run
   when test_type.match(/performance/)
     run_performance
   else
-    set_result(FrameworkConstants::Result[:Fail], "Unsupported Test Type")
+    set_result(FrameworkConstants::Result[:fail], "Unsupported Test Type")
     return
   end
 end
@@ -42,11 +42,11 @@ def run_performance
 # Sanity check that modules are loading correctly
   modprobe_on_device(module_name, gadget_types, 'insert')
   if !check_enum_on_target(module_name)
-     set_result(FrameworkConstants::Result[:Fail], "Gadget not detected on target.")
+     set_result(FrameworkConstants::Result[:fail], "Gadget not detected on target.")
      return
   end
   if !check_enum_on_host(gadget_types)
-     set_result(FrameworkConstants::Result[:Fail], "One or more gadgets not detected on host.")
+     set_result(FrameworkConstants::Result[:fail], "One or more gadgets not detected on host.")
      return
   end
   modprobe_on_device(module_name, gadget_types, 'remove')
@@ -103,9 +103,9 @@ def run_stress_insert_remove(iterations)
       modprobe_on_device(module_name,gadget_types, 'remove')
   end # of while
   if ((loop_count == device_test) && (loop_count == host_test))
-      set_result(FrameworkConstants::Result[:Pass], "In #{loop_count} iterations, device detected gadget #{device_test} times and host detected gadget #{host_test} times.")
+      set_result(FrameworkConstants::Result[:pass], "In #{loop_count} iterations, device detected gadget #{device_test} times and host detected gadget #{host_test} times.")
   else
-      set_result(FrameworkConstants::Result[:Fail], "In #{loop_count} iterations, device detected gadget #{device_test} times and host detected gadget #{host_test} times.")
+      set_result(FrameworkConstants::Result[:fail], "In #{loop_count} iterations, device detected gadget #{device_test} times and host detected gadget #{host_test} times.")
   end
 end
 
@@ -140,11 +140,11 @@ def modprobe_on_device(module_name,gadget_types,action)
     dut_response = @equipment['dut1'].response
     host_response = @equipment['server1'].response
     if (!dut_response.match(/USB disconnect/))
-      set_result(FrameworkConstants::Result[:Fail], "Disconnect message not seen on target during module removal.")
+      set_result(FrameworkConstants::Result[:fail], "Disconnect message not seen on target during module removal.")
       return
     end
     if (!host_response.match(/USB disconnect/))
-      set_result(FrameworkConstants::Result[:Fail], "Disconnect message not seen on host during module removal.")
+      set_result(FrameworkConstants::Result[:fail], "Disconnect message not seen on host during module removal.")
       return
     end
   else
