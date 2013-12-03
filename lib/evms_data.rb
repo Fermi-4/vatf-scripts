@@ -45,4 +45,45 @@ module EvmData
     return nand_loc[key]
   end
 
+  def get_platform_string(params)
+    machines = {}
+    machines['am335x-evm']  = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x EVM/}
+    machines['am335x-sk']   = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x EVM-SK/}
+    machines['beaglebone']  = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x BeagleBone/}
+    machines['beaglebone-black'] = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x BeagleBone/}
+    machines['dra7xx-evm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/}
+    machines['omap5-evm']   = {'0.0' => /Machine: Generic OMAP5 \(Flattened Device Tree\), model: TI OMAP5 uEVM board/}
+    machines['am43xx-epos'] = {'0.0' => /Machine: Generic AM43 \(Flattened Device Tree\), model: TI AM43x EPOS EVM/}
+    machines['am43xx-epos'] = {'0.0' => /Machine: Generic AM43 \(Flattened Device Tree\), model: TI AM43x GP EVM/}
+    params.merge!({'dict' => machines})
+    get_cmd(params)
+  end
+
+  def get_max_opp_string(params)
+    machines = {}
+    machines['am335x-evm']  = {'0.0' => '1000000'}
+    machines['am335x-sk']   = {'0.0' => '720000'}
+    machines['beaglebone']  = {'0.0' => '720000'}
+    machines['beaglebone-black'] = {'0.0' => '1000000'}
+    machines['dra7xx-evm']  = {'0.0' => '1500000'}
+    machines['omap5-evm']   = {'0.0' => '1500000'}
+    machines['am43xx-epos'] = {'0.0' => '1200000'}
+    machines['am43xx-epos'] = {'0.0' => '1200000'}
+    params.merge!({'dict' => machines})
+    get_cmd(params)
+  end
+
+
+  def get_cmd(params)
+    raise "'platform' and 'version' are both mandatory params" if !params.key?('platform') or !params.key?('version')
+    platform = params['platform'] 
+    version = params['version']
+    cmds_hash = params['dict'][platform]
+    versions = cmds_hash.keys.sort {|a,b| b <=> a}  # sort by version
+    tmp = versions.select {|v| Gem::Version.new(v.dup) <= Gem::Version.new(version)}
+    raise "get_cmd: Unable to find the version matching v<= #{version}\n" if tmp.empty?
+    return cmds_hash[tmp[0]] 
+  end
+
+
 end 
