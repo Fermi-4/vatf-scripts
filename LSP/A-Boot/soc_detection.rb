@@ -9,8 +9,7 @@ def run
     platform_string = get_platform_string(params)
         
     # Check platform string
-    @equipment['dut1'].send_cmd('dmesg', /#{platform_string}.+#{@equipment['dut1'].prompt}/mi, 20)
-    if @equipment['dut1'].timeout?
+    if !@equipment['dut1'].boot_log.match(/#{platform_string}/mi)
       set_result(FrameworkConstants::Result[:fail], "SoC was not properly detected. Could not find #{platform_string} in boot logs")
       return
     end
