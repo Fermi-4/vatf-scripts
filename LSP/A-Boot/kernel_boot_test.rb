@@ -3,7 +3,6 @@ include LspTestScript
 
 def setup
   self.as(LspTestScript).setup
-
 end
 
 def run
@@ -19,6 +18,7 @@ def run
         puts "soft-reboot....\n\n"
         @equipment['dut1'].send_cmd('reboot', translated_boot_params['dut'].login_prompt, 40)
         @equipment['dut1'].send_cmd(translated_boot_params['dut'].login, translated_boot_params['dut'].prompt, 10) # login to the unit
+        raise 'Could not soft-reboot' if @equipment['dut1'].timeout?
       else
         @equipment['dut1'].disconnect
         self.as(LspTestScript).setup
