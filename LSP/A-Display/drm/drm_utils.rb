@@ -240,9 +240,10 @@ end
 def get_mode_string(params)
   result = ''
   result += params['connectors_ids'].join(',')
-  result += '@'+ params['crtc_id'] if params.has_key?('crtc_id')
-  result += ':'+ params['mode']
-  result += '@'+ params['format'] if params.has_key?('format')
+  result += '@' + params['crtc_id'] if params.has_key?('crtc_id')
+  result += ':' + params['mode']
+  result += '-' + params['framerate'] if params.has_key?('framerate')
+  result += '@' + params['format'] if params.has_key?('format')
   result
 end
 
@@ -280,7 +281,7 @@ def get_entries(string)
   table_header = string.match(/(^id.*)/).captures[0].strip()
   table_content = string.sub(table_header,'')
   column_names = table_header.split(/\t+/)
-  entry_regex = /^[\w,\-\(\)]+(?:\t+[\w\-,\(\)]+){#{column_names.length() - 1}}/
+  entry_regex = /^[\w,\- \(\)]+(?:\t+[\w\-, \(\)]+){#{column_names.length() - 1}}/
   entry_info = get_sections(table_content, entry_regex)
   result = []
   if entry_info
@@ -318,7 +319,7 @@ def get_entries(string)
               md = m.strip.split(/\s+/)
               md.each_index {|i| mode_hash[cap_headers[i]] = md[i]}
               mode_hash.merge!(get_sections(ft,/\w+:/))
-              entry[cap] << mode_hash
+              entry[cap] << mode_hash if !entry[cap].include?(mode_hash)
             end
           end
         end
