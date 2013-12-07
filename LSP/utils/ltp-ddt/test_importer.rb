@@ -146,7 +146,7 @@ class TestImporter
         add_custom_field(cfs, "scripts", "LSP/TARGET/dev_test2.rb")
         dut_caps = t.has_key?('hw_caps') ? "linux_#{t['hw_caps']}" : 'linux'
         add_custom_field(cfs, "hw_assets_config", "dut1=[\"<platform>\",#{dut_caps}];server1=[\"linux_server\"]")
-        add_custom_field(cfs, "params_control", "script=cd /opt/ltp;./runltp -P \#{@equipment['dut1'].name} -f #{t['file']} -s \"#{t['name']} \",timeout=#{get_timeout(t['type'])}")
+        add_custom_field(cfs, "params_control", "script=cd /opt/ltp;./runltp -P \#{@equipment['dut1'].name} -f #{t['file']} -s \"#{t['name']} \",timeout=#{get_timeout(t['scope'], t['type'])}")
         kws = tc.add_element "keywords"
         kws.add_element "keyword", {'name' => "s_#{t['scope']}"}
         kws.add_element "keyword", {'name' => "t_#{t['type']}"}
@@ -157,14 +157,23 @@ class TestImporter
     f.close
   end
   
-  def get_timeout(type)
-    case type
-      when /STRESS/i
-        return (3600*24).to_s
-      when /PERF/i
-        return '3600'
+  def get_timeout(scope, type)
+    scope.upcase!
+    case scope
+      when 'XS'
+        return '60'
+      when 'S'
+        return (60*10).to_s
+      when 'M'
+        return (60*60).to_s
+      when 'L'
+        return (60*60*4).to_s
+      when 'XL'
+        return (60*60*24).to_s
+      when 'XXL'
+        return (60*60*24*7).to_s
       else
-        return '600'
+        raise "Invalid test scope #{scope}"
     end     
   end
   
