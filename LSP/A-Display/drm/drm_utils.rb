@@ -228,7 +228,7 @@ def run_sync_flip_test(params, dut=@equipment['dut1'], timeout=600)
   output = modetest('-v -s ' + get_mode_string(params), dut, timeout, true) do
     yield
   end
-  fps_arr = output.scan(/^freq:\s*([\d.]+)Hz/)
+  fps_arr = output.scan(/^freq:\s*([\d.]+)Hz/).drop(2)
   fps_arr.each do |rate|
     return false if (rate[0].to_f - params['framerate'].to_f).abs > 2
   end

@@ -14,32 +14,32 @@ def run
       next if encoder['id'] != connector['encoder']
       drm_info['CRTCs:'].each do |crtc|
       next if crtc['id'] != encoder['crtc']
-        connector['modes:'].each do |mode|
-          formats = ['default']
-          if !@test_params.params_control.instance_variable_defined?(:@test_type) ||
+        if !@test_params.params_control.instance_variable_defined?(:@test_type) ||
                @test_params.params_control.test_type[0].strip().downcase() != 'properties'
-            formats = @test_params.params_chan.formats if @test_params.params_chan.instance_variable_defined?(:@formats)
-            formats.each do |format|
-              result_string += "conn: #{connector['id']}, enc: #{encoder['id']}, " \
-                             "crtc: #{crtc['id']}, 'mode': #{mode.to_s}, " \
-                             "format: #{format} => "
-            
-                mode_params = {'connectors_ids' => [connector['id']], 
-                               'crtc_id' => crtc['id'], 
-                               'mode' => mode['name'],
-                               'framerate' => mode['refresh (Hz)']}
-                mode_params['format'] = format if format != 'default'
-                res, res_string = run_mode_test(mode_params)
-                test_result &= res
-                result_string += res_string + "\n\n"
-            end
-          else
+          connector['modes:'].each do |mode|
+            formats = ['default']
+              formats = @test_params.params_chan.formats if @test_params.params_chan.instance_variable_defined?(:@formats)
+              formats.each do |format|
+                result_string += "conn: #{connector['id']}, enc: #{encoder['id']}, " \
+                               "crtc: #{crtc['id']}, 'mode': #{mode.to_s}, " \
+                               "format: #{format} => "
+              
+                  mode_params = {'connectors_ids' => [connector['id']], 
+                                 'crtc_id' => crtc['id'], 
+                                 'mode' => mode['name'],
+                                 'framerate' => mode['refresh (Hz)']}
+                  mode_params['format'] = format if format != 'default'
+                  res, res_string = run_mode_test(mode_params)
+                  test_result &= res
+                  result_string += res_string + "\n\n"
+              end
+          end
+        else
             {'CRTC' => crtc, 'Connector' => connector}.each do |type, drm_obj|
               res, res_string = run_properties_test(type, drm_obj)
               test_result &= res
               result_string += res_string + "\n\n"
             end
-          end
         end
       end
     end
