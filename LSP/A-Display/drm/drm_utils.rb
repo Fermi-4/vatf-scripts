@@ -71,27 +71,34 @@ end
 #                                                 RX30
 #                                                 BA30
 #                                                 BX30
-#  width => <value>                        : width of the frame in pixels
-#  height => <value>                       : height of the frame in pixels
-#  crtc_id => <value>                      : id of the crtc to used, for -P and optionally for -s and -v
+#  width => <value>                        : width of the plane in pixels
+#  height => <value>                       : height of the plane in pixels
+#  crtc_id => <value>                      : id of the crtc to used
 #  scale => <value>                        : (Optional) fraction to scale,
 #  xyoffset => [<xoffset>,<yoffset>]       : (Optional) x,y offsets array in pixels, 
 def set_plane(params, dut=@equipment['dut1'], timeout=600)
   #-P <crtc_id>:<w>x<h>[+<x>+<y>][*<scale>][@<format>]     set a plane
-  p_string = '-P '
-  p_string += params['crtc_id']
-  p_string += ':'+ params['width'] + 'x' + params['height']
-  p_string += '+'+ params['xyoffset'].join('+') if params['xyoffset']
-  p_string += '*'+ params['scale'].join('+') if params['scale']
-  p_string += '@'+ params['format'] if params.has_key?['format']
+  p_string = get_plane_string(params)
   modeset(p_string, dut, timeout, true) do
     yield
   end
 end
 
+#Function to create the string for plane related tests, takes the
+#same params value as required by set_plane
+def get_plane_string(params)
+  p_string = '-P '
+  p_string += params['crtc_id']
+  p_string += ':'+ params['width'].to_s + 'x' + params['height'].to_s
+  p_string += '+'+ params['xyoffset'].join('+') if params['xyoffset']
+  p_string += '*'+ params['scale'].to_s if params['scale']
+  p_string += '@'+ params['format'] if params['format']
+  p_string
+end
+
 #Function to set a drm mode, takes:
 #  params, a Hash whose entries are:
-#  format => <value>                       :the format of the data to display, needs to be one of the following
+#    format => <value>                     :the format of the data to display, needs to be one of the following
 #                                            /* YUV packed */
 #                                                 UYVY
 #                                                 VYUY
@@ -144,12 +151,23 @@ end
 #                                                 RX30
 #                                                 BA30
 #                                                 BX30
-#  crtc_id => <value>                      : (Optional) id of the crtc to used, for -P and optionally for -s and -v
-#  connectors_ids => [id1,id2, ..., idx]    : array of connector ids,
-#  mode => <value>                         : string containing the mode, i.e. 800x480
-def set_mode(params, dut=@equipment['dut1'], timeout=600)
+#    crtc_id => <value>                    : (Optional) id of the crtc to used, for -P and optionally for -s 
+#                                            and -v
+#    connectors_ids => [id1,id2, ..., idx]  : array of connector ids,
+#    mode => <value>                       : string containing the mode, i.e. 800x480
+#  plane_params, (Optional) a Hash whose entries are:
+#    width => <value>                      : width of the plane in pixels
+#    height => <value>                     : height of the plane in pixels
+#    scale => <value>                      : (Optional) fraction to scale, i.e. 0.5,
+#    xyoffset => [<xoffset>,<yoffset>]     : (Optional) x,y offsets array in pixels,
+def set_mode(params, plane_params=nil, dut=@equipment['dut1'], timeout=600)
   #-s <connector_id>[,<connector_id>][@<crtc_id>]:<mode>[@<format>]  set a mode
-  modetest('-s ' + get_mode_string(params), dut, timeout, true) do
+  m_str = get_mode_string(params)
+  if plane_params
+    plane_params['crtc_id'] = params['crtc_id']
+    m_str += ' ' + get_plane_string(plane_params)
+  end
+  modetest(m_str, dut, timeout, true) do
     yield
   end
 end
@@ -165,7 +183,7 @@ end
 
 #Function to run a vsynced page flipping test, takes:
 #  params, a Hash whose entries are:
-#  format => <value>                       :the format of the data to display, needs to be one of the following
+#    format => <value>                     :the format of the data to display, needs to be one of the following
 #                                            /* YUV packed */
 #                                                 UYVY
 #                                                 VYUY
@@ -218,14 +236,25 @@ end
 #                                                 RX30
 #                                                 BA30
 #                                                 BX30
-#  crtc_id => <value>                      : (Optional) id of the crtc to used, for -P and optionally for -s and -v
-#  connectors_ids => [id1,id2, ..., idx]   : array of connector ids,
-#  mode => <value>                         : string containing the mode, i.e. 800x480
-#  framerate => <value>                    : expected frame rate in Hz
+#    crtc_id => <value>                    : id of the crtc to used, for -P and optionally for -s and -v.
+#                                            Optional if not specifying plane_params, otherwise required
+#    connectors_ids => [id1,id2, ..., idx] : array of connector ids,
+#    mode => <value>                       : string containing the mode, i.e. 800x480
+#    framerate => <value>                  : expected frame rate in Hz
+#  plane_params, (Optional) a Hash whose entries are:
+#    width => <value>                      : width of the plane in pixels
+#    height => <value>                     : height of the plane in pixels
+#    scale => <value>                      : (Optional) fraction to scale, i.e. 0.5,
+#    xyoffset => [<xoffset>,<yoffset>]     : (Optional) x,y offsets array in pixels, 
 #Return true if the captured frame rate matches the expected fram rate, specified by framerate 
-def run_sync_flip_test(params, dut=@equipment['dut1'], timeout=600)
+def run_sync_flip_test(params, plane_params=nil, dut=@equipment['dut1'], timeout=600)
   #-v test vsynced page flipping
-  output = modetest('-v -s ' + get_mode_string(params), dut, timeout, true) do
+  s_f_test_str = '-v ' + get_mode_string(params)
+  if plane_params
+    plane_params['crtc_id'] = params['crtc_id']
+    s_f_test_str += ' ' + get_plane_string(plane_params)
+  end
+  output = modetest(s_f_test_str, dut, timeout, true) do
     yield
   end
   fps_arr = output.scan(/^freq:\s*([\d.]+)Hz/).drop(2)
@@ -238,7 +267,7 @@ end
 #Function to create the string for the mode related tests, takes the
 #same params value as required by set_mode
 def get_mode_string(params)
-  result = ''
+  result = '-s '
   result += params['connectors_ids'].join(',')
   result += '@' + params['crtc_id'] if params.has_key?('crtc_id')
   result += ':' + params['mode']
@@ -321,6 +350,8 @@ def get_entries(string)
               mode_hash.merge!(get_sections(ft,/\w+:/))
               entry[cap] << mode_hash if !entry[cap].include?(mode_hash)
             end
+          else
+            entry[cap] = cap_info.strip().split(/\s+/)
           end
         end
       end

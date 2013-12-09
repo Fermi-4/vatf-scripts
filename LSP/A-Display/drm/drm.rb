@@ -16,22 +16,41 @@ def run
       next if crtc['id'] != encoder['crtc']
         if !@test_params.params_control.instance_variable_defined?(:@test_type) ||
                @test_params.params_control.test_type[0].strip().downcase() != 'properties'
-          connector['modes:'].each do |mode|
+          #If planes supported and only 1 mode, repeat mode to test with/wout planes
+          if !drm_info['Planes:'].empty? && connector['modes:'].length == 1
+            connector['modes:'] << connector['modes:'][0]
+          end
+          connector['modes:'].each_index do |i| 
+            mode = connector['modes:'][i]
             formats = ['default']
               formats = @test_params.params_chan.formats if @test_params.params_chan.instance_variable_defined?(:@formats)
               formats.each do |format|
+                
                 result_string += "conn: #{connector['id']}, enc: #{encoder['id']}, " \
                                "crtc: #{crtc['id']}, 'mode': #{mode.to_s}, " \
-                               "format: #{format} => "
-              
+                               "format: #{format}"
                   mode_params = {'connectors_ids' => [connector['id']], 
                                  'crtc_id' => crtc['id'], 
                                  'mode' => mode['name'],
                                  'framerate' => mode['refresh (Hz)']}
                   mode_params['format'] = format if format != 'default'
-                  res, res_string = run_mode_test(mode_params)
+                  plane_params = nil
+                  if !drm_info['Planes:'].empty? && i % 2 == 1
+                    plane = drm_info['Planes:'][0]
+                    result_string += ', with planes => '
+                    width, height = mode['name'].match(/(\d+)x(\d+)/).captures
+                    plane_params = { 'width' => width, 
+                                     'height' => height,
+                                     'xyoffset' => [i,i],
+                                     'scale' => [0.3, 1.to_f/(1+i).to_f].max,
+                                     'format' => plane['formats:'][rand(plane['formats:'].length)]}
+                  else
+                    result_string += ' => '
+                  end
+                  res, res_string = run_mode_test(mode_params, plane_params)
                   test_result &= res
                   result_string += res_string + "\n\n"
+                  next if !res
               end
           end
         else
@@ -71,18 +90,21 @@ end
 
 #Function to run the drm mode tests supported by modetest, takes
 #  mode_params, a hash whose entry are the ones required by drm_utils set_mode method
+#  plane_params, (Optional) use to defined a plane that will be overlay on top of the image,
+#                the parameter is a hash whose entries are the one required by 
+#                drm_utils set_mode method
 #Returns an array containing [boolean, res_string] where the boolean signals if
 #the test passed (true) or failed (false); and the res_string is an informational
 #string regarding the result of the test  
-def run_mode_test(mode_params)
+def run_mode_test(mode_params, plane_params=nil)
   test_result = true
   result_string = ''
-  set_mode(mode_params) do
+  set_mode(mode_params, plane_params) do
     mode_result, mode_string = get_drm_test_result('set mode test')
     test_result &= mode_result
     result_string += mode_string
   end
-  fps_res = run_sync_flip_test(mode_params) do
+  fps_res = run_sync_flip_test(mode_params, plane_params) do
     sf_result, sf_string = get_drm_test_result('sync flip test')
     test_result &= sf_result
     result_string += ', ' + sf_string
