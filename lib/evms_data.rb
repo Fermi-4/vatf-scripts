@@ -69,7 +69,7 @@ module EvmData
     machines['dra7xx-evm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/}
     machines['omap5-evm']   = {'0.0' => /Machine: Generic OMAP5 \(Flattened Device Tree\), model: TI OMAP5 uEVM board/}
     machines['am43xx-epos'] = {'0.0' => /Machine: Generic AM43 \(Flattened Device Tree\), model: TI AM43x EPOS EVM/}
-    machines['am43xx-epos'] = {'0.0' => /Machine: Generic AM43 \(Flattened Device Tree\), model: TI AM43x GP EVM/}
+    machines['am43xx-gpevm'] = {'0.0' => /Machine: Generic AM43 \(Flattened Device Tree\), model: TI AM43x GP EVM/}
     params.merge!({'dict' => machines})
     get_cmd(params)
   end
@@ -77,13 +77,13 @@ module EvmData
   def get_max_opp_string(params)
     machines = {}
     machines['am335x-evm']  = {'0.0' => '1000000'}
-    machines['am335x-sk']   = {'0.0' => '720000'}
+    machines['am335x-sk']   = {'0.0' => '1000000'}
     machines['beaglebone']  = {'0.0' => '720000'}
     machines['beaglebone-black'] = {'0.0' => '1000000'}
     machines['dra7xx-evm']  = {'0.0' => '1500000'}
     machines['omap5-evm']   = {'0.0' => '1500000'}
     machines['am43xx-epos'] = {'0.0' => '1200000'}
-    machines['am43xx-epos'] = {'0.0' => '1200000'}
+    machines['am43xx-gpevm'] = {'0.0' => '1200000'}
     params.merge!({'dict' => machines})
     get_cmd(params)
   end
