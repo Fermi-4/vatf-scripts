@@ -167,7 +167,7 @@ class TestImporter
       when 'M'
         return (60*60).to_s
       when 'L'
-        return (60*60*4).to_s
+        return (60*60*8).to_s
       when 'XL'
         return (60*60*24).to_s
       when 'XXL'
