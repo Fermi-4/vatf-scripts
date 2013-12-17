@@ -1,6 +1,5 @@
 require File.dirname(__FILE__)+'/../default_target_test'
 require File.dirname(__FILE__)+'/audio_utils'
-require File.dirname(__FILE__)+'/../../lib/result_forms'
 require File.dirname(__FILE__)+'/../../lib/utils'
 
 include LspTargetTestScript
@@ -8,6 +7,7 @@ include LspTargetTestScript
 def run
   test_result = true
   file_op_wait = 100
+  @equipment['dut1'].send_cmd("mkdir /test", @equipment['dut1'].prompt) #Make sure test folder exists
   ref_file_url = @test_params.params_chan.file_url[0]
   ref_path, dut_src_file = get_file_from_url(ref_file_url)
   ref_pcm_path = File.join(@linux_temp_folder, 'audio_src_file.pcm')
@@ -58,13 +58,16 @@ def run
       dut_play_info = dut_audio_info.merge({'card'=>dut_play_dev['card'],
                                             'device'=>dut_play_dev['device'],
                                             'file'=>dut_src_file,
-                                            'duration'=>duration})
+                                            'duration'=>duration,
+                                            'type'=>'wav'})
       dut_rec_info = dut_audio_info.merge({'card'=>dut_rec_dev['card'],
                                            'device'=>dut_rec_dev['device'],
                                            'file'=>dut_test_file,
-                                           'duration'=>rec_duration})
+                                           'duration'=>rec_duration,
+                                           'type' => 'raw'})
       host_chk_rec_info = host_audio_info.merge({'file'=>local_test_file,
-                                                 'duration'=>rec_duration})
+                                                 'duration'=>rec_duration,
+                                                 'type'=>'raw'})
       while(current_test_res == FrameworkConstants::Result[:nry])
         res_win = ResultWindow.new("Audio #{test_type} test")
         res_win.add_buttons({'name' => "Play Ref(#{File.basename(ref_file_url)})", 
@@ -81,7 +84,8 @@ def run
           when 'record'
             play_rec_audio(host_audio_info.merge({'sys'=>@equipment['server1'],
                                                   'file'=>ref_path,
-                                                  'duration'=>duration}), 
+                                                  'duration'=>duration,
+                                                  'type'=>'wav'}), 
                                                  dut_rec_info)
             scp_pull_file(dut_ip, dut_test_file, local_test_file)
             res_win.add_buttons({'name' => 'Play Recorded(HOST)', 
