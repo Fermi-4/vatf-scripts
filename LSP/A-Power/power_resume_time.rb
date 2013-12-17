@@ -22,6 +22,12 @@ def run
     @equipment['dut1'].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'get_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})}", @equipment['dut1'].prompt, 10)
   end
 
+  # Work around to enable uart wakeup on some platforms (e.g. J6)
+  if wakeup_domain == 'uart' 
+    cmd = CmdTranslator.get_linux_cmd({'cmd'=>'enable_uart_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})
+    @equipment['dut1'].send_cmd(cmd , @equipment['dut1'].prompt) if cmd.to_s != ''
+  end
+
   # dut will be suspend with random suspend time
   max_s_time = @test_params.params_chan.max_suspend_time[0].to_i
   test_loop = @test_params.params_control.test_loop[0].to_i
