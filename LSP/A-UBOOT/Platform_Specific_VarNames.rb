@@ -3,6 +3,7 @@
 module PlatformSpecificVarNames
   @platform_specific_var_name =  {
     'ramaddress' => {  
+      'am43xx-epos' => '0x81000000',
       'omap5-evm' => '0x82000000',
       'dm644x-evm'=>'0x80700000',
       'dm365-evm'=>'0x80700000',
@@ -26,10 +27,12 @@ module PlatformSpecificVarNames
       'keystone-evm' => '0x80000100'
       },
     'ramaddress_2' => {
+      'am43xx-epos' => '0x82000000',
       'am335x-evm'=>'0x82000000',
       'omap5-evm' => '0x83000000'
       },
     'ramaddress_3' => {
+      'am43xx-epos' => '0x84000000',
       'omap5-evm' => '0x84000000',
       'am335x-evm'=>'0x84000000'
       },

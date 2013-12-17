@@ -38,6 +38,7 @@ def run
 
   @equipment['dut1'].send_cmd("nand erase #{nand_env_part_addr_start} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("saveenv",@equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("saveenv",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("nand dump #{nand_env_part_addr_start} page",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("nand read.raw #{ramaddress} #{nand_env_part_addr_start} 1",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("md.b #{ramaddress} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
