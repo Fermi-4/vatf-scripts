@@ -1,5 +1,6 @@
 require File.dirname(__FILE__)+'/../default_target_test'
 require File.dirname(__FILE__)+'/audio_utils'
+require File.dirname(__FILE__)+'/../../lib/result_forms'
 require File.dirname(__FILE__)+'/../../lib/utils'
 
 include LspTargetTestScript
@@ -101,13 +102,13 @@ def run
             raise "Test type #{test_type} not supported"
         end
         res_win.show()
-        current_test_res, curren_comment = res_win.get_result()
+        current_test_res, current_comment = res_win.get_result()
       end
       if current_test_res == FrameworkConstants::Result[:pass]
-        @results_html_file.add_rows_to_table(res_table,[[buffer_size, period, ["Passed",{:bgcolor => "green"}],curren_comment]])
+        @results_html_file.add_rows_to_table(res_table,[[buffer_size, period, ["Passed",{:bgcolor => "green"}],current_comment]])
       else
         test_result = false
-        @results_html_file.add_rows_to_table(res_table,[[buffer_size, period, ["Failed",{:bgcolor => "red"}],curren_comment]])
+        @results_html_file.add_rows_to_table(res_table,[[buffer_size, period, ["Failed",{:bgcolor => "red"}],current_comment]])
       end
     end
   end
