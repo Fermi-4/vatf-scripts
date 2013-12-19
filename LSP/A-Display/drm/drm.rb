@@ -1,13 +1,13 @@
 # -*- coding: ISO-8859-1 -*-
 require File.dirname(__FILE__)+'/../../default_test_module'
+require File.dirname(__FILE__)+'/../../../lib/result_forms'
 require File.dirname(__FILE__)+'/drm_utils'   
 
 include LspTestScript
 
 def run
   @equipment['dut1'].send_cmd('',@equipment['dut1'].prompt) #making sure that the board is ok
-  test_result = true
-  result_string = ''
+  test_result = true     
   drm_info = get_properties()
   drm_info['Connectors:'].each do |connector|
     drm_info['Encoders:'].each do |encoder|
@@ -16,6 +16,14 @@ def run
       next if crtc['id'] != encoder['crtc']
         if !@test_params.params_control.instance_variable_defined?(:@test_type) ||
                @test_params.params_control.test_type[0].strip().downcase() != 'properties'
+          @results_html_file.add_paragraph("")
+          res_table = @results_html_file.add_table([["Connector",{:bgcolor => "4863A0"}], 
+                                                     ["Encoder", {:bgcolor => "4863A0"}],
+                                                     ["CRTC", {:bgcolor => "4863A0"}],
+                                                     ["Plane", {:bgcolor => "4863A0"}],
+                                                     ["Mode", {:bgcolor => "4863A0"}],
+                                                     ["Result", {:bgcolor => "4863A0"}],
+                                                     ["Comment", {:bgcolor => "4863A0"}]])
           #If planes supported and only 1 mode, repeat mode to test with/wout planes
           if !drm_info['Planes:'].empty? && connector['modes:'].length == 1
             connector['modes:'] << connector['modes:'][0]
@@ -25,10 +33,6 @@ def run
             formats = ['default']
               formats = @test_params.params_chan.formats if @test_params.params_chan.instance_variable_defined?(:@formats)
               formats.each do |format|
-                
-                result_string += "conn: #{connector['id']}, enc: #{encoder['id']}, " \
-                               "crtc: #{crtc['id']}, 'mode': #{mode.to_s}, " \
-                               "format: #{format}"
                   mode_params = {'connectors_ids' => [connector['id']], 
                                  'crtc_id' => crtc['id'], 
                                  'mode' => mode['name'],
@@ -37,19 +41,33 @@ def run
                   plane_params = nil
                   if !drm_info['Planes:'].empty? && i % 2 == 1
                     plane = drm_info['Planes:'][0]
-                    result_string += ', with planes => '
                     width, height = mode['name'].match(/(\d+)x(\d+)/).captures
                     plane_params = { 'width' => width, 
                                      'height' => height,
                                      'xyoffset' => [i,i],
                                      'scale' => [0.3, 1.to_f/(1+i).to_f].max,
                                      'format' => plane['formats:'][rand(plane['formats:'].length)]}
-                  else
-                    result_string += ' => '
+                    plane_info_str = "#{plane_params['width']}x#{plane_params['height']}-#{plane_params['format']}"
                   end
                   res, res_string = run_mode_test(mode_params, plane_params)
                   test_result &= res
-                  result_string += res_string + "\n\n"
+                  if res
+                    @results_html_file.add_rows_to_table(res_table,[[connector['id'], 
+                                                                     encoder['id'],
+                                                                     crtc['id'],
+                                                                     "#{mode['name']}@#{mode['refresh (Hz)']}",
+                                                                     plane_info_str ? plane_info_str : 'No plane',
+                                                                     ["Passed",{:bgcolor => "green"}],
+                                                                     res_string]])
+                  else
+                    @results_html_file.add_rows_to_table(res_table,[[connector['id'], 
+                                                                     encoder['id'],
+                                                                     crtc['id'],
+                                                                     "#{mode['name']}@#{mode['refresh (Hz)']}",
+                                                                     plane_info_str ? plane_info_str : 'No plane',
+                                                                     ["Failed",{:bgcolor => "red"}],
+                                                                     res_string]])
+                  end
                   next if !res
               end
           end
@@ -57,16 +75,15 @@ def run
             {'CRTC' => crtc, 'Connector' => connector}.each do |type, drm_obj|
               res, res_string = run_properties_test(type, drm_obj)
               test_result &= res
-              result_string += res_string + "\n\n"
             end
         end
       end
     end
   end
   if test_result
-    set_result(FrameworkConstants::Result[:pass], result_string)
+    set_result(FrameworkConstants::Result[:pass], "DRM Test Passed")
   else
-    set_result(FrameworkConstants::Result[:fail], result_string)
+    set_result(FrameworkConstants::Result[:fail], "DRM Test failed")
   end
 end
 
@@ -76,16 +93,10 @@ end
 #the test passed (true) or failed (false); and the res_string is an informational
 #string regarding the result of the test 
 def get_drm_test_result(test_string)
-  sleep(5)
-  print "Did the test display correctly [y/n]?"
-  answer = STDIN.gets()
-  if answer.downcase().start_with?('y')
-    return [true, " #{test_string} Passed"]
-  else
-    print "Failure reason? "
-    reason = STDIN.gets()
-    return [false, " #{test_string} Failed: #{reason.strip()}"]
-  end
+  sleep(5) #Run for at least 5 secs
+  res_win = ResultWindow.new(test_string)
+  res_win.show()
+  return res_win.get_result()
 end
 
 #Function to run the drm mode tests supported by modetest, takes
@@ -99,15 +110,21 @@ end
 def run_mode_test(mode_params, plane_params=nil)
   test_result = true
   result_string = ''
-  set_mode(mode_params, plane_params) do
-    mode_result, mode_string = get_drm_test_result('set mode test')
-    test_result &= mode_result
-    result_string += mode_string
+  mode_result = FrameworkConstants::Result[:nry]
+  while(mode_result == FrameworkConstants::Result[:nry])
+    set_mode(mode_params, plane_params) do
+      mode_result, mode_string = get_drm_test_result('set mode test')
+      test_result &= mode_result == FrameworkConstants::Result[:pass]
+      result_string += mode_string
+    end
   end
-  fps_res = run_sync_flip_test(mode_params, plane_params) do
-    sf_result, sf_string = get_drm_test_result('sync flip test')
-    test_result &= sf_result
-    result_string += ', ' + sf_string
+  sf_result = FrameworkConstants::Result[:nry]
+  while(sf_result == FrameworkConstants::Result[:nry])
+    fps_res = run_sync_flip_test(mode_params, plane_params) do
+      sf_result, sf_string = get_drm_test_result('sync flip test')
+      test_result &= sf_result == FrameworkConstants::Result[:pass]
+      result_string += ', ' + sf_string
+    end
   end
   if !fps_res
     result_string += ", fps Failed in sync flip test "
@@ -126,38 +143,75 @@ end
 #string regarding the result of the test 
 def run_properties_test(type, drm_obj)
   test_result = true
+  test_string = ''
   obj_id = drm_obj['id']
   props_hash = drm_obj['props:']
-  test_string = "#{type}-#{obj_id} => "
+  test_string = ""
   props_hash.each do |prop, prop_info|
     prop_name = prop.match(/([A-z]+)/).captures[0].strip()
+    @results_html_file.add_paragraph("")
+    res_table = @results_html_file.add_table([["#{type}-#{obj_id}", {:bgcolor => "4863A0", :colspan => "3"}]])
+    @results_html_file.add_rows_to_table(res_table,[[[prop_name,{:bgcolor => "98AFC7"}],   
+                                                     ["Result",{:bgcolor => "98AFC7"}],
+                                                     ["Comment",{:bgcolor => "98AFC7"}]]])
+                                                     
     case prop_info['flags:'].strip()
       when 'enum'
         prop_info['enums:'].each do |e_name, e_val|
-          set_property(obj_id, prop_name, e_val)
-          res, res_string = get_drm_property_test_result(prop_name, e_val, e_name)
-          test_result &= res
+          res = FrameworkConstants::Result[:nry]
+          while(res == FrameworkConstants::Result[:nry])
+            set_property(obj_id, prop_name, prop_info['value:'])
+            set_property(obj_id, prop_name, e_val)
+            res, res_string = get_drm_property_test_result(prop_name, e_val, e_name)
+          end
+          @results_html_file.add_rows_to_table(res_table,[["#{e_val}(#{e_name})",
+                                                           res == FrameworkConstants::Result[:pass] ?
+                                                                   ["Passed",{:bgcolor => "green"}] :
+                                                                   ["Failed",{:bgcolor => "red"}],
+                                                           res_string]])
+          test_result &= res == FrameworkConstants::Result[:pass]
           test_string += ' ,' + res_string
         end
         set_property(obj_id, prop_name, prop_info['value:'])
       when 'bitmask'
         prop_info['values:'].each do |b_name, b_val|
-          set_property(obj_id, prop_name, b_val)
-          res, res_string = get_drm_property_test_result(prop_name, b_val, b_name)
-          test_result &= res
+          res = FrameworkConstants::Result[:nry]
+          while(res == FrameworkConstants::Result[:nry])
+            set_property(obj_id, prop_name, prop_info['value:'])
+            set_property(obj_id, prop_name, b_val)
+            res, res_string = get_drm_property_test_result(prop_name, b_val, b_name)
+          end
+          @results_html_file.add_rows_to_table(res_table,[["#{b_val}(#{b_name})",
+                                                           res == FrameworkConstants::Result[:pass] ?
+                                                                   ["Passed",{:bgcolor => "green"}] :
+                                                                   ["Failed",{:bgcolor => "red"}],
+                                                           res_string]])
+          test_result &= res == FrameworkConstants::Result[:pass]
           test_string += ' ,' + res_string
         end
         set_property(obj_id, prop_name, prop_info['value:'])
       when 'range'
         prop_info['values:'].each do |current_val|
-          set_property(obj_id, prop_name, current_val)
-          res, res_string = get_drm_property_test_result(prop_name, current_val)
-          test_result &= res
+          res = FrameworkConstants::Result[:nry]
+          while(res == FrameworkConstants::Result[:nry])
+            set_property(obj_id, prop_name, prop_info['value:'])
+            set_property(obj_id, prop_name, current_val)
+            res, res_string = get_drm_property_test_result(prop_name, current_val)
+          end
+          @results_html_file.add_rows_to_table(res_table,[["#{current_val}",
+                                                           res == FrameworkConstants::Result[:pass] ?
+                                                                   ["Passed",{:bgcolor => "green"}] :
+                                                                   ["Failed",{:bgcolor => "red"}],
+                                                           res_string]])
+          test_result &= res == FrameworkConstants::Result[:pass]
           test_string += ' ,' + res_string
         end
         set_property(obj_id, prop_name, prop_info['value:'])
-      else 
-         test_string += ", Nothing to do for #{prop}, it is #{prop_info['flags:']}"
+      else
+         @results_html_file.add_rows_to_table(res_table,[[prop,
+                                                          ["Passed",{:bgcolor => "green"}],
+                                                          "Nothing to do for #{prop}, it is #{prop_info['flags:']}"]])
+         test_string += ''
     end
   end
   [test_result, test_string]
@@ -171,16 +225,9 @@ end
 #the test passed (true) or failed (false); and the res_string is an informational
 #string regarding the result of the test 
 def get_drm_property_test_result(prop, prop_val, val_meaning=nil)
-  meaning_string = val_meaning ? "(#{val_meaning})" : ''
-  print "Did the property #{prop} value #{prop_val}#{meaning_string} function correctly [y/n]?"
-  answer = STDIN.gets()
-  if answer.downcase().start_with?('y')
-    return [true, " Property #{prop} value #{prop_val}#{meaning_string} Passed"]
-  else
-    print "Failure reason? "
-    reason = STDIN.gets()
-    return [false, " Property #{prop} value #{prop_val}#{meaning_string} Failed: #{reason.strip()}"]
-  end
+  res_win = ResultWindow.new("#{prop}#{val_meaning ? "(#{val_meaning})" : ''} property test")
+  res_win.show()
+  return res_win.get_result()
 end
 
 
