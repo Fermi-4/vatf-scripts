@@ -8,7 +8,7 @@ require 'net/scp'
 #Returns a hase whose entries are <name>=><value> for each pair found in
 #field_string
 def parse_sep_field(field_string, sep='=')
-  vals = field_string.strip().scan(/([\w ]+)#{sep}(\d+)/)
+  vals = field_string.strip().scan(/([\w \-_]+)#{sep}((?:0x){0,1}\d+)/)
   vals_hash = {}
   vals.each { |c_val| vals_hash[c_val[0].strip()] = c_val[1] }
   vals_hash
