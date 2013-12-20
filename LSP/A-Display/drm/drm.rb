@@ -20,8 +20,8 @@ def run
           res_table = @results_html_file.add_table([["Connector",{:bgcolor => "4863A0"}], 
                                                      ["Encoder", {:bgcolor => "4863A0"}],
                                                      ["CRTC", {:bgcolor => "4863A0"}],
-                                                     ["Plane", {:bgcolor => "4863A0"}],
                                                      ["Mode", {:bgcolor => "4863A0"}],
+                                                     ["Plane", {:bgcolor => "4863A0"}],
                                                      ["Result", {:bgcolor => "4863A0"}],
                                                      ["Comment", {:bgcolor => "4863A0"}]])
           #If planes supported and only 1 mode, repeat mode to test with/wout planes
@@ -111,9 +111,12 @@ def run_mode_test(mode_params, plane_params=nil)
   test_result = true
   result_string = ''
   mode_result = FrameworkConstants::Result[:nry]
+  title_string = "#{mode_params['mode']}@#{mode_params['framerate']}-" \
+                 "#{plane_params ? "#{plane_params['width']}x#{plane_params['height']}-" \
+                                   "#{plane_params['format']}" : 'No plane'}"
   while(mode_result == FrameworkConstants::Result[:nry])
     set_mode(mode_params, plane_params) do
-      mode_result, mode_string = get_drm_test_result('set mode test')
+      mode_result, mode_string = get_drm_test_result("#{title_string} mode test")
       test_result &= mode_result == FrameworkConstants::Result[:pass]
       result_string += mode_string
     end
@@ -121,7 +124,7 @@ def run_mode_test(mode_params, plane_params=nil)
   sf_result = FrameworkConstants::Result[:nry]
   while(sf_result == FrameworkConstants::Result[:nry])
     fps_res = run_sync_flip_test(mode_params, plane_params) do
-      sf_result, sf_string = get_drm_test_result('sync flip test')
+      sf_result, sf_string = get_drm_test_result("#{title_string} sync flip test")
       test_result &= sf_result == FrameworkConstants::Result[:pass]
       result_string += ', ' + sf_string
     end
