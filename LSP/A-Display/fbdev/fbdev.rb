@@ -1,5 +1,6 @@
 # -*- coding: ISO-8859-1 -*-
 require File.dirname(__FILE__)+'/../../default_test_module'
+require File.dirname(__FILE__)+'/../../../lib/result_forms'
 require File.dirname(__FILE__)+'/fbdev_utils'   
 
 include LspTestScript
@@ -35,19 +36,26 @@ def run
     'sink' => 'fbdevsink ' + dev_node
      
   }
-  if fbset(test_settings)
-    gst_play_test_pattern(gst_settings)
-    print "Did the video display correctly [y/n]?"
-    answer = STDIN.gets()
-    if answer.downcase().start_with?('y')
-      set_result(FrameworkConstants::Result[:pass], "Test Passed")
+  test_string = "#{@test_params.params_chan.width[0]}x" \
+                "#{@test_params.params_chan.height[0]}@" \
+                "#{@test_params.params_chan.frame_rate[0]}-" \
+                "#{@test_params.params_chan.format[0]} fbdev test"
+  test_result = FrameworkConstants::Result[:nry]
+  while(test_result == FrameworkConstants::Result[:nry])
+    if fbset(test_settings)
+      gst_play_test_pattern(gst_settings)
+      res_win = ResultWindow.new(test_string)
+      res_win.show()
+      test_result, test_comment = res_win.get_result()
+      if test_result == FrameworkConstants::Result[:pass]
+        set_result(test_result, "Test Passed #{test_comment}")
+      elsif test_result == FrameworkConstants::Result[:fail]
+        set_result(test_result, "Test Failed, #{test_comment}")
+      end
     else
-      print "Failure reason? "
-      reason = STDIN.gets()
-      set_result(FrameworkConstants::Result[:fail], "Test Failed, #{reason.strip()}")
+      set_result(FrameworkConstants::Result[:fail], "Test Failed, not able to change mode through fbdev")
+      test_result = FrameworkConstants::Result[:fail]
     end
-  else
-    set_result(FrameworkConstants::Result[:fail], "Test Failed, not able to change mode through fbdev")
   end
   ensure
     restore_settings(default_settings) if default_settings
