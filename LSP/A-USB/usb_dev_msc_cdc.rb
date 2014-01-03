@@ -29,6 +29,7 @@ def run
   test_command = ''
 
   $result = 0
+  $result_message = ""
   command = "modprobe -r g_ether"
   #@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   #command = "modprobe -r g_file_storage"
@@ -49,6 +50,8 @@ def run
       test_command = test_cmd[host_type]
       else
          puts "Unsupported Host Device type in test parameter - #{host_type}\n"
+         $result = 1
+         $result_message = "Testcase has an unsupported device type as parameter"
          set_result(FrameworkConstants::Result[:fail], "Testcase has an unsupported device type as parameter.")
          return
     end
@@ -67,6 +70,7 @@ def run
       @stop_test=true
     else
       $result = 1
+      $result_message = "#{cmds} does not match any case"
       puts "#{cmds} does not match any case\n"
      if (!simultaneous_host_device_test)
        @stop_test=true
@@ -76,7 +80,7 @@ def run
   if $result == 0
     set_result(FrameworkConstants::Result[:pass], "Testcase Result is PASS.")  
     else
-    set_result(FrameworkConstants::Result[:fail], "Testcase Result is FAIL.")
+    set_result(FrameworkConstants::Result[:fail], $result_message)
     command = "modprobe -r g_ether"
     @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
     command = "modprobe -r g_mass_storage"
@@ -97,14 +101,13 @@ end
 
 
 def create_share_memory(command, response_pattern, next_command, timeout)
-
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt, timeout)
   response = @equipment['dut1'].response
   if response.include?("#{response_pattern}")
     return next_command
   else
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "#{command} command could not execute")
+    $result_message = "#{command} command could not be executed"
     if (@test_params.params_control.instance_variable_defined?(:@simultaneous_host))
      @stop_test=true
     end
@@ -123,19 +126,19 @@ def usb_dev_msc()
   @equipment['server2'].send_sudo_cmd('bash -c "df | grep /media > media_string1.txt"', @equipment['server2'].prompt , 30)
 
   command = "depmod -a"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,3)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,20)
 
   system ("sleep 1")
 
   #command = "modprobe -l"
   command = "find /lib/modules -name *.ko"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,20)
   response = @equipment['dut1'].response
   if response.include?('g_mass_storage.ko')
     puts "g_mass_storage USB Module is available"
   else
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "g_mass_storage.ko module is not available.")  
+    $result_message = "g_mass_storage.ko module is not available"
      if (@test_params.params_control.instance_variable_defined?(:@simultaneous_host))
      @stop_test=true
     end
@@ -144,7 +147,7 @@ def usb_dev_msc()
   end
 
   command = "dmesg -c"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,30)
 
   system ("sleep 2")
 
@@ -152,19 +155,26 @@ def usb_dev_msc()
   
   case 
     when $cmd.match(/_msc_mmc/)
-      
-      command = "umount /media/mmcblk0p1"
+      device = get_sd_partition.strip+'p3'
+      sd_dev = '/dev/'+device
+      @equipment['dut1'].send_cmd("ls -al #{sd_dev}",@equipment['dut1'].prompt,1)
+      if (@equipment['dut1'].response.include?("No such file or directory"))
+        $result = 1
+        $result_message = "MMC/SD does not contain a third partition"
+        #set_result(FrameworkConstants::Result[:fail], "MMC/SD does not contain a third partition.")  
+        return
+      end
+      sd_drive = '/media/'+device
+      command = "umount "+sd_drive
       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)      
-      command = "modprobe g_mass_storage file=/dev/mmcblk0p1 stall=0 removable=1"
+      command = "modprobe g_mass_storage file="+sd_dev+" stall=0 removable=1"
     
     when $cmd.match(/_msc_usb/)
-
       command = "umount /media/sda1"
       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
       command = "modprobe g_mass_storage file=/dev/sda1 stall=0 removable=1"
 
     when $cmd.match(/_msc_slave/)
-
       command = create_share_memory("dd if=/dev/zero of=/dev/shm/disk bs=1M count=52", "52+0 records", "mknod /dev/loop0 b 7 0", 10)
       command = create_share_memory(command, "#", "losetup /dev/loop0 /dev/shm/disk", 5)
       command = create_share_memory(command, "#", "echo $?", 2)
@@ -176,14 +186,14 @@ def usb_dev_msc()
 
     else
       $result = 1
-      puts "#{$cmd} does not match any case\n"
+      $result_message = "$cmd does not match any case"
     end
 
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   response = @equipment['dut1'].response
   if response.include?('Error')
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "g_mass_storage.ko insertion fialed.")  
+    $result_message = "g_mass_storage.ko insertion failed"
      #if (simultaneous_host_device_test)
     if (@test_params.params_control.instance_variable_defined?(:@simultaneous_host))
      @stop_test=true
@@ -200,19 +210,16 @@ def usb_dev_msc()
   mscmount= find_newmedia()
   puts "mscdev =#{mscdev}"
   puts "mscmount =#{mscmount}"
-
   if mscdev == mscmount then
 
     puts "Host does not detect any USB device"
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "Testcase Result is FAIL.")
+    $result_message = "Host PC did not detect a USB device"
     # if (simultaneous_host_device_test)
      if (@test_params.params_control.instance_variable_defined?(:@simultaneous_host))
      @stop_test=true
     end
-
     return
-  
   end
 
   @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
@@ -222,7 +229,7 @@ def usb_dev_msc()
   @equipment['server2'].send_sudo_cmd("mount #{mscdev} #{mscmount}", @equipment['server2'].prompt , 30)
 
   MSC_Unmount_Device("#{mscdev}","#{mscmount}")
-case
+  case
   when $cmd.match(/_msc_slave/)  
     MSC_Mount_Device("#{mscdev}","#{mscmount}")
     MSC_Raw_Write("#{mscmount}","50")
@@ -230,6 +237,7 @@ case
     MSC_Mount_Device("#{mscdev}","#{mscmount}")  
     MSC_Raw_Read("#{mscmount}","50")
 
+    puts "DONE Mount, raw read, raw write\n"
   else
   
     MSC_Mount_Device("#{mscdev}","#{mscmount}")
@@ -270,29 +278,28 @@ end
 def usb_dev_cdc()
 
   command = "depmod -a"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,3)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,20)
 
   system ("sleep 1")
 
   #command = "modprobe -l"
   command = "find /lib/modules -name *.ko"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,20)
   response = @equipment['dut1'].response
   if response.include?('g_ether.ko')
     puts "g_ether USB Module is available"
   else
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "g_ether.ko module is not available.")  
+    $result_message = "g_ether.ko module is not available"
     #if (simultaneous_host_device_test)
     if (@test_params.params_control.instance_variable_defined?(:@simultaneous_host))
      @stop_test=true
     end
-
     return     
   end
 
   command = "dmesg -c"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,2)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,30)
   @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt,10)
 
   system ("sleep 2")
@@ -302,12 +309,11 @@ def usb_dev_cdc()
   response = @equipment['dut1'].response
   if response.include?('not found')
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "Module insertion is failed.")  
+    $result_message = "Module insertion failed"
     #if (simultaneous_host_device_test)
     if (@test_params.params_control.instance_variable_defined?(:@simultaneous_host))
      @stop_test=true
     end
-
     return     
   end
 
@@ -320,16 +326,14 @@ def usb_dev_cdc()
     puts "g_ether module inserted succesfully"
   else
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "g_ether module insertion fialed.")  
+    $result_message = "g_ether module insertion failed"
     if (@test_params.params_control.instance_variable_defined?(:@simultaneous_host))
      @stop_test=true
   end
   return
 
   end
-  puts "SERVER RESPONSE is #{response_server}\n"
   if (response_server.include?('cdc_ether') || response.server.include?('cdc_eem'))
-    puts "SUCCESS"
     puts "g_ether registered on host succesfully"
     if (response_server.include?('cdc_ether'))
       usb_num=/usb(\d+)\s?:\s?register.*cdc_ether.*/.match(response_server).captures
@@ -342,11 +346,10 @@ def usb_dev_cdc()
   else
     puts "FAILURE"
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "Ethernet gadget did not register on host side. Please check connections")  
+    $result_message = "Ethernet gadget did not register on host side. Please check connections."
     if (@test_params.params_control.instance_variable_defined?(:@simultaneous_host))
      @stop_test=true
     end
-
     return     
   end
   
@@ -357,7 +360,7 @@ def usb_dev_cdc()
   response = @equipment['dut1'].response
   if response.include?('No such device')
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "DUT ip address is not assigned properlly.")  
+    $result_message = "DUT IP Address is not assigned properly"
     return 
   end
 
@@ -368,7 +371,7 @@ def usb_dev_cdc()
   response = @equipment['server2'].response
   if response.include?('No such device')
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "Linux system ip address is not assigned properlly.")  
+    $result_message = "Linux system ip address is not assigned properly"
     return 
   end
 
@@ -394,8 +397,7 @@ def usb_dev_cdc()
 
     else
       $result = 1
-      puts "#{$cmd} does not match any case\n"
-
+      $result_message = "#{cmd} does not match any case"
   end
 
 #  Remove the ethernet gadget module
@@ -413,10 +415,10 @@ def assign_server_ip(server_usb_interface)
   response = @equipment['server2'].response
   if response.include?('No such device')
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "Linux system ip address is not assigned properly.")
+    $result_message = "Linux system ip address is not assigned properly"
     return
   end
-  command ="ping -I #{server_usb_interface} #{@equipment['dut1'].usb_ip}"
+  command ="ping -I #{server_usb_interface} #{@equipment['dut1'].usb_ip} -c 3"
   @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt , 5)
   system ("sleep 1")
 end
@@ -427,17 +429,16 @@ def pingtest_cdc(server_usb_interface)
   packetsize = [64,4096,65500]
   assign_server_ip(server_usb_interface) 
   packetsize.each { |psize| 
-  
   #Ping from DUT to host
 
   command ="ping -c 10 #{@equipment['server2'].usb_ip} -s #{psize}"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,15)
   response = @equipment['dut1'].response
-  if response.include?('bytes from')
+  if response.include?(' 0% packet loss')
     puts "Ping from DUT to host is successful "
     else
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "Ping from DUT to host is failed.")  
+    $result_message = "Ping from DUT to host failed"
     return 
   end
 
@@ -446,11 +447,11 @@ def pingtest_cdc(server_usb_interface)
   command="ping -c 10 #{@equipment['dut1'].usb_ip} -s #{psize}"
   @equipment['server2'].send_cmd(command, @equipment['server2'].prompt,15)
   response = @equipment['server2'].response
-  if response.include?('bytes from')
+  if response.include?(' 0% packet loss')
     puts "Ping from host to DUT is successful "
   else
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "Ping from host to DUT is failed.")  
+    $result_message = "Ping from host to DUT failed"
     return 
   end
 
@@ -469,11 +470,11 @@ def floodpingtest_cdc(server_usb_interface)
   command="ping -f -c 10 #{@equipment['dut1'].usb_ip} -s #{psize}"
   @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt,15)
   response = @equipment['server2'].response
-  if response.include?('0% packet loss')
+  if response.include?(' 0% packet loss')
     puts "Flood ping from host to DUT is successful "
   else
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "Flood ping from host to DUT is failed.")
+    $result_message = "Flood ping from host to DUT failed"
     return
   end
 
@@ -502,7 +503,7 @@ def iperftest_cdc(server_usb_interface)
     puts "iperf application started succesfully"
   else
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "iperf application initialisation failed.")  
+    $result_message = "IPERF application initialization failed"
     return 
   end
 
@@ -511,7 +512,7 @@ def iperftest_cdc(server_usb_interface)
   response = @equipment['server2'].response
   if response.include?('Connection refused')
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "iperf application is not started on DUT.")  
+    $result_message = "IPERF application could not be started on DUT"
     return 
   end
   
@@ -522,7 +523,6 @@ def iperftest_cdc(server_usb_interface)
 
 #  iperf test from DUT to host
 
-  puts "iperf test from dut to host is going to start"
   windowsize = [8,16,32,64,128]
   assign_server_ip(server_usb_interface)
   output_string = ''
@@ -535,12 +535,12 @@ def iperftest_cdc(server_usb_interface)
 
   command ="ps"
   @equipment['server2'].send_cmd(command, @equipment['server2'].prompt,3)
-  response = @equipment['dut1'].response
+  response = @equipment['server2'].response
   if response.include?('iperf')
     puts "iperf application started succesfully"
   else
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "iperf application initialisation failed.")  
+    $result_message = "IPERF application initialization failed on server"
     return 
   end
 
@@ -549,7 +549,7 @@ def iperftest_cdc(server_usb_interface)
   response = @equipment['dut1'].response
   if response.include?('Connection refused')
     $result = 1
-    set_result(FrameworkConstants::Result[:fail], "iperf application is not started on host.")  
+    $result_message = "IPERF application not started on host"
     return 
   end
   
@@ -558,6 +558,11 @@ def iperftest_cdc(server_usb_interface)
   system ("kill -9 $(pidof iperf)")
   system ("ps | grep iperf")
   match_string=response.scan(/\d+.\d\sMbits\/sec/)
+  if (match_string.length == 0)
+    $result = 1
+    $result_message = "IPERF response does not have performance numbers for #{wsize}"
+    return 
+  end
   throughput = match_string[0].split(' Mbits/sec')[0].to_f+match_string[1].split(' Mbits/sec')[0].to_f
   output_string += " Packetsize="+wsize.to_s+"_Throughput="+throughput.to_s
   puts "Throughput is #{throughput}\n"
@@ -642,7 +647,6 @@ def MSC_Raw_Write(mscmount, mbsize)
   @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
   @equipment['server2'].send_sudo_cmd("time dd of=#{mscmount}/#{mbsize}mb if=/dev/zero bs=1M count=#{mbsize}", @equipment['server2'].prompt , 30)
   response = @equipment['server2'].response
-  puts "RESPONSE is #{response}\n"
   @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
   @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
   system ("sleep 5")
@@ -698,4 +702,39 @@ def stop_usbhost_test
   if @usbhost_thread
     @usbhost_thread["stop"]=true
   end
+end
+
+# Function to find the block which matches SD type to differentiate between SD and EMMC block types
+def get_sd_partition
+  cmd = "ls /dev/mmcblk* |grep boot |head -1 |sed s'/boot[0-9]*//'"
+  @equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt)
+  response = @equipment['dut1'].response
+  dev_node = get_stripped_partition(response)
+  if (dev_node == "")
+   # the target does not have emmc so just find out the partition with boot sector
+   mmc_cmd = "ls /dev/mmcblk* |grep -E \".*blk[[:digit:]]+$\" |head -1"
+   @equipment['dut1'].send_cmd(mmc_cmd, @equipment['dut1'].prompt)
+   mmc_response = @equipment['dut1'].response
+   mmc_node = get_stripped_partition(mmc_response)
+  else
+    cmd = "ls /dev/mmcblk* |sed s\",/dev/#{dev_node}.*$,,g\" |grep -E \".*blk[[:digit:]]+$\" |head -1"
+    @equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt)
+    response = @equipment['dut1'].response
+    mmc_node = get_stripped_partition(response)
+  end
+  if mmc_node == ""
+    set_result(FrameworkConstants::Result[:fail], "No SD or MMC block device is found on host.")
+    return
+  else
+    return mmc_node
+  end
+end
+
+# Function to remove cmd, dut prompt from input which is dut_response and return mmc device node name
+def get_stripped_partition(response)
+  response = response.lines.to_a[1..-1].join.strip
+  response = response.gsub(/root@.*#/,'')
+  response = response.gsub('/dev/','')
+  response = response.strip
+  return response
 end
