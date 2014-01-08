@@ -88,6 +88,20 @@ module EvmData
     get_cmd(params)
   end
 
+  def get_expected_volt_reductions(params)
+    machines = {}
+    machines['am335x-evm']  = {'0.0' => {'VDD_CORE' => 0.95, 'VDD_MPU' => 0.95}}
+    machines['am335x-sk']   = {'0.0' => nil}
+    machines['beaglebone']  = {'0.0' => nil}
+    machines['beaglebone-black'] = {'0.0' => nil}
+    machines['dra7xx-evm']  = {'0.0' => nil}
+    machines['omap5-evm']   = {'0.0' => nil}
+    machines['am43xx-epos'] = {'0.0' => {'VDD_CORE' => 0.95, 'VDD_MPU' => 0.95}}
+    machines['am43xx-gpevm'] = {'0.0' => nil}
+    params.merge!({'dict' => machines})
+    get_cmd(params)
+  end
+
 
   def get_cmd(params)
     raise "'platform' and 'version' are both mandatory params" if !params.key?('platform') or !params.key?('version')
