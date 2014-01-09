@@ -281,6 +281,7 @@ module LspTestScript
     boot_params['var_use_default_env']  = @test_params.var_use_default_env  if @test_params.instance_variable_defined?(:@var_use_default_env)
     boot_params['bootargs_append'] = @test_params.var_bootargs_append if @test_params.instance_variable_defined?(:@var_bootargs_append)
     boot_params['bootargs_append'] = @test_params.params_control.bootargs_append[0] if @test_params.params_control.instance_variable_defined?(:@bootargs_append)
+    boot_params['bootargs'] = @test_params.var_bootargs if @test_params.instance_variable_defined?(:@var_bootargs)
 
     translated_boot_params = translate_boot_params(boot_params)
 
@@ -352,6 +353,9 @@ module LspTestScript
     check_dut_booted()
     install_modules(translated_boot_params)
     install_user_binaries(translated_boot_params)
+    # HACK to work around SGX bug. DO NOT PUSH
+    @equipment['dut1'].send_cmd("rmmod bufferclass_ti omaplfb pvrsrvkm", @equipment['dut1'].prompt)
+    
   end
     
     def run      
