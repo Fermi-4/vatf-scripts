@@ -353,9 +353,6 @@ module LspTestScript
     check_dut_booted()
     install_modules(translated_boot_params)
     install_user_binaries(translated_boot_params)
-    # HACK to work around SGX bug. DO NOT PUSH
-    @equipment['dut1'].send_cmd("rmmod bufferclass_ti omaplfb pvrsrvkm", @equipment['dut1'].prompt)
-    
   end
     
     def run      
