@@ -257,3 +257,20 @@ def parse_wav_audio_info(wav_info)
   result['format'] = "S#{result['sample_length']}_#{endian}"
   result
 end
+
+#Function to set the volume of an audio control, takes
+#  level, float in the range [0,1] that specify the volume (0-no volume, 1-max volume)
+#  control, mixer control whose volume will be set
+#  sys, object used to communicate with the system where the volume of the control will
+#       be set
+#Returns, true if the volume was set successfully false otherwise
+def set_volume(level=0.75, control='PCM', sys=@equipment['dut1'])
+  ctrl = control.upcase
+  sys.send_cmd("amixer sget '#{ctrl}'", sys.prompt, 10)
+  vol_limit = sys.response.match(/Limits:\s*(?:playback|capture)\s*\d+\s*-\s*(\d+)/i).captures[0].to_i
+  new_volume = (vol_limit*level).ceil().to_int
+  new_volume = level < 0 ? 0 : level > 1 ? vol_limit : new_volume
+  sys.send_cmd("amixer sset '#{ctrl}' #{new_volume}", sys.prompt, 10)
+  new_level = sys.response.match(/(?:playback|capture)\s*(\d+).*?dB\]/i).captures[0].to_i
+  new_volume == new_level
+end
