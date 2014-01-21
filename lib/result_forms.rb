@@ -9,7 +9,7 @@ class ResultFrame < Wx::Frame
   attr_reader :result
   
   def initialize(title)
-    @result = ''
+    @result = [FrameworkConstants::Result[:nry], '']
     super(nil, -1, title)
     @res_panel = Panel.new(self)
     @c_label = StaticText.new(@res_panel, -1, 'Comment', 
@@ -64,21 +64,21 @@ class ResultFrame < Wx::Frame
   
   #Function to handle pass button click events
   def pass_button_click()
-    @result=[FrameworkConstants::Result[:pass], @c_textbox.get_value]
+    @result = [FrameworkConstants::Result[:pass], @c_textbox.get_value]
     self.close()
   end
   
   #Function to handle fail button click events
   def fail_button_click()
-    @result=[FrameworkConstants::Result[:fail], @c_textbox.get_value]
+    @result = [FrameworkConstants::Result[:fail], @c_textbox.get_value]
     self.close()
   end
   
   #Function to handle retry button click events
   def retry_button_click()
-    @result=[FrameworkConstants::Result[:nry], @c_textbox.get_value]
     self.close()
   end
+  
 end
 
 #App class that will be forked do not call directly
