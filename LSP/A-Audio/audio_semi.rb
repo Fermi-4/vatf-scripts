@@ -19,7 +19,7 @@ def run
   @equipment['server1'].send_cmd("gst-launch-0.10 filesrc location=#{ref_path} ! wavparse ! filesink location=#{ref_pcm_path}", @equipment['server1'].prompt, file_op_wait)
   @equipment['server1'].send_cmd("file #{ref_path}",@equipment['server1'].prompt,file_op_wait)
   wav_info = @equipment['server1'].response
-  ['PCM', 'HP DAC', 'PGA'].each do |ctrl|
+  ['PCM', 'HP DAC', 'PGA', 'DAC', 'HP Analog'].each do |ctrl|
     puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.75,ctrl)
   end
   audio_info, duration = case(wav_info)
