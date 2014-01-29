@@ -80,10 +80,10 @@ module EvmData
     machines['am335x-sk']   = {'0.0' => '1000000'}
     machines['beaglebone']  = {'0.0' => '720000'}
     machines['beaglebone-black'] = {'0.0' => '1000000'}
-    machines['dra7xx-evm']  = {'0.0' => '1500000'}
+    machines['dra7xx-evm']  = {'0.0' => '1176000'}
     machines['omap5-evm']   = {'0.0' => '1500000'}
-    machines['am43xx-epos'] = {'0.0' => '1200000'}
-    machines['am43xx-gpevm'] = {'0.0' => '1200000'}
+    machines['am43xx-epos'] = {'0.0' => '1000000'}
+    machines['am43xx-gpevm'] = {'0.0' => '1000000'}
     params.merge!({'dict' => machines})
     get_cmd(params)
   end
