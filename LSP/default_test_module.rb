@@ -594,5 +594,34 @@ module LspTestScript
   end
 
    
+  # export ltp-ddt path so the script/function can be called from vatf-script
+  def export_ltppath
+    ltppath = '/opt/ltp'
+    if !dut_dir_exist?(ltppath+"/testcases/bin/ddt")
+      raise "LTP-DDT is not in the file sytem. Please install LTP-DDT into the target filesystem"
+    end
+    @equipment['dut1'].send_cmd("export LTPPATH=/opt/ltp", @equipment['dut1'].prompt, 20)
+    cmd = "export PATH=\"${PATH}:${LTPPATH}/testcases/bin\"$( find ${LTPPATH}/testcases/bin/ddt -type d -exec printf \":\"{} \\; )"
+    @equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("echo $PATH", @equipment['dut1'].prompt, 10)
+
+  end
+
+  # check if directory or file exist in dut target
+  def dut_dir_exist?(directory)
+    @equipment['dut1'].send_cmd("ls #{directory} > /dev/null", @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
+    !@equipment['dut1'].timeout?
+  end
+
+  def save_dut_orig_path()
+    @equipment['dut1'].send_cmd("echo $PATH", @equipment['dut1'].prompt, 10)
+    dut_orig_path = @equipment['dut1'].response.match(/^\/.*/)
+  end
+
+  def restore_dut_path(dut_orig_path)
+    @equipment['dut1'].send_cmd("export PATH=#{dut_orig_path} ", @equipment['dut1'].prompt, 10)
+  end
+
 end
 
