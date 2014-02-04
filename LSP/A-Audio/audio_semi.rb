@@ -19,7 +19,16 @@ def run
   @equipment['server1'].send_cmd("gst-launch-0.10 filesrc location=#{ref_path} ! wavparse ! filesink location=#{ref_pcm_path}", @equipment['server1'].prompt, file_op_wait)
   @equipment['server1'].send_cmd("file #{ref_path}",@equipment['server1'].prompt,file_op_wait)
   wav_info = @equipment['server1'].response
-  ['PCM', 'HP DAC', 'PGA', 'DAC', 'HP Analog'].each do |ctrl|
+  #Turning on playout/capture ctrls
+  [['SP Driver', 0], 'SP Left', 'SP Right', 'Output Left From Left DAC', 'Output Right From Right DAC',
+   ['HP Driver',0], 'HP Left', 'HP Right'].each do |ctrl|
+    puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl)
+  end
+  cset_state('on','ADC Capture Switch')
+  set_state('MIC1RP P-Terminal','FFR 10 Ohm') if @equipment['dut1'].name == 'am43xx-epos'
+  #Setting volume
+  set_volume(0, 'ADC')
+  ['PCM', 'HP DAC', 'PGA', 'DAC', 'HP Analog', 'SP Analog'].each do |ctrl|
     puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.75,ctrl)
   end
   audio_info, duration = case(wav_info)
@@ -30,7 +39,8 @@ def run
                              raise "Unable to parse audio info for #{@test_params.params_chan.file_url[0]}"
                            end
   rec_duration = duration + 2
-  rec_dev_info = @equipment['dut1'].name.gsub(/\-.*?$/i,'').gsub(/beaglebone/i,'am335x')
+  @equipment['dut1'].send_cmd("cat /proc/device-tree/model | grep '.*'", @equipment['dut1'].prompt,10)
+  rec_dev_info = @equipment['dut1'].response.match(/^TI\s*([^\n\r]+)/).captures[0].gsub(/\s*/,'')
   play_dev_info = rec_dev_info
   rec_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@rec_device)
   play_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@play_device)
