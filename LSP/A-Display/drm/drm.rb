@@ -45,7 +45,7 @@ def run
                     plane_params = { 'width' => width, 
                                      'height' => height,
                                      'xyoffset' => [i,i],
-                                     'scale' => [0.3, 1.to_f/(1+i).to_f].max,
+                                     'scale' => [0.125, 1.to_f/(1+i).to_f].max,
                                      'format' => plane['formats:'][rand(plane['formats:'].length)]}
                     plane_info_str = "#{plane_params['width']}x#{plane_params['height']}-#{plane_params['format']}"
                   end
