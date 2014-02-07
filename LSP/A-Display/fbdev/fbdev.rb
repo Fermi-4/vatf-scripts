@@ -40,9 +40,23 @@ def run
                 "#{@test_params.params_chan.height[0]}@" \
                 "#{@test_params.params_chan.frame_rate[0]}-" \
                 "#{@test_params.params_chan.format[0]} fbdev test"
+  omapdss_displays = find_omapdss_connected_displays()
+  if !omapdss_displays.empty?
+    toggle_matrix_gui('stop')
+    omapdss_displays.each{|disp| toggle_omapdss_connected_displays(disp, 0)}  
+    set_omapdss_fb_size(1920*1200*4,
+                      File.basename(test_settings['fb']))
+  end
+  omapdss_displays.each do |disp|
+    set_omapdss_timings(test_settings.merge({'display' => disp}))
+  end
   test_result = FrameworkConstants::Result[:nry]
   while(test_result == FrameworkConstants::Result[:nry])
     if fbset(test_settings)
+      if !omapdss_displays.empty?
+        omapdss_displays.each{|disp| toggle_omapdss_connected_displays(disp, 1)}
+        toggle_matrix_gui('start')
+      end
       gst_play_test_pattern(gst_settings)
       res_win = ResultWindow.new(test_string)
       res_win.show()
