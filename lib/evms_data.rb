@@ -28,7 +28,7 @@ module EvmData
     #20 VDDSHV6	1.8 / 		R496	J34	
     power_data['am335x-evm']  =  {'power_domains' => ['VDD_CORE', 'VDD_MPU', 'VDDS_RTC', 'VDDS_DDR', 'VDDS', 'VDDS_SRAM_CORE_BG', 'VDDS_SRAM_MPU_BB', 'VDDS_PLL_DDR', 'VDDS_PLL_CORE_LCD', 'VDDS_PLL_MPU', 'VDDS_OSC', 'VDDA_1P8V_USB0_1', 'VDDS_A3P3V_USB0_1', 'VDDA_ADC', 'VDDSHV1', 'VDDSHV2', 'VDDSHV3', 'VDDSHV4', 'VDDSHV5', 'VDDSHV6'],
                                  'domain_resistors' => {'VDD_CORE'=>'0.05', 'VDD_MPU'=>'0.05', 'VDDS_RTC'=>'2.0', 'VDDS_DDR'=>'0.24', 'VDDS'=>'0.24', 'VDDS_SRAM_CORE_BG'=>'2.0', 'VDDS_SRAM_MPU_BB'=>'2.0', 'VDDS_PLL_DDR'=>'2.0', 'VDDS_PLL_CORE_LCD'=>'2.0', 'VDDS_PLL_MPU'=>'2.0', 'VDDS_OSC'=>'2.0', 'VDDA_1P8V_USB0_1'=>'1.0', 'VDDS_A3P3V_USB0_1'=>'2.0', 'VDDA_ADC'=>'1.0', 'VDDSHV1'=>'0.24', 'VDDSHV2'=>'0.24', 'VDDSHV3'=>'0.24', 'VDDSHV4'=>'0.24', 'VDDSHV5'=>'0.24', 'VDDSHV6'=>'0.24'}}
-    power_data['am43xx-epos'] =  {'power_domains' => ['VDD_CORE', 'VDD_MPU', 'VDDS_DDR', 'VDDS_SRAM_CORE_BG', 'VDDS_SRAM_MPU_BB',
+    power_data['am43xx-epos_alpha'] =  {'power_domains' => ['VDD_CORE', 'VDD_MPU', 'VDDS_DDR', 'VDDS_SRAM_CORE_BG', 'VDDS_SRAM_MPU_BB',
                                                       'VDDS_PLL_DDR', 'VDDS_PLL_CORE_LCD', 'VDDS_PLL_MPU', 'VDDS_OSC', 'VDDS_CTM',
                                                       'VDDA_MC_ADC', 'VDDA_TS_ADC', 'VDDS', 'VDDA1P8V', 'VDDA3P3V',
                                                       'VDDSHV1', 'VDDSHV2', 'VDDSHV3', 'VDDSHV4', 'VDDSHV5', 'VDDSHV6', 
@@ -43,6 +43,13 @@ module EvmData
                                                        'VDDSHV6' => '1', 'VDDSHV7' => '1', 'VDDSHV8' => '1', 'VDDSHV9' => '1',
                                                        'VDDSHV10' => '1', 'VDDSHV11' => '1', 'VDDSHV12' => '1', 
                                                        'VDD_TPM' => '2', 'VDDS_TPM' => '2'}}
+    power_data['am43xx-epos'] =  {'power_domains' => ['VDD_CORE', 'VDD_MPU', 'VDDS_DDR', 'V1_8D_AM437X', 'V3_3D_AM437X'],
+                                  'domain_resistors' => {'VDD_CORE' => '0.05', 'VDD_MPU' => '0.05', 'VDDS_DDR' => '0.05',
+                                                          'V1_8D_AM437X' => '0.1', 'V3_3D_AM437X' => '0.1'}}
+    power_data['am43xx-gpevm'] =  {'power_domains' => ['VDD_CORE', 'VDD_MPU', 'VDDS_DDR', 'V1_8D_AM437X', 'V3_3D_AM437X', 'VDDS_DDR_MEM'],
+                                   'domain_resistors' => {'VDD_CORE' => '0.05', 'VDD_MPU' => '0.05', 'VDDS_DDR' => '0.05',
+                                                          'V1_8D_AM437X' => '0.1', 'V3_3D_AM437X' => '0.1', 'VDDS_DDR_MEM' => '0.05'}}
+    
 
     # am37x related data
     #Power Domain   		Shunt   Jumper
