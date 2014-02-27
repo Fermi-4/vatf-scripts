@@ -25,7 +25,9 @@ def run
     puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl)
   end
   cset_state('on','ADC Capture Switch')
-  set_state('MIC1RP P-Terminal','FFR 10 Ohm') if @equipment['dut1'].name == 'am43xx-epos'
+  if @equipment['dut1'].name == 'am43xx-epos'
+    ['MIC1RP P-Terminal', 'MIC1LP P-Terminal'].each {|ctrl| set_state('FFR 10 Ohm', ctrl)}
+  end
   #Setting volume
   set_volume(0, 'ADC')
   ['PCM', 'HP DAC', 'PGA', 'DAC', 'HP Analog', 'SP Analog'].each do |ctrl|
@@ -142,7 +144,7 @@ def get_file_from_url(file_url)
   @equipment['server1'].send_cmd("wget #{url} -O #{host_path}", @equipment['server1'].prompt, 100) if @equipment['server1'].response.match(/failed/im)
   raise "Host is unable to fetch file from #{url}" if @equipment['server1'].response.match(/error/im)
   @equipment['dut1'].send_cmd("wget #{url} -O #{dut_path}", @equipment['dut1'].prompt, 100)
-  raise "Dut is unable to fetch file from #{url}" if @equipment['dut1'].response.match(/error/im)
+ # raise "Dut is unable to fetch file from #{url}" if @equipment['dut1'].response.match(/error/im)
  	[host_path, dut_path]
 end
 
