@@ -34,6 +34,11 @@ def get_apps_list(name)
   apps
 end
 
+def get_golden_json
+  @golden_json = Dir.glob(File.join(@apps_dir, "**", "golden", "*.{json}"))
+  @golden_json
+end
+
 def create_subtests_results_table
   table_title = Array.new()
   table_title << ['Test Case', {:width => "60%"}]
