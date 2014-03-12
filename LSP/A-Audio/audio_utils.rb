@@ -248,7 +248,8 @@ end
 def parse_wav_audio_info(wav_info)
   result = {}
   result['endianness'] = wav_info.match(/(\w+)-endian/i).captures[0]
-  result['sample_length'] = wav_info.match(/(\w+)\s*bit/i).captures[0].to_i
+  result['sample_length'] = 32
+  result['sample_length'] = wav_info.match(/(\w+)\s*bit/i).captures[0].to_i if wav_info.match(/bit/i)
   result['channels'] = 1
   result['channels'] = 2 if wav_info.match(/stereo/i)
   result['rate'] = wav_info.match(/(\d+)\s*Hz/i).captures[0].to_i
@@ -288,7 +289,7 @@ def set_state(state, ctrl, sys=@equipment['dut1'])
   ctrl_arr[1..-1].each {|c_info| local_ctrl += " '#{c_info}'"}
   sys.send_cmd("amixer sget #{local_ctrl}", sys.prompt, 10)
   return true if sys.response.match(/Unable\s*to\s*find.*?#{ctrl_arr[0]}/im)
-  sys.send_cmd("amixer sset #{local_ctrl} #{state}", sys.prompt, 10)
+  sys.send_cmd("amixer sset #{local_ctrl} '#{state}'", sys.prompt, 10)
   new_state = sys.response.match(/(?:playback|capture|item\d+:).*?(#{state})\]*/i).captures[0].to_i
   state == new_state
 end
