@@ -64,9 +64,13 @@ def get_param_value_local(equipment_ref, variable)
 end
 
 def util_get_ip_addr(equipment, dev='dut1', iface_type='eth')
+  wait_for_text = "Metric:"
   this_equipment = equipment["#{dev}"]
-  this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*#{iface_type}.*/{print $1}' | head -1`;ifconfig $eth", this_equipment.prompt)
+  #this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*#{iface_type}.*/{print $1}' | head -1`;ifconfig $eth", this_equipment.prompt)
+  this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*#{iface_type}.*/{print $1}' | head -1`;ifconfig $eth", wait_for_text)
+  this_equipment.log_info(" get_ip_addr: \"#{this_equipment.response}\"\r\n")
   ifconfig_data =/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(this_equipment.response)
+  this_equipment.log_info(" ifconfig_data: \"#{ifconfig_data}\"\r\n")
   ifconfig_data ? ifconfig_data[1] : nil
 end
   
@@ -413,7 +417,8 @@ class VatfHelperUtilities
   def is_matched_count(raw_buffer, string, count)
     is_matched = false
     temp = raw_buffer.scan(convert_string_to_case_insensitive_reg_expression(string))
-    is_matched = true if (temp.length == count)
+    #is_matched = true if (temp.length == count)
+    is_matched = true if (temp.length >= count)
     # log_info(BETA_SIDE(), "\r\n##########################\r\n string: #{string}, temp.length: #{temp.length}, count: #{count}, is_matched #{is_matched}, raw_buffer:\r\n#{raw_buffer} \r\n##########################\r\n")
     log_info(BETA_SIDE(), "\r\n##### string: #{string}, temp.length: #{temp.length}, count: #{count}, is_matched: #{is_matched} #####\r\n")
     return is_matched
@@ -440,7 +445,8 @@ class VatfHelperUtilities
     offload_indices_common(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal, "offload_sp")
   end
   def stop_offload_indices(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal)
-    offload_indices_common(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal, "stop_offload")
+    #offload_indices_common(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal, "stop_offload")
+    offload_indices_common(is_alpha_side, policy_index_out, policy_index_in, offload_command_post_fix, is_fatal, "stop_offload")
   end
   def get_file_location(is_alpha_side, filename)
     file_name_path = ""
@@ -1719,12 +1725,72 @@ class CascadeSetupUtilities
   end
 end
 
-class IperfUtilities
+class TputBinarySearch
+  def initialize
+    # set default search values. User can do an init_search_values to change these before execution.
+    @max_mbps = 1000
+    @previous_tested_mbps = @max_mbps
+    @best_mbps = 0
+    @search_increment= 25
+    @binary_search_complete = false
+  end
+  def binary_search_complete
+    @binary_search_complete
+  end
+  def init_search_values(max_mbps, step)
+    @max_mbps = max_mbps
+    @previous_tested_mbps = @max_mbps
+    @best_mbps = 0
+    @search_increment = step
+    @binary_search_complete = false
+    return 0
+  end
+  def incremented_value(value)
+    new_value = (value / @search_increment) * @search_increment
+    new_value += @search_increment if (value - ((@search_increment / 2) + 1)) > new_value
+    return new_value
+  end
+  def binary_search(tested_mbps, measured_mbps, vatf_helper, perf_client_side)
+    new_test_mbps = measured_mbps
+    action = "go_higher" if (tested_mbps - measured_mbps) == 0
+    action = "go_higher" if (tested_mbps - measured_mbps) < 0
+    action = "go_lower" if (tested_mbps - measured_mbps) > 0
+
+    @best_mbps = measured_mbps if measured_mbps > @best_mbps
+
+    #puts("\r\n before: ac:#{action}, t:#{tested_mbps}, m:#{measured_mbps}, b:#{@best_mbps}, p:#{@previous_tested_mbps}\r\n")
+    vatf_helper.log_info(perf_client_side, " before: ac:#{action}, t:#{tested_mbps}, m:#{measured_mbps}, b:#{@best_mbps}, p:#{@previous_tested_mbps}\r\n")
+
+    case action
+      when "go_higher"
+        new_test_mbps = @best_mbps + ((@previous_tested_mbps - @best_mbps) / 2)
+      when "go_lower"
+        lower_mbps = @best_mbps
+        upper_mbps = tested_mbps
+        new_test_mbps = lower_mbps + ((upper_mbps - lower_mbps) / 2)
+        #@binary_search_complete = true if @search_increment >= (upper_mbps - lower_mbps)
+        @binary_search_complete = true if @search_increment >= (@previous_tested_mbps - @best_mbps).abs
+    end
+
+    if @binary_search_complete
+      new_test_mbps = @previous_tested_mbps
+    end
+
+    @previous_tested_mbps = tested_mbps
+
+    #puts("\r\n after: ac:#{action}, t:#{tested_mbps}, m:#{measured_mbps}, b:#{@best_mbps}, p:#{@previous_tested_mbps}\r\n")
+    vatf_helper.log_info(perf_client_side, " after: ac:#{action}, t:#{tested_mbps}, m:#{measured_mbps}, b:#{@best_mbps}, p:#{@previous_tested_mbps}\r\n")
+    return incremented_value(new_test_mbps)
+  end
+end
+
+class PerfUtilities
   def initialize
     @lnx_helper = LinuxHelperUtilities.new
     @vatf_helper = VatfHelperUtilities.new
 
     @result = 0
+    @error_result_text = ""
     @error_bit = 0
     @result_text = ""
     @vatf_dut_ref = ""
@@ -1738,19 +1804,55 @@ class IperfUtilities
     @additional_beta_params = ""
     @free_mem_start = ""
     @free_mem_end = ""
-    # Static variable settings
-    @sudo_cmd = true
-    @normal_cmd = false
-    @iperf_cmd = "iperf "
-    @error_bit = 5
-    @xfrm_stats_accumulation = 0
-    @xfrm_stat_command = "cat /proc/net/xfrm_stat"
-    @sideband_stat_command = "cat /sys/devices/soc.0/20c0000.crypto/stats/tx_drop_pkts"
+
+    @max_mbps = 0
+    @best_mbps = 0
+    @adjusted_max_mbps = 0
+    @binary_increment = 0
+    @binary_search_complete = false
+    @perf_app = IPERF_APP()
+    @iperf_threads = 2
+    @test_direction = INGRESS()
+    @min_ingress_mbps = 0
+    @min_egress_mbs = 0
     @first_xfrm_stat = Array.new
     @next_xfrm_stat = Array.new
     @first_sideband_stat = Array.new
     @next_sideband_stat = Array.new
     clear_stat_arrays()
+
+    # Static variable settings
+    @sudo_cmd = true
+    @normal_cmd = false
+    @iperf_cmd = "iperf "
+    @netperf_cmd = "netperf "
+    @error_bit = 5
+    @xfrm_stats_accumulation = 0
+    @xfrm_stat_command = "cat /proc/net/xfrm_stat"
+    @sideband_stat_command = "cat /sys/devices/soc.0/20c0000.crypto/stats/tx_drop_pkts"
+  end
+  def IPERF_APP()
+    return "iperf"
+  end
+  def NETPERF_APP()
+    return "netperf"
+  end
+  def INGRESS()
+    return "ingress"
+  end
+  def EGRESS()
+    return "egress"
+  end
+  def BOTH()
+    return "both"
+  end
+  def set_perf_app(string)
+    case string.downcase
+      when IPERF_APP()
+        @perf_app = IPERF_APP()
+      when NETPERF_APP()
+        @perf_app = NETPERF_APP()
+    end
   end
   def clear_stat_arrays()
     @first_xfrm_stat.clear
@@ -1776,6 +1878,7 @@ class IperfUtilities
     @vatf_helper.clear_result()
     @result = 0
     @result_text = ""
+    @error_result_text = ""
   end
   def clear_result_text()
     @result_text = ""
@@ -1787,21 +1890,72 @@ class IperfUtilities
   def result_text
     @result_text
   end
-  def kill_task(is_alpha_side, task_name)
-    @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "kill `ps -ef | grep #{task_name} | grep -v grep | awk '{print $2}'`", "", @error_bit, 0)
+  def is_task_running(is_alpha_side, task_name, check_string)
+    monitor_secs = 1
+    task_started = false
+    task_check_command = "ps -ef | grep \"#{task_name}\" | grep -v grep"
+    response_string = @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, task_check_command, "force fail", @vatf_helper.DONT_SET_ERROR_BIT(), 0, monitor_secs)
+    #response_string = @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, task_check_command, "WARNING:", @vatf_helper.DONT_SET_ERROR_BIT(), 0, monitor_secs)
+    # remove the command used to get the response so that the check_string only checks against the response given and not the command given.
+    response_string.gsub!(task_check_command, "")
+    @vatf_helper.log_info(is_alpha_side, "\r\n is_task_running response_string: \"#{response_string}\")\r\n")
+    task_started = true if response_string.downcase.include?(check_string.downcase)
   end
-  def server_start(is_alpha_side, protocol, monitor_secs)
+  def kill_task(is_alpha_side, task_name)
+    @vatf_helper.log_info(is_alpha_side, "\r\n kill_task... (#{task_name}\r\n")
+    if is_task_running(is_alpha_side, task_name, task_name)
+      @vatf_helper.log_info(is_alpha_side, "\r\n kill -9 `ps -ef | grep \"#{task_name}\" | grep -v grep | awk '{print $2}'`\r\n")
+      @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "kill -9 `ps -ef | grep \"#{task_name}\" | grep -v grep | awk '{print $2}'`", "", @error_bit, 0)
+      count = 30
+      while is_task_running(is_alpha_side, task_name, task_name)
+        break if count <= 0
+        # sleep(2)
+        count -= 1
+        @vatf_helper.log_info(is_alpha_side, "\r\n Waiting for task \"#{task_name}\" to be removed... (#{count})\r\n")
+      end
+    end
+  end
+  def iperf_server_start(is_alpha_side, protocol, monitor_secs, file_pipe="")
     command = ""
     command += @iperf_cmd
     command += "-s "
     command += "-u " if protocol == "udp"
     command += (is_alpha_side ? @additional_alpha_params : @additional_beta_params)
     command += " 2>&1 "
+    command += file_pipe
     command += "&"
+    @vatf_helper.log_info(is_alpha_side, "\r\n Starting iperf server thread... (command: #{command})\r\n")
     server_thread = Thread.new {
       @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", "Mbits/sec", @error_bit, 0, monitor_secs)
     }
+    @vatf_helper.log_info(is_alpha_side, "\r\n Iperf server thread is running.\r\n")
     return server_thread
+  end
+  def netperf_server_start(is_alpha_side, protocol, monitor_secs, file_pipe="")
+    command = ""
+    command += "netserver"
+    if !is_task_running(is_alpha_side, "#{command}", "#{command}")
+      command += (is_alpha_side ? @additional_alpha_params : @additional_beta_params)
+      @vatf_helper.log_info(is_alpha_side, "\r\n Starting netperf server thread... (command: #{command})\r\n")
+      server_thread = Thread.new {
+        @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0, monitor_secs)
+      }
+      sleep(5)
+    else
+      server_thread = Thread.new {
+        @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#Netperf is already running.", "", @error_bit, 0, monitor_secs)
+      }
+    end
+    @vatf_helper.log_info(is_alpha_side, "\r\n Netperf server thread is running.\r\n")
+    return server_thread
+  end
+  def server_start(is_alpha_side, protocol, monitor_secs, file_pipe="")
+    case @perf_app
+      when IPERF_APP()
+        return iperf_server_start(is_alpha_side, protocol, monitor_secs, file_pipe)
+      when NETPERF_APP()
+        return netperf_server_start(is_alpha_side, protocol, monitor_secs, file_pipe)
+    end
   end
   def get_crypto_support(is_alpha_side)
     temp = ""
@@ -1809,16 +1963,41 @@ class IperfUtilities
     temp = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
   end
   def server_kill(is_alpha_side)
-    task_name = "iperf -s"
-    kill_task(is_alpha_side, task_name)
+    task_name = ""
+    case @perf_app
+      when IPERF_APP()
+        task_name = "iperf -s"
+      when NETPERF_APP()
+        task_name = (is_alpha_side ? "netserver" : "")
+    end
+    kill_task(is_alpha_side, task_name) if task_name != ""
+  end
+  def client_kill(is_alpha_side)
+    task_name = ""
+    case @perf_app
+      when IPERF_APP()
+        task_name = "iperf -c"
+      when NETPERF_APP()
+        task_name = "netperf"
+    end
+    kill_task(is_alpha_side, task_name) if task_name != ""
   end
   def run_top(is_alpha_side, test_seconds)
-    iterations = (test_seconds / 5)
-    iterations = (iterations > 1 ? iterations : 2)
-    command = "rm /home/root/top_stats.txt"
-    temp = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
-    command = "top -b -d 5 -n #{iterations} > /home/root/top_stats.txt &"
-    temp = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
+    do_top = true
+    case @perf_app
+      when IPERF_APP()
+        do_top = true
+      when NETPERF_APP()
+        do_top = false
+    end
+    if do_top
+      iterations = (test_seconds / 5)
+      iterations = (iterations > 1 ? iterations : 2)
+      command = "rm /home/root/top_stats.txt"
+      temp = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
+      command = "top -b -d 5 -n #{iterations} > /home/root/top_stats.txt &"
+      temp = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
+    end
   end
   def display_memfree_info()
     return "[#{@free_mem_start} / #{@free_mem_end}]"
@@ -1933,8 +2112,17 @@ class IperfUtilities
     else
       @free_mem_end =  mem_stat
     end
-    command = "ip -s xfrm state"
-    raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
+    stat_commands = Array.new
+    stat_commands.push("ip -s xfrm state")
+    stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/rx_pkts")
+    stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/tx_pkts")
+    stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/sc_tear_drop_pkts")
+    stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/tx_drop_pkts")
+    #command = "ip -s xfrm state"
+    #raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
+    stat_commands.each do |stat_command|
+      raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{stat_command}", "", @error_bit, 0)
+    end
     command = @xfrm_stat_command
     raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
     set_error_result_for_non_zero_stat(command, raw_buffer, false)
@@ -1946,51 +2134,298 @@ class IperfUtilities
   end
   def get_top_idle_stat(is_alpha_side)
     lowest = "100"
+    samples = 0
+    count = 0
+    average = 0
     result = ""
     command = "cat /home/root/top_stats.txt"
     raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
-    temp = raw_buffer.scan(/ [0-9]*.[0-9]*%id/)
+    #temp = raw_buffer.scan(/ [0-9]*.[0-9]*%id/)
+    temp = raw_buffer.scan(/[0-9]*.[0-9]*%id/)
     result += "\r\n CPU idle stats:\r\n"
     temp.each do |match_string|
       idle = match_string.gsub("%id", "")
       lowest = idle if (lowest.to_f > idle.to_f)
-      result += "\r\n  #{match_string} : #{lowest}"
+      # average only the middle samples. The first and last sample are not averaged in.
+      if count >= 1 and samples < temp.length
+        average += idle.to_f
+        samples += 1
+      end
+      count += 1
+      result += "\r\n  (lowest)#{match_string} : #{lowest}"
     end
+    average = average.to_f / samples.to_f
+    result += "\r\n  (average) : #{average}"
     result += "\r\n"
-    return lowest
+    #return lowest
+    return "%3.1f" % [average]
   end
-  def get_iperf_stat(is_alpha_side, test_headline, raw_buffer, protocol, packet_size)
-    throughput = "[ERROR: iperf measurement is incomplete]"
-    cpu_idle_stat = get_top_idle_stat(is_alpha_side)
+  def get_base_index_by_string(is_alpha_side, search_array, string)
+    current_index = 0
+    search_array.each do |stat|
+      break if stat == string
+      current_index += 1
+    end
+
+    count = 0
+    temp_string = ""
+    search_array.each do |stat|
+      temp_string += "\r\n stat_values[#{count}]: #{stat}"
+      count += 1
+    end
+    @vatf_helper.log_info(is_alpha_side, "#{temp_string}\r\n\r\n")
+
+    return current_index
+  end
+  def get_tput_and_cpu_utilization_for_netperf(is_alpha_side, raw_buffer, protocol, tput_error_string, cpu_util_error_string)
+    throughput = tput_error_string
+    cpu_util_stat = cpu_util_error_string
+    stat_values = raw_buffer.scan(/[0-9.]+|Demand/)
+    base_index = get_base_index_by_string(is_alpha_side, stat_values, "Demand")
+    tput_index = (protocol.downcase == "udp" ? 14 : 7) + base_index
+    tx_util_index = (protocol.downcase == "udp" ? 9 : 8) + base_index
+    rx_util_index = (protocol.downcase == "udp" ? 15 : 9) + base_index
+    highest_index = rx_util_index
+    if (stat_values.length > highest_index)
+      tx_util = stat_values[tx_util_index]
+      rx_util = stat_values[rx_util_index]
+      throughput = stat_values[tput_index]
+      # Only interested in the EVMs CPU utilization measurements so if on alpha side use the rx utilization number and if on the beta side use the tex utilization number
+      cpu_util_stat = (is_alpha_side ? rx_util : tx_util)
+    end
+    return throughput, cpu_util_stat
+  end
+  def get_iperf_tput_number_from_buffer(is_alpha_side, raw_buffer, protocol, tput_error_string)
+    throughput = tput_error_string
+    if protocol.downcase == "tcp"
+      tputs = raw_buffer.scan(/[0-9.]* Mbits\/sec/)
+    else
+      tputs = raw_buffer.scan(/[0-9.]* Mbits\/sec[\s0-9.ems\-\/(]*%\)/)
+    end
+    aggregated_throughput = 0
+    tputs.each do | tput_info |
+      @vatf_helper.log_info(is_alpha_side, "\r\n get_iperf_tput_number_from_buffer: (tputs.length: #{tputs.length}, tput_info: #{tput_info})\r\n")
+      if protocol.downcase == "tcp"
+        aggregated_throughput = tput_info.split(" ")[0].to_f
+      else
+        aggregated_throughput += tput_info.split(" ")[0].to_f
+      end
+    end
+    if (tputs.length > 0)
+      #throughput = aggregated_throughput.to_i
+      throughput = aggregated_throughput
+    end
+    return throughput
+  end
+  def get_tput_and_cpu_utilization_for_iperf(is_alpha_side, raw_buffer, protocol, tput_error_string, cpu_util_error_string, auto_detect)
+    throughput = tput_error_string
+    cpu_util_stat = cpu_util_error_string
+    cpu_idle_stat = get_top_idle_stat(is_alpha_side) if !auto_detect
+    cpu_util_stat = "#{'%.2f' % (100 - cpu_idle_stat.to_f)}"
+    throughput = get_iperf_tput_number_from_buffer(is_alpha_side, raw_buffer, protocol, tput_error_string)
+    @vatf_helper.log_info(is_alpha_side, "\r\n get_tput_and_cpu_utilization_for_iperf: (throughput: #{format_tput(throughput)}, cpu_util_stat: #{cpu_util_stat})\r\n")
+    return throughput, cpu_util_stat
+  end
+  def validate_throughput(ingress_tput, egress_tput)
+    if ingress_tput != "" && @min_ingress_mbps != ""
+      if @min_ingress_mbps.to_f > ingress_tput.to_f
+        @result = @error_bit 
+        @error_result_text += "\r\n\r\nFAILED: Throughput measurement for ingress was below the required #{@min_ingress_mbps} mbps.\r\n\r\n"
+      end
+    end
+    if egress_tput != "" && @min_egress_mbps != ""
+      if @min_egress_mbps.to_f > egress_tput.to_f
+        @result = @error_bit 
+        @error_result_text += "\r\n\r\nFAILED: Throughput measurement for egress was below the required #{@min_egress_mbps} mbps.\r\n\r\n"
+      end
+    end
+    @vatf_helper.log_info(ALPHA_SIDE(), "\r\n perf @result_text: \"#{@error_result_text}\"\r\n")
+  end
+  def is_numeric?(input)
+    is_numeric = false
+    is_numeric = true if input.to_i.to_s == input.to_s
+    is_numeric = true if input.to_f.to_s == input.to_s
+    return is_numeric
+  end
+  def format_tput(throughput_string)
+    return (is_numeric?(throughput_string) ? '%.1f' % throughput_string.to_f : throughput_string)
+  end
+  def get_tput_result_string(test_headline, ingress_tput, egress_tput, packet_size, cpu_util_stat)
+    tput_result_display = ""
+    validate_throughput(ingress_tput, egress_tput)
+    if @test_direction != BOTH()
+      throughput = (ingress_tput != "" ? ingress_tput : egress_tput)
+      tput_result_display = "   Test: #{test_headline}, Tput: #{format_tput(throughput)}, Pkt_size: #{packet_size} [CPU_Util%: #{cpu_util_stat}]\r\n"
+    else
+      tput_result_display = "   Test: #{test_headline}, Tput_ingress: #{format_tput(ingress_tput)}, Tput_egress: #{format_tput(egress_tput)}, Pkt_size: #{packet_size} [CPU_Util%: #{cpu_util_stat}]\r\n"
+    end
+    return tput_result_display
+  end
+  def get_netperf_stat(is_alpha_side, test_headline, raw_buffer, protocol, packet_size, auto_detect=false)
+    tput_ingress = ""
+    tput_egress = ""
+    throughput = "[ERROR: netperf measurement is incomplete]"
+    cpu_util_stat = ""
     result_string = ""
-    tput_instance = (protocol.downcase == "udp" ? 2 : 1)
-    temp2 = raw_buffer.scan(/[0-9.]* Mbits\/sec/)
-    throughput = temp2[temp2.length-1] if temp2.length == tput_instance
-    result_string = "   Test: #{test_headline}, Tput: #{throughput}, Pkt_size: #{packet_size} [Idle%: #{cpu_idle_stat}]\r\n"
+    throughput, cpu_util_stat = get_tput_and_cpu_utilization_for_netperf(is_alpha_side, raw_buffer, protocol, throughput, cpu_util_stat)
+    if @test_direction == INGRESS()
+      tput_ingress = throughput
+    else
+      tput_egress = throughput
+    end
+    #result_string = "   Test: #{test_headline}, Tput: #{'%.1f' % throughput}, Pkt_size: #{packet_size} [CPU_Util%: #{cpu_util_stat}]\r\n"
+    result_string = get_tput_result_string(test_headline, tput_ingress, tput_egress, packet_size, cpu_util_stat)
     @result = @error_bit if result_string.downcase.include?("error:")
     return result_string
   end
-  def client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
-    wait_for_text = "/sec"
+  def get_iperf_stat(is_alpha_side, test_headline, raw_buffer, protocol, packet_size, auto_detect=false)
+    tput_ingress = ""
+    tput_egress = ""
+    throughput = "[ERROR: iperf measurement is incomplete]"
+    cpu_util_stat = ""
+    result_string = ""
+    throughput, cpu_util_stat = get_tput_and_cpu_utilization_for_iperf(is_alpha_side, raw_buffer, protocol, throughput, cpu_util_stat, auto_detect)
+    if @test_direction == INGRESS()
+      tput_ingress = throughput
+    else
+      tput_egress = throughput
+    end
+    if !auto_detect
+      #result_string = "   Test: #{test_headline}, Tput: #{'%.1f' % throughput}, Pkt_size: #{packet_size} [CPU_Util%: #{cpu_util_stat}]\r\n"
+      result_string = get_tput_result_string(test_headline, tput_ingress, tput_egress, packet_size, cpu_util_stat)
+    else
+      #result_string = (!result_string.downcase.include?("error:") ? throughput.gsub(" Mbits/sec", "").to_i : 0)
+      result_string = (!result_string.downcase.include?("error:") ? throughput.to_i : 0)
+    end
+    if !auto_detect
+      @result = @error_bit if result_string.downcase.include?("error:")
+    end
+    return result_string
+  end
+  def get_perf_stat(is_alpha_side, test_headline, raw_buffer, protocol, packet_size, auto_detect=false)
+    case @perf_app
+      when IPERF_APP()
+        return get_iperf_stat(is_alpha_side, test_headline, raw_buffer, protocol, packet_size, auto_detect)
+      when NETPERF_APP()
+        return get_netperf_stat(is_alpha_side, test_headline, raw_buffer, protocol, packet_size, auto_detect)
+    end
+  end
+  def get_iperf_stat_simultaneous(is_alpha_side, test_headline, raw_buffer_ingress, raw_buffer_egress, protocol, packet_size)
+    throughput_ingress = "[ERROR: iperf measurement is incomplete]"
+    throughput_egress = throughput_ingress
+    cpu_idle_stat = get_top_idle_stat(is_alpha_side)
+    cpu_util_stat = "#{'%.2f' % (100 - cpu_idle_stat.to_f)}"
+    result_string = ""
+    throughput_ingress = get_iperf_tput_number_from_buffer(is_alpha_side, raw_buffer_ingress, protocol, throughput_ingress)
+    throughput_egress = get_iperf_tput_number_from_buffer(is_alpha_side, raw_buffer_egress, protocol, throughput_egress)
+    #result_string = "   Test: #{test_headline}, Tput_ingress: #{'%.1f' % throughput_ingress}, Tput_egress: #{'%.1f' % throughput_egress}, Pkt_size: #{packet_size} [CPU_Util%: #{cpu_util_stat}]\r\n"
+    result_string = get_tput_result_string(test_headline, throughput_ingress, throughput_egress, packet_size, cpu_util_stat)
+    @result = @error_bit if result_string.downcase.include?("error:")
+    return result_string
+  end
+  def netperf_client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
+    #wait_for_text = "/sec"
+    #wait_for_text = " ms    "
+    wait_for_text = "forcing timeout to occur"
+    #wait_secs = test_time + 10
+    wait_secs = test_time + 10
+    command = ""
+    command += @netperf_cmd
+    command += "-H "
+    command += (is_alpha_side ? @beta_ip : @alpha_ip)
+    command += " -c -C "
+    command += "-l #{test_time} "
+    command += "-T 1 "
+    command += "-t "
+    command += "UDP_STREAM " if protocol.downcase == "udp"
+    command += "TCP_STREAM " if protocol.downcase == "tcp"
+    command += "-- -m #{packet_size}"
+    #command += "-P 2 " if protocol.downcase == "tcp"
+    #command += (is_alpha_side ? @additional_alpha_params : @additional_beta_params)
+    @vatf_helper.log_info(is_alpha_side, "\r\n Starting netperf client... (command: #{command})\r\n")
+    return @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", wait_for_text, @error_bit, 0, wait_secs)
+  end
+  def iperf_client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
+    #wait_for_text = "/sec"
+    #wait_for_text = " ms    "
+    threaded_bandwidth = "#{(udp_bandwidth.to_f / @iperf_threads)}M"
+    #wait_for_text = "forcing timeout to occur"
+    wait_for_text = "command_done"
     wait_secs = test_time + 10
     command = ""
     command += @iperf_cmd
     command += "-c "
     command += (is_alpha_side ? @beta_ip : @alpha_ip)
     command += " "
-    command += "-u -b #{udp_bandwidth} --len #{packet_size} " if protocol.downcase == "udp"
+
+    #command += "-P 2 --format m "
+    command += "-P #{@iperf_threads} --format m "
+    command += "-u -b #{threaded_bandwidth} --len #{packet_size} " if protocol.downcase == "udp"
+
+    #command += "-u -b #{udp_bandwidth} --len #{packet_size} " if protocol.downcase == "udp"
     command += "-M #{packet_size} -w 128K " if protocol.downcase == "tcp"
+    #command += "-P 2 " if protocol.downcase == "tcp"
     command += "-t #{test_time} "
     command += (is_alpha_side ? @additional_alpha_params : @additional_beta_params)
+    command += " ; echo 'command_done'"
+    @vatf_helper.log_info(is_alpha_side, "\r\n Starting iperf client... (command: #{command})\r\n")
     return @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", wait_for_text, @error_bit, 0, wait_secs)
   end
-  def iperf_typical_config(equipment)
-    # Get IP addresses to use on each side of the IPSEC connection
-    @alpha_ip = equipment[@vatf_helper.vatf_server_ref].telnet_ip
-    @beta_ip = util_get_ip_addr(equipment)
-
+  def client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
+    case @perf_app
+      when IPERF_APP()
+        return iperf_client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
+      when NETPERF_APP()
+        return netperf_client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
+    end
+  end
+  def get_ip_address_for_eth_port_from_static_base(eth_port)
+    static_ip_address_items = get_param_value('dut1', "static_ip_base_address").split(".")
+    octet_to_change = static_ip_address_items.length - 1
+    eth_port_static_ip_address = ""
+    separator = ""
+    octet_count = 0
+    static_ip_address_items.each do |ip_item|
+      eth_port_static_ip_address += (octet_count == octet_to_change ? "#{separator}#{ip_item.to_i + eth_port}" : "#{separator}#{ip_item}")
+      separator = "."
+      octet_count += 1
+    end
+    return eth_port_static_ip_address
+  end
+  def isolate_dut_ethernet_test_port(iface_type)
+    is_alpha_side = false
+    this_eth_port = iface_type.split("eth")[1].to_i
+    this_eth_static_ip_address = get_ip_address_for_eth_port_from_static_base(this_eth_port)
+    wait_for_text = "id:"
+    wait_secs = 10
+    eth_min_port = 0
+    eth_max_port = 5
+    last_dhcp_port = 1
+    do_dhclient = (this_eth_static_ip_address == "" ? true : false)
+    if (this_eth_port > last_dhcp_port)
+      if do_dhclient
+        @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ifconfig eth#{this_eth_port} up", "Link is Up", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
+        sleep(2)
+        @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "dhclient eth#{this_eth_port} ; echo 'command_done'", "command_done", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
+      else
+        @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ifconfig eth#{this_eth_port} #{this_eth_static_ip_address} up", "Link is Up", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
+      end
+    end
+    for curr_port in (eth_min_port..eth_max_port)
+      if curr_port != this_eth_port
+        @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ifconfig eth#{curr_port} down ; echo 'command_done'", "command_done", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
+      end
+    end
+    @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ping #{@alpha_ip} -c 3", "seq=2", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
+  end
+  def perf_typical_config(equipment, dev='dut1', iface_type='eth')
     # Use the default vatf linux pc ('server1') and evm ('dut1') reference, but set the equipment variable so we can communicate with them
     set_helper_common(equipment, "", "")
+
+    # Get IP addresses to use on each side of the IPSEC connection
+    @alpha_ip = equipment[@vatf_helper.vatf_server_ref].telnet_ip
+    isolate_dut_ethernet_test_port(iface_type)
+    @beta_ip = util_get_ip_addr(equipment, dev, iface_type)
   end
   def start_log_thread(is_alpha_side, time_secs)
     evm_log_thread = Thread.new {
@@ -2030,36 +2465,158 @@ class IperfUtilities
       @vatf_helper.log_info(is_alpha_side, "\r\n\#################### dmesg end ####################\r\n\r\n")
     end
   end
-  def test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, iperf_server_side, iperf_client_side, crypto_mode)
+  def test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode, auto_detect=false)
+    clear_stat_arrays()
+    # Manual test to set perf server used
+    #@perf_app = "iperf"
+    #@perf_app = NETPERF_APP()
+    result = ""
+    measured_mbps = 0
+    linux_pc = ALPHA_SIDE()
+    evm_side = BETA_SIDE()
+    cpu_stats_side = evm_side
+    case @perf_app
+      when IPERF_APP()
+        cpu_stats_side = evm_side
+      when NETPERF_APP()
+        cpu_stats_side = perf_client_side
+    end
+    get_proc_info(evm_side, crypto_mode) if !auto_detect
+    server_thread = server_start(perf_server_side, protocol, test_time_secs + 10, " > ~/perf_svr_log.txt")
+    if !auto_detect
+      run_top(evm_side, test_time_secs)
+      result += "\r\n============================================================\r\n\r\n"
+      result += (perf_server_side == linux_pc ? " EVM to Linux PC" : " Linux PC to EVM")
+      result += " transfer stats:\r\n"
+    end
+    raw_buffer = client_run(perf_client_side, protocol, test_time_secs, udp_bandwidth, packet_size)
+    if !auto_detect
+      result += raw_buffer
+      result += "\r\n============================================================\r\n"
+    end
+    wait_on_thread_complete(server_thread)
+    if !auto_detect
+      @result_text += get_perf_stat(cpu_stats_side, test_headline, raw_buffer, protocol, packet_size)
+      @result_text += @error_result_text
+      @result_text += result
+    end
+    server_kill(perf_server_side)
+    client_kill(perf_client_side)
+    if !auto_detect
+      get_proc_info(evm_side, crypto_mode)
+    else
+      measured_mbps = get_perf_stat(cpu_stats_side, test_headline, raw_buffer, protocol, packet_size, auto_detect)
+    end
+    return measured_mbps
+  end
+  def test_simultaneous_common(protocol, test_time_secs, udp_bandwidth_ingress, udp_bandwidth_egress, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)
     clear_stat_arrays()
     result = ""
+    raw_buffer_ingress = ""
+    raw_buffer_egress = ""
     linux_pc = ALPHA_SIDE()
     evm_side = BETA_SIDE()
     get_proc_info(evm_side, crypto_mode)
-    server_thread = server_start(iperf_server_side, protocol, test_time_secs + 10)
+    server_thread_ingress = server_start(perf_server_side, protocol, test_time_secs + 20, " > ~/perf_svr_log.txt")
+    server_thread_egress = server_start(perf_client_side, protocol, test_time_secs + 20, " > ~/perf_svr_log.txt")
+    sleep(4)
     run_top(evm_side, test_time_secs)
-    result += "\r\n============================================================\r\n\r\n"
-    result += (iperf_server_side == linux_pc ? " EVM to Linux PC" : " Linux PC to EVM")
-    result += " transfer stats:\r\n"
-    raw_buffer = client_run(iperf_client_side, protocol, test_time_secs, udp_bandwidth, packet_size)
-    result += raw_buffer
-    result += "\r\n============================================================\r\n"
-    wait_on_thread_complete(server_thread)
-    @result_text += get_iperf_stat(evm_side, test_headline, raw_buffer, protocol, packet_size)
+    #result += "\r\n============================================================\r\n\r\n"
+    #result += " Simultaneous EVM to Linux PC and Linux PC to EVM"
+    #result += " transfer stats:\r\n"
+    client_thread_ingress = Thread.new {
+      raw_buffer_ingress = client_run(perf_client_side, protocol, test_time_secs, udp_bandwidth_ingress, packet_size)
+    }
+    client_thread_egress = Thread.new {
+      raw_buffer_egress = client_run(perf_server_side, protocol, test_time_secs, udp_bandwidth_egress, packet_size)
+    }
+    wait_on_thread_complete(client_thread_ingress)
+    wait_on_thread_complete(client_thread_egress)
+    #result += raw_buffer_ingress
+    #result += raw_buffer_egress
+    #result += "\r\n============================================================\r\n"
+    wait_on_thread_complete(server_thread_ingress)
+    wait_on_thread_complete(server_thread_egress)
+    @result_text += get_iperf_stat_simultaneous(evm_side, test_headline, raw_buffer_ingress, raw_buffer_egress, protocol, packet_size)
+    @result_text += @error_result_text
     @result_text += result
-    server_kill(iperf_server_side)
+    server_kill(perf_server_side)
+    server_kill(perf_client_side)
     get_proc_info(evm_side, crypto_mode)
   end
-  def test_evm_to_linux(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode)
-    iperf_server_side = ALPHA_SIDE()  # Linux PC
-    iperf_client_side = BETA_SIDE()   # EVM
-    test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, iperf_server_side, iperf_client_side, crypto_mode)
+  def test_common_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, perf_server_side, perf_client_side)
+    auto_detect = true
+    max_attemps = 10
+    binary_step =  25
+    current_auto_mbps = udp_bandwidth.gsub("M", "").to_i
+    tput_detect = TputBinarySearch.new
+    tput_detect.init_search_values(current_auto_mbps, binary_step)
+    #while ((!@binary_search_complete) && (max_attemps > 0))
+    while ((!tput_detect.binary_search_complete) && (max_attemps > 0))
+      measured_mbps = test_common(protocol, test_time_secs, "#{current_auto_mbps}M", packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode, auto_detect)
+      # try again
+      if measured_mbps == 0
+        measured_mbps = test_common(protocol, test_time_secs, "#{current_auto_mbps}M", packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode, auto_detect)
+      end
+      #current_auto_mbps = binary_search_by_step(current_auto_mbps, measured_mbps)
+      current_auto_mbps = tput_detect.binary_search(current_auto_mbps, measured_mbps, @vatf_helper, perf_client_side)
+      max_attemps -= 1
+    end
+    @vatf_helper.log_info(perf_client_side, " final bin search; mbps: #{measured_mbps}, @current_auto_mbps: #{@current_auto_mbps}, max_attempts: #{max_attemps}\r\n")
+    return "#{current_auto_mbps}M"
+  end
+  def test_linux_to_evm_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode)
+    @test_direction = INGRESS()
+    @min_ingress_mbps = 0
+    @min_egress_mbs = 0
+    case @perf_app
+      when NETPERF_APP()
+        return udp_bandwidth
+    end
+    perf_server_side = BETA_SIDE()   # EVM
+    perf_client_side = ALPHA_SIDE()  # Linux PC
+    current_auto_mbps = test_common_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, perf_server_side, perf_client_side)
+    return current_auto_mbps
+  end
+  def test_evm_to_linux_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode)
+    @test_direction = EGRESS()
+    @min_ingress_mbps = 0
+    @min_egress_mbs = 0
+    case @perf_app
+      when NETPERF_APP()
+        return udp_bandwidth
+    end
+    perf_server_side = ALPHA_SIDE() # Linux PC
+    perf_client_side = BETA_SIDE()  # EVM
+    current_auto_mbps = test_common_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, perf_server_side, perf_client_side)
+    return current_auto_mbps
+  end
+  def test_linux_to_evm(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, min_ingress_mbps, min_egress_mbps)
+    @test_direction = INGRESS()
+    @min_ingress_mbps = min_ingress_mbps
+    @min_egress_mbs = min_egress_mbps
+    perf_server_side = BETA_SIDE()   # EVM
+    perf_client_side = ALPHA_SIDE()  # Linux PC
+    test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)
+    @vatf_helper.log_info(ALPHA_SIDE(), "\r\n last perf @result_text: \"#{@result_text}\"\r\n")
     return @result
   end
-  def test_linux_to_evm(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode)
-    iperf_server_side = BETA_SIDE()   # EVM
-    iperf_client_side = ALPHA_SIDE()  # Linux PC
-    test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, iperf_server_side, iperf_client_side, crypto_mode)
+  def test_evm_to_linux(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, min_ingress_mbps, min_egress_mbps)
+    @test_direction = EGRESS()
+    @min_ingress_mbps = min_ingress_mbps
+    @min_egress_mbs = min_egress_mbps
+    perf_server_side = ALPHA_SIDE()  # Linux PC
+    perf_client_side = BETA_SIDE()   # EVM
+    test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)
+    return @result
+  end
+  def test_linux_to_evm_and_evm_to_linux(protocol, test_time_secs, udp_bandwidth_ingress, udp_bandwidth_egress, packet_size, test_headline, crypto_mode, min_ingress_mbps, min_egress_mbps)
+    @test_direction = BOTH()
+    @min_ingress_mbps = min_ingress_mbps
+    @min_egress_mbs = min_egress_mbps
+    perf_server_side = BETA_SIDE()   # EVM
+    perf_client_side = ALPHA_SIDE()  # Linux PC
+    test_simultaneous_common(protocol, test_time_secs, udp_bandwidth_ingress, udp_bandwidth_egress, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)
     return @result
   end
 end
@@ -2137,12 +2694,14 @@ class IpsecUtilitiesVatf
     # Ipsec Manager variables
     @executable_directory = "/usr/bin"
     @hplib_file_name = "hplibmod.ko"
+    @ipsec_mgr = "ipsecmgr_mod.ko"  # Workaround for Sandeep's stuff
     @app_sock_name_env_cmd = "export IPSECMGR_APP_SOCK_NAME=\"/etc/app_sock\""
     @daemon_sock_name_env_cmd ="export IPSECMGR_DAEMON_SOCK_NAME=\"/etc/ipsd_sock\""
     @log_file_env_cmd = "export IPSECMGR_LOG_FILE=\"/var/run/ipsecmgr_app.log\""
     @daemon_cmd = "ipsecmgr_daemon.out"
     @cmd_shell_cmd = "ipsecmgr_cmd_shell.out"
     @inflow_active_name = "INFLOW_MODE_ACTIVE"
+    @do_friendly = false
   end
   def default_rekey_lifetime()
     return @default_rekey_lifetime
@@ -2817,12 +3376,19 @@ class IpsecUtilitiesVatf
     ipsec_start(BETA_SIDE())
     sleep(3)
     # Bring up the IPSEC tunnel on both sides
-    start_tunnels(is_ipv4, is_pass_through)
+    # start_tunnels(is_ipv4, is_pass_through)
+    # Bring up the IPSEC tunnel on the EVM
+    bring_ipsec_tunnel_up(BETA_SIDE(), is_ipv4, is_pass_through)    
   end
   def ipsec_restart_all(is_ipv4, is_pass_through)
     ipsec_stop(ALPHA_SIDE())
     ipsec_stop(BETA_SIDE())
     ipsec_start_all(is_ipv4, is_pass_through)
+  end
+  def load_friendlies(is_alpha_side)
+    if @do_friendly
+      @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "cd #{@executable_directory}; chmod 777 #{@daemon_cmd}; tftp -g -r #{@daemon_cmd} -l #{@daemon_cmd} 192.168.1.84", "", @error_bit, 2)
+    end
   end
   def ipsec_restart_with_new_ipsec_conf_file(is_ipv4, tunnel_type, ipsec_conf_input_file, is_clear_previous_result, is_pass_through)
     puts("\r\nRestarting ipsec with file: #{ipsec_conf_input_file}, tunnel type: #{(tunnel_type ? "FQDN" : "IP")}\r\n")
@@ -2836,6 +3402,9 @@ class IpsecUtilitiesVatf
     # Stop currently running ipsec
     ipsec_stop(ALPHA_SIDE())
     ipsec_stop(BETA_SIDE())
+    #@do_friendly = true
+    @do_friendly = false
+    load_friendlies(BETA_SIDE()) # Debug code remove when working
     # Create ipsec.conf files from input template
     create_ipsec_conf_file(ALPHA_SIDE())
     create_ipsec_conf_file(BETA_SIDE())
@@ -3022,12 +3591,19 @@ class IpsecUtilitiesVatf
     raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "env", "", @vatf_helper.DONT_SET_ERROR_BIT(), 1)
     # Only start the ipsec manager if the variables do not already exist
     if !@vatf_helper.is_matched_count(raw_buffer, string, count)
-      @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "cd #{@executable_directory}", "", @error_bit, 1)
       @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "insmod #{@vatf_helper.get_file_location(is_alpha_side, @hplib_file_name)}", "", @error_bit, 2)
+      if @do_friendly
+        @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "insmod #{@vatf_helper.get_file_location(is_alpha_side, @ipsec_mgr)}", "", @error_bit, 2)
+      end
+      @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "cd #{@executable_directory}", "", @error_bit, 1)
       @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{@app_sock_name_env_cmd}", "", @error_bit, 1)
       @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{@daemon_sock_name_env_cmd}", "", @error_bit, 1)
       @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{@log_file_env_cmd}", "", @error_bit, 1)
-      @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{@daemon_cmd}", "", @error_bit, 2)
+      if @do_friendly
+        @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{@daemon_cmd}&", "", @error_bit, 2)
+      else
+        @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{@daemon_cmd}", "", @error_bit, 2)
+      end
     end
     @result |= @vatf_helper.result
     @result_text += @vatf_helper.result_text

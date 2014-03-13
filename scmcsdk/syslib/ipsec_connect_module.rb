@@ -193,19 +193,28 @@ module IpsecConnectionScript
     is_nat_traversal = get_variable_value(test_params.params_chan.nat[0])  if test_params.params_chan.instance_variable_defined?(:@nat)
     esp_integrity = get_variable_value(test_params.params_chan.integrity[0].downcase)  if test_params.params_chan.instance_variable_defined?(:@integrity)
     crypto_mode = get_variable_value(test_params.params_chan.crypto[0].downcase)  if test_params.params_chan.instance_variable_defined?(:@crypto)
+    conn_type = get_variable_value(test_params.params_chan.conn[0])  if test_params.params_chan.instance_variable_defined?(:@conn)
     protocol = get_variable_value(test_params.params_chan.protocol[0].downcase)  if test_params.params_chan.instance_variable_defined?(:@protocol)
     esp_encryption = get_variable_value(test_params.params_chan.encryption[0].downcase)  if test_params.params_chan.instance_variable_defined?(:@encryption)
     esp_integrity = get_variable_value(test_params.params_chan.integrity[0].downcase)  if test_params.params_chan.instance_variable_defined?(:@integrity)
 
+    IpsecConnectionScript.set_all_vars(comment_text, result, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, ipsec_template)
+      
     # Return immediately with error code if any mandatory parameters are missing
     if protocol == "" or esp_encryption == "" or esp_integrity == ""
       result = 1
       comment_text += "\r\n IpsecConnectionScript.establish_ipsec_connection error: protocol, esp encryption and/or esp integrity parameter missing. \r\n"
       comment_text += "#{display_ipsec_test_params(ipsec_template, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, alpha_side_nat_public_ip, alpha_side_nat_gateway_ip, beta_side_nat_public_ip, beta_side_nat_gateway_ip)}"
-      IpsecConnectionScript.set_all_vars(comment_text, result, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, ipsec_template)
       return result
     end
 
+    # Return immediately if user does not want an IPSEC connection started.
+    if conn_type == "eth-only"
+      comment_text += "\r\n IpsecConnectionScript.establish_ipsec_connection: Bypassing IPSEC connection altogether as specified by user. \r\n"
+      IpsecConnectionScript.set_all_vars(comment_text, result, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, ipsec_template)
+      return 0
+    end
+    
     # Set connection parameter state based on test case information.
     is_pass_through = (is_pass_through.downcase == "pass" ? true : false)
     is_secure_data = (is_secure_data.downcase == "secure" ? true : false)
