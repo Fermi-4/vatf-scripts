@@ -35,18 +35,19 @@ def run
 
   i = 0
   while i < test_loop do
-    suspend_time = rand(max_s_time-1) + 1
+    suspend_time = rand(max_s_time-1) + 30   # Adding 30 seconds to make sure that alarm event happens on suspend state
     @equipment['dut1'].log_info("Random suspend time: #{suspend_time}\n")
     puts "Random suspend time: #{suspend_time}\n"
     if(@test_params.params_chan.instance_variable_defined?(:@wakeup_domain) && @test_params.params_chan.wakeup_domain[0].to_s == 'rtc')
       @equipment['dut1'].send_cmd( "[ -e /dev/rtc0 ]; echo $?", /^0[\0\n\r]+/m, 2)
       raise "DUT does not seem to support rtc wakeup. /dev/rtc0 does not exist"  if @equipment['dut1'].timeout?
-      @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m #{power_state} -s #{suspend_time}", /PM:\s+resume\s+of\s+devices\s+complete/i, suspend_time + 60)
+      @equipment['dut1'].send_cmd("sync", @equipment['dut1'].prompt, 60)
+      @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m #{power_state} -s #{suspend_time}", /PM:\s+resume\s+of\s+devices\s+complete/i, suspend_time + 60, false)
       if @equipment['dut1'].timeout?
         raise "Timeout while waiting for RTC suspend/resume completion"
       end
     else
-      @equipment['dut1'].send_cmd("sync; echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, 120)
+      @equipment['dut1'].send_cmd("sync; echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, 120, false)
       if @equipment['dut1'].timeout?
         puts "Timeout while waiting to suspend"
         raise "DUT took more than 120 seconds to suspend"
@@ -54,7 +55,7 @@ def run
       sleep suspend_time
       # Resume from console
       puts "GOING TO RESUME DUT"
-      resume_wtime = 10
+      resume_wtime = 60
       @equipment['dut1'].send_cmd("\n", @equipment['dut1'].prompt, resume_wtime)  
       if @equipment['dut1'].timeout?
         raise "DUT took more than #{resume_wtime} seconds to resume"

@@ -49,14 +49,15 @@ def run
   end
 
   i = 0
+  resume_wtime = 60
   while i < test_loop do
     puts "GOING TO SUSPEND DUT"
-    @equipment['dut1'].send_cmd("sync; echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, 120)
+    @equipment['dut1'].send_cmd("sync; echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, 120, false)
     if @equipment['dut1'].timeout?
       puts "Timeout while waiting to suspend"
       raise "DUT took more than 120 seconds to suspend"
     end
-    
+    sleep 2 # Let system reach deep sleep state
     #Measure voltage
     volt_readings = @equipment['multimeter1'].get_multimeter_output(3, @test_params.params_equip.timeout[0].to_i)
     #Compare measured against expected
@@ -64,18 +65,19 @@ def run
       # Allows 2.5% deviation from theoretical value
       max_measured_volt = volt_readings["domain_" + domain  + "_volt_readings"].max
       if  max_measured_volt > (volt*1.025)
-        set_result(FrameworkConstants::Result[:fail], "On iteration #{1}, Measured voltage #{max_measured_volt} for #{domain} domain is higher than expected #{volt}")
+        set_result(FrameworkConstants::Result[:fail], "On iteration #{i}, Measured voltage #{max_measured_volt} for #{domain} domain is higher than expected #{volt}")
+        @equipment['dut1'].send_cmd("\n", @equipment['dut1'].prompt, resume_wtime)  
         return
       end
     }
 
     # Resume from console
     puts "GOING TO RESUME DUT"
-    resume_wtime = 10
     @equipment['dut1'].send_cmd("\n", @equipment['dut1'].prompt, resume_wtime)  
     if @equipment['dut1'].timeout?
       raise "DUT took more than #{resume_wtime} seconds to resume"
     end
+    sleep 2 # Stay awake couple of seconds
 
     i += 1
   end # end of while

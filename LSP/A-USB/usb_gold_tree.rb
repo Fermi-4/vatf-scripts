@@ -105,8 +105,8 @@ def run_gold_tree_tests
               @equipment['dut1'].send_cmd('reboot',@equipment['dut1'].login_prompt,120)
               @equipment['dut1'].send_cmd(@equipment['dut1'].login, @equipment['dut1'].prompt, 10)
            when 'suspend_resume'
-              @equipment['dut1'].send_cmd("echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 10)
-              raise "DUT took more than 10 seconds to suspend" if @equipment['dut1'].timeout?
+              @equipment['dut1'].send_cmd("sync; echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 120)
+              raise "DUT took more than 120 seconds to suspend" if @equipment['dut1'].timeout?
               sleep 2
               @equipment['dut1'].send_cmd(" ", @equipment['dut1'].prompt, 10)
            when 'cold_boot'

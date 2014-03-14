@@ -69,7 +69,7 @@ def run
   end
 
   if @test_params.params_chan.instance_variable_defined?(:@suspend)
-      @equipment['dut1'].send_cmd("echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 5) if @test_params.params_chan.suspend[0] == '1'
+      @equipment['dut1'].send_cmd("sync; echo mem > /sys/power/state", /Freezing remaining freezable tasks/, 120, false) if @test_params.params_chan.suspend[0] == '1'
   end
   sleep 5
 

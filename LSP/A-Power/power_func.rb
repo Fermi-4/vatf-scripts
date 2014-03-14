@@ -26,6 +26,8 @@ def run
 
   power_state = @test_params.params_chan.instance_variable_defined?(:@power_state) ? @test_params.params_chan.power_state[0] : 'mem'
   wakeup_domain = @test_params.params_chan.instance_variable_defined?(:@wakeup_domain) ? @test_params.params_chan.wakeup_domain[0] : 'uart'
+  max_suspend_time = 60
+  max_resume_time = 60
 
   # Configure multimeter 
   @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name))
@@ -80,9 +82,10 @@ def run
   if @test_params.params_chan.instance_variable_defined?(:@suspend) && @test_params.params_chan.suspend[0] == '1'
     @test_params.params_control.loop_count[0].to_i.times do
       # Suspend
-      @equipment['dut1'].send_cmd("echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, 10)
+      @equipment['dut1'].send_cmd("sync", @equipment['dut1'].prompt, 120)
+      @equipment['dut1'].send_cmd("echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, max_suspend_time, false)
       
-      raise "DUT took more than 10 seconds to suspend" if @equipment['dut1'].timeout?
+      raise "DUT took more than #{max_suspend_time} seconds to suspend" if @equipment['dut1'].timeout?
       #@equipment['dut1'].send_cmd("\x3", @equipment['dut1'].prompt, 1) if @test_params.params_chan.suspend[0] == '1'  # Ctrl^c is required for some reason w/ amsdk fs
       sleep 2  # wait for suspend to stabilize
       
@@ -100,8 +103,8 @@ def run
       
               
       # Resume from console
-      @equipment['dut1'].send_cmd(" ", @equipment['dut1'].prompt, 10)
-      raise "DUT took more than 10 seconds to resume" if @equipment['dut1'].timeout?
+      @equipment['dut1'].send_cmd(" ", @equipment['dut1'].prompt, max_resume_time, false)
+      raise "DUT took more than #{max_resume_time} seconds to resume" if @equipment['dut1'].timeout?
       #dutThread.join if dutThread
     end
     
