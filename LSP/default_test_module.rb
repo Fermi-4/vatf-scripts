@@ -376,7 +376,7 @@ module LspTestScript
     
     def clean
       puts "\nLspTestScript::clean"
-      if @test_result.result == FrameworkConstants::Result[:fail]
+      if @test_result.result == FrameworkConstants::Result[:fail] or @test_result.result == FrameworkConstants::Result[:nry]
         query_debug_data
       end
       kernel_modules = @test_params.kernel_modules   if @test_params.instance_variable_defined?(:@kernel_modules)
