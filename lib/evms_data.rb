@@ -105,7 +105,7 @@ module EvmData
     machines['dra7xx-evm']  = {'0.0' => nil}
     machines['omap5-evm']   = {'0.0' => nil}
     machines['am43xx-epos'] = {'0.0' => {'VDD_CORE' => 0.95, 'VDD_MPU' => 0.95}}
-    machines['am43xx-gpevm'] = {'0.0' => nil}
+    machines['am43xx-gpevm'] = {'0.0' => {'VDD_CORE' => 0.95, 'VDD_MPU' => 0.95}}
     params.merge!({'dict' => machines})
     get_cmd(params)
   end
