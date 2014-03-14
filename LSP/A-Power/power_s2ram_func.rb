@@ -28,11 +28,15 @@ def run
     puts "test_thr status=#{status}, suspend_thr status=#{suspend_thr.status.to_s}"
     sleep 1
   end
+  puts "\n===> Test time achieved. Going to stop test"
   @global_stop = true
-  result = test_thr.value           # This will block (join) until test_thr completes
-  set_result(result[0], result[1]) 
   @stop_test = true
+  puts "\n===> waiting on suspend_thr"
   suspend_thr.join
+  puts "\n===> waiting on test_thr"
+  result = test_thr.value           # This will block (join) until test_thr completes
+  puts "\n===> all threads finished"
+  set_result(result[0], result[1]) 
   query_pm_stats
   show_execution_logs
 end
@@ -143,17 +147,19 @@ def suspend_resume_loop
     while (!@stop_test) 
       puts "GOING TO SUSPEND DUT - rtcwake case"
       @mutex.synchronize do
-        @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m #{power_state} -s #{suspend_time}", /resume\s+of\s+devices\s+complete/i, suspend_time+30)
+        @equipment['dut1'].send_cmd("sync", @equipment['dut1'].prompt, 120)
+        @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m #{power_state} -s #{suspend_time}", /resume\s+of\s+devices\s+complete/i, suspend_time+60, false)
       end
       if @equipment['dut1'].timeout?
         puts "Timeout while waiting for RTC suspend/resume completion"
         @queue.push(1)  # Inform test thread that dut is awake
         @global_stop = true
-        raise "DUT took more than #{suspend_time+30} seconds to suspend/resume" 
+        raise "DUT took more than #{suspend_time+60} seconds to suspend/resume" 
       end
       @queue.push(1)  # Inform test thread that dut is awake
       sleep resume_time 
     end
+    @queue.push(1)  # Extra one to avoid lock in atypical case where test thread run faster than suspend thread
   }
 
   else
@@ -161,7 +167,7 @@ def suspend_resume_loop
     while (!@stop_test) 
       puts "GOING TO SUSPEND DUT"
       @mutex.synchronize do
-        @equipment['dut1'].send_cmd("sync; echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, 120)
+        @equipment['dut1'].send_cmd("sync; echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, 120, false)
       end
       if @equipment['dut1'].timeout?
         puts "Timeout while waiting to suspend"
@@ -173,16 +179,17 @@ def suspend_resume_loop
       @equipment['dut1'].send_cmd("\n\n\n", @equipment['dut1'].prompt, 1)  # Try to resume
       @equipment['dut1'].send_cmd("\n\n\n", @equipment['dut1'].prompt, 1)  # Try to resume 
       @equipment['dut1'].send_cmd("\n\n\n", @equipment['dut1'].prompt, 1)  # Try to resume 
-      @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 20)  # One last time
+      @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 60)  # One last time
       if @equipment['dut1'].timeout?
         puts "Timeout while waiting to resume"
         @queue.push(1)  # Inform test thread that dut is awake
         @global_stop = true
-        raise "DUT took more than 20 seconds to resume" 
+        raise "DUT took more than 60 seconds to resume" 
       end
       @queue.push(1)  # Inform test thread that dut is awake
       sleep resume_time 
     end
+    @queue.push(1)  # Extra one to avoid lock in atypical case where test thread run faster than suspend thread
   }
   end
   return thr
