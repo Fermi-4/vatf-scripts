@@ -1,5 +1,0 @@
-SOURCES := lsusb.c \
-        names.c names.h \
-        devtree.c devtree.h list.h \
-        usbmisc.c usbmisc.h
-
