@@ -1,0 +1,52 @@
+From e8a2f0135727f9d9cbad86c657362947b15db22d Mon Sep 17 00:00:00 2001
+From: Lalindra Jayatilleke <lalindra@ti.com>
+Date: Tue, 18 Mar 2014 14:56:24 -0400
+Subject: [PATCH VATF-SCRIPTS] Arm benchmarks: Added parser for the stream
+ benchmark
+
+Addition of the stream parser patch to VATF scripts.
+---
+ LSP/arm-benchmarks/stream_parser_1core.rb |   31 +++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+ create mode 100755 LSP/arm-benchmarks/stream_parser_1core.rb
+
+diff --git a/LSP/arm-benchmarks/stream_parser_1core.rb b/LSP/arm-benchmarks/stream_parser_1core.rb
+new file mode 100755
+index 0000000..f3b7a5c
+--- /dev/null
++++ b/LSP/arm-benchmarks/stream_parser_1core.rb
+@@ -0,0 +1,31 @@
++# Get array of performance metrics
++# Each array element is a hash with following key,values pairs:
++#  name: Performance metric's name
++#  regex: regular expression used to capture perf metric value
++#  units: Performance metric's units
++#  adj: Optional hash used to escale capture value to appropriate units.
++#       The adj is a hash with following keys:
++#        val_index: index of capture value in regex above
++#        unit_index: index of capture units in regex above
++#        val_adj: hash of regex:val. The capture unit value will be check agains regex key, if match value is adjusted by val.
++def get_metrics  
++perf_metrics = [  
++{'name' => 'Copy',  
++'regex' => 'Copy\s*:\s*(\d*.\d*)',  
++'units' => 'MB/s',  
++},
++{'name' => 'Scale',  
++'regex' => 'Scale\s*:\s*(\d*.\d*)',  
++'units' => 'MB/s',  
++},
++{'name' => 'Add',  
++'regex' => 'Add\s*:\s*(\d*.\d*)',  
++'units' => 'MB/s',  
++},
++{'name' => 'Triad',  
++'regex' => 'Triad\s*:\s*(\d*.\d*)',  
++'units' => 'MB/s',  
++}
++]
++perf_metrics
++end
+-- 
+1.7.9.5
+
