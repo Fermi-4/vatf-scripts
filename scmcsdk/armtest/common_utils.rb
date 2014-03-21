@@ -103,7 +103,7 @@ end
 #
 # Returns true if running, or false if  not
 def rmServer_up?(file_version = "_2sohk")
-  @equipment['dut1'].send_cmd("ps | grep rmServer",
+  @equipment['dut1'].send_cmd("ps -e | grep rmServer",
     /rmServer_[#{ file_version }]/i, 10)
   @equipment['dut1'].timeout? ? false : true
 end
