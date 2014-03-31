@@ -33,9 +33,15 @@ def run_determine_test_outcome(return_non_zero)
             "failtest() function was called. \n",
             get_performance_data(File.join(@linux_temp_folder,'test.log'), get_perf_metrics)]
   else
-    return [FrameworkConstants::Result[:pass],
+    if get_test_output.match(/^\|WARNING\|.+SKIPPING TEST:/)
+      return [FrameworkConstants::Result[:ns],
+            "Test skipped. Optional kernel config option not set as expected.\n",
+            get_performance_data(File.join(@linux_temp_folder,'test.log'), get_perf_metrics)]
+    else
+      return [FrameworkConstants::Result[:pass],
             "Test passed. Application exited with zero. \n",
             get_performance_data(File.join(@linux_temp_folder,'test.log'), get_perf_metrics)]
+    end
   end
 end
 
