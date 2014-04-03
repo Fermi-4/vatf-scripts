@@ -139,8 +139,10 @@ module LspTestScript
     new_params['user_bins']  = new_params['user_bins'] ? new_params['user_bins'] : 
                              @test_params.instance_variable_defined?(:@user_bins) ? @test_params.user_bins : 
                              ''     
-    
-#new_params.each{|k,v| puts "#{k}:#{v}"}
+    # Optional SW asset with user-defined boot commands
+    new_params['boot_cmds']  = new_params['boot_cmds'] ? new_params['boot_cmds'] : 
+                             @test_params.instance_variable_defined?(:@boot_cmds) ? @test_params.boot_cmds : 
+                             ''     
     new_params = add_dev_loc_to_params(new_params, 'primary_bootloader')
     new_params = add_dev_loc_to_params(new_params, 'secondary_bootloader')
     new_params = add_dev_loc_to_params(new_params, 'kernel')
