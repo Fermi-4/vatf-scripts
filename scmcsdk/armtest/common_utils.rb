@@ -144,3 +144,47 @@ def sudo_cmd(cmd, expected_match = /.*/, timeout = 30)
     false
   end
 end
+
+# Public: Get the TFTP file and path from test params
+def get_relative_tftp_file_and_path(file)
+  relative_tftp_file_and_path = ""
+  tmp_relative_path = @test_params.staf_service_name.to_s.strip.gsub('@','_')
+  error_msg = "Error: \"#{file.gsub('$',"")}=\" not specified in build information."
+  case file
+    when "$kernel"
+      if !@test_params.instance_variable_defined?(:@kernel)
+        @equipment['dut1'].log_info(error_msg)
+        raise error_msg
+      else
+        relative_tftp_file_and_path = File.join(tmp_relative_path, File.basename(@test_params.kernel))
+      end
+    when "$nand_test_file"
+      if !@test_params.instance_variable_defined?(:@nand_test_file)
+        @equipment['dut1'].log_info(error_msg)
+        raise error_msg
+      else
+        tftp_file_name = File.basename(@test_params.nand_test_file)
+        server_tftp_path = File.join(@equipment['server1'].tftp_path, tmp_relative_path)
+        server_tftp_file_and_path = File.join(server_tftp_path, tftp_file_name)
+        @equipment['server1'].log_info("\r\n src: #{@test_params.nand_test_file}, dst: #{server_tftp_path}\r\n")
+        copy_asset(@equipment['server1'], @test_params.nand_test_file, server_tftp_path)
+        relative_tftp_file_and_path = File.join(tmp_relative_path, tftp_file_name)
+        #relative_tftp_file_and_path = "make_it_fail"
+      end
+    else
+      relative_tftp_file_and_path = file
+  end
+  return relative_tftp_file_and_path
+end
+
+# Public: TFTP file to EVM
+def tftp_file_from_host(file, host_ip, timeout_secs)
+  tftp_file_and_path = get_relative_tftp_file_and_path(file)
+  tftp_server_ip = (host_ip == "$host_ip" ? @equipment['server1'].telnet_ip : host_ip)
+  #@equipment['dut1'].send_cmd("tftp -g -r #{tftp_file_and_path} #{tftp_server_ip} ; echo command_done", "command_done", 2)
+  @equipment['dut1'].send_cmd("tftp -g -r #{tftp_file_and_path} #{tftp_server_ip} ; echo command_done", @equipment['dut1'].prompt, 2)
+  response_string = @equipment['dut1'].response.to_s
+  if !response_string.include?("error") && !response_string.include?("can't")
+    @equipment['dut1'].send_cmd("\r\n", "command_done", timeout_secs.to_i)
+  end
+end

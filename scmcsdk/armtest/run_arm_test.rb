@@ -115,8 +115,10 @@ def analyze_criteria(count, test_cmd, std_response, criteria)
     #if criterion is preceded by a -, fail output contains failure_word
     elsif criterion[0] == "-"
       failure_word = criterion[/\S.+\S/][1, criterion[/\S.+\S/].length]
-      if std_response[/#{failure_word}/io]
+      #if std_response[/#{failure_word}/io]
+      if std_response[/#{failure_word}/i]
         puts "**Output contains '#{failure_word}'**"
+        comment += "** Error: output contains '#{failure_word}' **\n"
         return [false, comment]
       end
     #if criterion is preceded by a +, call internally_consistent?
@@ -509,6 +511,7 @@ def run_command(cmds, look_for = @equipment['dut1'].prompt)
     end
 
     std_response = @equipment['dut1'].response.to_s
+    @equipment['dut1'].log_info("\r\nstd_response(run_command): #\"#{std_response}\"#\r\n")
     if std_response[/Segmentation fault/]
       comment += "\nSeg fault error."
       return [false, comment]
