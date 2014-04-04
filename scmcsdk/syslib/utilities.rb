@@ -1830,6 +1830,7 @@ class PerfUtilities
     @xfrm_stats_accumulation = 0
     @xfrm_stat_command = "cat /proc/net/xfrm_stat"
     @sideband_stat_command = "cat /sys/devices/soc.0/20c0000.crypto/stats/tx_drop_pkts"
+    @wait_for_text = "command_done"
   end
   def IPERF_APP()
     return "iperf"
@@ -1895,8 +1896,8 @@ class PerfUtilities
     task_started = false
     task_check_command = "ps -ef | grep \"#{task_name}\" | grep -v grep"
     response_string = @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, task_check_command, "force fail", @vatf_helper.DONT_SET_ERROR_BIT(), 0, monitor_secs)
-    #response_string = @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, task_check_command, "WARNING:", @vatf_helper.DONT_SET_ERROR_BIT(), 0, monitor_secs)
-    # remove the command used to get the response so that the check_string only checks against the response given and not the command given.
+    #task_check_command = "ps -ef | grep \"#{task_name}\" | grep -v grep ; echo $WAITFOR"
+    #response_string = @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, task_check_command, @wait_for_text, @vatf_helper.DONT_SET_ERROR_BIT(), 0, monitor_secs)
     response_string.gsub!(task_check_command, "")
     @vatf_helper.log_info(is_alpha_side, "\r\n is_task_running response_string: \"#{response_string}\")\r\n")
     task_started = true if response_string.downcase.include?(check_string.downcase)
@@ -2113,6 +2114,7 @@ class PerfUtilities
       @free_mem_end =  mem_stat
     end
     stat_commands = Array.new
+    stat_commands.push("cat /proc/net/snmp")
     stat_commands.push("ip -s xfrm state")
     stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/rx_pkts")
     stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/tx_pkts")
@@ -2349,8 +2351,7 @@ class PerfUtilities
     #wait_for_text = "/sec"
     #wait_for_text = " ms    "
     threaded_bandwidth = "#{(udp_bandwidth.to_f / @iperf_threads)}M"
-    #wait_for_text = "forcing timeout to occur"
-    wait_for_text = "command_done"
+    wait_for_text = "forcing timeout to occur"
     wait_secs = test_time + 10
     command = ""
     command += @iperf_cmd
@@ -2367,8 +2368,10 @@ class PerfUtilities
     #command += "-P 2 " if protocol.downcase == "tcp"
     command += "-t #{test_time} "
     command += (is_alpha_side ? @additional_alpha_params : @additional_beta_params)
-    command += " ; echo 'command_done'"
+    #command += " ; echo 'command_done'"
+    #command += " ; echo $WAITFOR"
     @vatf_helper.log_info(is_alpha_side, "\r\n Starting iperf client... (command: #{command})\r\n")
+    #return @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", @wait_for_text, @error_bit, 0, wait_secs)
     return @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", wait_for_text, @error_bit, 0, wait_secs)
   end
   def client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
@@ -2400,7 +2403,7 @@ class PerfUtilities
     wait_secs = 10
     eth_min_port = 0
     eth_max_port = 5
-    last_dhcp_port = 1
+    last_dhcp_port = 0
     do_dhclient = (this_eth_static_ip_address == "" ? true : false)
     if (this_eth_port > last_dhcp_port)
       if do_dhclient
@@ -2417,6 +2420,25 @@ class PerfUtilities
       end
     end
     @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ping #{@alpha_ip} -c 3", "seq=2", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
+  end
+  def find_eth_interface_by_ipaddress(ip_address, is_alpha_side)
+    eth_iface = ""
+    raw_ifconfig = @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ifconfig", "force timeout" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 2)
+    temp = raw_ifconfig.gsub("\n","").scan(/eth[0-9a-zA-Z\s:.]*inet addr:[0-9.]+/)
+    temp.each do |eth_item|
+      if eth_item.include?(ip_address)
+        eth_iface = eth_item.scan(/eth[0-9]*/)[0]
+      end
+    end
+    return eth_iface
+  end
+  def set_mtu_size(mtu_set_size, evm_eth_port)
+    eth_iface_evm = (evm_eth_port == "" ? "eth0" : "eth#{evm_eth_port}")
+    eth_iface_pc = find_eth_interface_by_ipaddress(@alpha_ip, ALPHA_SIDE())
+    @vatf_helper.smart_send_cmd_wait(ALPHA_SIDE(), @sudo_cmd, "ifconfig #{eth_iface_pc} mtu #{mtu_set_size}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
+    @vatf_helper.smart_send_cmd_wait(BETA_SIDE(), @normal_cmd, "ifconfig #{eth_iface_evm} mtu #{mtu_set_size}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
+    @vatf_helper.smart_send_cmd_wait(ALPHA_SIDE(), @sudo_cmd, "ifconfig #{eth_iface_pc}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
+    @vatf_helper.smart_send_cmd_wait(BETA_SIDE(), @normal_cmd, "ifconfig #{eth_iface_evm}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
   end
   def perf_typical_config(equipment, dev='dut1', iface_type='eth')
     # Use the default vatf linux pc ('server1') and evm ('dut1') reference, but set the equipment variable so we can communicate with them
@@ -2474,6 +2496,8 @@ class PerfUtilities
     measured_mbps = 0
     linux_pc = ALPHA_SIDE()
     evm_side = BETA_SIDE()
+    @vatf_helper.smart_send_cmd_wait(linux_pc, @normal_cmd, "export WAITFOR=#{@wait_for_text}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
+    @vatf_helper.smart_send_cmd_wait(evm_side, @normal_cmd, "export WAITFOR=#{@wait_for_text}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
     cpu_stats_side = evm_side
     case @perf_app
       when IPERF_APP()
@@ -2516,6 +2540,8 @@ class PerfUtilities
     raw_buffer_egress = ""
     linux_pc = ALPHA_SIDE()
     evm_side = BETA_SIDE()
+    @vatf_helper.smart_send_cmd_wait(linux_pc, @normal_cmd, "export WAITFOR=#{@wait_for_text}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
+    @vatf_helper.smart_send_cmd_wait(evm_side, @normal_cmd, "export WAITFOR=#{@wait_for_text}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
     get_proc_info(evm_side, crypto_mode)
     server_thread_ingress = server_start(perf_server_side, protocol, test_time_secs + 20, " > ~/perf_svr_log.txt")
     server_thread_egress = server_start(perf_client_side, protocol, test_time_secs + 20, " > ~/perf_svr_log.txt")
@@ -3008,7 +3034,8 @@ class IpsecUtilitiesVatf
     function_name = "bring_ipsec_tunnel_up"
     # Return immediately if errors have already occurred.
     return if (result() != 0)
-    verify_message = (is_pass_through ? "PASS" : "ESTABLISHED")
+    #verify_message = (is_pass_through ? "PASS" : "ESTABLISHED")
+    verify_message = (is_pass_through ? "PASS" : "TUNNEL")
     ipsec_cmd = (is_pass_through ? "route" : "up")
     ip_ref = ( is_pass_through ? (is_ipv4 ? "#{@connection_name}3" : "#{@connection_name}4") : (is_ipv4 ? "#{@connection_name}1" : "#{@connection_name}2") )
     connect_ref = (is_alpha_side ? "#{@alpha_side_ref}-#{ip_ref}" : "#{@beta_side_ref}-#{ip_ref}")

@@ -111,6 +111,7 @@ def run
   mtu_size = default_mtu_size
   auto_bw = "yes"
   min_tput = ""
+  jumbo_frames = "no"
   
   # Get IPSEC connection result  (The result will be set from running establish_ipsec_connection in the setup)
   result |= IpsecConnectionScript.result.to_i
@@ -133,6 +134,7 @@ def run
     perf_app = get_variable_value(@test_params.params_chan.perf_server[0])  if @test_params.params_chan.instance_variable_defined?(:@perf_server)
     mtu_size = get_variable_value(@test_params.params_chan.mtu_size[0])  if @test_params.params_chan.instance_variable_defined?(:@mtu_size)
     min_tput = get_variable_value(@test_params.params_chan.min_tput[0])  if @test_params.params_chan.instance_variable_defined?(:@min_tput)
+    jumbo_frames = get_variable_value(@test_params.params_chan.jumbo_frames[0])  if @test_params.params_chan.instance_variable_defined?(:@jumbo_frames)
 
     if min_tput.include?("/")
       min_tput_array = min_tput.split("/")
@@ -142,6 +144,11 @@ def run
       ingress_min_tput = (min_tput == "" ? 0 : min_tput.to_i)
       egress_min_tput = ingress_min_tput
     end
+
+    if jumbo_frames.downcase.include?("yes") || jumbo_frames.downcase.include?("true")
+      jumbo_frames = "yes"
+    end
+    #jumbo_frames = "yes"
 
     # For debug only
     #test_secs = 5
@@ -173,6 +180,11 @@ def run
 
     # Set IP addresses for perf to use
     perfUtils.perf_typical_config(@equipment, dev, iface_type)
+
+    # Set mtu for Jumbo packets if needed
+    if jumbo_frames == "yes" && packet_size.to_i > 1500
+      perfUtils.set_mtu_size(packet_size, eth_port)
+    end
       
     case test_direction
       when DIRECTION_BOTH
@@ -191,9 +203,15 @@ def run
         # If UDP use binary search to get the best MBPS
         if IpsecConnectionScript.protocol.downcase == "udp" && auto_bandwidth_detect
           udp_bandwidth_ingress = perfUtils.test_linux_to_evm_mbps_detect(IpsecConnectionScript.protocol, auto_bw_test_secs, udp_bandwidth_ingress, packet_size, "auto detect mbps", crypto_mode)
+          if udp_bandwidth_ingress == 0
+            result = 1
+            comments += "Error: Automated throughput measurement detected 0 Mbps. UDP packets are not passing accross this connection."
+          end
         end
         test_headline_ingress = "#{test_headline}_#{DIRECTION_INGRESS}#{get_bw_info(IpsecConnectionScript.protocol, specified_bandwidth, auto_bandwidth_detect)}"
-        result |= perfUtils.test_linux_to_evm(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_ingress, packet_size, test_headline_ingress, crypto_mode, ingress_min_tput, egress_min_tput)
+        if result == 0
+          result |= perfUtils.test_linux_to_evm(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_ingress, packet_size, test_headline_ingress, crypto_mode, ingress_min_tput, egress_min_tput)
+        end
       when DIRECTION_EGRESS
         udp_bandwidth_egress = udp_bandwidth_array[UPLOAD_SPEED_INDEX]
         specified_bandwidth = udp_bandwidth_egress
@@ -201,13 +219,24 @@ def run
         udp_bandwidth_egress = "1400M" if udp_bandwidth_array[UPLOAD_SPEED_INDEX] == "10000M"
         if IpsecConnectionScript.protocol.downcase == "udp" && auto_bandwidth_detect
           udp_bandwidth_egress = perfUtils.test_evm_to_linux_mbps_detect(IpsecConnectionScript.protocol, auto_bw_test_secs, udp_bandwidth_egress, packet_size, "auto detect mbps", crypto_mode)
+          if udp_bandwidth_ingress == 0
+            result = 1
+            comments += "Error: Automated throughput measurement detected 0 Mbps. UDP packets are not passing accross this connection."
+          end
         end
         test_headline_egress = "#{test_headline}_#{DIRECTION_EGRESS}#{get_bw_info(IpsecConnectionScript.protocol, specified_bandwidth, auto_bandwidth_detect)}"
-        result |= perfUtils.test_evm_to_linux(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_egress, packet_size, test_headline_egress, crypto_mode, ingress_min_tput, egress_min_tput)
+        if result == 0
+          result |= perfUtils.test_evm_to_linux(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_egress, packet_size, test_headline_egress, crypto_mode, ingress_min_tput, egress_min_tput)
+        end
       else
         result = 1
         comments += "Test Case ERROR: Unable to determine throughput direction.\r\n"
     end
+  end
+
+  # Set mtu back to default
+  if jumbo_frames == "yes" && packet_size.to_i > 1500
+    perfUtils.set_mtu_size(default_mtu_size, eth_port)
   end
 
   # Set overall test result and comments text
