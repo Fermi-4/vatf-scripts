@@ -1,0 +1,22 @@
+Instructions on how to get the performance data from Testlink to the results spreadsheet
+
+1) Goto Results-> Query Metrics
+2) Select the appropriate buld(s)
+3) Select IPSEC & ETH test suites
+4) Select start time from before the first test case was run
+5) Select Result Set as Latest Results Only
+6) Select Totals as Yes
+7) Select Test Suite Summaries as Yes
+8) Click the Submit Query button
+9) Once the Query is complete hit Ctrl & a keys together to select all of the results
+10) Copy the results to an Excel spreadsheet
+11) Save the results to a MSDOS .csv file
+12) Run the perf_gen.bat file specifying the name of the .csv file you just created. (perf_gen.bat MCSDK304.csv)
+13) Copy the MCSDK304 iperf spread sheets from \\gtsnowball\System_Test\Automation\gtsystst_logs\MCSDK-304
+14) Rename the sheets to the release being tested.
+15) Use excel to edit the spreadsheet
+16) Unhide the 3 _raw sheets
+17) Copy the appropriate data from the three spreadsheets created by perf_gen.bat to the 3 _raw spreadsheets
+18) Re-hide the _raw spreadsheets.
+19) Copy the new spreadsheets to the appropriate results directory.
+20) You are done.
