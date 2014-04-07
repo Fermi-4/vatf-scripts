@@ -1814,7 +1814,7 @@ class PerfUtilities
     @iperf_threads = 2
     @test_direction = INGRESS()
     @min_ingress_mbps = 0
-    @min_egress_mbs = 0
+    @min_egress_mbps = 0
     @first_xfrm_stat = Array.new
     @next_xfrm_stat = Array.new
     @first_sideband_stat = Array.new
@@ -2594,7 +2594,7 @@ class PerfUtilities
   def test_linux_to_evm_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode)
     @test_direction = INGRESS()
     @min_ingress_mbps = 0
-    @min_egress_mbs = 0
+    @min_egress_mbps = 0
     case @perf_app
       when NETPERF_APP()
         return udp_bandwidth
@@ -2607,7 +2607,7 @@ class PerfUtilities
   def test_evm_to_linux_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode)
     @test_direction = EGRESS()
     @min_ingress_mbps = 0
-    @min_egress_mbs = 0
+    @min_egress_mbps = 0
     case @perf_app
       when NETPERF_APP()
         return udp_bandwidth
@@ -2620,7 +2620,7 @@ class PerfUtilities
   def test_linux_to_evm(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, min_ingress_mbps, min_egress_mbps)
     @test_direction = INGRESS()
     @min_ingress_mbps = min_ingress_mbps
-    @min_egress_mbs = min_egress_mbps
+    @min_egress_mbps = min_egress_mbps
     perf_server_side = BETA_SIDE()   # EVM
     perf_client_side = ALPHA_SIDE()  # Linux PC
     test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)
@@ -2630,7 +2630,7 @@ class PerfUtilities
   def test_evm_to_linux(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, min_ingress_mbps, min_egress_mbps)
     @test_direction = EGRESS()
     @min_ingress_mbps = min_ingress_mbps
-    @min_egress_mbs = min_egress_mbps
+    @min_egress_mbps = min_egress_mbps
     perf_server_side = ALPHA_SIDE()  # Linux PC
     perf_client_side = BETA_SIDE()   # EVM
     test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)
@@ -2639,7 +2639,7 @@ class PerfUtilities
   def test_linux_to_evm_and_evm_to_linux(protocol, test_time_secs, udp_bandwidth_ingress, udp_bandwidth_egress, packet_size, test_headline, crypto_mode, min_ingress_mbps, min_egress_mbps)
     @test_direction = BOTH()
     @min_ingress_mbps = min_ingress_mbps
-    @min_egress_mbs = min_egress_mbps
+    @min_egress_mbps = min_egress_mbps
     perf_server_side = BETA_SIDE()   # EVM
     perf_client_side = ALPHA_SIDE()  # Linux PC
     test_simultaneous_common(protocol, test_time_secs, udp_bandwidth_ingress, udp_bandwidth_egress, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)

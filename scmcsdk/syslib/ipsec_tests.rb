@@ -138,8 +138,8 @@ def run
 
     if min_tput.include?("/")
       min_tput_array = min_tput.split("/")
-      ingress_min_tput = min_tput_array[UPLOAD_SPEED_INDEX].to_i
-      egress_min_tput = min_tput_array[DOWNLOAD_SPEED_INDEX].to_i
+      ingress_min_tput = min_tput_array[DOWNLOAD_SPEED_INDEX].to_i
+      egress_min_tput = min_tput_array[UPLOAD_SPEED_INDEX].to_i
     else
       ingress_min_tput = (min_tput == "" ? 0 : min_tput.to_i)
       egress_min_tput = ingress_min_tput
