@@ -21,7 +21,8 @@ def run
   wav_info = @equipment['server1'].response
   #Turning on playout/capture ctrls
   [['SP Driver', 0], 'SP Left', 'SP Right', 'Output Left From Left DAC', 'Output Right From Right DAC',
-   ['HP Driver',0], 'HP Left', 'HP Right'].each do |ctrl|
+   ['HP Driver',0], 'HP Left', 'HP Right', 'Left PGA Mixer Line1L', 'Right PGA Mixer Line1R', 
+   'Left PGA Mixer Mic3L', 'Right PGA Mixer Mic3R'].each do |ctrl|
     puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl)
   end
   cset_state('on','ADC Capture Switch')
