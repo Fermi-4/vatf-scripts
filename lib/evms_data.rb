@@ -58,6 +58,13 @@ module EvmData
     power_data['am37x-evm'] = {'power_domains' => ['VDD1', 'VDD2'], 'domain_resistors' => {'VDD1'=>'0.05', 'VDD2'=>'0.1'}}
     power_data['am335x-sk'] = {'power_domains' => ['VDD_MPU', 'VDDS_DDR3'], 'domain_resistors' => {'VDD_MPU'=>'0.1', 'VDDS_DDR3'=>'0.24'}}
 
+    power_data['dra7xx-evm'] = {'power_domains' => ['VDD_DSPEVE', 'VDD_MPU', 'DDR_CPU', 'VDDA_1V8_PLL', 'VDD_GPU', 'VUSB_3V3', 
+                                                    'VDDS18V', 'VDD_SHV', 'CORE_VDD', 'VDD_IVA', 'DDR_MEM', 'VDDA_1V8_PHY'], 
+                                'domain_resistors' => {'VDD_DSPEVE' => '0.001', 'VDD_MPU' => '0.001', 'DDR_CPU' => '0.005', 
+                                                       'VDDA_1V8_PLL' => '0.01', 'VDD_GPU' => '0.002', 'VUSB_3V3' => '0.01',
+                                                       'VDDS18V' => '0.01', 'VDD_SHV' => '0.001', 'CORE_VDD' => '0.002', 
+                                                       'VDD_IVA' => '0.002', 'DDR_MEM' => '0.005', 'VDDA_1V8_PHY' => '0.01'}}
+
     return power_data[key]
   end
 
