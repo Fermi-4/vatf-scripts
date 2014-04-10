@@ -7,7 +7,10 @@ include LspTestScript
 
 def setup
   self.as(LspTestScript).setup
-
+  # Add multimeter to result logs
+  add_equipment('multimeter1') do |log_path|
+    Object.const_get(@equipment['dut1'].params['multimeter1'].driver_class_name).new(@equipment['dut1'].params['multimeter1'],log_path)
+  end
   # Connect to multimeter
   @equipment['multimeter1'].connect({'type'=>'serial'}) if @equipment['multimeter1'].instance_variable_defined?(:@serial_port) 
 end
