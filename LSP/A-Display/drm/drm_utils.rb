@@ -287,21 +287,6 @@ def get_properties(dut=@equipment['dut1'])
   result
 end
 
-#Function to parse sections of a string, takes:
-#  string, the string to be parsed
-#  sep_regex, a regex containing the pattern used to determine the sections
-#Return a hash whose key-value pair entries are 
-#  <string that matches sep_regex> => <string found after sep_regex>
-def get_sections(string, sep_regex)
-  scan_res = string.scan(/(#{sep_regex})((.(?!#{sep_regex}))*)/im)
-  return nil if scan_res.empty?
-  result = {}
-  scan_res.each do |cur_section|
-    result[cur_section[0].strip()] = cur_section[1]
-  end
-  result
-end
-
 #Function to parse the values of drm object entries, takes
 #  string, string containing all the information related to a drm object
 #Returns an array of hashes where each hash in the array contains 

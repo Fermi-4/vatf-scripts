@@ -84,3 +84,18 @@ def scp_push_file(ip_addr, local_path, rem_path, username='root', password='')
     ssh.scp.upload!(local_path, rem_path)
   end
 end
+
+#Function to parse sections of a string, takes:
+#  string, the string to be parsed
+#  sep_regex, a regex containing the pattern used to determine the sections
+#Return a hash whose key-value pair entries are 
+#  <string that matches sep_regex> => <string found after sep_regex>
+def get_sections(string, sep_regex)
+  scan_res = string.scan(/(#{sep_regex})((.(?!#{sep_regex}))*)/im)
+  return nil if scan_res.empty?
+  result = {}
+  scan_res.each do |cur_section|
+    result[cur_section[0].strip()] = cur_section[1]
+  end
+  result
+end
