@@ -50,7 +50,7 @@ end
 #sections of the string returned by sensorCapture -x
 #Returns a list containing the entries found in the section
 def get_entries(info)
-  info.scan(/(?<=: )[^\r\n]+/)  
+  Set.new(info.scan(/(?<=: )[^\r\n]+/)).to_a  
 end
 
 
