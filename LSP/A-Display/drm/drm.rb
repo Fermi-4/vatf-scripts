@@ -31,45 +31,35 @@ def run
           connector['modes:'].each_index do |i| 
             mode = connector['modes:'][i]
             formats = ['default']
-              formats = @test_params.params_chan.formats if @test_params.params_chan.instance_variable_defined?(:@formats)
-              formats.each do |format|
-                  mode_params = {'connectors_ids' => [connector['id']], 
-                                 'crtc_id' => crtc['id'], 
-                                 'mode' => mode['name'],
-                                 'framerate' => mode['refresh (Hz)']}
-                  mode_params['format'] = format if format != 'default'
-                  plane_params = nil
-                  if !drm_info['Planes:'].empty? && i % 2 == 1
-                    plane = drm_info['Planes:'][0]
-                    width, height = mode['name'].match(/(\d+)x(\d+)/).captures
-                    plane_params = { 'width' => width, 
-                                     'height' => height,
-                                     'xyoffset' => [i,i],
-                                     'scale' => [0.125, 1.to_f/(1+i).to_f].max,
-                                     'format' => plane['formats:'][rand(plane['formats:'].length)]}
-                    plane_info_str = "#{plane_params['width']}x#{plane_params['height']}-#{plane_params['format']}"
-                  end
-                  res, res_string = run_mode_test(mode_params, plane_params)
-                  test_result &= res
-                  if res
-                    @results_html_file.add_rows_to_table(res_table,[[connector['id'], 
-                                                                     encoder['id'],
-                                                                     crtc['id'],
-                                                                     "#{mode['name']}@#{mode['refresh (Hz)']}",
-                                                                     plane_info_str ? plane_info_str : 'No plane',
-                                                                     ["Passed",{:bgcolor => "green"}],
-                                                                     res_string]])
-                  else
-                    @results_html_file.add_rows_to_table(res_table,[[connector['id'], 
-                                                                     encoder['id'],
-                                                                     crtc['id'],
-                                                                     "#{mode['name']}@#{mode['refresh (Hz)']}",
-                                                                     plane_info_str ? plane_info_str : 'No plane',
-                                                                     ["Failed",{:bgcolor => "red"}],
-                                                                     res_string]])
-                  end
-                  next if !res
-              end
+			formats = @test_params.params_chan.formats if @test_params.params_chan.instance_variable_defined?(:@formats)
+			formats.each do |format|
+			  mode_params = {'connectors_ids' => [connector['id']], 
+						     'crtc_id' => crtc['id'], 
+						     'mode' => mode['name'],
+						     'framerate' => mode['refresh (Hz)']}
+			  mode_params['format'] = format if format != 'default'
+			  plane_params = nil
+			  if !drm_info['Planes:'].empty? && i % 2 == 1
+				plane = drm_info['Planes:'][0]
+				width, height = mode['name'].match(/(\d+)x(\d+)/).captures
+				plane_params = { 'width' => width, 
+						         'height' => height,
+						         'xyoffset' => [i,i],
+						         'scale' => [0.125, 1.to_f/(1+i).to_f].max,
+						         'format' => plane['formats:'][rand(plane['formats:'].length)]}
+				plane_info_str = "Scale: #{plane_params['scale']}, pix_fmt: #{plane_params['format']}"
+			  end
+			  res, res_string = run_mode_test(mode_params, plane_params)
+			  test_result &= res
+			  @results_html_file.add_rows_to_table(res_table,[[connector['id'], 
+						                                       encoder['id'],
+						                                       crtc['id'],
+						                                       "#{mode['name']}@#{mode['refresh (Hz)']}",
+						                                       plane_info_str ? plane_info_str : 'No plane',
+						                                       res ? ["Passed",{:bgcolor => "green"}] : 
+						                                       ["Failed",{:bgcolor => "red"}],
+						                                       res_string]])
+			end
           end
         else
             {'CRTC' => crtc, 'Connector' => connector}.each do |type, drm_obj|
@@ -121,7 +111,7 @@ def run_mode_test(mode_params, plane_params=nil)
       result_string += mode_string
     end
   end
-  sf_result = FrameworkConstants::Result[:nry]
+  sf_result = test_result ? FrameworkConstants::Result[:nry] : FrameworkConstants::Result[:fail]
   while(sf_result == FrameworkConstants::Result[:nry])
     fps_res = run_sync_flip_test(mode_params, plane_params) do
       sf_result, sf_string = get_drm_test_result("#{title_string} sync flip test")
