@@ -2,6 +2,7 @@ require File.dirname(__FILE__)+'/../TARGET/dev_test2'
 
 def setup
   self.as(LspTargetTestScript).setup
+  @DEBUGFS_PATH='/sys/kernel/debug/'
 end
 
 def run
@@ -53,14 +54,17 @@ def configure_dut
   @equipment['dut1'].send_cmd("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", @equipment['dut1'].prompt, 3)
   @equipment['dut1'].send_cmd(" cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies", @equipment['dut1'].prompt, 3)
   supported_frequencies = @equipment['dut1'].response.split(/\s+/).select {|v| v =~ /^\d+$/ }
-    
-  if @test_params.params_chan.sleep_while_idle[0] != '0' ||  @test_params.params_chan.enable_off_mode[0] != '0'
-    @equipment['dut1'].send_cmd("mkdir /debug", @equipment['dut1'].prompt)
-    @equipment['dut1'].send_cmd("mount -t debugfs debugfs /debug", @equipment['dut1'].prompt)
-    #@equipment['dut1'].send_cmd("echo #{@test_params.params_chan.sleep_while_idle[0]} > /debug/pm_debug/sleep_while_idle", @equipment['dut1'].prompt)
-    @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.enable_off_mode[0]} > /debug/pm_debug/enable_off_mode", @equipment['dut1'].prompt) 
-  end
- 
+
+  # Check debugfs is available
+  raise "debugfs is not available at #{@DEBUGFS_PATH}" if !dut_dir_exist? @DEBUGFS_PATH
+  
+  # Enable cpu idle  
+  @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.sleep_while_idle[0]} > #{@DEBUGFS_PATH}pm_debug/sleep_while_idle", @equipment['dut1'].prompt)
+  
+  # Enable off mode (RTC-only wakeup)
+  @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.enable_off_mode[0]} > #{@DEBUGFS_PATH}pm_debug/enable_off_mode", @equipment['dut1'].prompt) 
+  
+  
   if @test_params.params_chan.cpufreq[0] != '0' 
     # put device in avaiable OPP states
     raise "This dut does not support #{@test_params.params_chan.dvfs_freq[0]} Hz, supported values are #{supported_frequencies.to_s}" if !supported_frequencies.include?(@test_params.params_chan.dvfs_freq[0])
@@ -72,7 +76,7 @@ def configure_dut
 
   # set uart to gpio in standby_gpio_pad_conf so that uart can wakeup from standby
   if power_state == 'standby' && wakeup_domain == 'uart'
-    @equipment['dut1'].send_cmd("cd /debug/omap_mux/board", @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("cd #{@DEBUGFS_PATH}omap_mux/board", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'set_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})}" , @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'get_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})}", @equipment['dut1'].prompt, 10)
   end
@@ -197,7 +201,7 @@ end
 
 def query_pm_stats
   puts "\n\n======= Power Domain transition stats =======\n"
-  @equipment['dut1'].send_cmd("cat /debug/pm_debug/count", @equipment['dut1'].prompt) 
+  @equipment['dut1'].send_cmd("cat #{@DEBUGFS_PATH}pm_debug/count", @equipment['dut1'].prompt) 
   @equipment['dut1'].send_cmd("cat /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state", @equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd("find /sys/devices/system/cpu/cpu0/cpuidle/ -name \"state*\" -exec cat {}/time \\;", @equipment['dut1'].prompt)
 end
