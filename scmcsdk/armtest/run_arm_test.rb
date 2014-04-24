@@ -43,6 +43,7 @@ def run
   commands = assign_commands()
   criteria = assign_criteria()
   iterations = assign_iterations()
+  @platform = get_platform()
   test_folder_location = nil
   #for debugging, test_folder_location = @test_params.lld_test_archive
 
@@ -175,6 +176,14 @@ def assign_iterations
     @test_params.params_control.iterations[0].to_i
   else
     @test_params.params_chan.iterations[0].to_i
+  end
+end
+
+def get_platform()
+  if @equipment['dut1'].id.split("_").grep(/k2.?/).size > 0
+    @equipment['dut1'].id.split("_").grep(/k2.?/)[0] 
+  else
+    "k2h"
   end
 end
 
