@@ -188,3 +188,7 @@ def tftp_file_from_host(file, host_ip, timeout_secs)
     @equipment['dut1'].send_cmd("\r\n", "command_done", timeout_secs.to_i)
   end
 end
+
+def eval_and_send(cmd,look_for)
+  @equipment['dut1'].send_cmd(eval('"'+cmd+'"'),look_for)
+end
