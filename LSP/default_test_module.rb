@@ -519,6 +519,10 @@ module LspTestScript
 
   # Start collecting system metrics (i.e. cpu load, mem load)
   def run_start_stats
+
+    # Dont collect stats if user asked so
+    return if @test_params.instance_variable_defined?(:@var_test_no_stats)
+
     @eth_ip_addr = get_ip_addr()
     if @eth_ip_addr
       old_telnet_ip = @equipment['dut1'].target.platform_info.telnet_ip
@@ -546,6 +550,10 @@ module LspTestScript
   
   # Stop collecting system metrics 
   def run_stop_stats
+
+    # Dont stop stats if user asked not to collect in the first place.
+    return if @test_params.instance_variable_defined?(:@var_test_no_stats)
+
     if @eth_ip_addr
       @target_sys_stats = stop_collecting_stats(@collect_stats) do |cmd| 
         if cmd
