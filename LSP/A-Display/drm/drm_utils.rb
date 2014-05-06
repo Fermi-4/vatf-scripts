@@ -1,5 +1,7 @@
 require File.dirname(__FILE__)+'/../../../lib/utils'
 
+MODETEST_PIX_FMTS = ['UYVY', 'VYUY', 'YUYV', 'YVYU', 'NV12', 'NV21', 'NV16', 'NV61', 'YU12', 'YV12', 'AR12', 'XR12', 'AB12', 'XB12', 'RA12', 'RX12', 'BA12', 'BX12', 'AR15', 'XR15', 'AB15', 'XB15', 'RA15', 'RX15', 'BA15', 'BX15', 'RG16', 'BG16', 'BG24', 'RG24','AR24', 'XR24', 'AB24', 'XB24', 'RA24', 'RX24', 'BA24', 'BX24', 'AR30', 'XR30', 'AB30', 'XB30', 'RA30', 'RX30', 'BA30', 'BX30']
+
 #Function to run the modetest command on the dut, takes:
 #  command, string containing the modetest command to run
 #  timeout, time in sec to wait for the command to finish
@@ -7,7 +9,7 @@ require File.dirname(__FILE__)+'/../../../lib/utils'
 def modetest(command, dut, timeout=5, interactive=false)
   response = ''
   t1 = Thread.new do
-    dut.send_cmd("/home/root/modetest/modetest #{command}", dut.prompt, timeout) #Set /home/root/modetest/modetest for now should change to modetest once libdrm in included in fs
+    dut.send_cmd("modetest #{command}", dut.prompt, timeout) #Set /home/root/modetest/modetest for now should change to modetest once libdrm in included in fs
     response = dut.response
   end
   yield if interactive
@@ -79,7 +81,7 @@ end
 def set_plane(params, dut=@equipment['dut1'], timeout=600)
   #-P <crtc_id>:<w>x<h>[+<x>+<y>][*<scale>][@<format>]     set a plane
   p_string = get_plane_string(params)
-  modeset(p_string, dut, timeout, true) do
+  modetest(p_string, dut, timeout, true) do
     yield
   end
 end
@@ -246,8 +248,21 @@ end
 #    height => <value>                     : height of the plane in pixels
 #    scale => <value>                      : (Optional) fraction to scale, i.e. 0.5,
 #    xyoffset => [<xoffset>,<yoffset>]     : (Optional) x,y offsets array in pixels, 
-#Return true if the captured frame rate matches the expected fram rate, specified by framerate 
+#Return true if the captured frame rate matches the expected frame rate, specified by framerate 
 def run_sync_flip_test(params, plane_params=nil, dut=@equipment['dut1'], timeout=600)
+  result = run_perf_sync_flip_test(params, plane_params, dut, timeout) do
+             yield
+           end
+  
+  result[0]
+end
+
+#Function to run a vsynced page flipping test, takes the same parameters as function
+#run_sync_flip_test
+#Returns an array with two elements: 
+#          [true/false if the captured frame rate matches the expected frame rate or not, 
+#           an array [] containing the fps captured]
+def run_perf_sync_flip_test(params, plane_params=nil, dut=@equipment['dut1'], timeout=600)
   #-v test vsynced page flipping
   s_f_test_str = '-v ' + get_mode_string(params)
   if plane_params
@@ -257,11 +272,11 @@ def run_sync_flip_test(params, plane_params=nil, dut=@equipment['dut1'], timeout
   output = modetest(s_f_test_str, dut, timeout, true) do
     yield
   end
-  fps_arr = output.scan(/^freq:\s*([\d.]+)Hz/).drop(2)
+  fps_arr = output.scan(/^freq:\s*([\d.]+)Hz/).drop(2).flatten
   fps_arr.each do |rate|
-    return false if (rate[0].to_f - params['framerate'].to_f).abs > 2
+    return [false, fps_arr] if (rate.to_f - params['framerate'].to_f).abs > 2
   end
-  !fps_arr.empty?
+  [!fps_arr.empty?, fps_arr]
 end
 
 #Function to create the string for the mode related tests, takes the
@@ -345,5 +360,58 @@ def get_entries(string)
   end
   result
 end
+
+#Function to obtain the formats supported by the connector/graphics planes,
+#takes:
+#  - connectors, a Hash containing the information associated with all the CRTCs
+#                enabled on the board, of the same syntax as the value referenced
+#                by the Connectors: key of the hash returned by get_properties()
+#Returns, a Hash of syntax {<connector id> => [ array of supported pix fmts]}
+def get_supported_fmts(connectors)
+  pix_fmts = Hash.new(){|h,k| h[k] = []}
+  connectors.each do |c_info|
+    next if !c_info['modes:']
+    m_params = {}
+    m_params['mode'] = c_info['modes:'][0]['name']
+    m_params['connectors_ids'] = [c_info['id']]
+    MODETEST_PIX_FMTS.each do |current_fmt|
+      m_params['format'] = current_fmt
+      mode_str = set_mode(m_params){sleep 2}
+      mode_str = mode_str.downcase()
+      pix_fmts[c_info['id']] << current_fmt if ['unsupported pixel format', 'invalid pixel format',
+                                                'invalid argument'].inject(true) do |t, str| 
+                                                    t &&= !mode_str.include?(str)
+                                               end
+    end
+  end
+  pix_fmts
+end
+
+#Function to obtain the formats supported by the overlay planes, takes:
+#  - crtc_info, a Hash containing the information associated with all the CRTCs
+#               enabled on the board, of the same syntax as the value referenced
+#               by the CRTCs: key of the hash returned by get_properties()
+#Returns, a Hash of syntax {<crtc id> => [ array of supported pix fmts]}
+def get_supported_plane_pix_fmts(crtcs_info)
+  pix_fmts = Hash.new(){|h,k| h[k] = []}
+  crtcs_info.each do |c_info|
+    p_params = {}
+    width, height = c_info['size'].gsub(/[\(\)]+/,'').split('x')
+    p_params['width'] = width
+    p_params['height'] = height
+    p_params['crtc_id'] = c_info['id'] 
+    MODETEST_PIX_FMTS.each do |current_fmt|
+      p_params['format'] = current_fmt
+      plane_str = set_plane(p_params){sleep 2}
+      plane_str = plane_str.downcase()
+      pix_fmts[c_info['id']] << current_fmt if ['unsupported pixel format', 'invalid pixel format',
+                                                'invalid argument', 'no unused plane available for'].inject(true) do |t, str| 
+                                                    t &&= !plane_str.include?(str)
+                                               end
+    end
+  end
+  pix_fmts
+end
+
 
 

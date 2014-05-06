@@ -7,13 +7,23 @@ include LspTestScript
 
 def run
   @equipment['dut1'].send_cmd('',@equipment['dut1'].prompt) #making sure that the board is ok
-  test_result = true     
+  test_result = true
+  perf_data = []
   drm_info = get_properties()
+  formats = ['default']
+  if @test_params.params_chan.instance_variable_defined?(:@formats)
+    formats = Hash.new() { |h,k| h[k] = @test_params.params_chan.formats }
+  elsif @test_params.params_chan.instance_variable_defined?(:@valid_formats)
+    formats = get_supported_fmts(drm_info['Connectors:'])
+  else
+    formats = Hash.new(['default'])
+  end
+            
   drm_info['Connectors:'].each do |connector|
     drm_info['Encoders:'].each do |encoder|
       next if encoder['id'] != connector['encoder']
       drm_info['CRTCs:'].each do |crtc|
-      next if crtc['id'] != encoder['crtc']
+        next if crtc['id'] != encoder['crtc']
         if !@test_params.params_control.instance_variable_defined?(:@test_type) ||
                @test_params.params_control.test_type[0].strip().downcase() != 'properties'
           @results_html_file.add_paragraph("")
@@ -30,50 +40,49 @@ def run
           end
           connector['modes:'].each_index do |i| 
             mode = connector['modes:'][i]
-            formats = ['default']
-			formats = @test_params.params_chan.formats if @test_params.params_chan.instance_variable_defined?(:@formats)
-			formats.each do |format|
-			  mode_params = {'connectors_ids' => [connector['id']], 
-						     'crtc_id' => crtc['id'], 
-						     'mode' => mode['name'],
-						     'framerate' => mode['refresh (Hz)']}
-			  mode_params['format'] = format if format != 'default'
-			  plane_params = nil
-			  if !drm_info['Planes:'].empty? && i % 2 == 1
-				plane = drm_info['Planes:'][0]
-				width, height = mode['name'].match(/(\d+)x(\d+)/).captures
-				plane_params = { 'width' => width, 
-						         'height' => height,
-						         'xyoffset' => [i,i],
-						         'scale' => [0.125, 1.to_f/(1+i).to_f].max,
-						         'format' => plane['formats:'][rand(plane['formats:'].length)]}
-				plane_info_str = "Scale: #{plane_params['scale']}, pix_fmt: #{plane_params['format']}"
-			  end
-			  res, res_string = run_mode_test(mode_params, plane_params)
-			  test_result &= res
-			  @results_html_file.add_rows_to_table(res_table,[[connector['id'], 
-						                                       encoder['id'],
-						                                       crtc['id'],
-						                                       "#{mode['name']}@#{mode['refresh (Hz)']}",
-						                                       plane_info_str ? plane_info_str : 'No plane',
-						                                       res ? ["Passed",{:bgcolor => "green"}] : 
-						                                       ["Failed",{:bgcolor => "red"}],
-						                                       res_string]])
-			end
+            formats[connector['id']].each do |format|
+              mode_params = {'connectors_ids' => [connector['id']], 
+                             'crtc_id' => crtc['id'], 
+                             'mode' => mode['name'],
+                             'framerate' => mode['refresh (Hz)'],
+                             'type' => connector['type']}
+              mode_params['format'] = format if format != 'default'
+              plane_params = nil
+              if !drm_info['Planes:'].empty? && i % 2 == 1
+                plane = drm_info['Planes:'][0]
+                width, height = mode['name'].match(/(\d+)x(\d+)/).captures
+                plane_params = {'width' => width, 
+                                'height' => height,
+                                'xyoffset' => [i,i],
+                                'scale' => [0.125, 1.to_f/(1+i).to_f].max,
+                                'format' => plane['formats:'][rand(plane['formats:'].length)]}
+                plane_info_str = "Scale: #{plane_params['scale']}, pix_fmt: #{plane_params['format']}"
+              end
+              res, res_string = run_mode_test(mode_params, plane_params, perf_data)
+              test_result &= res
+              @results_html_file.add_rows_to_table(res_table,[["#{connector['type']} (#{connector['id']})", 
+                                                   encoder['id'],
+                                                   crtc['id'],
+                                                   "#{mode['name']}@#{mode['refresh (Hz)']}",
+                                                   plane_params ? plane_info_str : 'No plane',
+                                                   res ? ["Passed",{:bgcolor => "green"}] : 
+                                                   ["Failed",{:bgcolor => "red"}],
+                                                   res_string]])
+            end
           end
         else
-            {'CRTC' => crtc, 'Connector' => connector}.each do |type, drm_obj|
-              res, res_string = run_properties_test(type, drm_obj)
-              test_result &= res
-            end
+          {'CRTC' => crtc, 'Connector' => connector}.each do |type, drm_obj|
+            res, res_string = run_properties_test(type, drm_obj)
+            test_result &= res
+          end
         end
       end
     end
   end
   if test_result
-    set_result(FrameworkConstants::Result[:pass], "DRM Test Passed")
+    set_result(FrameworkConstants::Result[:pass], "DRM Test Passed", perf_data)
   else
-    set_result(FrameworkConstants::Result[:fail], "DRM Test failed")
+    set_result(FrameworkConstants::Result[:fail], "DRM Test failed", perf_data)
   end
 end
 
@@ -94,10 +103,11 @@ end
 #  plane_params, (Optional) use to defined a plane that will be overlay on top of the image,
 #                the parameter is a hash whose entries are the one required by 
 #                drm_utils set_mode method
+#  perf_data, (Not used) Array for collecting performance data
 #Returns an array containing [boolean, res_string] where the boolean signals if
 #the test passed (true) or failed (false); and the res_string is an informational
 #string regarding the result of the test  
-def run_mode_test(mode_params, plane_params=nil)
+def run_mode_test(mode_params, plane_params=nil, perf_data=[])
   test_result = true
   result_string = ''
   mode_result = FrameworkConstants::Result[:nry]

@@ -129,5 +129,17 @@ module EvmData
     return cmds_hash[tmp[0]] 
   end
 
-
+  def get_required_display_modes(platform)
+    machines = {}
+    machines['am335x-evm']  = []
+    machines['am335x-sk']   = []
+    machines['beaglebone']  = []
+    machines['beaglebone-black'] = ['1280x720@60','720x480@60']
+    machines['dra7xx-evm']  = ['1920x1080@60','1920x540@60','1280x720@60','720x480@60']
+    machines['omap5-evm']   = []
+    machines['am43xx-epos'] = []
+    machines['am43xx-gpevm'] = []
+    machines[platform]
+  end
+  
 end 

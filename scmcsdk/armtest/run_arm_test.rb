@@ -476,7 +476,7 @@ end
 #     string "funct(x:y)" will be run as send(funct, [x,y])
 #
 # Return false if there are no parentheses.
-def rubify(some_string)
+def rubify(some_string,look_for)
   if some_string[/\(.*\)/]
     method = some_string[/.*\(/].to_s.sub('(', '')
     args = some_string.to_s.sub(method, '').sub(')', '').sub('(', '')
@@ -485,7 +485,7 @@ def rubify(some_string)
       puts 'Method= ' + method + ', Argument(s)= ' + args_array.to_s + '.'
     end
     begin
-      self.send(method, *args_array)
+      self.send(method, *args_array, look_for)
       true
     rescue => detail
       error = detail.backtrace.join("\n")
@@ -508,7 +508,7 @@ def run_command(cmds, look_for = @equipment['dut1'].prompt)
   comment = ""
   cmds.each do |cmd|
     comment += "Running " + cmd.to_s + ". "
-    if rubify(cmd)
+    if rubify(cmd,look_for)
       puts cmd + " run. command sent as ruby method"
     else
       @equipment['dut1'].send_cmd(cmd, look_for, 40)
