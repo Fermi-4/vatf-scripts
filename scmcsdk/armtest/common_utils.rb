@@ -178,7 +178,7 @@ def get_relative_tftp_file_and_path(file)
 end
 
 # Public: TFTP file to EVM
-def tftp_file_from_host(file, host_ip, timeout_secs)
+def tftp_file_from_host(file, host_ip, timeout_secs,look_for)
   tftp_file_and_path = get_relative_tftp_file_and_path(file)
   tftp_server_ip = (host_ip == "$host_ip" ? @equipment['server1'].telnet_ip : host_ip)
   #@equipment['dut1'].send_cmd("tftp -g -r #{tftp_file_and_path} #{tftp_server_ip} ; echo command_done", "command_done", 2)
