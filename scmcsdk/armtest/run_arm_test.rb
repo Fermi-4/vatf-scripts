@@ -45,6 +45,7 @@ def run
   iterations = assign_iterations()
   @platform = get_platform()
   test_folder_location = nil
+  setup_required = get_setup_required()
   #for debugging, test_folder_location = @test_params.lld_test_archive
 
   ##Prepare for running tests. Bundle up file building, server starting
@@ -70,6 +71,17 @@ def run
   ##run test_cmd iteration times
   test_cmd = commands[0]
   iterations.times do |count|
+    ## check to see if we are told to run setup for every iteration
+    if (count > 0 && setup_required == true)
+        prep_results = prepare_for_test(test_folder_location, commands)
+        if prep_results[0] == false
+            if @show_debug_messages
+	        comment += prep_results[1]
+	    end
+	    set_result(test_done_result,comment)
+	    return
+	end
+    end
     cmd_result = run_command(Array.new.push(test_cmd),
     look_for = /#{ criteria[0] }/i)
     if cmd_result[0] == false
@@ -184,6 +196,15 @@ def get_platform()
     @equipment['dut1'].id.split("_").grep(/k2.?/)[0] 
   else
     "k2h"
+  end
+end
+
+## check if setup needs to run for each iteration
+def get_setup_required()
+  if defined? @test_params.params_control.setup_required
+    @test_params.params_control.setup_required[0].to_s == "true" ? true : false
+  else
+    @test_params.params_chan.setup_required[0].to_s == "true" ? true : false
   end
 end
 
