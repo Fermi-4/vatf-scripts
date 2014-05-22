@@ -203,8 +203,10 @@ end
 def get_setup_required()
   if defined? @test_params.params_control.setup_required
     @test_params.params_control.setup_required[0].to_s == "true" ? true : false
-  else
+  elsif defined? @test_params.params_chan.setup_required
     @test_params.params_chan.setup_required[0].to_s == "true" ? true : false
+  else
+    false
   end
 end
 
