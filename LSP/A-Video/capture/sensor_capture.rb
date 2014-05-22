@@ -17,7 +17,6 @@ def run
   capture_device = get_capture_device(ip_type)
   raise "No capture device of type #{ip_type} found" if !capture_device
   capture_device = '/dev/' + capture_device
-  puts capture_device
   fmt_opts = get_fmt_options(capture_device)
   capture_opts = get_sensor_capture_options(capture_device)
   dut_ip = get_ip_addr()
@@ -75,7 +74,9 @@ def play_video(params)
                 "RGB32" => 'rgba',
                 "RGB24" => 'rgb24',
                 "YUYV2X8" => 'yuyv422',
+                "YUYV" => 'yuyv422',
                 "UYVY2X8" => 'uyvy422',
+                "UYVY" => 'uyvy422',
                 "NV12" => 'nv12',
                 "YUV420" => 'yuv420p',
                 #You need to download and compile raw2rgbpnm from git@gitorious.org:raw2rgbpnm/raw2rgbpnm.git
