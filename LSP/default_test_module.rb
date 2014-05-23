@@ -533,8 +533,8 @@ module LspTestScript
       @equipment['dut1'].target.platform_info.telnet_ip = old_telnet_ip
       @equipment['dut1'].target.platform_info.telnet_port = old_telnet_port
       @equipment['dut1'].target.telnet.send_cmd("pwd", @equipment['dut1'].prompt , 3)    
-      @collect_stats = @test_params.collect_stats[0] if @test_params.instance_variable_defined?(:@collect_stats)
-      @collect_stats_interval = @test_params.collect_stats_interval[0].to_i if @test_params.instance_variable_defined?(:@collect_stats_interval)
+      @collect_stats = @test_params.params_control.collect_stats[0] if @test_params.params_control.instance_variable_defined?(:@collect_stats)
+      @collect_stats_interval = @test_params.params_control.collect_stats_interval[0].to_i if @test_params.params_control.instance_variable_defined?(:@collect_stats_interval)
       start_collecting_stats(@collect_stats, @collect_stats_interval) do |cmd| 
         if cmd
           @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
@@ -600,6 +600,7 @@ module LspTestScript
       this_equipment.send_cmd("cat /proc/version", this_equipment.prompt)
       this_equipment.send_cmd("cat /proc/vmstat", this_equipment.prompt)
       this_equipment.send_cmd("cat /proc/zoneinfo", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/net/snmp", this_equipment.prompt)
     end
   end
 
@@ -633,5 +634,8 @@ module LspTestScript
     @equipment['dut1'].send_cmd("export PATH=#{dut_orig_path} ", @equipment['dut1'].prompt, 10)
   end
 
+  def kill_process(this_equipment=@equipment['dut1'],process)
+    this_equipment.send_cmd("kill $(ps aux | grep `echo #{process} | sed -r 's/^/[/g' | sed 's/^\\(.\\{2\\}\\)/\\1]/'` | awk '{print $2}')", @equipment['dut1'].prompt, 10)
+  end
 end
 

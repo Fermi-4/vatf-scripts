@@ -26,16 +26,19 @@ def setup
    @equipment['dut1'].send_cmd("set_ethtool_coalesce_options.sh -d #{@test_params.params_control.iface[0]} -p 'rx-usecs' -n #{@test_params.params_control.interrupt_pacing_interval[0]}", @equipment['dut1'].prompt, 3)
   end
   test_cmd = test_type.match(/udp/i) ? "iperf -s -u -w 128k &" : "iperf -s &"
-  if !is_iperf_running?(test_type)
-    @equipment['dut1'].send_cmd(test_cmd, /Server\s+listening.*?#{test_type}\sport/i, 10)
-  end
+  # If iperf is already running on the DUT, it could possibly interfere with our results, kill it.
+  kill_process('iperf')
+  puts "Send iperf command"
+  @equipment['dut1'].send_cmd(test_cmd, /Server\s+listening.*?#{test_type}\sport/i, 10)
+  # iperf server process needs some time
+  @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
   if !is_iperf_running?(test_type)
     raise "iperf can not be started. Please make sure iperf is installed in the DUT"    
   end
 end
 
 def run
-  dut_ip_addr = get_ip_addr(@test_params.params_control.iface[0])
+  dut_ip_addr = get_ip_addr('dut1',@test_params.params_control.iface[0])
   run_start_stats
   test_type = @test_params.params_control.type[0]
   if (test_type.match(/udp/i))
@@ -77,53 +80,6 @@ end
   
 end
 
-# Start collecting system metrics (i.e. cpu load, mem load)
-  def self.run_start_stats
-    @eth_ip_addr = get_ip_addr(@test_params.params_control.iface[0])
-    @collect_stats = @test_params.params_control.collect_stats[0]
-    @collect_stats_interval = @test_params.params_control.collect_stats_interval[0].to_i
-
-    if @eth_ip_addr
-      @equipment['dut1'].target.platform_info.telnet_ip = @eth_ip_addr
-      @equipment['dut1'].target.platform_info.telnet_port = 23
-      @equipment['dut1'].connect({'type'=>'telnet'})
-      @equipment['dut1'].target.telnet.send_cmd("pwd", @equipment['dut1'].prompt , 3)    
-      start_collecting_stats(@collect_stats, @collect_stats_interval) do |cmd|
-        if cmd
-          @equipment['dut1'].log_info("CMD is #{cmd}\n")
-          @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
-          @equipment['dut1'].target.telnet.response
-        end
-      end
-      @equipment['dut1'].target.telnet.send_cmd("cd /sys/class/net/eth0/statistics", /.*/, 3)
-      @equipment['dut1'].target.telnet.send_cmd("find -type f -exec basename {} \;", /.*/, 3)
-      @equipment['dut1'].target.telnet.send_cmd("find -type f -exec cat {} \;", /.*/, 3)
-      @equipment['dut1'].target.telnet.send_cmd("cat /sys/devices/platform/cpsw.0/net/eth0/hw_stats", /.*/, 3)
-    end
-    
-  end
-  
-  # Stop collecting system metrics 
-  def self.run_stop_stats
-    if @eth_ip_addr
-      @target_sys_stats = stop_collecting_stats(@collect_stats) do |cmd| 
-        if cmd
-          @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
-          @equipment['dut1'].target.telnet.response
-        end
-      end
-      @equipment['dut1'].target.telnet.send_cmd("cd /sys/class/net/eth0/statistics", /.*/, 3)
-      @equipment['dut1'].target.telnet.send_cmd("find -type f -exec basename {} \;", /.*/, 3)
-      @equipment['dut1'].target.telnet.send_cmd("find -type f -exec cat {} \;", /.*/, 3)
-      @equipment['dut1'].target.telnet.send_cmd("cat /sys/devices/platform/cpsw.0/net/eth0/hw_stats", /.*/, 3)
-    end
-     @equipment['dut1'].send_cmd("find /sys/class/net/eth0/statistics -type f -exec basename {} \\;", @equipment['dut1'].prompt, 3)
-     @equipment['dut1'].send_cmd("find /sys/class/net/eth0/statistics -type f -exec cat {} \\;", @equipment['dut1'].prompt, 3)
-     @equipment['dut1'].send_cmd("cat /sys/devices/platform/cpsw.0/net/eth0/hw_stats", @equipment['dut1'].prompt, 3)
-     
-  end
-
-
 # Default implementation to return empty array
 def get_perf_metrics
   if @test_params.params_control.instance_variable_defined?(:@perf_metrics_file)
@@ -136,23 +92,9 @@ end
 
 def is_iperf_running?(type)
   is_iperf_detected = false
-  test_regex = type.match(/udp/i) ? /iperf\s+\-s\s+\-u/i : /iperf\s+\-s\s*$/i
+  test_regex = /iperf/
   @equipment['dut1'].send_cmd("ps", @equipment['dut1'].prompt, 10)
   is_iperf_detected = true if (@equipment['dut1'].response.match(test_regex))
-  # If the current method for detecting iperf fails, then try with different method
-  if !is_iperf_detected
-    # Check for iperf running using a different ps command and for TCP a different regex match
-    test_regex = type.match(/udp/i) ? test_regex : /iperf\s+\-s\s/i
-    @equipment['dut1'].send_cmd("ps -f", @equipment['dut1'].prompt, 10)
-    is_iperf_detected = true if (@equipment['dut1'].response.match(test_regex))
-  end
   return is_iperf_detected
-end
-
-# Get ip address assgined to ethernet interface
-def get_ip_addr(iface='eth0', eq=@equipment['dut1'])
-  eq.send_cmd("ifconfig #{iface}", eq.prompt)
-  dut_ip = (/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(eq.response)).captures[0] 
-  dut_ip
 end
 
