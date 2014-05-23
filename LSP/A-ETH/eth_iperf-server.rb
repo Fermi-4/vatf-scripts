@@ -39,6 +39,14 @@ end
 
 def run
   dut_ip_addr = get_ip_addr('dut1',@test_params.params_control.iface[0])
+  if @test_params.params_control.type.length > 1
+    test_vars = @test_params.params_control.type[1]
+  else
+    test_vars = nil
+  end
+  if test_vars != nil && test_vars.match(/stress/i)
+    start_genload()
+  end
   run_start_stats
   test_type = @test_params.params_control.type[0]
   if (test_type.match(/udp/i))
@@ -49,7 +57,11 @@ def run
    direction = @test_params.params_control.direction[0].match(/bi/i)? '-d':''
    @equipment['server1'].send_cmd("iperf -c #{dut_ip_addr} -m -M  #{@test_params.params_control.packet_size[0]} -f M #{direction} -t #{@test_params.params_control.time[0]} -w  #{@test_params.params_control.window[0]}",@equipment['server1'].prompt,@test_params.params_control.timeout[0].to_i)
   end
-  run_stop_stats                               
+  run_stop_stats 
+  if test_vars != nil && test_vars.match(/stress/i)
+    stop_genload  
+  end
+
   if (test_type.match(/tcp/i) && @test_params.params_control.instance_variable_defined?(:@interrupt_pacing_interval)
 )
    @equipment['dut1'].send_cmd("set_ethtool_coalesce_options.sh -d #{@test_params.params_control.iface[0]} -p 'rx-usecs' -n 16", @equipment['dut1'].prompt, 3)
@@ -97,4 +109,13 @@ def is_iperf_running?(type)
   is_iperf_detected = true if (@equipment['dut1'].response.match(test_regex))
   return is_iperf_detected
 end
+
+def start_genload()
+  @equipment['dut1'].send_cmd("/opt/ltp/testcases/bin/genload -m 4 &", /genload: info:/i, 10)
+end
+
+def stop_genload()
+  kill_process('genload')
+end
+
 
