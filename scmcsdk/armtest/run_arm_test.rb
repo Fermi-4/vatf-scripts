@@ -253,29 +253,19 @@ def build_files(test_folder_location)
     puts "No archive flattening"
   end
 
-  ##copy K2k dtb files
-  @equipment['dut1'].send_cmd("cd /usr/bin/device/k2k",
+
+  ##copy platform specific dtb files
+  @equipment['dut1'].send_cmd("cd /usr/bin/device/#{@platform}",
     @equipment['dut1'].prompt, 10)
   @equipment['dut1'].send_cmd("ls", @equipment['dut1'].prompt, 10)
-  if !@equipment['dut1'].response["_k2k.dtb"]
+  if !@equipment['dut1'].response["_#{@platform}.dtb"]
     @equipment['dut1'].send_cmd("for i in $(ls *.dtb); \
-      do cp $i ${i%'.dtb'}'_k2k.dtb'; done", @equipment['dut1'].prompt, 10)
+      do cp $i ${i%'.dtb'}'_#{@platform}.dtb'; done", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("cp *.dtb /usr/bin",
       @equipment['dut1'].prompt, 10)
   end
 
-  ##copy K2h dtb files
-  @equipment['dut1'].send_cmd("cd /usr/bin/device/k2h",
-    @equipment['dut1'].prompt, 10)
-  @equipment['dut1'].send_cmd("ls", @equipment['dut1'].prompt, 10)
-  if !@equipment['dut1'].response["_k2h.dtb"]
-    @equipment['dut1'].send_cmd("for i in $(ls *.dtb); \
-      do cp $i ${i%'.dtb'}'_k2h.dtb'; done", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("cp *.dtb /usr/bin",
-      @equipment['dut1'].prompt, 10)
-  end
-
-  ##copy dtb files
+  ##copy rmServer specific dtb files
   @equipment['dut1'].send_cmd("cd /usr/bin/ti/drv/rm/test/dts_files",
     @equipment['dut1'].prompt, 10)
   @equipment['dut1'].send_cmd("ls", @equipment['dut1'].prompt, 10)
