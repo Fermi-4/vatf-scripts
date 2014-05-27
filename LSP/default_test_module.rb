@@ -250,7 +250,7 @@ module LspTestScript
     assets.each do |asset|
       next if  params[asset] == ''
       copy_asset(params['server'], params[asset], File.join(params['server'].tftp_path, tmp_path))
-      params[asset+'_image_name'] = File.join(tmp_path, File.basename(params[asset]))
+      params[asset+'_image_name'] = File.join(tmp_path, File.basename(params[asset])).sub(/^\//,'')
     end
   end
 
