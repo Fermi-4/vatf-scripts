@@ -40,7 +40,7 @@ end
 
 # For DSP + ARM Linux Test Project
 #./stop_all.sh rmK2HArmv7LinuxDspClientTestProject.out
-def mpm_load_all(out_file, num_of_cores = 8)
+def mpm_load_all(out_file, num_of_cores = 8,look_for)
   for count in 0..(num_of_cores-1)
     puts " 'Loading and Running #{out_file}...'"
     @equipment['dut1'].send_cmd("./mpmcl load dsp#{count} #{out_file}",
@@ -59,7 +59,7 @@ end
 
 # For DSP + ARM Linux Test Project
 # ./stop_all.sh rmK2KArmv7LinuxDspClientTestProject.out
-def mpm_stop_all(file, num_of_cores = 8)
+def mpm_stop_all(file, num_of_cores = 8,look_for)
   for count in 0..(num_of_cores-1)
     puts "'Resetting core #{file}...'"
     @equipment['dut1'].send_cmd("mpmcl reset dsp#{count}",
