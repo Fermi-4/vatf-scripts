@@ -104,8 +104,9 @@ def execute_cmd(commands)
 		else
 			expect_regex = "(#{cmd.pass_regex}|#{cmd.fail_regex})"
 		end
-	regex = Regexp.new(expect_regex)                                                
-	if (cmd.cmd_to_send == "bootm") || (cmd.cmd_to_send == "bootd")||(cmd.cmd_to_send == "tftpboot") || (cmd.cmd_to_send == "dhcp")
+	regex = Regexp.new(expect_regex, Regexp::IGNORECASE)
+	if (cmd.cmd_to_send == "bootm") || (cmd.cmd_to_send == "bootd")||(cmd.cmd_to_send == "tftpboot") || (cmd.cmd_to_send == "dhcp") \
+	                               || (cmd.cmd_to_send == "reset") || (cmd.cmd_to_send.match(/ddr/)) || (cmd.cmd_to_send == "boot")
 	    @equipment['dut1'].send_cmd(cmd.cmd_to_send, regex, bootcmd_timeout)
 	else
 	    @equipment['dut1'].send_cmd(cmd.cmd_to_send, @equipment['dut1'].boot_prompt, dut_timeout)
@@ -125,7 +126,7 @@ end
 def stop_boot()
 	@equipment['dut1'].wait_for(/I2C:/, 10) if @test_params.platform.match('am387x-evm')
 	@equipment['dut1'].wait_for(/cpsw/, 10) if @test_params.platform.match('am335x-evm')
-	@equipment['dut1'].send_cmd("\e", @equipment['dut1'].boot_prompt, 1)	
+	@equipment['dut1'].stop_boot
 end
 
 def put_val(val)
