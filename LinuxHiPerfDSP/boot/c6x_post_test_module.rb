@@ -6,7 +6,7 @@
     def run
       @equipment['dut1'].set_api('linux-c6x')
       boot_times = @test_params.params_chan.instance_variable_get("@boot_times")[0].to_i
-      wait_for_string = Regexp.new("POST result:\s+(PASS|FAIL)")
+      wait_for_string = @test_params.params_chan.instance_variable_get("@wait_for_string")[0]
       puts "Test looks for #{wait_for_string}"
       timeout = @test_params.params_chan.instance_variable_get("@timeout")[0].to_i
       power_port = @equipment['dut1'].power_port
@@ -15,7 +15,8 @@
       boot_arr = [] 
       boot_failures = 0
       test_done_result = FrameworkConstants::Result[:fail]
-      comment = "Test fail"    
+      comment = "Test fail"
+      result = false  
      
       #Switch off power
 
@@ -32,20 +33,20 @@
       response = connect_to_equipment('dut1',wait_for_string,timeout)
       if (response != nil)
         result = parse_response(response,wait_for_string)
-      if (result == true)
-        success_times = success_times+1
-        boot_arr << 'B'
+        if (result == true)
+          success_times = success_times+1
+          boot_arr << 'B'
+        else
+          fail_times = fail_times+1
+          boot_arr << 'X'
+        end
       else
         fail_times = fail_times+1
+        boot_failures = boot_failures+1
         boot_arr << 'X'
       end
-      else
-      fail_times = fail_times+1
-      boot_failures = boot_failures+1
-      boot_arr << 'X'
-      end
       # To prevent NAND corruption in XDS-560
-      sleep(60)
+      # sleep(60)
       }
       if success_times == boot_times
         test_done_result = FrameworkConstants::Result[:pass]
@@ -55,7 +56,7 @@
         comment = "Test fail. POST test failed #{fail_times} out of #{boot_times} times. Boot log - #{boot_arr.to_s} "    
       end
       if (boot_failures > 0) 
-        comment += "Board failed to boot #{boot_failures} out of #{boot_times} times"
+        comment += "Did not find POST #{wait_for_string} string #{boot_failures} out of #{boot_times} times"
       end
       set_result(test_done_result,comment)
     end
@@ -86,16 +87,12 @@
       end
     end
     def parse_response(response,wait_for_string)
-	  result = response.match(/POST result:\s+(PASS|FAIL)/).captures[0].to_s
-	  puts " +++++++++ Result: #{result} ++++++++++++++"
-	  if (result.match(/PASS/))
+        if (response.match(/FAIL/))
+	    return false
+	else 
 	    return true
-	  elsif (result.match(/FAIL/))
-		return false
-	  else 
-	    return nil
-      end
-	end
+        end
+    end
     def disconnect(equipment)
       this_equipment = @equipment["#{equipment}"]
       if this_equipment.target.telnet || this_equipment.target.serial
