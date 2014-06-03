@@ -24,12 +24,13 @@ module PlatformSpecificVarNames
       'beagle'=>'0x80200000',
       'da850-omapl138-evm'=>'0xc0700000',
       'tci6614-evm' => '0x80000100',
-      'keystone-evm' => '0x80000100'
+      'keystone-evm' => '80000000'
       },
     'ramaddress_2' => {
       'am43xx-epos' => '0x82000000',
       'am335x-evm'=>'0x82000000',
-      'omap5-evm' => '0x83000000'
+      'omap5-evm' => '0x83000000',
+      'keystone-evm' => 'f0000000'
       },
     'ramaddress_3' => {
       'am43xx-epos' => '0x84000000',
@@ -136,7 +137,7 @@ module PlatformSpecificVarNames
       'beagle' =>'0x0000A5A5',
       'da850-omapl138-evm'=>'0x0000A5A5',
       'tci6614-evm' => '0x0000A5A5',
-      'keystone-evm' => '0x0000A5A5'
+      'keystone-evm' => '0000A5A5'
       },
     'bootcmd' => {  
       'omap5-evm'=>'dhcp;bootm',
