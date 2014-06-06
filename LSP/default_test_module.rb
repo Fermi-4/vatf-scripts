@@ -343,12 +343,22 @@ module LspTestScript
     @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
     @new_keys = (@test_params.params_control.instance_variable_defined?(:@booargs_append))? (@new_keys + @test_params.params_control.bootargs_append[0]) : @new_keys
     if boot_required?(@old_keys, @new_keys) #&& translated_boot_params['kernel'] != ''
-	    if !(@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) && 
+      if !(@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) && 
       !(@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)
         raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
       end
-        
-      @equipment['dut1'].boot(translated_boot_params) 
+      
+      boot_attempts = 1
+      boot_attempts = @test_params.var_boot_attempts.to_i if @test_params.instance_variable_defined?(:@var_boot_attempts)
+      boot_attempts.times do |trial|
+        begin
+          @equipment['dut1'].boot(translated_boot_params)
+          break
+        rescue Exception => e
+          puts "Boot attempt #{trial} failed, trying again....."
+          raise e if trial == boot_attempts - 1
+        end
+      end 
     end
     
     connect_to_equipment('dut1')
