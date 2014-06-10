@@ -7,6 +7,14 @@ def display_as_binary(number)
   return display_text
 end
 
+def get_platform()
+  if @equipment['dut1'].id.split("_").grep(/k2.?/).size > 0
+    @equipment['dut1'].id.split("_").grep(/k2.?/)[0] 
+  else
+    "k2h"
+  end
+end
+
 def error_code_bit_breakdown(error_code)
   error_code_text = ""
   if (error_code > 2)
@@ -2732,6 +2740,14 @@ class IpsecUtilitiesVatf
     @inflow_active_name = "INFLOW_MODE_ACTIVE"
     @do_friendly = false
   end
+  def get_ipsec_cmd_additions_using_bench_file()
+    cmd_platform_addition = get_platform()
+    @equipment['dut1'].log_info("\r\n cmd_platform_addition: #{cmd_platform_addition}\r\n")
+    if cmd_platform_addition != ""
+      @daemon_cmd = (!@daemon_cmd.include?(cmd_platform_addition) ? @daemon_cmd.gsub(".out", "_#{cmd_platform_addition}.out &") : @daemon_cmd)
+      @cmd_shell_cmd = (!@cmd_shell_cmd.include?(cmd_platform_addition) ? @cmd_shell_cmd.gsub(".out", "_#{cmd_platform_addition}.out") : @cmd_shell_cmd)
+    end
+  end
   def default_rekey_lifetime()
     return @default_rekey_lifetime
   end
@@ -3417,6 +3433,7 @@ class IpsecUtilitiesVatf
   end
   def load_friendlies(is_alpha_side)
     if @do_friendly
+      get_ipsec_cmd_additions_using_bench_file()
       @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "cd #{@executable_directory}; chmod 777 #{@daemon_cmd}; tftp -g -r #{@daemon_cmd} -l #{@daemon_cmd} 192.168.1.84", "", @error_bit, 2)
     end
   end
@@ -3621,6 +3638,7 @@ class IpsecUtilitiesVatf
     raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "env", "", @vatf_helper.DONT_SET_ERROR_BIT(), 1)
     # Only start the ipsec manager if the variables do not already exist
     if !@vatf_helper.is_matched_count(raw_buffer, string, count)
+      get_ipsec_cmd_additions_using_bench_file()
       @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "insmod #{@vatf_helper.get_file_location(is_alpha_side, @hplib_file_name)}", "", @error_bit, 2)
       if @do_friendly
         @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "insmod #{@vatf_helper.get_file_location(is_alpha_side, @ipsec_mgr)}", "", @error_bit, 2)
@@ -3634,12 +3652,14 @@ class IpsecUtilitiesVatf
       else
         @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{@daemon_cmd}", "", @error_bit, 2)
       end
+      @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "lsmod", "", @error_bit, 1)
     end
     @result |= @vatf_helper.result
     @result_text += @vatf_helper.result_text
     return @result
   end
   def inflow_offload(is_alpha_side)
+	get_ipsec_cmd_additions_using_bench_file()
     inflow_stop_offload(is_alpha_side)
     policy_index_in = @vatf_helper.get_policy_id(is_alpha_side, "in")
     policy_index_out = @vatf_helper.get_policy_id(is_alpha_side, "out")
@@ -3653,6 +3673,7 @@ class IpsecUtilitiesVatf
     return @result
   end
   def inflow_stop_offload(is_alpha_side)
+	get_ipsec_cmd_additions_using_bench_file()
     string = @inflow_active_name
     count = 1
     raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "env", "", @vatf_helper.DONT_SET_ERROR_BIT(), 1)
