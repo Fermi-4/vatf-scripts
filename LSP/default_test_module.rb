@@ -535,13 +535,7 @@ module LspTestScript
 
     @eth_ip_addr = get_ip_addr()
     if @eth_ip_addr
-      old_telnet_ip = @equipment['dut1'].target.platform_info.telnet_ip
-      @equipment['dut1'].target.platform_info.telnet_ip = @eth_ip_addr
-      old_telnet_port = @equipment['dut1'].target.platform_info.telnet_port
-      @equipment['dut1'].target.platform_info.telnet_port = 23
-      @equipment['dut1'].connect({'type'=>'telnet'})
-      @equipment['dut1'].target.platform_info.telnet_ip = old_telnet_ip
-      @equipment['dut1'].target.platform_info.telnet_port = old_telnet_port
+      connect_to_telnet(@eth_ip_addr)
       @equipment['dut1'].target.telnet.send_cmd("pwd", @equipment['dut1'].prompt , 3)    
       @collect_stats = @test_params.params_control.collect_stats[0] if @test_params.params_control.instance_variable_defined?(:@collect_stats)
       @collect_stats_interval = @test_params.params_control.collect_stats_interval[0].to_i if @test_params.params_control.instance_variable_defined?(:@collect_stats_interval)
@@ -564,7 +558,10 @@ module LspTestScript
     # Dont stop stats if user asked not to collect in the first place.
     return if @test_params.instance_variable_defined?(:@var_test_no_stats)
 
+    @eth_ip_addr = get_ip_addr()
     if @eth_ip_addr
+      @equipment['dut1'].disconnect('telnet') if @equipment['dut1'].target.telnet
+      connect_to_telnet(@eth_ip_addr)
       @target_sys_stats = stop_collecting_stats(@collect_stats) do |cmd| 
         if cmd
           @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
@@ -588,6 +585,18 @@ module LspTestScript
     #ifconfig_data =`ifconfig #{eth}`
     ifconfig_data =/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(this_equipment.response)
     ifconfig_data ? ifconfig_data[1] : nil
+  end
+
+  def connect_to_telnet(eth_ip_addr, e='dut1')
+    return if !@equipment.key?(e)
+    this_equipment = @equipment[e]
+    old_telnet_ip = this_equipment.target.platform_info.telnet_ip
+    this_equipment.target.platform_info.telnet_ip = eth_ip_addr
+    old_telnet_port = this_equipment.target.platform_info.telnet_port
+    this_equipment.target.platform_info.telnet_port = 23
+    this_equipment.connect({'type'=>'telnet'})
+    this_equipment.target.platform_info.telnet_ip = old_telnet_ip
+    this_equipment.target.platform_info.telnet_port = old_telnet_port
   end
 
   def query_debug_data(e='dut1')
