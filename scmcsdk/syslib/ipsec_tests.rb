@@ -179,64 +179,65 @@ def run
     end
 
     # Set IP addresses for perf to use
-    perfUtils.perf_typical_config(@equipment, dev, iface_type)
+    result |= perfUtils.perf_typical_config(@equipment, dev, iface_type)
 
-    # Set mtu for Jumbo packets if needed
+    if result == 0
+      # Set mtu for Jumbo packets if needed
+      if jumbo_frames == "yes" && packet_size.to_i > 1500
+        perfUtils.set_mtu_size(mtu_size, eth_port)
+      end
+        
+      case test_direction
+        when DIRECTION_BOTH
+          udp_bandwidth_ingress = udp_bandwidth_array[DOWNLOAD_SPEED_INDEX]
+          udp_bandwidth_egress = udp_bandwidth_array[UPLOAD_SPEED_INDEX]
+          ingress_bw = get_bw_info(IpsecConnectionScript.protocol, udp_bandwidth_ingress, auto_bandwidth_detect)
+          egress_bw = get_bw_info(IpsecConnectionScript.protocol, udp_bandwidth_egress, auto_bandwidth_detect)
+          test_headline_both = "#{test_headline}_#{DIRECTION_INGRESS}#{ingress_bw}_#{DIRECTION_EGRESS}#{egress_bw}"
+          result |= perfUtils.test_linux_to_evm_and_evm_to_linux(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_ingress, udp_bandwidth_egress, packet_size, test_headline_both, crypto_mode, ingress_min_tput, egress_min_tput)
+        when DIRECTION_INGRESS
+          udp_bandwidth_ingress = udp_bandwidth_array[DOWNLOAD_SPEED_INDEX]
+          specified_bandwidth = udp_bandwidth_ingress
+          # Currently the 10G interface does not get anywhere near 10G and will cause lower rates if stating at 10000M so start it at 1000M
+          udp_bandwidth_ingress = "1400M" if udp_bandwidth_array[DOWNLOAD_SPEED_INDEX] == "10000M"
+          # If UDP use binary search to get the best MBPS
+          if IpsecConnectionScript.protocol.downcase == "udp" && auto_bandwidth_detect
+            udp_bandwidth_ingress = perfUtils.test_linux_to_evm_mbps_detect(IpsecConnectionScript.protocol, auto_bw_test_secs, udp_bandwidth_ingress, packet_size, "auto detect mbps", crypto_mode)
+            if udp_bandwidth_ingress == 0.0
+              result = 1
+              comments += "Error: Automated throughput measurement detected 0 Mbps. UDP packets are not passing accross this connection."
+            end
+          end
+          test_headline_ingress = "#{test_headline}_#{DIRECTION_INGRESS}#{get_bw_info(IpsecConnectionScript.protocol, specified_bandwidth, auto_bandwidth_detect)}"
+          if result == 0
+            result |= perfUtils.test_linux_to_evm(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_ingress, packet_size, test_headline_ingress, crypto_mode, ingress_min_tput, egress_min_tput)
+          end
+        when DIRECTION_EGRESS
+          udp_bandwidth_egress = udp_bandwidth_array[UPLOAD_SPEED_INDEX]
+          specified_bandwidth = udp_bandwidth_egress
+          # Currently the 10G interface does not get anywhere near 10G and will cause lower rates if stating at 10000M so start it at 1000M
+          udp_bandwidth_egress = "1400M" if udp_bandwidth_array[UPLOAD_SPEED_INDEX] == "10000M"
+          if IpsecConnectionScript.protocol.downcase == "udp" && auto_bandwidth_detect
+            udp_bandwidth_egress = perfUtils.test_evm_to_linux_mbps_detect(IpsecConnectionScript.protocol, auto_bw_test_secs, udp_bandwidth_egress, packet_size, "auto detect mbps", crypto_mode)
+            if udp_bandwidth_ingress == 0.0
+              result = 1
+              comments += "Error: Automated throughput measurement detected 0 Mbps. UDP packets are not passing accross this connection."
+            end
+          end
+          test_headline_egress = "#{test_headline}_#{DIRECTION_EGRESS}#{get_bw_info(IpsecConnectionScript.protocol, specified_bandwidth, auto_bandwidth_detect)}"
+          if result == 0
+            result |= perfUtils.test_evm_to_linux(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_egress, packet_size, test_headline_egress, crypto_mode, ingress_min_tput, egress_min_tput)
+          end
+        else
+          result = 1
+          comments += "Test Case ERROR: Unable to determine throughput direction.\r\n"
+      end
+    end
+
+    # Set mtu back to default
     if jumbo_frames == "yes" && packet_size.to_i > 1500
-      perfUtils.set_mtu_size(packet_size, eth_port)
+      perfUtils.set_mtu_size(default_mtu_size, eth_port)
     end
-      
-    case test_direction
-      when DIRECTION_BOTH
-        udp_bandwidth_ingress = udp_bandwidth_array[DOWNLOAD_SPEED_INDEX]
-        udp_bandwidth_egress = udp_bandwidth_array[UPLOAD_SPEED_INDEX]
-        ingress_bw = get_bw_info(IpsecConnectionScript.protocol, udp_bandwidth_ingress, auto_bandwidth_detect)
-        egress_bw = get_bw_info(IpsecConnectionScript.protocol, udp_bandwidth_egress, auto_bandwidth_detect)
-        test_headline_both = "#{test_headline}_#{DIRECTION_INGRESS}#{ingress_bw}_#{DIRECTION_EGRESS}#{egress_bw}"
-        result |= perfUtils.test_linux_to_evm_and_evm_to_linux(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_ingress, udp_bandwidth_egress, packet_size, test_headline_both, crypto_mode, ingress_min_tput, egress_min_tput)
-      when DIRECTION_INGRESS
-        udp_bandwidth_ingress = udp_bandwidth_array[DOWNLOAD_SPEED_INDEX]
-        specified_bandwidth = udp_bandwidth_ingress
-        # Currently the 10G interface does not get anywhere near 10G and will cause lower rates if stating at 10000M so start it at 1000M
-        udp_bandwidth_ingress = "1400M" if udp_bandwidth_array[DOWNLOAD_SPEED_INDEX] == "10000M"
-        #udp_bandwidth_ingress = throughput_mbps_select_based_on_packet_size(packet_size.to_i, udp_bandwidth_ingress)
-        # If UDP use binary search to get the best MBPS
-        if IpsecConnectionScript.protocol.downcase == "udp" && auto_bandwidth_detect
-          udp_bandwidth_ingress = perfUtils.test_linux_to_evm_mbps_detect(IpsecConnectionScript.protocol, auto_bw_test_secs, udp_bandwidth_ingress, packet_size, "auto detect mbps", crypto_mode)
-          if udp_bandwidth_ingress == 0
-            result = 1
-            comments += "Error: Automated throughput measurement detected 0 Mbps. UDP packets are not passing accross this connection."
-          end
-        end
-        test_headline_ingress = "#{test_headline}_#{DIRECTION_INGRESS}#{get_bw_info(IpsecConnectionScript.protocol, specified_bandwidth, auto_bandwidth_detect)}"
-        if result == 0
-          result |= perfUtils.test_linux_to_evm(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_ingress, packet_size, test_headline_ingress, crypto_mode, ingress_min_tput, egress_min_tput)
-        end
-      when DIRECTION_EGRESS
-        udp_bandwidth_egress = udp_bandwidth_array[UPLOAD_SPEED_INDEX]
-        specified_bandwidth = udp_bandwidth_egress
-        # Currently the 10G interface does not get anywhere near 10G and will cause lower rates if stating at 10000M so start it at 1000M
-        udp_bandwidth_egress = "1400M" if udp_bandwidth_array[UPLOAD_SPEED_INDEX] == "10000M"
-        if IpsecConnectionScript.protocol.downcase == "udp" && auto_bandwidth_detect
-          udp_bandwidth_egress = perfUtils.test_evm_to_linux_mbps_detect(IpsecConnectionScript.protocol, auto_bw_test_secs, udp_bandwidth_egress, packet_size, "auto detect mbps", crypto_mode)
-          if udp_bandwidth_ingress == 0
-            result = 1
-            comments += "Error: Automated throughput measurement detected 0 Mbps. UDP packets are not passing accross this connection."
-          end
-        end
-        test_headline_egress = "#{test_headline}_#{DIRECTION_EGRESS}#{get_bw_info(IpsecConnectionScript.protocol, specified_bandwidth, auto_bandwidth_detect)}"
-        if result == 0
-          result |= perfUtils.test_evm_to_linux(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_egress, packet_size, test_headline_egress, crypto_mode, ingress_min_tput, egress_min_tput)
-        end
-      else
-        result = 1
-        comments += "Test Case ERROR: Unable to determine throughput direction.\r\n"
-    end
-  end
-
-  # Set mtu back to default
-  if jumbo_frames == "yes" && packet_size.to_i > 1500
-    perfUtils.set_mtu_size(default_mtu_size, eth_port)
   end
 
   # Set overall test result and comments text

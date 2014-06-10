@@ -2419,7 +2419,9 @@ class PerfUtilities
         @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ifconfig eth#{curr_port} down ; echo 'command_done'", "command_done", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
       end
     end
-    @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ping #{@alpha_ip} -c 3", "seq=2", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
+    @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ping #{@alpha_ip} -c 3", "seq=2", @error_bit, 0, wait_secs)
+    @result |= @vatf_helper.result
+    @result_text += "Ping check for eth#{this_eth_port} did not pass.\r\n" if @result != 0
   end
   def find_eth_interface_by_ipaddress(ip_address, is_alpha_side)
     eth_iface = ""
@@ -2448,6 +2450,7 @@ class PerfUtilities
     @alpha_ip = equipment[@vatf_helper.vatf_server_ref].telnet_ip
     isolate_dut_ethernet_test_port(iface_type)
     @beta_ip = util_get_ip_addr(equipment, dev, iface_type)
+    return @result
   end
   def start_log_thread(is_alpha_side, time_secs)
     evm_log_thread = Thread.new {
