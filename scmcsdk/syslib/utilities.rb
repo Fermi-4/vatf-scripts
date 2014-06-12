@@ -7,6 +7,14 @@ def display_as_binary(number)
   return display_text
 end
 
+def get_platform()
+  if @equipment['dut1'].id.split("_").grep(/k2.?/).size > 0
+    @equipment['dut1'].id.split("_").grep(/k2.?/)[0] 
+  else
+    "k2h"
+  end
+end
+
 def error_code_bit_breakdown(error_code)
   error_code_text = ""
   if (error_code > 2)
@@ -2419,7 +2427,9 @@ class PerfUtilities
         @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ifconfig eth#{curr_port} down ; echo 'command_done'", "command_done", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
       end
     end
-    @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ping #{@alpha_ip} -c 3", "seq=2", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
+    @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ping #{@alpha_ip} -c 3", "seq=2", @error_bit, 0, wait_secs)
+    @result |= @vatf_helper.result
+    @result_text += "Ping check for eth#{this_eth_port} did not pass.\r\n" if @result != 0
   end
   def find_eth_interface_by_ipaddress(ip_address, is_alpha_side)
     eth_iface = ""
@@ -2448,6 +2458,7 @@ class PerfUtilities
     @alpha_ip = equipment[@vatf_helper.vatf_server_ref].telnet_ip
     isolate_dut_ethernet_test_port(iface_type)
     @beta_ip = util_get_ip_addr(equipment, dev, iface_type)
+    return @result
   end
   def start_log_thread(is_alpha_side, time_secs)
     evm_log_thread = Thread.new {
@@ -2728,6 +2739,14 @@ class IpsecUtilitiesVatf
     @cmd_shell_cmd = "ipsecmgr_cmd_shell.out"
     @inflow_active_name = "INFLOW_MODE_ACTIVE"
     @do_friendly = false
+  end
+  def get_ipsec_cmd_additions_using_bench_file()
+    cmd_platform_addition = get_platform()
+    @equipment['dut1'].log_info("\r\n cmd_platform_addition: #{cmd_platform_addition}\r\n")
+    if cmd_platform_addition != ""
+      @daemon_cmd = (!@daemon_cmd.include?(cmd_platform_addition) ? @daemon_cmd.gsub(".out", "_#{cmd_platform_addition}.out &") : @daemon_cmd)
+      @cmd_shell_cmd = (!@cmd_shell_cmd.include?(cmd_platform_addition) ? @cmd_shell_cmd.gsub(".out", "_#{cmd_platform_addition}.out") : @cmd_shell_cmd)
+    end
   end
   def default_rekey_lifetime()
     return @default_rekey_lifetime
@@ -3414,6 +3433,7 @@ class IpsecUtilitiesVatf
   end
   def load_friendlies(is_alpha_side)
     if @do_friendly
+      get_ipsec_cmd_additions_using_bench_file()
       @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "cd #{@executable_directory}; chmod 777 #{@daemon_cmd}; tftp -g -r #{@daemon_cmd} -l #{@daemon_cmd} 192.168.1.84", "", @error_bit, 2)
     end
   end
@@ -3618,6 +3638,7 @@ class IpsecUtilitiesVatf
     raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "env", "", @vatf_helper.DONT_SET_ERROR_BIT(), 1)
     # Only start the ipsec manager if the variables do not already exist
     if !@vatf_helper.is_matched_count(raw_buffer, string, count)
+      get_ipsec_cmd_additions_using_bench_file()
       @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "insmod #{@vatf_helper.get_file_location(is_alpha_side, @hplib_file_name)}", "", @error_bit, 2)
       if @do_friendly
         @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "insmod #{@vatf_helper.get_file_location(is_alpha_side, @ipsec_mgr)}", "", @error_bit, 2)
@@ -3631,12 +3652,14 @@ class IpsecUtilitiesVatf
       else
         @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{@daemon_cmd}", "", @error_bit, 2)
       end
+      @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "lsmod", "", @error_bit, 1)
     end
     @result |= @vatf_helper.result
     @result_text += @vatf_helper.result_text
     return @result
   end
   def inflow_offload(is_alpha_side)
+	get_ipsec_cmd_additions_using_bench_file()
     inflow_stop_offload(is_alpha_side)
     policy_index_in = @vatf_helper.get_policy_id(is_alpha_side, "in")
     policy_index_out = @vatf_helper.get_policy_id(is_alpha_side, "out")
@@ -3650,6 +3673,7 @@ class IpsecUtilitiesVatf
     return @result
   end
   def inflow_stop_offload(is_alpha_side)
+	get_ipsec_cmd_additions_using_bench_file()
     string = @inflow_active_name
     count = 1
     raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "env", "", @vatf_helper.DONT_SET_ERROR_BIT(), 1)

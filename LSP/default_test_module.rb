@@ -343,12 +343,22 @@ module LspTestScript
     @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
     @new_keys = (@test_params.params_control.instance_variable_defined?(:@booargs_append))? (@new_keys + @test_params.params_control.bootargs_append[0]) : @new_keys
     if boot_required?(@old_keys, @new_keys) #&& translated_boot_params['kernel'] != ''
-	    if !(@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) && 
+      if !(@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) && 
       !(@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)
         raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
       end
-        
-      @equipment['dut1'].boot(translated_boot_params) 
+      
+      boot_attempts = 1
+      boot_attempts = @test_params.var_boot_attempts.to_i if @test_params.instance_variable_defined?(:@var_boot_attempts)
+      boot_attempts.times do |trial|
+        begin
+          @equipment['dut1'].boot(translated_boot_params)
+          break
+        rescue Exception => e
+          puts "Boot attempt #{trial} failed, trying again....."
+          raise e if trial == boot_attempts - 1
+        end
+      end 
     end
     
     connect_to_equipment('dut1')
@@ -525,16 +535,10 @@ module LspTestScript
 
     @eth_ip_addr = get_ip_addr()
     if @eth_ip_addr
-      old_telnet_ip = @equipment['dut1'].target.platform_info.telnet_ip
-      @equipment['dut1'].target.platform_info.telnet_ip = @eth_ip_addr
-      old_telnet_port = @equipment['dut1'].target.platform_info.telnet_port
-      @equipment['dut1'].target.platform_info.telnet_port = 23
-      @equipment['dut1'].connect({'type'=>'telnet'})
-      @equipment['dut1'].target.platform_info.telnet_ip = old_telnet_ip
-      @equipment['dut1'].target.platform_info.telnet_port = old_telnet_port
+      connect_to_telnet(@eth_ip_addr)
       @equipment['dut1'].target.telnet.send_cmd("pwd", @equipment['dut1'].prompt , 3)    
-      @collect_stats = @test_params.collect_stats[0] if @test_params.instance_variable_defined?(:@collect_stats)
-      @collect_stats_interval = @test_params.collect_stats_interval[0].to_i if @test_params.instance_variable_defined?(:@collect_stats_interval)
+      @collect_stats = @test_params.params_control.collect_stats[0] if @test_params.params_control.instance_variable_defined?(:@collect_stats)
+      @collect_stats_interval = @test_params.params_control.collect_stats_interval[0].to_i if @test_params.params_control.instance_variable_defined?(:@collect_stats_interval)
       start_collecting_stats(@collect_stats, @collect_stats_interval) do |cmd| 
         if cmd
           @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
@@ -554,7 +558,10 @@ module LspTestScript
     # Dont stop stats if user asked not to collect in the first place.
     return if @test_params.instance_variable_defined?(:@var_test_no_stats)
 
+    @eth_ip_addr = get_ip_addr()
     if @eth_ip_addr
+      @equipment['dut1'].disconnect('telnet') if @equipment['dut1'].target.telnet
+      connect_to_telnet(@eth_ip_addr)
       @target_sys_stats = stop_collecting_stats(@collect_stats) do |cmd| 
         if cmd
           @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
@@ -580,6 +587,18 @@ module LspTestScript
     ifconfig_data ? ifconfig_data[1] : nil
   end
 
+  def connect_to_telnet(eth_ip_addr, e='dut1')
+    return if !@equipment.key?(e)
+    this_equipment = @equipment[e]
+    old_telnet_ip = this_equipment.target.platform_info.telnet_ip
+    this_equipment.target.platform_info.telnet_ip = eth_ip_addr
+    old_telnet_port = this_equipment.target.platform_info.telnet_port
+    this_equipment.target.platform_info.telnet_port = 23
+    this_equipment.connect({'type'=>'telnet'})
+    this_equipment.target.platform_info.telnet_ip = old_telnet_ip
+    this_equipment.target.platform_info.telnet_port = old_telnet_port
+  end
+
   def query_debug_data(e='dut1')
     return if !@equipment.key?(e)
     this_equipment = @equipment[e]
@@ -600,6 +619,7 @@ module LspTestScript
       this_equipment.send_cmd("cat /proc/version", this_equipment.prompt)
       this_equipment.send_cmd("cat /proc/vmstat", this_equipment.prompt)
       this_equipment.send_cmd("cat /proc/zoneinfo", this_equipment.prompt)
+      this_equipment.send_cmd("cat /proc/net/snmp", this_equipment.prompt)
     end
   end
 
@@ -633,5 +653,8 @@ module LspTestScript
     @equipment['dut1'].send_cmd("export PATH=#{dut_orig_path} ", @equipment['dut1'].prompt, 10)
   end
 
+  def kill_process(this_equipment=@equipment['dut1'],process)
+    this_equipment.send_cmd("kill $(ps aux | grep `echo #{process} | sed -r 's/^/[/g' | sed 's/^\\(.\\{2\\}\\)/\\1]/'` | awk '{print $2}')", @equipment['dut1'].prompt, 10)
+  end
 end
 
