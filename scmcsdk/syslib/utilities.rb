@@ -2584,7 +2584,7 @@ class PerfUtilities
   def test_common_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, perf_server_side, perf_client_side)
     auto_detect = true
     max_attemps = 10
-    binary_step =  25
+    binary_step =  2
     current_auto_mbps = udp_bandwidth.gsub("M", "").to_i
     tput_detect = TputBinarySearch.new
     tput_detect.init_search_values(current_auto_mbps, binary_step)
