@@ -1930,8 +1930,9 @@ class PerfUtilities
     command += "-s "
     command += "-u " if protocol == "udp"
     command += (is_alpha_side ? @additional_alpha_params : @additional_beta_params)
-    command += " 2>&1 "
+    command += " "
     command += file_pipe
+    command += " 2>&1 "
     command += "&"
     @vatf_helper.log_info(is_alpha_side, "\r\n Starting iperf server thread... (command: #{command})\r\n")
     server_thread = Thread.new {
