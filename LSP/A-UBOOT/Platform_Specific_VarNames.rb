@@ -24,13 +24,17 @@ module PlatformSpecificVarNames
       'beagle'=>'0x80200000',
       'da850-omapl138-evm'=>'0xc0700000',
       'tci6614-evm' => '0x80000100',
-      'keystone-evm' => '80000000'
+      'k2hk-evm' => '80000000',
+      'k2l-evm' => '80000000',
+      'k2e-evm' => '80000000'
       },
     'ramaddress_2' => {
       'am43xx-epos' => '0x82000000',
       'am335x-evm'=>'0x82000000',
       'omap5-evm' => '0x83000000',
-      'keystone-evm' => 'f0000000'
+      'k2hk-evm' => 'f0000000',
+      'k2l-evm' => 'f0000000',
+      'k2e-evm' => 'f0000000'
       },
     'ramaddress_3' => {
       'am43xx-epos' => '0x84000000',
@@ -95,7 +99,9 @@ module PlatformSpecificVarNames
       'beagle' =>'80200004',
       'da850-omapl138-evm'=>'C0700004',
       'tci6614-evm' => '0x80000200',
-      'keystone-evm' => '0x80000200'
+      'k2hk-evm' => '0x80000200',
+      'k2l-evm' => '0x80000200',
+      'k2e-evm' => '0x80000200'
       },
     'ramaddressfornm'  => {
       'omap5-evm' => '0x82000000',
@@ -137,7 +143,9 @@ module PlatformSpecificVarNames
       'beagle' =>'0x0000A5A5',
       'da850-omapl138-evm'=>'0x0000A5A5',
       'tci6614-evm' => '0x0000A5A5',
-      'keystone-evm' => '0000A5A5'
+      'k2hk-evm' => '0000A5A5',
+      'k2l-evm' => '0000A5A5',
+      'k2e-evm' => '0000A5A5'
       },
     'bootcmd' => {  
       'omap5-evm'=>'dhcp;bootm',
@@ -425,7 +433,9 @@ module PlatformSpecificVarNames
       'am17x-evm' => '',
       'beagle' =>'0x48',
       'da850-omapl138-evm'=>'',
-      'keystone-evm' => '0x50'
+      'k2hk-evm' => '0x50',
+      'k2l-evm' => '0x50',
+      'k2e-evm' => '0x50'
       },
     'i2coff1' => {  
       'omap5-evm'=>'0',
@@ -446,7 +456,9 @@ module PlatformSpecificVarNames
       'beagle' =>'0',
       'da850-omapl138-evm'=>'',
       'tci6614-evm' => '0',
-      'keystone-evm' => '0'
+      'k2hk-evm' => '0',
+      'k2l-evm' => '0',
+      'k2e-evm' => '0'  
       },
     'i2coff2' => {  
       'omap5-evm'=>'2',
@@ -465,7 +477,9 @@ module PlatformSpecificVarNames
       'beagle' =>'2',
       'da850-omapl138-evm'=>'',
       'tci6614-evm' => '2',
-      'keystone-evm' => '2'
+      'k2hk-evm' => '2',
+      'k2l-evm' => '2',
+      'k2e-evm' => '2'
       },
     'i2cmagicval' => {  
       'omap5-evm'=>'55',
@@ -484,7 +498,9 @@ module PlatformSpecificVarNames
       'beagle' =>'55',
       'da850-omapl138-evm'=>'',
       'tci6614-evm' => '55',
-      'keystone-evm' => '55'
+      'k2hk-evm' => '55',
+      'k2l-evm' => '55',
+      'k2e-evm' => '55'
       },
     'i2caddrprmpt' => {  
       'dm644x-evm'=>'00000000',
