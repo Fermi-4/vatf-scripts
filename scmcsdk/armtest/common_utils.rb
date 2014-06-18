@@ -6,7 +6,7 @@
 
 # For DSP + ARM Linux Test Project
 #./dump_trace.sh
-def dump_trace(num_of_cores = 8)
+def dump_trace(num_of_cores = 8, look_for)
   for count in 0..(num_of_cores-1)
     puts "'Core #{count} Trace...'"
     @equipment['dut1'].send_cmd(
