@@ -28,7 +28,12 @@ def run
               }
   test_command = ''
 
-  $result = 0
+  # Preserve current governor
+  prev_gov = create_save_cpufreq_governors
+  #Change to performance governor
+  enable_cpufreq_governor
+  
+$result = 0
   $result_message = ""
   command = "modprobe -r g_ether"
   #@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
@@ -92,6 +97,9 @@ def run
   end  
 
  stop_usbhost_test
+ # Restore previous governor
+ restore_cpufreq_governors(prev_gov)
+
 end
 
 
@@ -467,7 +475,7 @@ def floodpingtest_cdc(server_usb_interface)
 
   #Flood ping from host to DUT
 
-  command="ping -f -c 10 #{@equipment['dut1'].usb_ip} -s #{psize}"
+  command="ping -f -c 100 #{@equipment['dut1'].usb_ip} -s #{psize}"
   @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt,15)
   response = @equipment['server2'].response
   if response.include?(' 0% packet loss')
@@ -645,7 +653,7 @@ end
 def MSC_Raw_Write(mscmount, mbsize)
 
   @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd("time dd of=#{mscmount}/#{mbsize}mb if=/dev/zero bs=1M count=#{mbsize}", @equipment['server2'].prompt , 30)
+  @equipment['server2'].send_sudo_cmd("time dd of=#{mscmount}/#{mbsize}mb if=/dev/zero bs=1M count=#{mbsize} oflag=direct", @equipment['server2'].prompt , 120)
   response = @equipment['server2'].response
   @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
   @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
@@ -659,7 +667,7 @@ end
 def MSC_Raw_Read(mscmount, mbsize)
   
   @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd("time dd if=#{mscmount}/#{mbsize}mb of=/dev/zero bs=1M count=#{mbsize}", @equipment['server2'].prompt , 30)
+  @equipment['server2'].send_sudo_cmd("time dd if=#{mscmount}/#{mbsize}mb of=/dev/zero bs=1M count=#{mbsize}", @equipment['server2'].prompt , 120)
   response = @equipment['server2'].response
   @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
   @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
