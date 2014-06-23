@@ -3636,7 +3636,7 @@ class IpsecUtilitiesVatf
   def ipsec_mgr_start(is_alpha_side)
     string = "IPSECMGR_"
     count = 4
-    raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "env", "", @vatf_helper.DONT_SET_ERROR_BIT(), 1)
+    raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "env", "/usr/bin/env", @vatf_helper.DONT_SET_ERROR_BIT(), 2)
     # Only start the ipsec manager if the variables do not already exist
     if !@vatf_helper.is_matched_count(raw_buffer, string, count)
       get_ipsec_cmd_additions_using_bench_file()
@@ -3677,7 +3677,7 @@ class IpsecUtilitiesVatf
 	get_ipsec_cmd_additions_using_bench_file()
     string = @inflow_active_name
     count = 1
-    raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "env", "", @vatf_helper.DONT_SET_ERROR_BIT(), 1)
+    raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "env", "/usr/bin/env", @vatf_helper.DONT_SET_ERROR_BIT(), 2)
     # Only stop offload if inflow mode is active
     if @vatf_helper.is_matched_count(raw_buffer, string, count)
       policy_index_in = @vatf_helper.get_policy_id(is_alpha_side, "in")
