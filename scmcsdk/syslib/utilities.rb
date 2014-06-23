@@ -1756,6 +1756,7 @@ class TputBinarySearch
   def incremented_value(value)
     new_value = (value / @search_increment) * @search_increment
     new_value += @search_increment if (value - ((@search_increment / 2) + 1)) > new_value
+    new_value = @search_increment if new_value < @search_increment
     return new_value
   end
   def binary_search(tested_mbps, measured_mbps, vatf_helper, perf_client_side)
@@ -1772,11 +1773,11 @@ class TputBinarySearch
     case action
       when "go_higher"
         new_test_mbps = @best_mbps + ((@previous_tested_mbps - @best_mbps) / 2)
+        @binary_search_complete = true if @search_increment >= (@previous_tested_mbps - @best_mbps).abs
       when "go_lower"
         lower_mbps = @best_mbps
         upper_mbps = tested_mbps
         new_test_mbps = lower_mbps + ((upper_mbps - lower_mbps) / 2)
-        #@binary_search_complete = true if @search_increment >= (upper_mbps - lower_mbps)
         @binary_search_complete = true if @search_increment >= (@previous_tested_mbps - @best_mbps).abs
     end
 
