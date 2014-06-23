@@ -12,11 +12,13 @@ include PowerModule
 include NetperfModule
 
 def setup
+  multimeter = @equipment['dut1'].params['multimeter']
+  conn_type = multimeter.params && multimeter.params.has_key?('conn_type') ? multimeter.params['conn_type'] : 'serial'
   add_equipment('multimeter') do |log_path|
-    KeithleyMultiMeterDriver.new(@equipment['dut1'].params['multimeter'],log_path)
+    KeithleyMultiMeterDriver.new(multimeter,log_path)
   end
   # Connect to multimeter
-  @equipment['multimeter'].connect({'type'=>'serial'})
+  @equipment['multimeter'].connect({'type'=>conn_type})
   @equipment['dut1'].connect({'type'=>'serial'})
   send_adb_cmd("shell svc power stayon true") 
   self.as(AndroidTest).setup
