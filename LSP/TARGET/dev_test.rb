@@ -82,17 +82,25 @@ def run_generate_script
   end
   
   out_file = File.new(File.join(@linux_temp_folder, 'test.sh'),'w')
+  if raw_test_lines[0].match(/^#!\//)
+    out_file.print("#{raw_test_lines.shift}\n") #Print sha-bang first 
+  end
   out_file.print("failtest() {\n")
   out_file.print("  echo 1 >&3\n")
   out_file.print("}\n")
   param_names = @test_params.params_control.instance_variables
   param_names.each {|name|
+    next if name.to_s.sub(/@/,'') == 'script'
     val=@test_params.params_control.instance_variable_get(name)[0]
     out_file.print("#{name.to_s.sub(/@/,'')}=#{/\s+/.match(val) ? "'"+val+"'" : val }\n")
   }
   out_file.print("\n# Start of user's script logic\n")
   raw_test_lines.each do |current_line|
-    out_file.print(eval('"'+current_line.gsub("\\","\\\\\\\\").gsub('"','\\"')+'"')+"\n")
+    if current_line.match(/#\{.+\}/) # Apply Ruby var substitution
+      out_file.print(eval('"'+current_line.gsub("\\","\\\\\\\\").gsub('"','\\"')+'"')+"\n")
+    else
+      out_file.print(current_line.gsub('$','\$').gsub(/(?=`)/,'\\')+"\n")
+    end
   end
   in_file.close   if !isScriptACommand
   out_file.close
