@@ -25,35 +25,31 @@ def run
 
   power_state = @test_params.params_chan.instance_variable_defined?(:@power_state) ? @test_params.params_chan.power_state[0] : 'mem'
   wakeup_domain = @test_params.params_chan.instance_variable_defined?(:@wakeup_domain) ? @test_params.params_chan.wakeup_domain[0] : 'uart'
-  max_suspend_time = 60
+  max_suspend_time = 30
   max_resume_time = 60
+
+  cpufreq_0 = '/sys/devices/system/cpu/cpu0/cpufreq'
+
+  # mount debugfs
+  @equipment['dut1'].send_cmd("mkdir /debug", @equipment['dut1'].prompt)
+  @equipment['dut1'].send_cmd("mount -t debugfs debugfs /debug", @equipment['dut1'].prompt)
 
   # Configure multimeter 
   @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name))
-  # Set DUT in appropriate state
-
+  
 	puts "\n\n======= Current CPU Frequency =======\n" 
-	@equipment['dut1'].send_cmd("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", @equipment['dut1'].prompt, 3)
- 	@equipment['dut1'].send_cmd(" cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies", @equipment['dut1'].prompt, 3)
+	@equipment['dut1'].send_cmd("cat #{cpufreq_0}/scaling_cur_freq", @equipment['dut1'].prompt, 3)
+ 	@equipment['dut1'].send_cmd(" cat #{cpufreq_0}/scaling_available_frequencies", @equipment['dut1'].prompt, 3)
 	supported_frequencies = @equipment['dut1'].response.split(/\s+/).select {|v| v =~ /^\d+$/ }
     
-  if @test_params.params_chan.sleep_while_idle[0] != '0' ||  @test_params.params_chan.enable_off_mode[0] != '0'
-  	# mount debugfs
-  	@equipment['dut1'].send_cmd("mkdir /debug", @equipment['dut1'].prompt)
-  	@equipment['dut1'].send_cmd("mount -t debugfs debugfs /debug", @equipment['dut1'].prompt)
-  	
-    @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.sleep_while_idle[0]} > /debug/pm_debug/sleep_while_idle", @equipment['dut1'].prompt)
-  	@equipment['dut1'].send_cmd("echo #{@test_params.params_chan.enable_off_mode[0]} > /debug/pm_debug/enable_off_mode", @equipment['dut1'].prompt) 
-  	@equipment['dut1'].send_cmd("echo 5 > /sys/devices/platform/omap/omap_uart.0/sleep_timeout", @equipment['dut1'].prompt)
-  	@equipment['dut1'].send_cmd("echo 5 > /sys/devices/platform/omap/omap_uart.1/sleep_timeout", @equipment['dut1'].prompt)
-  	@equipment['dut1'].send_cmd("echo 5 > /sys/devices/platform/omap/omap_uart.2/sleep_timeout", @equipment['dut1'].prompt)
-  end
- 
-  if @test_params.params_chan.cpufreq[0] != '0' && !@test_params.params_chan.instance_variable_defined?(:@suspend)
-  	# put device in avaiable OPP states
+  # Configure DUT 	
+  @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.sleep_while_idle[0]} > /debug/pm_debug/sleep_while_idle", @equipment['dut1'].prompt)
+  @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.enable_off_mode[0]} > /debug/pm_debug/enable_off_mode", @equipment['dut1'].prompt) 
+  if @test_params.params_chan.cpufreq[0] != '0' && @test_params.params_chan.instance_variable_defined?(:@dvfs_freq)
     raise "This dut does not support #{@test_params.params_chan.dvfs_freq[0]} Hz, supported values are #{supported_frequencies.to_s}" if !supported_frequencies.include?(@test_params.params_chan.dvfs_freq[0])
-  	@equipment['dut1'].send_cmd("echo #{@test_params.params_chan.dvfs_freq[0]} > /sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", @equipment['dut1'].prompt)
-    @equipment['dut1'].send_cmd("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", @equipment['dut1'].prompt, 3)
+    @equipment['dut1'].send_cmd("echo userspace > #{cpufreq_0}/scaling_governor", @equipment['dut1'].prompt)
+  	@equipment['dut1'].send_cmd("echo #{@test_params.params_chan.dvfs_freq[0]} > #{cpufreq_0}/scaling_setspeed", @equipment['dut1'].prompt)
+    @equipment['dut1'].send_cmd("cat #{cpufreq_0}/scaling_cur_freq", @equipment['dut1'].prompt, 3)
     new_opp = @equipment['dut1'].response.split(/\s+/).select {|v| v =~ /^\d+$/ }
     if !new_opp.include?(@test_params.params_chan.dvfs_freq[0])
       errMessage= "Could not set #{@test_params.params_chan.dvfs_freq[0]} OPP"
@@ -78,16 +74,17 @@ def run
   end
 
   volt_readings={}
+  measurement_time = get_power_domain_data(@equipment['dut1'].name)['power_domains'].size # approx 1 sec per channel to get 3 measurements
+  min_sleep_time   = 30 # to guarantee that RTC alarm does not fire prior to board reaching suspend state
+  rtc_suspend_time = [measurement_time, min_sleep_time].max
+  suspend_time = wakeup_domain == 'rtc' ? rtc_suspend_time : max_suspend_time 
   if @test_params.params_chan.instance_variable_defined?(:@suspend) && @test_params.params_chan.suspend[0] == '1'
     @test_params.params_control.loop_count[0].to_i.times do
       # Suspend
-      @equipment['dut1'].send_cmd("sync", @equipment['dut1'].prompt, 120)
-      @equipment['dut1'].send_cmd("echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, max_suspend_time, false)
-      
-      raise "DUT took more than #{max_suspend_time} seconds to suspend" if @equipment['dut1'].timeout?
+      start_time = Time.now
+      suspend(wakeup_domain, power_state, suspend_time)
       #@equipment['dut1'].send_cmd("\x3", @equipment['dut1'].prompt, 1) if @test_params.params_chan.suspend[0] == '1'  # Ctrl^c is required for some reason w/ amsdk fs
-      sleep 2  # wait for suspend to stabilize
-      
+            
       # Get voltage values for all channels in a hash
       if (volt_readings.size != 0) 
         new_volt_readings = @equipment['multimeter1'].get_multimeter_output(3, @test_params.params_equip.timeout[0].to_i)
@@ -100,11 +97,12 @@ def run
         puts "volt_readings.size = #{volt_readings.size}"
       end
       
-              
       # Resume from console
-      @equipment['dut1'].send_cmd(" ", @equipment['dut1'].prompt, max_resume_time, false)
-      raise "DUT took more than #{max_resume_time} seconds to resume" if @equipment['dut1'].timeout?
-      #dutThread.join if dutThread
+      elapsed_time = Time.now - start_time
+      sleep (suspend_time - elapsed_time) if elapsed_time < suspend_time
+      resume(wakeup_domain, max_resume_time)
+      @equipment['dut1'].send_cmd(" cat #{cpufreq_0}/stats/time_in_state", @equipment['dut1'].prompt, 1)
+      sleep 1
     end
     
     volt_readings.each_key {|k|
@@ -120,10 +118,10 @@ def run
   end
   
   puts "\n\n======= Power Domain states info =======\n"
-  @equipment['dut1'].send_cmd(" cat /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state", @equipment['dut1'].prompt, 1)
+  @equipment['dut1'].send_cmd(" cat #{cpufreq_0}/stats/time_in_state", @equipment['dut1'].prompt, 1)
   @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
   puts "\n\n======= Current CPU Frequency =======\n"
-  @equipment['dut1'].send_cmd(" cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", @equipment['dut1'].prompt, 1)
+  @equipment['dut1'].send_cmd(" cat #{cpufreq_0}/scaling_cur_freq", @equipment['dut1'].prompt, 1)
   @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
   puts "\n\n======= Power Domain transition stats =======\n"
   @equipment['dut1'].send_cmd(" cat /debug/pm_debug/count", @equipment['dut1'].prompt, 1) 
@@ -134,6 +132,27 @@ ensure
   else
     errMessage = "Could not get Power Performance data" if !errMessage
     set_result(FrameworkConstants::Result[:fail], errMessage)
+  end
+end
+
+def suspend(wakeup_domain, power_state, suspend_time)
+  @equipment['dut1'].send_cmd("sync", @equipment['dut1'].prompt, 120)
+  if wakeup_domain == 'uart'
+    @equipment['dut1'].send_cmd("echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/i, suspend_time, false)
+  elsif wakeup_domain == 'rtc'
+    @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m #{power_state} -s #{suspend_time}", /Freezing remaining freezable tasks/i, suspend_time, false)
+  else
+    raise "#{wakeup_domain} wakeup domain is not supported"
+  end
+  raise "DUT took more than #{suspend_time} seconds to suspend" if @equipment['dut1'].timeout?
+  sleep 2 # extra time to make sure board is sleep 
+end
+
+def resume(wakeup_domain, max_resume_time)
+  max_resume_time.times do |i|
+    @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 1, false)
+    break if !@equipment['dut1'].timeout?
+    raise "DUT took more than #{max_resume_time} seconds to resume" if i == (max_resume_time-1)
   end
 end
 
