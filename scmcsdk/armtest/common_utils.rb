@@ -84,7 +84,7 @@ def soft_reboot
     @equipment['dut1'].power_cycle({'power_handler'=>1})
     @equipment['dut1'].connect({'type'=>'serial'})
     @equipment['dut1'].power_port = dut_power_port
-    @equipment['dut1'].wait_for(/login:/, 60)
+    @equipment['dut1'].wait_for(/login:/, 600)
 
     @equipment['dut1'].send_cmd(@equipment['dut1'].login,
       @equipment['dut1'].prompt, 10) #login to the unit
@@ -190,5 +190,5 @@ def tftp_file_from_host(file, host_ip, timeout_secs,look_for)
 end
 
 def eval_and_send(cmd,look_for)
-  @equipment['dut1'].send_cmd(eval('"'+cmd+'"'),look_for)
+  @equipment['dut1'].send_cmd(eval('"'+cmd+'"'),look_for,120)
 end
