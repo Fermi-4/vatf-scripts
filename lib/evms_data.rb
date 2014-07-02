@@ -141,5 +141,50 @@ module EvmData
     machines['am43xx-gpevm'] = []
     machines[platform]
   end
+
+  # Define AVS class 0 registers for each domain and OPP
+  def get_avs_class0_data(platform)
+    machines = {}
+    machines['dra7xx-evm']  = {'VDD_IVA' => {'OPP_NOM'=>'0x4A0025CC','OPP_OD'=>'0x4A0025D0','OPP_HIGH'=>'0x4A0025D4'},
+                               'VDD_DSPEVE' => {'OPP_NOM'=>'0x4A0025E0','OPP_OD'=>'0x4A0025E4'}, 
+                               'CORE_VDD' => {'OPP_NOM'=>'0x4A0025F4'}, 
+                               'VDD_GPU' => {'OPP_NOM'=>'0x4A003B08','OPP_OD'=>'0x4A003B0C','OPP_HIGH'=>'0x4A003B10'}, 
+                               'VDD_MPU' => {'OPP_NOM'=>'0x4A003B20','OPP_OD'=>'0x4A003B24','OPP_HIGH'=>'0x4A003B28'}, 
+                              }
+    raise "AVS class0 data not defined for #{platform}" if !machines.key?(platform)
+    machines[platform]
+  end
+
+  # Define AVS requirements for uboot
+  def get_required_uboot_avs(platform)
+    data = get_avs_class0_data(platform)
+    case platform
+    
+    when "dra7xx-evm"
+      return data.map{|domain,opps| { domain => opps.select{|name,address| name == "OPP_NOM"} } }
+    
+    else
+      raise "AVS class0 uboot requirements are not defined for #{platform}" 
+    end
+  end
+
+  # Define AVS requirements for Linux
+  def get_required_linux_avs(platform)
+    data = get_avs_class0_data(platform)
+    case platform
+    
+    when "dra7xx-evm"
+      return data.map{|domain,opps| 
+        if domain == 'VDD_MPU' or domain == 'VDD_GPU'
+          { domain => opps }
+        else
+          { domain => opps.select{|name,address| name == "OPP_NOM"} }
+        end
+      }
+
+    else
+      raise "AVS class0 Linux requirements are not defined for #{platform}" 
+    end
+  end
   
 end 
