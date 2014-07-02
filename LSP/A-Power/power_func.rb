@@ -35,7 +35,7 @@ def run
   @equipment['dut1'].send_cmd("mount -t debugfs debugfs /debug", @equipment['dut1'].prompt)
 
   # Configure multimeter 
-  @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name))
+  @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name).merge({'dut_type'=>@equipment['dut1'].name}))
   
 	puts "\n\n======= Current CPU Frequency =======\n" 
 	@equipment['dut1'].send_cmd("cat #{cpufreq_0}/scaling_cur_freq", @equipment['dut1'].prompt, 3)
@@ -45,6 +45,8 @@ def run
   # Configure DUT 	
   @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.sleep_while_idle[0]} > /debug/pm_debug/sleep_while_idle", @equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.enable_off_mode[0]} > /debug/pm_debug/enable_off_mode", @equipment['dut1'].prompt) 
+  cmd = CmdTranslator.get_linux_cmd({'cmd'=>'enable_uart_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})
+  @equipment['dut1'].send_cmd(cmd , @equipment['dut1'].prompt) if cmd.to_s != ''
   if @test_params.params_chan.cpufreq[0] != '0' && @test_params.params_chan.instance_variable_defined?(:@dvfs_freq)
     raise "This dut does not support #{@test_params.params_chan.dvfs_freq[0]} Hz, supported values are #{supported_frequencies.to_s}" if !supported_frequencies.include?(@test_params.params_chan.dvfs_freq[0])
     @equipment['dut1'].send_cmd("echo userspace > #{cpufreq_0}/scaling_governor", @equipment['dut1'].prompt)
@@ -99,7 +101,7 @@ def run
       
       # Resume from console
       elapsed_time = Time.now - start_time
-      sleep (suspend_time - elapsed_time) if elapsed_time < suspend_time
+      sleep (suspend_time - elapsed_time) if elapsed_time < suspend_time and wakeup_domain != 'uart'
       resume(wakeup_domain, max_resume_time)
       @equipment['dut1'].send_cmd(" cat #{cpufreq_0}/stats/time_in_state", @equipment['dut1'].prompt, 1)
       sleep 1
@@ -168,14 +170,14 @@ def save_results(power_consumption,voltage_reading,multimeter=@equipment['multim
   table_title = Array.new()
   table_title << 'SAMPLE NO'
   table_title <<  'All domains(mw)'
-  for i in (1..multimeter.number_of_channels/2) 
-   table_title <<   multimeter.dut_power_domains[i - 1] + "(mw)" 
+  multimeter.dut_power_domains.each do |domain|
+   table_title <<   domain + "(mw)" 
   end
-  for i in (1..multimeter.number_of_channels/2) 
-   table_title <<   multimeter.dut_power_domains[i -1] + "drop(v)" 
+  multimeter.dut_power_domains.each do |domain|
+   table_title <<   domain + "drop(v)" 
   end
-  for i in (1..multimeter.number_of_channels/2) 
-   table_title <<  multimeter.dut_power_domains[i -1] + "(v)" 
+  multimeter.dut_power_domains.each do |domain|
+   table_title <<  domain + "(v)" 
   end
   @results_html_file.add_paragraph("")
     res_table = @results_html_file.add_table([["TOTAL,  PER DOMAIN POWER and VOLTAGE CALCULATED POINT BY POINT",{:bgcolor => "336666", :colspan => table_title.length},{:color => "white"}]],{:border => "1",:width=>"20%"})
@@ -186,22 +188,22 @@ def save_results(power_consumption,voltage_reading,multimeter=@equipment['multim
   table_data =  Array.new
   table_data <<  count.to_s    
   table_data << power.to_s 
-  for i in (1..multimeter.number_of_channels/2)
-   table_data <<  power_consumption["domain_" +  multimeter.dut_power_domains[i - 1] + "_power_readings"] [count].to_s 
+  multimeter.dut_power_domains.each do |domain|
+   table_data <<  power_consumption["domain_" +  domain + "_power_readings"] [count].to_s 
   end
-  for i in (1..multimeter.number_of_channels/2)
-   table_data <<   voltage_reading["domain_" +  multimeter.dut_power_domains[i - 1] + "drop_volt_readings"][count].to_s 
+  multimeter.dut_power_domains.each do |domain|
+   table_data <<   voltage_reading["domain_" + domain + "drop_volt_readings"][count].to_s 
   end
-  for i in (1..multimeter.number_of_channels/2)
-   table_data <<  voltage_reading["domain_" +  multimeter.dut_power_domains[i - 1] + "_volt_readings"][count].to_s
+  multimeter.dut_power_domains.each do |domain|
+   table_data <<  voltage_reading["domain_" +  domain + "_volt_readings"][count].to_s
   end
    table_data = table_data 
     @results_html_file.add_row_to_table(res_table,table_data)
     count += 1
   }
  
- for i in (1..multimeter.number_of_channels/2)
-  perf << {'name' => @equipment['multimeter1'].dut_power_domains[i - 1] + " Power", 'value' =>power_consumption["domain_" + @equipment['multimeter1'].dut_power_domains[i - 1] + "_power_readings"], 'units' => "mw"}
+  multimeter.dut_power_domains.each do |domain|
+    perf << {'name' => domain + " Power", 'value' =>power_consumption["domain_" + domain + "_power_readings"], 'units' => "mw"}
   end 
   perf << {'name' => "Total Power", 'value' => power_consumption["all_domains"], 'units' => "mw"}
   return perf
