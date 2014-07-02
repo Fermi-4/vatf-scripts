@@ -176,7 +176,8 @@ module EvmData
     when "dra7xx-evm"
       return data.map{|domain,opps| 
         if domain == 'VDD_MPU' or domain == 'VDD_GPU'
-          { domain => opps }
+          #{ domain => opps }  # TODO: Replace line below with this one once OPP_HIGH is supported
+          { domain => opps.select{|name,address| name == "OPP_NOM" or name == "OPP_OD"} }
         else
           { domain => opps.select{|name,address| name == "OPP_NOM"} }
         end
@@ -185,6 +186,15 @@ module EvmData
     else
       raise "AVS class0 Linux requirements are not defined for #{platform}" 
     end
+  end
+
+  # Define translations from OPP name to frequency in KHz (unit expected by cpufreq)
+  def get_frequency_for_opp(platform, opp)
+    machines = {}
+    machines['dra7xx-evm']  = {'OPP_NOM'=>'1000000','OPP_OD'=>'1176000','OPP_HIGH'=>'1500000'}
+
+    raise "OPP #{opp.upcase} not defined for #{platform}" if !machines.key?(platform) or !machines[platform][opp.upcase]
+    machines[platform][opp.upcase]
   end
   
 end 
