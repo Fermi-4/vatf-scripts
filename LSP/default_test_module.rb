@@ -687,7 +687,7 @@ module LspTestScript
   def read_address(address, from_kernel=true, e='dut1')
     raise "equipment #{e} does not exist" if !@equipment.key?(e)
     if from_kernel
-      @equipment[e].send_cmd("which devmem2; echo $?", /^0$/, 2)
+      @equipment[e].send_cmd("which devmem2; echo $?", /^0/)
       raise "devmem2 is not available" if @equipment[e].timeout?
       @equipment[e].send_cmd("devmem2 #{address}", @equipment[e].prompt)
       return @equipment[e].response.match(/Read at address  #{address} .+:\s*([x0-f]+)/i).captures[0].hex
