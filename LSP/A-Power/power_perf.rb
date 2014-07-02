@@ -23,7 +23,7 @@ end
 def run
   perf = []
   # Configure multimeter 
-  @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name))
+  @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name).merge({'dut_type'=>@equipment['dut1'].name}))
   # Set DUT in appropriate state
 
   

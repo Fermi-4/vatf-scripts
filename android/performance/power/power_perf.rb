@@ -29,7 +29,7 @@ def run
   power_readings =  Hash.new()
   volt_reading_table =  Hash.new()
   # Configure multimeter 
-  @equipment['multimeter'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name))
+  @equipment['multimeter'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name).merge({'dut_type'=>@equipment['dut1'].name}))
   if @test_params.params_chan.instance_variable_defined?(:@dvfs_governor)
    number_of_governor =  @test_params.params_chan.dvfs_governor.length
   else 

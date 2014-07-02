@@ -27,7 +27,7 @@ end
 def run
   perf = []
   # Configure multimeter 
-  @equipment['multimeter'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name))
+  @equipment['multimeter'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name).merge({'dut_type'=>@equipment['dut1'].name}))
   # Set DUT in appropriate state
   if @test_params.params_chan.instance_variable_defined?(:@disabled_cpu_idle_modes)
     @test_params.params_chan.disabled_cpu_idle_modes.each do |idle_mode|

@@ -20,7 +20,7 @@ def run
   wakeup_domain = @test_params.params_chan.instance_variable_defined?(:@wakeup_domain) ? @test_params.params_chan.wakeup_domain[0] : 'uart'
 
   # Configure multimeter 
-  @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name))
+  @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name).merge({'dut_type'=>@equipment['dut1'].name}))
 
   # set uart to gpio in standby_gpio_pad_conf so that uart can wakeup from standby
   if power_state == 'standby' && wakeup_domain == 'uart'
