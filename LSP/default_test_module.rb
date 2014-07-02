@@ -697,5 +697,18 @@ module LspTestScript
     end
   end
 
+  # Instantiate and connect to equipment accessible from another equipment bench params definitions
+  # Typical case is accessing multimeter equipment that is defined in the DUT bench params section
+  def add_child_equipment(child_name, father_name='dut1')
+    # Add Equipment to result logs
+    equip = @equipment[father_name].params[child_name]
+    conn_type = equip.params && equip.params.has_key?('conn_type') ? equip.params['conn_type'] : 'serial'
+    add_equipment(child_name) do |log_path|
+      Object.const_get(equip.driver_class_name).new(equip,log_path)
+    end
+    # Connect to equip
+    @equipment[child_name].connect({'type'=>conn_type})
+  end
+
 end
 
