@@ -29,10 +29,10 @@ def run
     expected_voltage = read_address(efuse_addr, false)
     deviation = (measured_voltage - expected_voltage.to_f).abs
     if deviation > max_deviation
-      result_str += "Domain #{domain} failed. Expected:#{expected_voltage}, Measured:#{measured_voltage}" 
+      result_str += "Domain #{domain} failed. Expected:#{expected_voltage}, Measured:#{measured_voltage}. " 
       failure += 1
     else
-      result_str += "Domain #{domain} passed. Expected:#{expected_voltage}, Measured:#{measured_voltage}" 
+      result_str += "Domain #{domain} passed. Expected:#{expected_voltage}, Measured:#{measured_voltage}. " 
     end
   }
 
