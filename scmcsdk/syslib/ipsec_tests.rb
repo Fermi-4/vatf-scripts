@@ -198,8 +198,6 @@ def run
         when DIRECTION_INGRESS
           udp_bandwidth_ingress = udp_bandwidth_array[DOWNLOAD_SPEED_INDEX]
           specified_bandwidth = udp_bandwidth_ingress
-          # Currently the 10G interface does not get anywhere near 10G and will cause lower rates if stating at 10000M so start it at 1000M
-          udp_bandwidth_ingress = "1400M" if udp_bandwidth_array[DOWNLOAD_SPEED_INDEX] == "10000M"
           # If UDP use binary search to get the best MBPS
           if IpsecConnectionScript.protocol.downcase == "udp" && auto_bandwidth_detect
             udp_bandwidth_ingress = perfUtils.test_linux_to_evm_mbps_detect(IpsecConnectionScript.protocol, auto_bw_test_secs, udp_bandwidth_ingress, packet_size, "auto detect mbps", crypto_mode)
@@ -215,8 +213,6 @@ def run
         when DIRECTION_EGRESS
           udp_bandwidth_egress = udp_bandwidth_array[UPLOAD_SPEED_INDEX]
           specified_bandwidth = udp_bandwidth_egress
-          # Currently the 10G interface does not get anywhere near 10G and will cause lower rates if stating at 10000M so start it at 1000M
-          udp_bandwidth_egress = "1400M" if udp_bandwidth_array[UPLOAD_SPEED_INDEX] == "10000M"
           if IpsecConnectionScript.protocol.downcase == "udp" && auto_bandwidth_detect
             udp_bandwidth_egress = perfUtils.test_evm_to_linux_mbps_detect(IpsecConnectionScript.protocol, auto_bw_test_secs, udp_bandwidth_egress, packet_size, "auto detect mbps", crypto_mode)
             if udp_bandwidth_ingress == 0.0

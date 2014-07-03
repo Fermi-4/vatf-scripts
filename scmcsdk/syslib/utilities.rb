@@ -2585,23 +2585,21 @@ class PerfUtilities
   end
   def test_common_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, perf_server_side, perf_client_side)
     auto_detect = true
-    max_attemps = 10
+    max_attempts = 15
     binary_step =  2
     current_auto_mbps = udp_bandwidth.gsub("M", "").to_i
     tput_detect = TputBinarySearch.new
     tput_detect.init_search_values(current_auto_mbps, binary_step)
-    #while ((!@binary_search_complete) && (max_attemps > 0))
-    while ((!tput_detect.binary_search_complete) && (max_attemps > 0))
+    while ((!tput_detect.binary_search_complete) && (max_attempts > 0))
       measured_mbps = test_common(protocol, test_time_secs, "#{current_auto_mbps}M", packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode, auto_detect)
       # try again
       if measured_mbps == 0
         measured_mbps = test_common(protocol, test_time_secs, "#{current_auto_mbps}M", packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode, auto_detect)
       end
-      #current_auto_mbps = binary_search_by_step(current_auto_mbps, measured_mbps)
       current_auto_mbps = tput_detect.binary_search(current_auto_mbps, measured_mbps, @vatf_helper, perf_client_side)
-      max_attemps -= 1
+      max_attempts -= 1
     end
-    @vatf_helper.log_info(perf_client_side, " final bin search; mbps: #{measured_mbps}, @current_auto_mbps: #{@current_auto_mbps}, max_attempts: #{max_attemps}\r\n")
+    @vatf_helper.log_info(perf_client_side, " final bin search; mbps: #{measured_mbps}, @current_auto_mbps: #{@current_auto_mbps}, max_attempts: #{max_attempts}\r\n")
     return "#{current_auto_mbps}M"
   end
   def test_linux_to_evm_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode)
