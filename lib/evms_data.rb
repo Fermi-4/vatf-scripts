@@ -175,7 +175,7 @@ module EvmData
     
     when "dra7xx-evm"
       return data.map{|domain,opps| 
-        if domain == 'VDD_MPU' or domain == 'VDD_GPU'
+        if domain == 'VDD_MPU' 
           #{ domain => opps }  # TODO: Replace line below with this one once OPP_HIGH is supported
           { domain => opps.select{|name,address| name == "OPP_NOM" or name == "OPP_OD"} }
         else
