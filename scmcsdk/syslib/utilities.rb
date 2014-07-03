@@ -1925,13 +1925,13 @@ class PerfUtilities
       end
     end
   end
-  def iperf_server_start(is_alpha_side, protocol, monitor_secs, file_pipe="")
+  def iperf_server_start(is_alpha_side, protocol, monitor_secs, packet_size, file_pipe="")
     command = ""
     command += @iperf_cmd
     command += "-s "
     command += "-u " if protocol == "udp"
     command += (is_alpha_side ? @additional_alpha_params : @additional_beta_params)
-    command += " "
+    command += " --len #{packet_size} "
     command += file_pipe
     command += " 2>&1 "
     command += "&"
@@ -1960,10 +1960,10 @@ class PerfUtilities
     @vatf_helper.log_info(is_alpha_side, "\r\n Netperf server thread is running.\r\n")
     return server_thread
   end
-  def server_start(is_alpha_side, protocol, monitor_secs, file_pipe="")
+  def server_start(is_alpha_side, protocol, monitor_secs, packet_size, file_pipe="")
     case @perf_app
       when IPERF_APP()
-        return iperf_server_start(is_alpha_side, protocol, monitor_secs, file_pipe)
+        return iperf_server_start(is_alpha_side, protocol, monitor_secs, packet_size, file_pipe)
       when NETPERF_APP()
         return netperf_server_start(is_alpha_side, protocol, monitor_secs, file_pipe)
     end
@@ -2519,7 +2519,7 @@ class PerfUtilities
         cpu_stats_side = perf_client_side
     end
     get_proc_info(evm_side, crypto_mode) if !auto_detect
-    server_thread = server_start(perf_server_side, protocol, test_time_secs + 10, " > ~/perf_svr_log.txt")
+    server_thread = server_start(perf_server_side, protocol, test_time_secs + 10, packet_size, " > ~/perf_svr_log.txt")
     if !auto_detect
       run_top(evm_side, test_time_secs)
       result += "\r\n============================================================\r\n\r\n"
@@ -2556,8 +2556,8 @@ class PerfUtilities
     @vatf_helper.smart_send_cmd_wait(linux_pc, @normal_cmd, "export WAITFOR=#{@wait_for_text}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
     @vatf_helper.smart_send_cmd_wait(evm_side, @normal_cmd, "export WAITFOR=#{@wait_for_text}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
     get_proc_info(evm_side, crypto_mode)
-    server_thread_ingress = server_start(perf_server_side, protocol, test_time_secs + 20, " > ~/perf_svr_log.txt")
-    server_thread_egress = server_start(perf_client_side, protocol, test_time_secs + 20, " > ~/perf_svr_log.txt")
+    server_thread_ingress = server_start(perf_server_side, protocol, test_time_secs + 20, packet_size, " > ~/perf_svr_log.txt")
+    server_thread_egress = server_start(perf_client_side, protocol, test_time_secs + 20, packet_size, " > ~/perf_svr_log.txt")
     sleep(4)
     run_top(evm_side, test_time_secs)
     #result += "\r\n============================================================\r\n\r\n"
