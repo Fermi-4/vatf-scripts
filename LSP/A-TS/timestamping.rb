@@ -15,14 +15,21 @@ def setup
   @timestamp_regex = @test_params.params_control.instance_variable_defined?(:@timestamp_regex) ? @test_params.params_control.timestamp_regex[0].to_s : 'HW\sraw\s(\d+\.\d+)'
   @incorrect_offset_detected = 0
   @drift = 0
+  @total_readings = 0
 end
 
 # Determine test result outcome and save performance data
 def run_determine_test_outcome(return_non_zero)
   test_result_comment = check_timestamps(File.join(@linux_temp_folder,'test.log'),@timestamp_regex)
+  if @total_readings < 5
+    test_result_comment = test_result_comment + "\n WARNING: Insufficient readings. Check if timestamping application ran or run for longer duration \n" 
+    return [FrameworkConstants::Result[:fail],
+            test_result_comment
+            ]
+  end
   
   if @incorrect_offset_detected > 5
-  # Fail test only if 5 or more incorrect offset readings
+    # Fail test only if 5 or more incorrect offset readings
     return [FrameworkConstants::Result[:fail], 
             test_result_comment
             ]
@@ -85,6 +92,7 @@ def check_timestamps(logs, regex)
         break
       end
     end 
+    @total_readings = diff_arr.length
     # report drift only if observed in last 5 readings or more
     if start_index != nil && start_index < -5
       @drift = 1
