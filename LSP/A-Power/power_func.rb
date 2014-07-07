@@ -1,11 +1,14 @@
 require File.dirname(__FILE__)+'/../default_test_module' 
 require File.dirname(__FILE__)+'/../../lib/multimeter_power'
 require File.dirname(__FILE__)+'/../../lib/evms_data'  
+require File.dirname(__FILE__)+'/power_functions' 
+
 require 'gnuplot.rb'
 
 include LspTestScript
 include MultimeterModule
 include EvmData
+include PowerFunctions
 
 def setup
   puts "\n====================\nPATH=#{ENV['PATH']}\n"
@@ -45,8 +48,7 @@ def run
   # Configure DUT 	
   @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.sleep_while_idle[0]} > /debug/pm_debug/sleep_while_idle", @equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.enable_off_mode[0]} > /debug/pm_debug/enable_off_mode", @equipment['dut1'].prompt) 
-  cmd = CmdTranslator.get_linux_cmd({'cmd'=>'enable_uart_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})
-  @equipment['dut1'].send_cmd(cmd , @equipment['dut1'].prompt) if cmd.to_s != ''
+  
   if @test_params.params_chan.cpufreq[0] != '0' && @test_params.params_chan.instance_variable_defined?(:@dvfs_freq)
     raise "This dut does not support #{@test_params.params_chan.dvfs_freq[0]} Hz, supported values are #{supported_frequencies.to_s}" if !supported_frequencies.include?(@test_params.params_chan.dvfs_freq[0])
     @equipment['dut1'].send_cmd("echo userspace > #{cpufreq_0}/scaling_governor", @equipment['dut1'].prompt)
@@ -67,9 +69,24 @@ def run
   end
 
   if wakeup_domain == 'uart'
+    # Enable UART wakeup if required
+    cmd = CmdTranslator.get_linux_cmd({'cmd'=>'enable_uart_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})
+    @equipment['dut1'].send_cmd(cmd , @equipment['dut1'].prompt) if cmd.to_s != ''
+  end
+
+  if wakeup_domain == 'gpio'
+    # Enable GPIO wakeup if required
+    cmd = CmdTranslator.get_linux_cmd({'cmd'=>'enable_gpio_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})
+    @equipment['dut1'].send_cmd(cmd , @equipment['dut1'].prompt) if cmd.to_s != ''
+  end
+
+  if wakeup_domain != 'usb'
     # Disable usb wakeup to reduce standby power
     cmd = CmdTranslator.get_linux_cmd({'cmd'=>'disable_usb_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})
     @equipment['dut1'].send_cmd(cmd , @equipment['dut1'].prompt) if cmd.to_s != ''
+  end
+
+  if wakeup_domain != 'tsc'
     # Disable tsc wakeup tp reduce standby power
     cmd = CmdTranslator.get_linux_cmd({'cmd'=>'disable_tsc_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})
     @equipment['dut1'].send_cmd(cmd , @equipment['dut1'].prompt) if cmd.to_s != ''
@@ -101,7 +118,7 @@ def run
       
       # Resume from console
       elapsed_time = Time.now - start_time
-      sleep (suspend_time - elapsed_time) if elapsed_time < suspend_time and wakeup_domain != 'uart'
+      sleep (suspend_time - elapsed_time) if elapsed_time < suspend_time and wakeup_domain == 'rtc'
       resume(wakeup_domain, max_resume_time)
       @equipment['dut1'].send_cmd(" cat #{cpufreq_0}/stats/time_in_state", @equipment['dut1'].prompt, 1)
       sleep 1
@@ -137,26 +154,6 @@ ensure
   end
 end
 
-def suspend(wakeup_domain, power_state, suspend_time)
-  @equipment['dut1'].send_cmd("sync", @equipment['dut1'].prompt, 120)
-  if wakeup_domain == 'uart'
-    @equipment['dut1'].send_cmd("echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/i, suspend_time, false)
-  elsif wakeup_domain == 'rtc'
-    @equipment['dut1'].send_cmd("rtcwake -d /dev/rtc0 -m #{power_state} -s #{suspend_time}", /Freezing remaining freezable tasks/i, suspend_time, false)
-  else
-    raise "#{wakeup_domain} wakeup domain is not supported"
-  end
-  raise "DUT took more than #{suspend_time} seconds to suspend" if @equipment['dut1'].timeout?
-  sleep 2 # extra time to make sure board is sleep 
-end
-
-def resume(wakeup_domain, max_resume_time)
-  max_resume_time.times do |i|
-    @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 1, false)
-    break if !@equipment['dut1'].timeout?
-    raise "DUT took more than #{max_resume_time} seconds to resume" if i == (max_resume_time-1)
-  end
-end
 
 # Function saves power consumption result
 # Input parameters: Hash table populated Power consumptions for all domains.
