@@ -89,7 +89,7 @@ def run
       
       # Resume from console
       elapsed_time = Time.now - start_time
-      sleep (suspend_time - elapsed_time) if elapsed_time < suspend_time and wakeup_domain == 'rtc'
+      #sleep (suspend_time - elapsed_time) if elapsed_time < suspend_time and wakeup_domain == 'rtc'
       resume(wakeup_domain, max_resume_time)
       @equipment['dut1'].send_cmd(" cat #{cpufreq_0}/stats/time_in_state", @equipment['dut1'].prompt, 1)
       sleep 1

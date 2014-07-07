@@ -25,16 +25,16 @@ module PowerFunctions
   end
 
   def resume(wakeup_domain, max_resume_time, e='dut1')
-    if wakeup_domain == 'gpio'
-      raise "Please define dut.params['gpio_wakeup_port'] in your bench file" if !@equipment[e].params.has_key?('gpio_wakeup_port')
-      @power_handler.load_power_ports(@equipment[e].params['gpio_wakeup_port'])
+    if wakeup_domain == 'gpio' or  wakeup_domain == 'rtc'
+      raise "Please define dut.params['gpio_wakeup_port'] in your bench file" if wakeup_domain == 'gpio' and !@equipment[e].params.has_key?('gpio_wakeup_port')
+      @power_handler.load_power_ports(@equipment[e].params['gpio_wakeup_port']) if wakeup_domain == 'gpio'
       is_dut_awake=false
       Thread.new {
         @equipment[e].wait_for(/PM: resume of devices complete/, max_resume_time)
         is_dut_awake = !@equipment[e].timeout?
       }
       sleep 1 
-      @power_handler.reset(@equipment[e].params['gpio_wakeup_port'])
+      @power_handler.reset(@equipment[e].params['gpio_wakeup_port']) if wakeup_domain == 'gpio'
       begin 
         Timeout::timeout(max_resume_time) {
           while !is_dut_awake
@@ -44,6 +44,7 @@ module PowerFunctions
       rescue Timeout::Error => e
         raise "DUT took more than #{max_resume_time} seconds to resume"
       end
+    
     else
       max_resume_time.times do |i|
         @equipment[e].send_cmd("", /PM: resume of devices complete/, 1, false)
