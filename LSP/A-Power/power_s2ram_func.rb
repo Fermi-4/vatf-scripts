@@ -1,4 +1,7 @@
 require File.dirname(__FILE__)+'/../TARGET/dev_test2'
+require File.dirname(__FILE__)+'/power_functions' 
+
+include PowerFunctions
 
 def setup
   self.as(LspTargetTestScript).setup
@@ -74,18 +77,8 @@ def configure_dut
     raise "Could not set #{@test_params.params_chan.dvfs_freq[0]} OPP" if !new_opp.include?(@test_params.params_chan.dvfs_freq[0])
   end
 
-  # set uart to gpio in standby_gpio_pad_conf so that uart can wakeup from standby
-  if power_state == 'standby' && wakeup_domain == 'uart'
-    @equipment['dut1'].send_cmd("cd #{@DEBUGFS_PATH}omap_mux/board", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'set_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})}" , @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'get_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})}", @equipment['dut1'].prompt, 10)
-  end
-  
-  # Work around to enable uart wakeup on some platforms (e.g. J6)
-  if wakeup_domain == 'uart' 
-    cmd = CmdTranslator.get_linux_cmd({'cmd'=>'enable_uart_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})
-    @equipment['dut1'].send_cmd(cmd , @equipment['dut1'].prompt) if cmd.to_s != ''
-  end
+  power_wakeup_configuration(wakeup_domain, power_state)
+
 end
 
 def start_target_tests

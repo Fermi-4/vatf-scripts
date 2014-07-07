@@ -30,7 +30,7 @@ module PowerFunctions
       @power_handler.load_power_ports(@equipment[e].params['gpio_wakeup_port'])
       is_dut_awake=false
       Thread.new {
-        @equipment[e].wait_for(/resume of devices complete/, max_resume_time)
+        @equipment[e].wait_for(/PM: resume of devices complete/, max_resume_time)
         is_dut_awake = !@equipment[e].timeout?
       }
       sleep 1 
@@ -46,11 +46,44 @@ module PowerFunctions
       end
     else
       max_resume_time.times do |i|
-        @equipment[e].send_cmd("", @equipment[e].prompt, 1, false)
+        @equipment[e].send_cmd("", /PM: resume of devices complete/, 1, false)
         break if !@equipment[e].timeout?
         raise "DUT took more than #{max_resume_time} seconds to resume" if i == (max_resume_time-1)
       end
     end
+  end
+
+  def power_wakeup_configuration(wakeup_domain, power_state, e='dut1')
+    # set uart to gpio in standby_gpio_pad_conf so that uart can wakeup from standby
+  if power_state == 'standby' && wakeup_domain == 'uart'
+    @equipment[e].send_cmd("cd /debug/omap_mux/board", @equipment[e].prompt, 10)
+    @equipment[e].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'set_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment[e].get_linux_version})}" , @equipment[e].prompt, 10)
+    @equipment[e].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'get_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment[e].get_linux_version})}", @equipment[e].prompt, 10)
+  end
+
+  if wakeup_domain == 'uart'
+    # Enable UART wakeup if required
+    cmd = CmdTranslator.get_linux_cmd({'cmd'=>'enable_uart_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment[e].get_linux_version})
+    @equipment[e].send_cmd(cmd , @equipment[e].prompt) if cmd.to_s != ''
+  end
+
+  if wakeup_domain == 'gpio'
+    # Enable GPIO wakeup if required
+    cmd = CmdTranslator.get_linux_cmd({'cmd'=>'enable_gpio_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment[e].get_linux_version})
+    @equipment[e].send_cmd(cmd , @equipment[e].prompt) if cmd.to_s != ''
+  end
+
+  if wakeup_domain != 'usb'
+    # Disable usb wakeup to reduce standby power
+    cmd = CmdTranslator.get_linux_cmd({'cmd'=>'disable_usb_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment[e].get_linux_version})
+    @equipment[e].send_cmd(cmd , @equipment[e].prompt) if cmd.to_s != ''
+  end
+
+  if wakeup_domain != 'tsc'
+    # Disable tsc wakeup tp reduce standby power
+    cmd = CmdTranslator.get_linux_cmd({'cmd'=>'disable_tsc_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment[e].get_linux_version})
+    @equipment[e].send_cmd(cmd , @equipment[e].prompt) if cmd.to_s != ''
+  end
   end
 
 end

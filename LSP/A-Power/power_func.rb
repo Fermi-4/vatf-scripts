@@ -61,37 +61,8 @@ def run
     end
   end
   
-  # set uart to gpio in standby_gpio_pad_conf so that uart can wakeup from standby
-  if power_state == 'standby' && wakeup_domain == 'uart'
-    @equipment['dut1'].send_cmd("cd /debug/omap_mux/board", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'set_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})}" , @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'get_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})}", @equipment['dut1'].prompt, 10)
-  end
-
-  if wakeup_domain == 'uart'
-    # Enable UART wakeup if required
-    cmd = CmdTranslator.get_linux_cmd({'cmd'=>'enable_uart_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})
-    @equipment['dut1'].send_cmd(cmd , @equipment['dut1'].prompt) if cmd.to_s != ''
-  end
-
-  if wakeup_domain == 'gpio'
-    # Enable GPIO wakeup if required
-    cmd = CmdTranslator.get_linux_cmd({'cmd'=>'enable_gpio_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})
-    @equipment['dut1'].send_cmd(cmd , @equipment['dut1'].prompt) if cmd.to_s != ''
-  end
-
-  if wakeup_domain != 'usb'
-    # Disable usb wakeup to reduce standby power
-    cmd = CmdTranslator.get_linux_cmd({'cmd'=>'disable_usb_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})
-    @equipment['dut1'].send_cmd(cmd , @equipment['dut1'].prompt) if cmd.to_s != ''
-  end
-
-  if wakeup_domain != 'tsc'
-    # Disable tsc wakeup tp reduce standby power
-    cmd = CmdTranslator.get_linux_cmd({'cmd'=>'disable_tsc_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})
-    @equipment['dut1'].send_cmd(cmd , @equipment['dut1'].prompt) if cmd.to_s != ''
-  end
-
+  power_wakeup_configuration(wakeup_domain, power_state)
+    
   volt_readings={}
   measurement_time = get_power_domain_data(@equipment['dut1'].name)['power_domains'].size # approx 1 sec per channel to get 3 measurements
   min_sleep_time   = 30 # to guarantee that RTC alarm does not fire prior to board reaching suspend state
