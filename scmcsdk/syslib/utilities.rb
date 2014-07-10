@@ -60,10 +60,12 @@ def get_variable_value(string)
 end
 
 def get_param_value(equipment_designator, variable)
-  value = @equipment[equipment_designator].params[variable]
-  value = (value == nil ? "" : value)
-  return value
+  @equipment[equipment_designator].instance_variable_defined?(:@params) ? \
+                        (@equipment[equipment_designator].params[variable] != nil) ? \
+                             @equipment[equipment_designator].params[variable] : "" \
+									: ""
 end
+
 
 def get_param_value_local(equipment_ref, variable)
   value = equipment_ref.params[variable]
