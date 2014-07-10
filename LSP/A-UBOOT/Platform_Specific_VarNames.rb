@@ -534,6 +534,12 @@ module PlatformSpecificVarNames
       'beagle' =>'00000001',
       'da850-omapl138-evm'=>''
       },
+	# Core PLL clock values
+    'clkspeed_0' => {  
+      'k2hk-evm' => 1198080000,
+      'k2l-evm' => 1000594188,
+      'k2e-evm' => 1250000000
+      },
     'bootargs' => {  
       'am335x-evm'=>'console=ttyO0,115200n8 noinitrd rw root=/dev/nfs nfsroot=$serverip:$nfspath,nolock ip=dhcp',
       'dm644x-evm'=>'console=ttyS0,115200n8 noinitrd rw root=/dev/nfs nfsroot=$serverip:$nfspath,nolock mem=120M ip=dhcp',
