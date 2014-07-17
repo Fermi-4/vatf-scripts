@@ -143,11 +143,22 @@ def find_omapdss_connected_displays(dut=@equipment['dut1'])
   connectors = find_type_dirs('connector','/sys/devices',dut)
   result = []
   connectors.each do |conn|
-    dut.send_cmd("cat /sys/devices/#{conn}/disp_name")
+    dut.send_cmd("cat /sys/devices/#{conn}/disp*")
     dut.response.split(/[\r\n]+/).each do |disp|
       if !disp.match(/^cat/) && disp.strip() != '' && !disp.match(/#{dut.prompt}/im)
         dut.send_cmd("cat /sys/devices/platform/omapdss/#{disp}/enabled",dut.prompt)
         result << disp if dut.response.match(/^1\r*$/)
+      end
+    end
+  end
+  if connectors.empty?
+    displays = find_type_dirs('display','/sys/devices',dut)
+    displays.each do |disp|
+      dut.send_cmd("cat /sys/devices/#{disp}/disp*", dut.prompt, 10)
+      if dut.response.match(/^lcd/)
+        dut.send_cmd("cat /sys/devices/platform/omapdss/display0/enabled",dut.prompt)
+        result << disp if dut.response.match(/^1\r*$/)
+        break
       end
     end
   end
