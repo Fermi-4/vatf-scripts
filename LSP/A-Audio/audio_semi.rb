@@ -16,8 +16,7 @@ def run
   local_test_file = File.join(@linux_temp_folder, 'audio_tst_file.pcm')
   @equipment['dut1'].send_cmd("rm -rf #{dut_test_file}", @equipment['dut1'].prompt)
   @equipment['server1'].send_cmd("rm -rf #{local_test_file}",@equipment['server1'].prompt)
-  @equipment['server1'].send_cmd("gst-launch-0.10 filesrc location=#{ref_path} ! wavparse ! filesink location=#{ref_pcm_path}", @equipment['server1'].prompt, file_op_wait)
-  @equipment['server1'].send_cmd("file #{ref_path}",@equipment['server1'].prompt,file_op_wait)
+  @equipment['server1'].send_cmd("avprobe #{ref_path}",@equipment['server1'].prompt,file_op_wait)
   wav_info = @equipment['server1'].response
   #Turning on playout/capture ctrls
   [['SP Driver', 0], 'SP Left', 'SP Right', 'Output Left From Left DAC', 'Output Right From Right DAC',
@@ -35,8 +34,9 @@ def run
     puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.75,ctrl)
   end
   audio_info, duration = case(wav_info)
-                           when /WAVE\s*audio/
+                           when /Audio:\s*pcm/i
                              info = parse_wav_audio_info(wav_info)
+                             @equipment['server1'].send_cmd("avconv -i #{ref_path} -f #{info['fmt']} #{ref_pcm_path}", @equipment['server1'].prompt, file_op_wait)
                              [info, File.size(ref_pcm_path)*8/(info['sample_length']*info['rate']*info['channels'])]
                            else
                              raise "Unable to parse audio info for #{@test_params.params_chan.file_url[0]}"

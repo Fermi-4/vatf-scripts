@@ -247,15 +247,18 @@ end
 #  'format' => <string>       :S<16,32,20,...>_<L,B>E
 def parse_wav_audio_info(wav_info)
   result = {}
-  result['endianness'] = wav_info.match(/(\w+)-endian/i).captures[0]
-  result['sample_length'] = 32
-  result['sample_length'] = wav_info.match(/(\w+)\s*bit/i).captures[0].to_i if wav_info.match(/bit/i)
+  if wav_info.match(/pcm_\w\d+\w+/i)
+    result['fmt'] = wav_info.match(/pcm_(\w\d+\w+)/i).captures[0]
+    sf, endian = result['fmt'].match(/(\w\d+)(\w+)/i).captures[0..1]
+    result['format'] = "#{sf.upcase()}_#{endian.upcase()}"  
+  else
+    result['fmt'] = wav_info.match(/pcm_(\w+)/i).captures[0]
+    result['format'] = result['fmt'].upcase()
+  end
+  result['sample_length'] = result['fmt'].match(/\d+/)[0].to_i
   result['channels'] = 1
   result['channels'] = 2 if wav_info.match(/stereo/i)
   result['rate'] = wav_info.match(/(\d+)\s*Hz/i).captures[0].to_i
-  endian = 'LE'
-  endian = 'BE' if result['endianness'].strip().downcase == 'big'
-  result['format'] = "S#{result['sample_length']}_#{endian}"
   result
 end
 
