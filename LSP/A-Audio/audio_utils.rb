@@ -256,7 +256,13 @@ def parse_wav_audio_info(wav_info)
     result['format'] = result['fmt'].upcase()
   end
   result['sample_length'] = result['fmt'].match(/\d+/)[0].to_i
-  result['channels'] = wav_info.match(/(\d+)\s*channels/i).captures[0].to_i
+  if wav_info.match(/\d+\s*channels/i)
+    result['channels'] = wav_info.match(/(\d+)\s*channels/i).captures[0].to_i
+  elsif wav_info.match(/stereo/i)
+    result['channels'] = 2
+  elsif wav_info.match(/mono|alaw|ulaw/i)
+    result['channels'] = 1
+  end
   result['rate'] = wav_info.match(/(\d+)\s*Hz/i).captures[0].to_i
   result
 end
