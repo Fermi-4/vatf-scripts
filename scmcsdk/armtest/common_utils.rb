@@ -10,7 +10,7 @@ def dump_trace(num_of_cores = 8, look_for)
   for count in 0..(num_of_cores-1)
     puts "'Core #{count} Trace...'"
     @equipment['dut1'].send_cmd(
-      "cat /debug/remoteproc/remoteproc#{count}/trace0",
+      "cat /sys/kernel/debug/remoteproc/remoteproc#{count}/trace0",
       @equipment['dut1'].prompt, 10)
     puts "'-----------------------------------------'"
   end
