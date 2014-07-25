@@ -709,6 +709,20 @@ module LspTestScript
     # Connect to equip
     @equipment[child_name].connect({'type'=>conn_type})
   end
-
+  
+  def process_running?(this_equipment=@equipment['dut1'],process)
+    this_equipment.send_cmd("ps aux | grep `echo #{process} | sed -r 's/^/[/g' | sed 's/^\\(.\\{2\\}\\)/\\1]/'` | awk '{print $2}'", this_equipment.prompt, 10)
+    if this_equipment.response.match(/\d+/)
+      return true
+    else
+      return false
+    end
+   end
+   
+   # Get the name of local interface that is talking to remote IP
+   def get_local_iface_name(this_equipment=@equipment['dut1'],remote_ipaddr)
+    this_equipment.send_cmd("ip route get #{remote_ipaddr}")
+    return this_equipment.response.match(/dev\s(\w+\d+)/)[1].to_s
+   end
 end
 

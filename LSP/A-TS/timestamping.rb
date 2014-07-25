@@ -4,44 +4,49 @@
 # The script will report offset errors (difference between observed and expected timestamps) if they are larger
 # than resolution value. This will catch clock roll over, if logfile has sufficient timestamp values.
 # The script will also report if clock drift is observed.
+#
+# Assumes timestamping test binary is in /usr/bin directory on DUT. Assumes timestamping app is in /usr/bin of Linux PC 
+# for rx case 
 
 require File.dirname(__FILE__)+'/../TARGET/dev_test2'
 
 def setup
   super
-  @dir = @test_params.params_control.test_type[0]
+  @dir = @test_params.params_control.test_type[0].to_s
   @offset_res = @test_params.params_control.instance_variable_defined?(:@offset_resolution) ? @test_params.params_control.offset_resolution[0].to_f : 0.001
   @timestamping_interval = @test_params.params_control.instance_variable_defined?(:@interval) ? @test_params.params_control.interval[0].to_f : 5
   @timestamp_regex = @test_params.params_control.instance_variable_defined?(:@timestamp_regex) ? @test_params.params_control.timestamp_regex[0].to_s : 'HW\sraw\s(\d+\.\d+)'
   @incorrect_offset_detected = 0
+  @timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_f : 300
+  @iface = @test_params.params_control.instance_variable_defined?(:@iface) ? @test_params.params_control.iface[0].to_s : 'eth0'
   @drift = 0
-  @total_readings = 0
-end
+  if (@dir == "rx")
+    server_iface = get_local_iface_name(@equipment['server1'],get_ip_addr('dut1',@iface))
+    kill_process(@equipment['server1'],'timestamping')
+    @equipment['server1'].send_sudo_cmd_nonblock("timestamping #{server_iface} SOF_TIMESTAMPING_TX_SOFTWARE SOF_TIMESTAMPING_SOFTWARE",/.*/,@timeout)  
+    if (process_running?(@equipment['server1'],'timestamping'))
+      #do nothing
+    else
+      raise "Could not start timestamping on Linux PC. Please check if timestamping is installed"
+    end
+  end
+  end
 
 # Determine test result outcome and save performance data
 def run_determine_test_outcome(return_non_zero)
   test_result_comment = check_timestamps(File.join(@linux_temp_folder,'test.log'),@timestamp_regex)
-  if @total_readings < 5
-    test_result_comment = test_result_comment + "\n WARNING: Insufficient readings. Check if timestamping application ran or run for longer duration \n" 
-    return [FrameworkConstants::Result[:fail],
-            test_result_comment
-            ]
-  end
+  test_outcome = FrameworkConstants::Result[:fail]
   
   if @incorrect_offset_detected > 5
-    # Fail test only if 5 or more incorrect offset readings
-    return [FrameworkConstants::Result[:fail], 
-            test_result_comment
-            ]
+  # Fail test only if 5 or more incorrect offset readings
   elsif @drift > 0
-    return [FrameworkConstants::Result[:fail],
-            test_result_comment
-            ]
+  # failtest
   else
-    return [FrameworkConstants::Result[:pass],
+    test_outcome = FrameworkConstants::Result[:pass]
+  end
+  return [test_outcome,
             test_result_comment
             ]
-  end
 end
 
 def check_timestamps(logs, regex)
@@ -49,7 +54,7 @@ def check_timestamps(logs, regex)
     diff_arr = []
     ref_arr = []
     obs_arr = []
-    start_index = nil
+    start_index = 0
     if File.file? logs
       data = File.new(logs,'r').read
     end
@@ -92,7 +97,6 @@ def check_timestamps(logs, regex)
         break
       end
     end 
-    @total_readings = diff_arr.length
     # report drift only if observed in last 5 readings or more
     if start_index != nil && start_index < -5
       @drift = 1
@@ -112,8 +116,15 @@ def check_timestamps(logs, regex)
      Offset resolution used is #{@offset_res} \n
      @incorrect_offset_detected in #{@incorrect_offset_detected} readings.
      @drift #{@drift}. \n
+     drift observed from #{diff_arr.length+start_index} reading. Total readings #{diff_arr.length} \n
      ******************** \n
     "
 end
 
+def clean
+  super
+  if (@dir == "rx")
+    kill_process(@equipment['server1'],'timestamping')
+  end
+end
 
