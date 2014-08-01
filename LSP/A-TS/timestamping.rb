@@ -20,6 +20,7 @@ def setup
   @timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_f : 300
   @iface = @test_params.params_control.instance_variable_defined?(:@iface) ? @test_params.params_control.iface[0].to_s : 'eth0'
   @drift = 0
+  @total_readings = 0
   if (@dir == "rx")
     server_iface = get_local_iface_name(@equipment['server1'],get_ip_addr('dut1',@iface))
     kill_process(@equipment['server1'],'timestamping')
@@ -35,6 +36,12 @@ def setup
 # Determine test result outcome and save performance data
 def run_determine_test_outcome(return_non_zero)
   test_result_comment = check_timestamps(File.join(@linux_temp_folder,'test.log'),@timestamp_regex)
+  if @total_readings < 5
+    test_result_comment = test_result_comment + "\n WARNING: Insufficient readings. Check if timestamping application ran or run for longer duration \n" 
+    return [FrameworkConstants::Result[:fail],
+         test_result_comment
+          ]
+  end
   test_outcome = FrameworkConstants::Result[:fail]
   
   if @incorrect_offset_detected > 5
@@ -97,6 +104,7 @@ def check_timestamps(logs, regex)
         break
       end
     end 
+    @total_readings = diff_arr.length
     # report drift only if observed in last 5 readings or more
     if start_index != nil && start_index < -5
       @drift = 1
