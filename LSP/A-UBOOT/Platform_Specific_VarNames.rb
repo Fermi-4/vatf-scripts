@@ -536,7 +536,7 @@ module PlatformSpecificVarNames
       },
 	# Core PLL clock values
     'clkspeed_0' => {  
-      'k2hk-evm' => 1198080000,
+      'k2hk-evm' => 1200000000,
       'k2l-evm' => 1000594188,
       'k2e-evm' => 1250000000
       },
