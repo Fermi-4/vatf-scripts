@@ -10,6 +10,35 @@ include PowerFunctions
 def setup
   super
   add_child_equipment('multimeter1')
+  enable_devfreq
+end
+
+def enable_devfreq(e='dut1')
+  @equipment[e].send_cmd("insmod /opt/ltp/testcases/bin/ddt/coproc_devfreq.ko", @equipment[e].prompt)
+end
+
+def disable_devfreq(e='dut1')
+  @equipment[e].send_cmd("rmmod coproc_devfreq", @equipment[e].prompt)
+end
+
+def set_opp(opp, e='dut1')
+  if (@reqs_for_opp.select {|r| r.keys[0].match(/_MPU/)}).length > 0
+    begin
+      freq = get_frequency_for_opp(@equipment[e].name, opp)
+      set_cpu_opp(freq)
+    rescue 
+      puts "Warning: #{opp} is not supported by MPU"
+    end
+  end
+  if (@reqs_for_opp.select {|r| r.keys[0].match(/_GPU/)}).length > 0
+    begin
+      freq = get_frequency_for_opp(@equipment[e].name, opp, 'gpu')
+      # coproc0 is the node used in the dts for gpu
+      set_coproc_opp(freq, 'coproc0')
+    rescue 
+      puts "Warning: #{opp} is not supported by GPU"
+    end
+  end
 end
 
 def run
@@ -25,10 +54,10 @@ def run
   requirements = get_required_linux_avs(@equipment['dut1'].name)
   requirements.each {|req| req.values.each {|v| v.keys.each {|opp| opps.add(opp)} } }
   opps.to_a.each{|opp|
-    set_opp_freq(get_frequency_for_opp(@equipment['dut1'].name, opp))
+    @reqs_for_opp =  requirements.select {|req| req.values[0].has_key?(opp)}
+    set_opp(opp)
     multimeter_readings = @equipment['multimeter1'].get_multimeter_output(10, 10) # 10 samples
-    reqs_for_opp =  requirements.select {|req| req.values[0].has_key?(opp)}
-    reqs_for_opp.each{|req|
+    @reqs_for_opp.each{|req|
       domain = req.keys[0]
       efuse_addr = req[domain][opp]
       measured_voltage = multimeter_readings['domain_'+domain+'_volt_readings'][0]  # AVG of 10 samples
@@ -49,4 +78,9 @@ def run
   else
     set_result(FrameworkConstants::Result[:fail], result_str)
   end
+end
+
+def clean
+  set_opp('OPP_NOM')
+  disable_devfreq
 end
