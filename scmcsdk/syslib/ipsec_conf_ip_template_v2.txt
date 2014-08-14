@@ -35,8 +35,10 @@ conn %default
     type=tunnel
     pfs=yes
     esp=%ESP_ENCRYPTION%-%ESP_INTEGRITY%-modp2048-noesn!
+    margintime=%MARGINTIME%
     ikelifetime=%IKE_LIFETIME%
     lifetime=%LIFETIME%
+    reauth=no
 
 conn %CONNECTION_SIDE%-%CONNECTION_NAME%1
     leftprotoport=%PROTOCOL%

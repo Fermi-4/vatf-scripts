@@ -454,9 +454,8 @@ class VatfHelperUtilities
   def offload_indices(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal)
     offload_indices_common(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal, "offload_sp")
   end
-  def stop_offload_indices(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal)
-    #offload_indices_common(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal, "stop_offload")
-    offload_indices_common(is_alpha_side, policy_index_out, policy_index_in, offload_command_post_fix, is_fatal, "stop_offload")
+  def stop_offload_indices(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal, offload_command_pre_fix)
+    offload_indices_common(is_alpha_side, policy_index_out, policy_index_in, offload_command_post_fix, is_fatal, offload_command_pre_fix)
   end
   def get_file_location(is_alpha_side, filename)
     file_name_path = ""
@@ -2703,7 +2702,9 @@ class IpsecUtilitiesVatf
     @alpha_side_ipsec_secrets_file = "/etc/ipsec.secrets"
     @beta_side_ipsec_secrets_file = "/etc/ipsec.secrets"
     @ipsec_conf_template_file_name = "ipsec_conf_template.txt"
+    @default_margintime = "9m"
     @default_rekey_lifetime = "48h"
+    @default_rekey_ike_lifetime = "48h"
     @alpha_side_secure_data = false
     @beta_side_secure_data = false
     @alpha_side_natt = false
@@ -2712,6 +2713,8 @@ class IpsecUtilitiesVatf
     @alpha_side_nat_public_ip = ""
     @beta_side_nat_gateway_ip = "192.168.1.80"
     @beta_side_nat_public_ip = "10.218.104.131"
+    @default_stop_offload_pre_cmd = "stop_offload"
+    @default_stop_offload_post_cmd = "--no_expire_sa"
     @slot_num = "0"
     @id_num = "01"
     @vatf_dut_ref = 'dut1'
@@ -2749,6 +2752,12 @@ class IpsecUtilitiesVatf
       @daemon_cmd = (!@daemon_cmd.include?(cmd_platform_addition) ? @daemon_cmd.gsub(".out", "_#{cmd_platform_addition}.out &") : @daemon_cmd)
       @cmd_shell_cmd = (!@cmd_shell_cmd.include?(cmd_platform_addition) ? @cmd_shell_cmd.gsub(".out", "_#{cmd_platform_addition}.out") : @cmd_shell_cmd)
     end
+  end
+  def default_margintime()
+    return @default_margintime
+  end
+  def default_rekey_ike_lifetime()
+    return @default_rekey_ike_lifetime
   end
   def default_rekey_lifetime()
     return @default_rekey_lifetime
@@ -2866,6 +2875,8 @@ class IpsecUtilitiesVatf
     puts("    @slot_num                     : #{@slot_num}\r\n")
     puts("    @id_num                       : #{@id_num}\r\n")
     puts("    @ipsec_conf_template_file_name: #{@ipsec_conf_template_file_name}\r\n")
+    puts("    @default_margintime           : #{@default_margintime}\r\n")
+    puts("    @default_rekey_ike_lifetime   : #{@default_rekey_ike_lifetime}\r\n")
     puts("    @default_rekey_lifetime       : #{@default_rekey_lifetime}\r\n")
     puts("    @vatf_dut_ref                 : #{@vatf_dut_ref}\r\n")
     puts("    @vatf_server_ref              : #{@vatf_server_ref}\r\n")
@@ -2935,10 +2946,19 @@ class IpsecUtilitiesVatf
     @lnx_helper.set_vatf_equipment(@equipment)
     @smart_card.set_common(@equipment, @vatf_server_ref, @vatf_dut_ref)
   end
-  def set_common(ipsec_conf_template_file_name, default_rekey_lifetime, ipsec_conf_save_name)
+  def set_common(ipsec_conf_template_file_name, default_margintime, default_rekey_ike_lifetime, default_rekey_lifetime, ipsec_conf_save_name)
     @ipsec_conf_template_file_name = ipsec_conf_template_file_name if (ipsec_conf_template_file_name != "")
+    @default_margintime = default_margintime if (default_margintime != "")
+    @default_rekey_ike_lifetime = default_rekey_ike_lifetime if (default_rekey_ike_lifetime != "")
     @default_rekey_lifetime = default_rekey_lifetime if (default_rekey_lifetime != "")
     @ipsec_conf_save_name = ipsec_conf_save_name if (ipsec_conf_save_name != "")
+  end
+  def set_rekey_parameters(default_margintime, default_rekey_ike_lifetime, default_rekey_lifetime)
+    set_common("", default_margintime, default_rekey_ike_lifetime, default_rekey_lifetime, "")
+  end
+  def set_stop_offload_commands(pre_cmd, post_cmd)
+    @default_stop_offload_pre_cmd = pre_cmd if (pre_cmd != "")
+    @default_stop_offload_post_cmd = post_cmd if (post_cmd != "")
   end
   def set_alpha_nat(is_nat_traversal, nat_public_ip, nat_gateway_ip)
     @alpha_side_natt = is_nat_traversal if (is_nat_traversal != "")
@@ -3328,7 +3348,8 @@ class IpsecUtilitiesVatf
     ipsec_conf_file = (is_alpha_side ? @alpha_side_ipsec_conf_file : @beta_side_ipsec_conf_file)
     ipsec_conf_file_tftp = (is_alpha_side ? get_file_tftp_server_file_name_path(is_alpha_side, @alpha_side_ipsec_conf_file) : get_file_tftp_server_file_name_path(is_alpha_side, @beta_side_ipsec_conf_file))
     ipsec_conf_save_file = ipsec_conf_file.gsub(File.basename(ipsec_conf_file), @ipsec_conf_save_name)
-    ike_lifetime = @default_rekey_lifetime
+    margintime = @default_margintime
+    ike_lifetime = @default_rekey_ike_lifetime
     lifetime = @default_rekey_lifetime
     
     # Get ipsec template file contents
@@ -3365,6 +3386,7 @@ class IpsecUtilitiesVatf
           file_line.gsub!("%LEFT_CERT_DISABLE%", left_cert_disable)
           file_line.gsub!("%REMOTE_CN%", remote_network_name)
           file_line.gsub!("%CONNECTION_SIDE%", connection_ref)
+          file_line.gsub!("%MARGINTIME%", margintime)
           file_line.gsub!("%IKE_LIFETIME%", ike_lifetime)
           file_line.gsub!("%LIFETIME%", lifetime)
           file_line.gsub!("%LOCAL_IPV6_ADDRESS%", local_ipv6)
@@ -3443,7 +3465,7 @@ class IpsecUtilitiesVatf
     puts("\r\nRestarting ipsec with file: #{ipsec_conf_input_file}, tunnel type: #{(tunnel_type ? "FQDN" : "IP")}\r\n")
     clear_results() if is_clear_previous_result
     # Set ipsec.conf input template file
-    set_common(ipsec_conf_input_file, "", "")
+    set_common(ipsec_conf_input_file, "", "", "", "")
     # Set the alpha side tunnel type. Leave everything else as is.
     set_alpha_cert("", tunnel_type, "", "", "", "", "", "", "", "", "", "", "")
     # Set the beta side tunnel type. Leave everything else as is.
@@ -3529,7 +3551,7 @@ class IpsecUtilitiesVatf
     #set_beta_cert(beta_ip, tunnel_type, "4", "", "", "", "", "", "", "", "", "", "")
     set_beta_cert(beta_ip, tunnel_type, "5", "", "", "", "", "", "", "", "", "", "")
     # Set ipsec.conf input template file to use.
-    set_common(ipsec_conf_input_file, "", "")
+    set_common(ipsec_conf_input_file, "", "", "" ,"")
     # Add an IPv6 ip address to the Linux PC side and the EVM side
     #  Need to add the ability to figure out the interface to use instead of hard coding it like it currently is
     #@lnx_helper.add_ip_address_to_interface(ALPHA_SIDE(), "#{@alpha_side_ipv6}/64", "eth3")
@@ -3589,7 +3611,7 @@ class IpsecUtilitiesVatf
   end
   def set_ipsec_template_file(ipsec_conf_input_file)
     # Set ipsec.conf input template file
-    set_common(ipsec_conf_input_file, "", "")
+    set_common(ipsec_conf_input_file, "", "", "", "")
   end
   def ipsec_typical_start(is_ipv4, is_pass_through)
     function_name = "ipsec_typical_start"
@@ -3661,7 +3683,7 @@ class IpsecUtilitiesVatf
     return @result
   end
   def inflow_offload(is_alpha_side)
-	get_ipsec_cmd_additions_using_bench_file()
+    get_ipsec_cmd_additions_using_bench_file()
     inflow_stop_offload(is_alpha_side)
     policy_index_in = @vatf_helper.get_policy_id(is_alpha_side, "in")
     policy_index_out = @vatf_helper.get_policy_id(is_alpha_side, "out")
@@ -3675,7 +3697,7 @@ class IpsecUtilitiesVatf
     return @result
   end
   def inflow_stop_offload(is_alpha_side)
-	get_ipsec_cmd_additions_using_bench_file()
+    get_ipsec_cmd_additions_using_bench_file()
     string = @inflow_active_name
     count = 1
     raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "env", "/usr/bin/env", @vatf_helper.DONT_SET_ERROR_BIT(), 2)
@@ -3684,7 +3706,7 @@ class IpsecUtilitiesVatf
       policy_index_in = @vatf_helper.get_policy_id(is_alpha_side, "in")
       policy_index_out = @vatf_helper.get_policy_id(is_alpha_side, "out")
       @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{@cmd_shell_cmd}", "CFG>", @error_bit, 2)
-      @vatf_helper.stop_offload_indices(is_alpha_side, policy_index_in, policy_index_out, "", false)
+      @vatf_helper.stop_offload_indices(is_alpha_side, policy_index_in, policy_index_out, @default_stop_offload_post_cmd, false, @default_stop_offload_pre_cmd)
       @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "exit", "", @error_bit, 2)
       # Remove inflow active flag on EVM by unsetting an environment variable
       @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "unset #{@inflow_active_name}", "", @error_bit, 1)

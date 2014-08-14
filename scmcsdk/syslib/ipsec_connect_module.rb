@@ -176,6 +176,11 @@ module IpsecConnectionScript
     esp_encryption = ""
     esp_integrity = ""
     crypto_mode = ""
+    stop_offload_pre_command = ""
+    stop_offload_post_command = ""
+    margintime = ""
+    rekey_ike_lifetime = ""
+    rekey_lifetime = ""
 
     # Get IPSEC information from v1 test case
     ipsec_conf_template = get_variable_value(test_params.params_chan.ipsec_test_suite[0])  if test_params.params_chan.instance_variable_defined?(:@ipsec_test_suite)
@@ -197,6 +202,11 @@ module IpsecConnectionScript
     protocol = get_variable_value(test_params.params_chan.protocol[0].downcase)  if test_params.params_chan.instance_variable_defined?(:@protocol)
     esp_encryption = get_variable_value(test_params.params_chan.encryption[0].downcase)  if test_params.params_chan.instance_variable_defined?(:@encryption)
     esp_integrity = get_variable_value(test_params.params_chan.integrity[0].downcase)  if test_params.params_chan.instance_variable_defined?(:@integrity)
+    stop_offload_pre_command = get_variable_value(test_params.params_chan.stop_offload_pre_cmd[0].downcase)  if test_params.params_chan.instance_variable_defined?(:@stop_offload_pre_cmd)
+    stop_offload_post_command = get_variable_value(test_params.params_chan.stop_offload_post_cmd[0].downcase)  if test_params.params_chan.instance_variable_defined?(:@stop_offload_post_cmd)
+    margintime = get_variable_value(test_params.params_chan.rekey_mt[0])  if test_params.params_chan.instance_variable_defined?(:@rekey_mt)
+    rekey_ike_lifetime = get_variable_value(test_params.params_chan.rekey_ikelt[0])  if test_params.params_chan.instance_variable_defined?(:@rekey_ikelt)
+    rekey_lifetime = get_variable_value(test_params.params_chan.rekey_lt[0])  if test_params.params_chan.instance_variable_defined?(:@rekey_lt)
 
     IpsecConnectionScript.set_all_vars(comment_text, result, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, ipsec_template)
       
@@ -246,6 +256,12 @@ module IpsecConnectionScript
     
     # Set IPSEC config for alpha side as Linux PC (swan version 5) and beta side as EVM (swan version 5). Use the default input ipsec.conf file.
     ipsecVatf.ipsec_typical_config(equipment, ipsecVatf.FQDN_TUNNEL, "")
+
+    # Set rekey parameters that testcase specifies
+    ipsecVatf.set_rekey_parameters(margintime, rekey_ike_lifetime, rekey_lifetime)
+    
+    # Set IPSEC stop offload pre and post commands.
+    ipsecVatf.set_stop_offload_commands(stop_offload_pre_command, stop_offload_post_command)
 
     if is_secure_data
       # Set beta side to use secure data for IPSEC and set template to use for ipsec.conf file generation.
