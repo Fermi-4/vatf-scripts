@@ -1,4 +1,4 @@
-require File.dirname(__FILE__)+'/../TARGET/dev_test2'
+require File.dirname(__FILE__)+'/../TARGET/dev_test_perf_gov'
 
 def setup
   super
