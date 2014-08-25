@@ -44,6 +44,7 @@ def run
   criteria = assign_criteria()
   iterations = assign_iterations()
   @platform = get_platform()
+  @dsp_cores = get_dsp_cores(@platform)
   test_folder_location = nil
   setup_required = get_setup_required()
   #for debugging, test_folder_location = @test_params.lld_test_archive
@@ -83,15 +84,14 @@ def run
 	end
     end
     cmd_result = run_command(Array.new.push(test_cmd),
-    look_for = /#{ criteria[0] }/i)
+    look_for = Regexp.new(criteria[0], Regexp::IGNORECASE))
     if cmd_result[0] == false
       set_result(test_done_result,comment + cmd_result[1])
       return
     else
       comment += cmd_result[1]
     end
-    std_response = @equipment['dut1'].response.to_s
-
+    std_response = @equipment['dut1'].update_response
     puts "'#{ test_cmd }' run. Now to test."
     criteria_result = analyze_criteria(count, test_cmd, std_response, criteria)
     if criteria_result[0] == false
@@ -199,6 +199,18 @@ def get_platform()
   end
 end
 
+def get_dsp_cores(platform)
+  case (platform)
+  when /k2[h|k|hk]/
+    return 8
+  when k2e 
+    return 1
+  when k2l
+    return 4
+  else
+    raise "unrecognized platform #{platform}"
+  end
+end
 ## check if setup needs to run for each iteration
 def get_setup_required()
   if defined? @test_params.params_control.setup_required
@@ -491,19 +503,21 @@ end
 # Return false if there are no parentheses.
 def rubify(some_string,look_for)
   if some_string[/\(.*\)/]
-    method = some_string[/.*\(/].to_s.sub('(', '')
-    args = some_string.to_s.sub(method, '').sub(')', '').sub('(', '')
-    args_array = args.split(":")
-    if @show_debug_messages
-      puts 'Method= ' + method + ', Argument(s)= ' + args_array.to_s + '.'
-    end
-    begin
-      self.send(method, *args_array, look_for)
-      true
-    rescue => detail
-      error = detail.backtrace.join("\n")
-      puts "**********************\nERROR: #{error}\n**********************"
-      raise "Error: ruby command not recognized: #{method}"
+    method = some_string[/.*?\(/].to_s.sub('(', '')
+    some_string.gsub(/\(.*\)/) do |substr|
+      args = substr[1..-2]
+      args_array = args.split(":")
+      if @show_debug_messages
+        puts 'Method= ' + method + ', Argument(s)= ' + args_array.to_s + '.'      
+      end
+      begin
+        self.send(method, *args_array, look_for)
+        true
+      rescue => detail
+        error = detail.backtrace.join("\n")
+        puts "**********************\nERROR: #{error}\n**********************"
+        raise "Error: ruby command not recognized: #{method}"
+      end
     end
   else
     false
@@ -541,6 +555,11 @@ def run_command(cmds, look_for = @equipment['dut1'].prompt)
     comment +=  cmd.to_s + " run. \n"
   end
   return [true, comment]
+end
+
+def eval_and_send(cmd,look_for)
+  cmd_to_send = eval('"'+cmd+'"')
+  run_command(Array.new.push(cmd_to_send),look_for)
 end
 
 def clean
