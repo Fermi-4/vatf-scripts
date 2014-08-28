@@ -12,11 +12,13 @@ end
 def run
   perf = []
   loop_iteration = 0
+  can_channel = @test_params.params_chan.instance_variable_defined?(:@can_channel_number) ? @test_params.params_chan.can_channel_number[0] : 'can0'
+
   while (loop_iteration<@test_params.params_chan.loop_count[0].to_i)
-	    @equipment['dut1'].send_cmd("ip link set can0 down", @equipment['dut1'].prompt, 1)
+	    @equipment['dut1'].send_cmd("ip link set #{can_channel} down", @equipment['dut1'].prompt, 1)
 	    @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 1)
-      @equipment['dut1'].send_cmd("ip link set can0 type can bitrate #{@test_params.params_chan.baudrate_in_kbps[0].to_i*1000} triple-sampling on", @equipment['dut1'].prompt, 1)
-	    @equipment['dut1'].send_cmd("ip link set can0 up", @equipment['dut1'].prompt, 1)
+      @equipment['dut1'].send_cmd("ip link set #{can_channel} type can bitrate #{@test_params.params_chan.baudrate_in_kbps[0].to_i*1000} triple-sampling on", @equipment['dut1'].prompt, 1)
+	    @equipment['dut1'].send_cmd("ip link set #{can_channel} up", @equipment['dut1'].prompt, 1)
 	    loop_iteration = loop_iteration+1
 	 end
 	@equipment['dut1'].send_cmd("date", @equipment['dut1'].prompt, 1)
@@ -34,7 +36,7 @@ def run
 	 # if (@test_params.params_chan.poll_mode[0].to_i == 1)
 	  #		 puts "ENTERED POLL MODE CASE PPPPPPPPP\n"
 	  		# if (@test_params.params_chan.can_version[0].to_s == 'A')
-	  		   @equipment['dut1'].send_cmd("cansequence can0 -p &", @equipment['dut1'].prompt, 1)
+	  		   @equipment['dut1'].send_cmd("cansequence #{can_channel} -p &", @equipment['dut1'].prompt, 1)
 	      # else 
 	      #   @equipment['dut1'].send_cmd("cansequence can0 -p -e &", @equipment['dut1'].prompt, 1)
 	      # end
@@ -44,7 +46,7 @@ def run
 	  #end
 	else
 	  puts "ENTERED RX CASE RRRRRRRRR\n"
-	  @equipment['dut1'].send_cmd("candump can0 -d", @equipment['dut1'].prompt, 1)
+	  @equipment['dut1'].send_cmd("candump #{can_channel} -d", @equipment['dut1'].prompt, 1)
 	end
 	duration_on_tee = duration/1000.to_i  
 	sleep duration_on_tee # sleep while test is running for the specified duration
@@ -66,7 +68,7 @@ def run
         @equipment['dut1'].send_cmd("kill -9 `ps | grep candump | grep -v grep | awk '{print $1}'`", @equipment['dut1'].prompt, 10) # kill candump as part of end of operation
 	      @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
 	  end
-	@equipment['dut1'].send_cmd("ip -d -s link show can0", @equipment['dut1'].prompt, 1)
+	@equipment['dut1'].send_cmd("ip -d -s link show #{can_channel}", @equipment['dut1'].prompt, 1)
 	ip_stats = @equipment['dut1'].response.split(/\r\n/)  
 	@equipment['dut1'].send_cmd(" cat /proc/net/can/stats", @equipment['dut1'].prompt, 1)
 	end_can_statistics = @equipment['dut1'].response.split(/\r\n/)  
