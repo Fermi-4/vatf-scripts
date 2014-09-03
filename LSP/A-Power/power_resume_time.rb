@@ -40,9 +40,9 @@ def run
     # Resmue
     elapsed_time = Time.now - start_time
     sleep (suspend_time - elapsed_time) if elapsed_time < suspend_time and wakeup_domain == 'rtc'
-    resume(wakeup_domain, max_resume_time)
+    response = resume(wakeup_domain, max_resume_time)
 
-    time_captures = /PM:\s+resume\s+of\s+devices\s+complete\s+after\s+([0-9\.]+)\s+([umsec]+)/i.match(@equipment['dut1'].response) 
+    time_captures = /PM:\s+resume\s+of\s+devices\s+complete\s+after\s+([0-9\.]+)\s+([umsec]+)/i.match(response) 
     resume_time << time_captures[1]
     # here assume the printed unit is same for all iterations
     unit = time_captures[2]
