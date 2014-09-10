@@ -202,5 +202,11 @@ module EvmData
     raise "OPP #{opp} not defined for #{platform}[#{proc}]" if !machines.key?(platform) or !machines[platform][proc][opp]
     machines[platform][proc][opp]
   end
+
+  def is_cpufreq_supported(platform)
+    unsupported = ['k2hk-evm', 'k2l-evm', 'k2e-evm']
+    ! unsupported.include? platform 
+  end
+
   
 end 
