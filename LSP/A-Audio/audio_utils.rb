@@ -143,7 +143,7 @@ def prep_audio_string(audio_info={})
   "--buffer-size=#{audio_inf['buffer-size']} #{audio_inf['file']}" 
 end
 
-#Function to record audio in a file, takes
+#Function to record audio in a file, takes an array of
 #  audio_info, a Hash whose entries are:
 #               'card' => <int>          :card id
 #               'device' => <int>        :device id 
@@ -168,12 +168,16 @@ end
 #               'sys' => <driver object> :object used to communincate with the
 #                                         system in whic the audio will be recorded
 def rec_audio(audio_info)
-  rec_string = prep_audio_string(audio_info)
-  sys = audio_info['sys']
-  sys.send_cmd("arecord #{rec_string}", sys.prompt, audio_info['duration'].to_i)
+  r_sys = audio_info[0]['sys']
+  r_string = 'arecord ' + prep_audio_string(audio_info[0])
+  audio_info[1..-1].each do |r_info|
+    r_string += " &\n arecord " + prep_audio_string(r_info)
+    r_sys = r_info['sys']
+  end
+  r_sys.send_cmd(r_string, r_sys.prompt, audio_info[0]['duration'].to_i)
 end
 
-#Function to play audio from a file, takes
+#Function to play audio from a file, takes an array of
 #  audio_info, a Hash whose entries are:
 #               'card' => <int>          :card id
 #               'device' => <int>        :device id 
@@ -198,12 +202,15 @@ end
 #               'sys' => <driver object> :object used to communincate with the
 #                                         system in which the audio will be played
 def play_audio(audio_info)
-  play_string = prep_audio_string(audio_info)
-  sys = audio_info['sys']
-  sys.send_cmd("aplay #{play_string}", sys.prompt, audio_info['duration'].to_i)
+  p_sys = audio_info[0]['sys']
+  p_string = 'aplay ' + prep_audio_string(audio_info[0])
+  audio_info[1..-1].each do |p_info|
+    p_string += " &\n aplay " + prep_audio_string(p_info)
+  end
+  p_sys.send_cmd(p_string, p_sys.prompt, audio_info[0]['duration'].to_i)
 end
 
-#Function to play and record audio simultaneously, takes
+#Function to play and record audio simultaneously, takes arrays of
 #  play_audio_info and rec_audio_info, Hashes whose entries are:
 #               'card' => <int>          :card id
 #               'device' => <int>        :device id 
@@ -228,12 +235,18 @@ end
 #               'sys' => <driver object> :object used to communincate with the
 #                                         system in which the audio will be played/recorded
 def play_rec_audio(play_audio_info, rec_audio_info)
-  r_string = prep_audio_string(rec_audio_info)
-  r_sys = rec_audio_info['sys']
-  r_sys.send_cmd("arecord #{r_string} &", /Recording\s*.+/im, 5)
-  p_string = prep_audio_string(play_audio_info)
-  p_sys = play_audio_info['sys']
-  p_sys.send_cmd("aplay #{p_string}", p_sys.prompt, play_audio_info['duration'].to_i)
+  r_sys = rec_audio_info[0]['sys']
+  r_string = 'arecord ' + prep_audio_string(rec_audio_info[0]) + " &\n"
+  rec_audio_info[1..-1].each do |r_info|
+    r_string += ' arecord ' + prep_audio_string(r_info) + " &\n"
+  end
+  r_sys.send_cmd(r_string, /Recording\s*.+/im, 5)
+  p_sys = play_audio_info[0]['sys']
+  p_string = 'aplay ' + prep_audio_string(play_audio_info[0])
+  play_audio_info[1..-1].each do |p_info|
+    p_string += " &\n aplay " + prep_audio_string(p_info)
+  end
+  p_sys.send_cmd(p_string, p_sys.prompt, play_audio_info[0]['duration'].to_i)
   sleep(5) #wait 5 secs for recording to finish
 end
 

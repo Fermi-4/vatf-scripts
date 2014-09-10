@@ -14,8 +14,8 @@ def run
   ref_pcm_path = File.join(@linux_temp_folder, 'audio_src_file.pcm')
   dut_test_file = File.join(@linux_dst_dir,'audio_test_file.pcm')
   local_test_file = File.join(@linux_temp_folder, 'audio_tst_file.pcm')
-  @equipment['dut1'].send_cmd("rm -rf #{dut_test_file}", @equipment['dut1'].prompt)
-  @equipment['server1'].send_cmd("rm -rf #{local_test_file}",@equipment['server1'].prompt)
+  @equipment['dut1'].send_cmd("rm -rf #{dut_test_file}*", @equipment['dut1'].prompt)
+  @equipment['server1'].send_cmd("rm -rf #{local_test_file}*",@equipment['server1'].prompt)
   @equipment['server1'].send_cmd("avprobe #{ref_path}",@equipment['server1'].prompt,file_op_wait)
   wav_info = @equipment['server1'].response
   #Turning on playout/capture ctrls
@@ -45,19 +45,27 @@ def run
                              raise "Unable to parse audio info for #{@test_params.params_chan.file_url[0]}"
                            end
   rec_duration = duration + 2
-  @equipment['dut1'].send_cmd("echo \"TI $(cat /sys/class/sound/card0/id)\"", @equipment['dut1'].prompt,10)
-  rec_dev_info = @equipment['dut1'].response.match(/^TI\s*([^\n\r]+)/).captures[0].gsub(/\s*/,'')
-  rec_dev_info += '|' + rec_dev_info.gsub(/x/,'')
-  play_dev_info = rec_dev_info
-  rec_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@rec_device)
-  play_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@play_device)
-  test_type = @test_params.params_chan.test_type[0].strip.downcase
   table_title = ''
+  test_type = @test_params.params_chan.test_type[0].strip.downcase
+  dut_rec_dev = []
+  dut_play_dev = []
+  @equipment['dut1'].send_cmd("ls /sys/class/sound/ | grep 'card'", @equipment['dut1'].prompt,10)
+  c_dirs = @equipment['dut1'].response.scan(/^card[^\s]*/)
+  c_dirs.each do |card|
+    @equipment['dut1'].send_cmd("echo \"TI $(cat /sys/class/sound/#{card}/id)\"", @equipment['dut1'].prompt,10)
+    rec_dev_info = @equipment['dut1'].response.match(/^TI\s*([^\n\r]+)/).captures[0].gsub(/\s*/,'')
+    rec_dev_info += '|' + rec_dev_info.gsub(/x/,'')
+    play_dev_info = rec_dev_info
+    rec_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@rec_device)
+    play_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@play_device)
+    d_rec_dev = get_audio_rec_dev(rec_dev_info)
+    d_play_dev = get_audio_play_dev(play_dev_info)
+    dut_rec_dev << d_rec_dev if d_rec_dev
+    dut_play_dev << d_play_dev if d_play_dev
+    table_title += "Rec Dev #{dut_rec_dev[-1].to_s}\n\n" if test_type.include?('record')
+    table_title += "Play Dev #{dut_play_dev[-1].to_s}\n\n" if test_type.include?('play')
+  end
   host_play_dev = get_audio_play_dev(nil,'analog',@equipment['server1'])
-  dut_rec_dev = get_audio_rec_dev(rec_dev_info)
-  table_title += "Rec Dev #{dut_rec_dev.to_s}\n\n" if test_type.include?('record')
-  dut_play_dev = get_audio_play_dev(play_dev_info)
-  table_title += "Play Dev #{dut_play_dev.to_s}\n\n" if test_type.include?('play')
   dut_ip = get_ip_addr()
   @results_html_file.add_paragraph("")
   res_table = @results_html_file.add_table([[table_title,{:bgcolor => "4863A0", :colspan => "4"}]], 
@@ -76,26 +84,31 @@ def run
                                           'card'=>host_play_dev['card'],
                                           'device'=>host_play_dev['device']})
       dut_audio_info = audio_info.merge({'sys'=>@equipment['dut1']})
-      dut_play_info = dut_audio_info.merge({'card'=>dut_play_dev['card'],
-                                            'device'=>dut_play_dev['device'],
-                                            'file'=>dut_src_file,
-                                            'duration'=>duration,
-                                            'type'=>'wav'})
-      dut_rec_info = dut_audio_info.merge({'card'=>dut_rec_dev['card'],
-                                           'device'=>dut_rec_dev['device'],
-                                           'file'=>dut_test_file,
-                                           'duration'=>rec_duration,
-                                           'type' => 'raw'})
-      host_chk_rec_info = host_audio_info.merge({'file'=>local_test_file,
-                                                 'duration'=>rec_duration,
+      dut_play_info = []
+      dut_rec_info = []
+      dut_play_dev.each do |p_dev|
+        dut_play_info << dut_audio_info.merge({'card'=>p_dev['card'],
+                                               'device'=>p_dev['device'],
+                                               'file'=>dut_src_file,
+                                               'duration'=>duration,
+                                               'type'=>'wav'})
+      end
+      dut_rec_dev.each do |r_dev|
+        dut_rec_info << dut_audio_info.merge({'card'=>r_dev['card'],
+                                              'device'=>r_dev['device'],
+                                              'file'=>"#{dut_test_file}.card#{r_dev['card']}",
+                                              'duration'=>rec_duration,
+                                              'type' => 'raw'})
+      end
+      host_chk_rec_info = host_audio_info.merge({'duration'=>rec_duration,
                                                  'type'=>'raw'})
       while(current_test_res == FrameworkConstants::Result[:nry])
         res_win = ResultWindow.new("Audio #{test_type} test")
         res_win.add_buttons({'name' => "Play Ref(#{File.basename(ref_file_url)})", 
                              'action' => :play_audio, 
-                             'action_params' => host_audio_info.merge({'sys'=>@equipment['server1'],
+                             'action_params' => [host_audio_info.merge({'sys'=>@equipment['server1'],
                                                                        'file'=>ref_path,
-                                                                       'duration'=>duration})})
+                                                                       'duration'=>duration})]})
         case (test_type)
           when 'play'
             play_audio(dut_play_info)
@@ -103,21 +116,25 @@ def run
                                  'action' => :play_audio, 
                                  'action_params' => dut_play_info})
           when 'record'
-            play_rec_audio(host_audio_info.merge({'sys'=>@equipment['server1'],
-                                                  'file'=>ref_path,
-                                                  'duration'=>duration,
-                                                  'type'=>'wav'}), 
-                                                 dut_rec_info)
-            scp_pull_file(dut_ip, dut_test_file, local_test_file)
-            res_win.add_buttons({'name' => 'Play Recorded(HOST)', 
-                                 'action' => :play_audio, 
-                                 'action_params' => host_chk_rec_info})
+            play_rec_audio([host_audio_info.merge({'sys'=>@equipment['server1'],
+                                                   'file'=>ref_path,
+                                                   'duration'=>duration,
+                                                   'type'=>'wav'})], 
+                                                   dut_rec_info)
+            dut_rec_dev.each do |r_dev|
+              scp_pull_file(dut_ip, "#{dut_test_file}.card#{r_dev['card']}", "local_test_file.card#{r_dev['card']}")
+              res_win.add_buttons({'name' => "Play Recorded card#{r_dev['card']} (HOST) ", 
+                                   'action' => :play_audio, 
+                                   'action_params' => [host_chk_rec_info.merge({'file'=>"local_test_file.card#{r_dev['card']}"})]})
+            end
           when 'play+record'
             play_rec_audio(dut_play_info, dut_rec_info)
-            scp_pull_file(dut_ip, dut_test_file, local_test_file)
-            res_win.add_buttons({'name' => 'Play Recorded(HOST)', 
-                                 'action' => :play_audio, 
-                                 'action_params' => host_chk_rec_info})
+            dut_rec_dev.each do |r_dev|
+              scp_pull_file(dut_ip, "#{dut_test_file}.card#{r_dev['card']}", "local_test_file.card#{r_dev['card']}")
+              res_win.add_buttons({'name' => "Play Recorded card#{r_dev['card']} (HOST) ", 
+                                   'action' => :play_audio, 
+                                   'action_params' => [host_chk_rec_info.merge({'file'=>"local_test_file.card#{r_dev['card']}"})]})
+            end
           else
             raise "Test type #{test_type} not supported"
         end
