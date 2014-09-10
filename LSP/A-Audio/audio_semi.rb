@@ -19,9 +19,11 @@ def run
   @equipment['server1'].send_cmd("avprobe #{ref_path}",@equipment['server1'].prompt,file_op_wait)
   wav_info = @equipment['server1'].response
   #Turning on playout/capture ctrls
-  [['SP Driver', 0], 'SP Left', 'SP Right', 'Output Left From Left DAC', 'Output Right From Right DAC',
+  [['Speaker Driver', 0], 'Speaker Left', 'Speaker Right', ['SP Driver', 0], 
+   'SP Left', 'SP Right', 'Output Left From Left DAC', 'Output Right From Right DAC',
    ['HP Driver',0], 'HP Left', 'HP Right', 'Left PGA Mixer Line1L', 'Right PGA Mixer Line1R', 
-   'Left PGA Mixer Mic3L', 'Right PGA Mixer Mic3R'].each do |ctrl|
+   'Left PGA Mixer Mic3L', 'Right PGA Mixer Mic3R', 'Output Left From MIC1LP',
+   'Output Left From MIC1RP', 'Output Right From MIC1RP'].each do |ctrl|
     puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl)
   end
   cset_state('on','ADC Capture Switch')
@@ -30,8 +32,9 @@ def run
   end
   #Setting volume
   set_volume(0, 'ADC')
-  ['PCM', 'HP DAC', 'PGA', 'DAC', 'HP Analog', 'SP Analog'].each do |ctrl|
-    puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.75,ctrl)
+  ['PCM', 'HP DAC', 'PGA', 'DAC', 'HP Analog', 'SP Analog', 'Speaker Analog',
+   'Mic PGA'].each do |ctrl|
+    puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.9,ctrl)
   end
   audio_info, duration = case(wav_info)
                            when /Audio:\s*pcm/i
@@ -42,15 +45,16 @@ def run
                              raise "Unable to parse audio info for #{@test_params.params_chan.file_url[0]}"
                            end
   rec_duration = duration + 2
-  @equipment['dut1'].send_cmd("cat /proc/device-tree/model | grep '.*'", @equipment['dut1'].prompt,10)
+  @equipment['dut1'].send_cmd("echo \"TI $(cat /sys/class/sound/card0/id)\"", @equipment['dut1'].prompt,10)
   rec_dev_info = @equipment['dut1'].response.match(/^TI\s*([^\n\r]+)/).captures[0].gsub(/\s*/,'')
+  rec_dev_info += '|' + rec_dev_info.gsub(/x/,'')
   play_dev_info = rec_dev_info
   rec_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@rec_device)
   play_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@play_device)
   test_type = @test_params.params_chan.test_type[0].strip.downcase
   table_title = ''
   host_play_dev = get_audio_play_dev(nil,'analog',@equipment['server1'])
-  dut_rec_dev = get_audio_play_dev(rec_dev_info)
+  dut_rec_dev = get_audio_rec_dev(rec_dev_info)
   table_title += "Rec Dev #{dut_rec_dev.to_s}\n\n" if test_type.include?('record')
   dut_play_dev = get_audio_play_dev(play_dev_info)
   table_title += "Play Dev #{dut_play_dev.to_s}\n\n" if test_type.include?('play')
