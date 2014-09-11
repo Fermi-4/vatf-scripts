@@ -4,12 +4,14 @@
 require File.dirname(__FILE__)+'/boot'
 require File.dirname(__FILE__)+'/kernel_module_names'
 require File.dirname(__FILE__)+'/metrics'
+require File.dirname(__FILE__)+'/network_utils'
 require File.dirname(__FILE__)+'/../lib/plot'
 require File.dirname(__FILE__)+'/../lib/evms_data'
 
 include Metrics
 include TestPlots
 include EvmData
+include NetworkUtils
 
 # Default Server-Side Test script implementation for LSP releases
 module LspTestScript 
@@ -576,15 +578,6 @@ module LspTestScript
      @equipment['dut1'].send_cmd("find /sys/class/net/eth0/statistics -type f -exec basename {} \\;", @equipment['dut1'].prompt, 3)
      @equipment['dut1'].send_cmd("find /sys/class/net/eth0/statistics -type f -exec cat {} \\;", @equipment['dut1'].prompt, 3)
      @equipment['dut1'].send_cmd("cat /sys/devices/platform/cpsw.0/net/eth0/hw_stats", @equipment['dut1'].prompt, 3)
-  end
-
-  def get_ip_addr(dev='dut1', iface_type='eth')     
-    this_equipment = @equipment["#{dev}"]
-    this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*#{iface_type}.*/{print $1}' | head -1`;ifconfig $eth", this_equipment.prompt)
-    #eth=`ls /sys/class/net/ | awk '/.*eth.*/{print $1}' | head -1`
-    #ifconfig_data =`ifconfig #{eth}`
-    ifconfig_data =/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(this_equipment.response)
-    ifconfig_data ? ifconfig_data[1] : nil
   end
 
   def connect_to_telnet(eth_ip_addr, e='dut1')
