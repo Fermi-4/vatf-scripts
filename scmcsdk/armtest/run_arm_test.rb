@@ -203,9 +203,9 @@ def get_dsp_cores(platform)
   case (platform)
   when /k2[h|k|hk]/
     return 8
-  when k2e 
+  when "k2e" 
     return 1
-  when k2l
+  when "k2l"
     return 4
   else
     raise "unrecognized platform #{platform}"
