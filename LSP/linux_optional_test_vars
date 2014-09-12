@@ -1,0 +1,18 @@
+Optional Test Parameters that affect test execution on targets running Linux
+These pararements are not testcase specific, they affect all the tests cases
+on a given test request.
+
+var_boot_timeout: 
+Maximum time in seconds that driver should wait from boot command until Linux login: prompt.
+
+var_nfs:
+Use this nfs server path as rootfs, e.g. 1.2.3.4:/home/user/nfsroot
+
+var_test_no_stats:
+Do not collect cpu load and memory usage stats while running tests
+
+var_use_default_env:
+Strategy to use to boot DUT. 
+If not defined then load software assets (e.g. kernel, dtb, fs, etc) passed in test request.
+If == 1 then power cycle DUT, set default uboot env (i.e. env default -a -f) and then boot
+If == 2 then power cycle DUT and let it boot without modifying boot Parameters
