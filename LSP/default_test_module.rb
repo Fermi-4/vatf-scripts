@@ -267,11 +267,8 @@ module LspTestScript
       end
     end
   end
-  
-  def setup_host_side(params={})
-    @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)    
-    @equipment['dut1'].set_api('psp')
 
+  def init_boot_params(params={})
     boot_params = params.merge({
        'power_handler'     => @power_handler,
        'platform'          => @test_params.platform.downcase,
@@ -286,6 +283,14 @@ module LspTestScript
     boot_params['bootargs_append'] = @test_params.var_bootargs_append if @test_params.instance_variable_defined?(:@var_bootargs_append)
     boot_params['bootargs_append'] = @test_params.params_control.bootargs_append[0] if @test_params.params_control.instance_variable_defined?(:@bootargs_append)
     boot_params['bootargs'] = @test_params.var_bootargs if @test_params.instance_variable_defined?(:@var_bootargs)
+    boot_params
+  end
+  
+  def setup_host_side(params={})
+    @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)    
+    @equipment['dut1'].set_api('psp')
+
+    boot_params = init_boot_params(params)
 
     translated_boot_params = translate_boot_params(boot_params)
 
