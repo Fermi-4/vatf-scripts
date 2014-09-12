@@ -26,9 +26,12 @@ def autoDeselectBoard()
 end
 
 def autoResetBoard()
-    autoDeselectBoard()
-    sleep(3)
+    @equipment['dut1'].log_info("Power-cycling board")
+    deselectBoard()
+    sleep(2)
     autoSelectBoard()
+    sleep(10)
+    @equipment['dut1'].log_info("Power-cycling done")
 end
 
 =begin
@@ -49,8 +52,9 @@ def selectBoard(name = nil)
             usb_switch.connect({'type'=>'serial'})
             if @equipment['dut1'].params.key?(name)
                 usb_switch.select_input(@equipment['dut1'].params[name])
-                sleep(3)
+                sleep(5)
                 returnValue = @equipment['dut1'].params[name]
+                @equipment['dut1'].log_info("Selected USB #{returnValue}")
 
             elsif @equipment['dut1'].params.key?('default')
                 @equipment['dut1'].log_info("There is no \"dut.params[\'#{name}\'] entry in the bench file, using default port")

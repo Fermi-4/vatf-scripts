@@ -12,7 +12,7 @@ def install_package
   @apps_dir = File.join(@linux_temp_folder, get_checksum)
   if !File.exists? @apps_dir
     `mkdir -p #{@apps_dir}`
-    `cp -f #{@test_params.apps} #{@apps_dir}`
+    `cp -vf #{@test_params.apps} #{@apps_dir}`
     `cd #{@apps_dir}; unzip #{File.basename @test_params.apps}`    
   end
   rescue Exception => e
@@ -30,7 +30,7 @@ end
 def get_apps_list(name)
   Dir.chdir @apps_dir
   apps = Dir.glob "**/#{name}/*"
-  raise "#{name} directory was not included in apps package" if apps.empty?
+  raise "\"#{name}\" directory was not included or is empty" if apps.empty?
   apps
 end
 
@@ -41,11 +41,11 @@ end
 
 def create_subtests_results_table
   table_title = Array.new()
-  table_title << ['Test Case', {:width => "60%"}]
+  table_title << ['Test Case', {:width => "50%"}]
   table_title << ['Result', {:width => "10%"}]
-  table_title << ['Notes', {:width => "30%"}]
+  table_title << ['Notes', {:width => "40%"}]
   @results_html_file.add_paragraph("")
-  res_table = @results_html_file.add_table([["Sub-Tests Results",{:bgcolor => "336666", :colspan => table_title.length},{:color => "white"}]],{:border => "1",:width=>"80%"})
+  res_table = @results_html_file.add_table([["Sub-Tests Results",{:bgcolor => "336666", :colspan => table_title.length},{:color => "white"}]],{:border => "1",:width=>"100%"})
   table_title = table_title
   @results_html_file.add_row_to_table(res_table,table_title)
   res_table
@@ -60,7 +60,7 @@ def add_subtest_result(table,result)
   when /SKIP/i
     "#FFFF00"
   end
-  @results_html_file.add_row_to_table(table, [result[0], [result[1], {:bgcolor => result_color}], result[2]])
+  @results_html_file.add_row_to_table(table, [result[0], [result[1], {:bgcolor => result_color}], [result[2], {:align => "left"}]])
 end
 
 
