@@ -97,4 +97,17 @@ module PowerFunctions
   end
   end
 
+  def report_power_stats(cpu=0, e='dut1')
+    ["cat /sys/devices/system/cpu/cpu#{cpu}/cpufreq/stats/time_in_state",
+      "cat /sys/devices/system/cpu/cpu#{cpu}/cpufreq/scaling_cur_freq",
+      "cat /sys/kernel/debug/pm_debug/count",
+      "cat /sys/kernel/debug/pm_debug/time",
+      "cat /sys/kernel/debug/suspend_stats",
+      "for s in `ls /sys/devices/system/cpu/cpu0/cpuidle/`; do cat /sys/devices/system/cpu/cpu#{cpu}/cpuidle/${s}/time; done"
+      ].each {|st| 
+      @equipment[e].send_cmd("#{st}", @equipment[e].prompt)
+      @equipment[e].send_cmd("", @equipment[e].prompt)
+    }
+  end
+
 end
