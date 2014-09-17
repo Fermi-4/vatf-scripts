@@ -1774,7 +1774,7 @@ class TputBinarySearch
     case action
       when "go_higher"
         new_test_mbps = @best_mbps + ((@previous_tested_mbps - @best_mbps) / 2)
-        @binary_search_complete = true if @search_increment >= (@previous_tested_mbps - @best_mbps).abs
+        @binary_search_complete = true if (@search_increment >= (@previous_tested_mbps - @best_mbps).abs || measured_mbps >= @max_mbps)
       when "go_lower"
         lower_mbps = @best_mbps
         upper_mbps = tested_mbps
@@ -1803,6 +1803,7 @@ class PerfUtilities
     @error_result_text = ""
     @error_bit = 0
     @result_text = ""
+    @session_result_text = ""
     @vatf_dut_ref = ""
     @vatf_server_ref = ""
     @equipment = ""
@@ -1820,6 +1821,8 @@ class PerfUtilities
     @adjusted_max_mbps = 0
     @binary_increment = 0
     @binary_search_complete = false
+    @auto_bandwidth_detect = false
+    @auto_bw_test_secs = 5
     @perf_app = IPERF_APP()
     @iperf_threads = 2
     @test_direction = INGRESS()
@@ -1836,6 +1839,7 @@ class PerfUtilities
     @normal_cmd = false
     @iperf_cmd = "iperf "
     @netperf_cmd = "netperf "
+    @max_retries = 3
     @error_bit = 5
     @xfrm_stats_accumulation = 0
     @xfrm_stat_command = "cat /proc/net/xfrm_stat"
@@ -1856,6 +1860,9 @@ class PerfUtilities
   end
   def BOTH()
     return "both"
+  end
+  def set_auto_bandwidth_detect(state)
+    @auto_bandwidth_detect = state
   end
   def set_perf_app(string)
     case string.downcase
@@ -1889,10 +1896,12 @@ class PerfUtilities
     @vatf_helper.clear_result()
     @result = 0
     @result_text = ""
+    @session_result_text = ""
     @error_result_text = ""
   end
   def clear_result_text()
     @result_text = ""
+    @session_result_text = ""
   end
   def result()
     @result |= @vatf_helper.result
@@ -2534,9 +2543,10 @@ class PerfUtilities
     end
     wait_on_thread_complete(server_thread)
     if !auto_detect
-      @result_text += get_perf_stat(cpu_stats_side, test_headline, raw_buffer, protocol, packet_size)
-      @result_text += @error_result_text
-      @result_text += result
+      @session_result_text = ""
+      @session_result_text += get_perf_stat(cpu_stats_side, test_headline, raw_buffer, protocol, packet_size)
+      @session_result_text += @error_result_text
+      @session_result_text += result
     end
     server_kill(perf_server_side)
     client_kill(perf_client_side)
@@ -2589,18 +2599,23 @@ class PerfUtilities
     max_attempts = 15
     binary_step =  2
     current_auto_mbps = udp_bandwidth.gsub("M", "").to_i
-    tput_detect = TputBinarySearch.new
-    tput_detect.init_search_values(current_auto_mbps, binary_step)
-    while ((!tput_detect.binary_search_complete) && (max_attempts > 0))
-      measured_mbps = test_common(protocol, test_time_secs, "#{current_auto_mbps}M", packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode, auto_detect)
-      # try again
-      if measured_mbps == 0
+    # Since the auto detect resolution is 1M, return the specified bandwidth if less than 1M
+    if current_auto_mbps > @iperf_threads
+      tput_detect = TputBinarySearch.new
+      tput_detect.init_search_values(current_auto_mbps, binary_step)
+      while ((!tput_detect.binary_search_complete) && (max_attempts > 0))
         measured_mbps = test_common(protocol, test_time_secs, "#{current_auto_mbps}M", packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode, auto_detect)
+        # try again
+        if measured_mbps == 0
+          measured_mbps = test_common(protocol, test_time_secs, "#{current_auto_mbps}M", packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode, auto_detect)
+        end
+        current_auto_mbps = tput_detect.binary_search(current_auto_mbps, measured_mbps, @vatf_helper, perf_client_side)
+        max_attempts -= 1
       end
-      current_auto_mbps = tput_detect.binary_search(current_auto_mbps, measured_mbps, @vatf_helper, perf_client_side)
-      max_attempts -= 1
+      @vatf_helper.log_info(perf_client_side, " final bin search; mbps: #{measured_mbps}, @current_auto_mbps: #{@current_auto_mbps}, max_attempts: #{max_attempts}\r\n")
+    else
+      current_auto_mbps = udp_bandwidth.gsub("M", "")
     end
-    @vatf_helper.log_info(perf_client_side, " final bin search; mbps: #{measured_mbps}, @current_auto_mbps: #{@current_auto_mbps}, max_attempts: #{max_attempts}\r\n")
     return "#{current_auto_mbps}M"
   end
   def test_linux_to_evm_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode)
@@ -2629,13 +2644,35 @@ class PerfUtilities
     current_auto_mbps = test_common_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, perf_server_side, perf_client_side)
     return current_auto_mbps
   end
+  def continue_auto_bandwidth_detection?(udp_bandwidth, result)
+    response = nil
+    current_thread_bandwidth = udp_bandwidth.gsub("M", "").to_i / @iperf_threads
+    if @auto_bandwidth_detect && result != 0 && current_thread_bandwidth > 1
+      response = (current_thread_bandwidth - (current_thread_bandwidth > 2 ? 2 : 1)) * @iperf_threads
+      response = "#{response}M"
+    end
+    return response
+  end
   def test_linux_to_evm(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, min_ingress_mbps, min_egress_mbps)
     @test_direction = INGRESS()
     @min_ingress_mbps = min_ingress_mbps
     @min_egress_mbps = min_egress_mbps
     perf_server_side = BETA_SIDE()   # EVM
     perf_client_side = ALPHA_SIDE()  # Linux PC
-    test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)
+    test_bandwidth = udp_bandwidth
+    if @auto_bandwidth_detect
+      test_bandwidth = test_linux_to_evm_mbps_detect(protocol, @auto_bw_test_secs, test_bandwidth, packet_size, "auto detect mbps", crypto_mode)
+    end
+    test_common(protocol, test_time_secs, test_bandwidth, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)
+    retry_attempts = @max_retries
+    new_test_bandwidth = test_bandwidth
+    while (new_test_bandwidth = continue_auto_bandwidth_detection?(new_test_bandwidth, @result)) && (retry_attempts > 0)
+      @result = 0
+      new_test_bandwidth = test_linux_to_evm_mbps_detect(protocol, test_time_secs, new_test_bandwidth, packet_size, "auto detect mbps", crypto_mode)
+      test_common(protocol, test_time_secs, new_test_bandwidth, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)
+      retry_attempts -= 1
+    end
+    @result_text = @session_result_text
     @vatf_helper.log_info(ALPHA_SIDE(), "\r\n last perf @result_text: \"#{@result_text}\"\r\n")
     return @result
   end
@@ -2645,7 +2682,20 @@ class PerfUtilities
     @min_egress_mbps = min_egress_mbps
     perf_server_side = ALPHA_SIDE()  # Linux PC
     perf_client_side = BETA_SIDE()   # EVM
-    test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)
+    test_bandwidth = udp_bandwidth
+    if @auto_bandwidth_detect
+      test_bandwidth = test_evm_to_linux_mbps_detect(protocol, @auto_bw_test_secs, test_bandwidth, packet_size, "auto detect mbps", crypto_mode)
+    end
+    test_common(protocol, test_time_secs, test_bandwidth, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)
+    retry_attempts = @max_retries
+    new_test_bandwidth = test_bandwidth
+    while (new_test_bandwidth = continue_auto_bandwidth_detection?(new_test_bandwidth, @result)) && (retry_attempts > 0)
+      @result = 0
+      new_test_bandwidth = test_evm_to_linux_mbps_detect(protocol, test_time_secs, new_test_bandwidth, packet_size, "auto detect mbps", crypto_mode)
+      test_common(protocol, test_time_secs, new_test_bandwidth, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)
+      retry_attempts -= 1
+    end
+    @result_text = @session_result_text
     return @result
   end
   def test_linux_to_evm_and_evm_to_linux(protocol, test_time_secs, udp_bandwidth_ingress, udp_bandwidth_egress, packet_size, test_headline, crypto_mode, min_ingress_mbps, min_egress_mbps)

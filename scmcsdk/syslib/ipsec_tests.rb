@@ -95,7 +95,6 @@ def run
   comments = ""
   connection_comments = ""
   test_secs = 60
-  auto_bw_test_secs = 5
   auto_bandwidth_detect = true
   crypto_mode = "" 
   udp_bandwidth = ""
@@ -148,10 +147,6 @@ def run
     if jumbo_frames.downcase.include?("yes") || jumbo_frames.downcase.include?("true")
       jumbo_frames = "yes"
     end
-    #jumbo_frames = "yes"
-
-    # For debug only
-    #test_secs = 5
 
     if perf_app.downcase.include?("netperf")
       perfUtils.set_perf_app(perfUtils.NETPERF_APP())
@@ -159,9 +154,6 @@ def run
 
     iface_type = "eth#{eth_port}"
 
-    if auto_bw == "no" || auto_bw == "false"
-      auto_bandwidth_detect = false
-    end
     if udp_bandwidth.include?("/")
       udp_bandwidth_array = udp_bandwidth.split("/")
       # If upd_bandwidth specified as /XXM then test egress direction otherwise test both directions 
@@ -169,15 +161,19 @@ def run
       test_direction = (udp_bandwidth_array[UPLOAD_SPEED_INDEX].downcase == "no" ? DIRECTION_INGRESS : test_direction)
       udp_bandwidth_array[DOWNLOAD_SPEED_INDEX] = throughput_mbps_select(conn_type, crypto_mode, udp_bandwidth_array[DOWNLOAD_SPEED_INDEX])
       udp_bandwidth_array[UPLOAD_SPEED_INDEX] = throughput_mbps_select(conn_type, crypto_mode, udp_bandwidth_array[UPLOAD_SPEED_INDEX])
-      if test_direction == DIRECTION_BOTH
-        auto_bandwidth_detect = false
-      end
     else
       # If a single bandwidth value is specified then push it to the udp_bandwidth_array
       udp_bandwidth_array.push(throughput_mbps_select(conn_type, crypto_mode, udp_bandwidth))
       test_direction = DIRECTION_INGRESS
     end
 
+    if IpsecConnectionScript.protocol.downcase == "udp"
+      auto_bandwidth_detect = ((auto_bw == "no" || auto_bw == "off" || auto_bw == "false" || test_direction == DIRECTION_BOTH) ? false : true)
+    else
+      auto_bandwidth_detect = false
+    end
+    perfUtils.set_auto_bandwidth_detect(auto_bandwidth_detect)
+    
     # Set IP addresses for perf to use
     result |= perfUtils.perf_typical_config(@equipment, dev, iface_type)
 
@@ -198,32 +194,13 @@ def run
         when DIRECTION_INGRESS
           udp_bandwidth_ingress = udp_bandwidth_array[DOWNLOAD_SPEED_INDEX]
           specified_bandwidth = udp_bandwidth_ingress
-          # If UDP use binary search to get the best MBPS
-          if IpsecConnectionScript.protocol.downcase == "udp" && auto_bandwidth_detect
-            udp_bandwidth_ingress = perfUtils.test_linux_to_evm_mbps_detect(IpsecConnectionScript.protocol, auto_bw_test_secs, udp_bandwidth_ingress, packet_size, "auto detect mbps", crypto_mode)
-            if udp_bandwidth_ingress == 0.0
-              result = 1
-              comments += "Error: Automated throughput measurement detected 0 Mbps. UDP packets are not passing accross this connection."
-            end
-          end
           test_headline_ingress = "#{test_headline}_#{DIRECTION_INGRESS}#{get_bw_info(IpsecConnectionScript.protocol, specified_bandwidth, auto_bandwidth_detect)}"
-          if result == 0
-            result |= perfUtils.test_linux_to_evm(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_ingress, packet_size, test_headline_ingress, crypto_mode, ingress_min_tput, egress_min_tput)
-          end
+          result |= perfUtils.test_linux_to_evm(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_ingress, packet_size, test_headline_ingress, crypto_mode, ingress_min_tput, egress_min_tput)
         when DIRECTION_EGRESS
           udp_bandwidth_egress = udp_bandwidth_array[UPLOAD_SPEED_INDEX]
           specified_bandwidth = udp_bandwidth_egress
-          if IpsecConnectionScript.protocol.downcase == "udp" && auto_bandwidth_detect
-            udp_bandwidth_egress = perfUtils.test_evm_to_linux_mbps_detect(IpsecConnectionScript.protocol, auto_bw_test_secs, udp_bandwidth_egress, packet_size, "auto detect mbps", crypto_mode)
-            if udp_bandwidth_ingress == 0.0
-              result = 1
-              comments += "Error: Automated throughput measurement detected 0 Mbps. UDP packets are not passing accross this connection."
-            end
-          end
           test_headline_egress = "#{test_headline}_#{DIRECTION_EGRESS}#{get_bw_info(IpsecConnectionScript.protocol, specified_bandwidth, auto_bandwidth_detect)}"
-          if result == 0
-            result |= perfUtils.test_evm_to_linux(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_egress, packet_size, test_headline_egress, crypto_mode, ingress_min_tput, egress_min_tput)
-          end
+          result |= perfUtils.test_evm_to_linux(IpsecConnectionScript.protocol, test_secs, udp_bandwidth_egress, packet_size, test_headline_egress, crypto_mode, ingress_min_tput, egress_min_tput)
         else
           result = 1
           comments += "Test Case ERROR: Unable to determine throughput direction.\r\n"
