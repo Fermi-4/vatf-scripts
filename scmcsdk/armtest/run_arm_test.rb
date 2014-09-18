@@ -42,6 +42,7 @@ def run
 
   commands = assign_commands()
   criteria = assign_criteria()
+  timeout = assign_timeout()
   iterations = assign_iterations()
   @platform = get_platform()
   @dsp_cores = get_dsp_cores(@platform)
@@ -84,7 +85,7 @@ def run
 	end
     end
     cmd_result = run_command(Array.new.push(test_cmd),
-    look_for = Regexp.new(criteria[0], Regexp::IGNORECASE))
+    look_for = Regexp.new(criteria[0], Regexp::IGNORECASE), timeout)
     if cmd_result[0] == false
       set_result(test_done_result,comment + cmd_result[1])
       return
@@ -188,6 +189,16 @@ def assign_iterations
     @test_params.params_control.iterations[0].to_i
   else
     @test_params.params_chan.iterations[0].to_i
+  end
+end
+
+def assign_timeout
+  if defined? @test_params.params_control.timeout
+    @test_params.params_control.timeout[0].to_i
+  elsif defined? @test_params.params_chan.timeout
+    @test_params.params_chan.timeout[0].to_i
+  else 
+    timeout = 120
   end
 end
 
@@ -501,7 +512,7 @@ end
 #     string "funct(x:y)" will be run as send(funct, [x,y])
 #
 # Return false if there are no parentheses.
-def rubify(some_string,look_for)
+def rubify(some_string,look_for,timeout)
   if some_string[/\(.*\)/]
     method = some_string[/.*?\(/].to_s.sub('(', '')
     some_string.gsub(/\(.*\)/) do |substr|
@@ -511,7 +522,7 @@ def rubify(some_string,look_for)
         puts 'Method= ' + method + ', Argument(s)= ' + args_array.to_s + '.'      
       end
       begin
-        self.send(method, *args_array, look_for)
+        self.send(method, *args_array, look_for, timeout)
         true
       rescue => detail
         error = detail.backtrace.join("\n")
@@ -531,14 +542,14 @@ end
 # look_for  - Criteria to look for in cmds output
 #
 # Return if cmds sent succesfully, with comments
-def run_command(cmds, look_for = @equipment['dut1'].prompt)
+def run_command(cmds, look_for = @equipment['dut1'].prompt,timeout=30)
   comment = ""
   cmds.each do |cmd|
     comment += "Running " + cmd.to_s + ". "
-    if rubify(cmd,look_for)
+    if rubify(cmd,look_for,timeout)
       puts cmd + " run. command sent as ruby method"
     else
-      @equipment['dut1'].send_cmd(cmd, look_for, 40)
+      @equipment['dut1'].send_cmd(cmd, look_for, timeout)
       if @equipment['dut1'].timeout?
         puts comment += "FAILURE to meet criteria '#{ look_for }'**"
         comment += "cmd " + cmd.to_s + " not sent correctly. "
@@ -557,9 +568,9 @@ def run_command(cmds, look_for = @equipment['dut1'].prompt)
   return [true, comment]
 end
 
-def eval_and_send(cmd,look_for)
+def eval_and_send(cmd,look_for,timeout)
   cmd_to_send = eval('"'+cmd+'"')
-  run_command(Array.new.push(cmd_to_send),look_for)
+  run_command(Array.new.push(cmd_to_send),look_for,timeout)
 end
 
 def clean

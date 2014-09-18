@@ -6,7 +6,7 @@
 
 # For DSP + ARM Linux Test Project
 #./dump_trace.sh
-def dump_trace(num_of_cores = @dsp_cores, look_for)
+def dump_trace(num_of_cores = @dsp_cores, look_for,timeout)
   for count in 0..(num_of_cores-1)
     puts "'Core #{count} Trace...'"
     @equipment['dut1'].send_cmd(
@@ -40,7 +40,7 @@ end
 
 # For DSP + ARM Linux Test Project
 #./stop_all.sh rmK2HArmv7LinuxDspClientTestProject.out
-def mpm_load_all(out_file,num_of_cores = @dsp_cores,look_for)
+def mpm_load_all(out_file,num_of_cores = @dsp_cores,look_for,timeout)
   for count in 0..(num_of_cores-1)
     puts " 'Loading and Running #{out_file}...'"
     @equipment['dut1'].send_cmd("./mpmcl load dsp#{count} #{out_file}",
@@ -59,7 +59,7 @@ end
 
 # For DSP + ARM Linux Test Project
 # ./stop_all.sh rmK2KArmv7LinuxDspClientTestProject.out
-def mpm_stop_all(file,num_of_cores = @dsp_cores,look_for)
+def mpm_stop_all(file,num_of_cores = @dsp_cores,look_for,timeout)
   for count in 0..(num_of_cores-1)
     puts "'Resetting core #{file}...'"
     @equipment['dut1'].send_cmd("mpmcl reset dsp#{count}",
@@ -178,7 +178,7 @@ def get_relative_tftp_file_and_path(file)
 end
 
 # Public: TFTP file to EVM
-def tftp_file_from_host(file, host_ip, timeout_secs,look_for)
+def tftp_file_from_host(file, host_ip, timeout_secs,look_for,dut_timeout=nil)
   tftp_file_and_path = get_relative_tftp_file_and_path(file)
   tftp_server_ip = (host_ip == "$host_ip" ? @equipment['server1'].telnet_ip : host_ip)
   #@equipment['dut1'].send_cmd("tftp -g -r #{tftp_file_and_path} #{tftp_server_ip} ; echo command_done", "command_done", 2)
