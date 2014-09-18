@@ -1,33 +1,9 @@
-def display_as_binary(number)
-  display_text = ""
-  # Displays number as binary with leading zeros
-  31.downto(0) do |n|
-    display_text += "#{number[n]}"
-  end
-  return display_text
-end
-
 def get_platform()
   if @equipment['dut1'].id.split("_").grep(/k2.?/).size > 0
     @equipment['dut1'].id.split("_").grep(/k2.?/)[0] 
   else
     "k2h"
   end
-end
-
-def error_code_bit_breakdown(error_code)
-  error_code_text = ""
-  if (error_code > 2)
-    error_code_text += " Error Code (#{error_code}) bit breakdown: \r\n"
-    error_code_text += "   33222222222211111111110000000000\r\n"
-    error_code_text += "   10987654321098765432109876543210\r\n"
-    error_code_text += "   --------------------------------\r\n"
-    error_code_text += "   #{display_as_binary(error_code)}"
-  else
-    error_code_text += " Error Code: #{error_code}"
-  end
-  error_code_text += "\r\n"
-  return error_code_text
 end
 
 def get_directory_less(string, up_count)
@@ -59,31 +35,6 @@ def get_variable_value(string)
   return value
 end
 
-def get_param_value(equipment_designator, variable)
-  @equipment[equipment_designator].instance_variable_defined?(:@params) ? \
-                        (@equipment[equipment_designator].params[variable] != nil) ? \
-                             @equipment[equipment_designator].params[variable] : "" \
-									: ""
-end
-
-
-def get_param_value_local(equipment_ref, variable)
-  value = equipment_ref.params[variable]
-  value = (value == nil ? "" : value)
-  return value
-end
-
-def util_get_ip_addr(equipment, dev='dut1', iface_type='eth')
-  wait_for_text = "Metric:"
-  this_equipment = equipment["#{dev}"]
-  #this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*#{iface_type}.*/{print $1}' | head -1`;ifconfig $eth", this_equipment.prompt)
-  this_equipment.send_cmd("eth=`ls /sys/class/net/ | awk '/.*#{iface_type}.*/{print $1}' | head -1`;ifconfig $eth", wait_for_text)
-  this_equipment.log_info(" get_ip_addr: \"#{this_equipment.response}\"\r\n")
-  ifconfig_data =/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(this_equipment.response)
-  this_equipment.log_info(" ifconfig_data: \"#{ifconfig_data}\"\r\n")
-  ifconfig_data ? ifconfig_data[1] : nil
-end
-  
 def convert_string_to_case_insensitive_reg_expression(string)
   reg_exp = ""
   if string.length > 0
@@ -483,6 +434,9 @@ class VatfHelperUtilities
   end
   def vatf_server_ref()
     return @vatf_server_ref
+  end
+  def equipment
+    @equipment
   end
 end
 
@@ -1288,7 +1242,7 @@ class NashPalTestBenchVatf
     
     # Get the Server IP (Linux PC) and EVM IP addresses for transferring the executables from the Linux PC to the EVM
     server_ip = equipment[@vatf_helper.vatf_server_ref].telnet_ip
-    dut_ip = util_get_ip_addr(equipment)
+    dut_ip = get_ip_addr(@vatf_helper.vatf_dut_ref)
     server_tftp_base_dir = equipment[@vatf_helper.vatf_server_ref].tftp_path
 
     # Set the trigger phrases to be used for determining if the test is running properly
@@ -1811,6 +1765,9 @@ class PerfUtilities
     @vatf_server_ref = 'server1'
     @alpha_ip = ""
     @beta_ip = ""
+    @alpha_ipv6 = ""
+    @beta_ipv6 = ""
+    @is_ipv4 = IPV4()
     @additional_alpha_params = ""
     @additional_beta_params = ""
     @free_mem_start = ""
@@ -1861,6 +1818,12 @@ class PerfUtilities
   def BOTH()
     return "both"
   end
+  def IPV4()
+    return true
+  end
+  def IPV6()
+    return false
+  end
   def set_auto_bandwidth_detect(state)
     @auto_bandwidth_detect = state
   end
@@ -1883,6 +1846,9 @@ class PerfUtilities
   end
   def BETA_SIDE()
     return false
+  end
+  def equipment_set(equipment)
+    @equipment = equipment if (equipment != "")
   end
   def set_helper_common(equipment, vatf_server_ref, vatf_dut_ref)
     @vatf_dut_ref = vatf_dut_ref if (vatf_dut_ref != "")
@@ -1939,6 +1905,10 @@ class PerfUtilities
     command = ""
     command += @iperf_cmd
     command += "-s "
+    if !@is_ipv4
+      command += "-V "
+      command += "-B #{(is_alpha_side ? @alpha_ipv6 : @beta_ipv6)} "
+    end
     command += "-u " if protocol == "udp"
     command += (is_alpha_side ? @additional_alpha_params : @additional_beta_params)
     command += " --len #{packet_size} "
@@ -2368,30 +2338,21 @@ class PerfUtilities
     return @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", wait_for_text, @error_bit, 0, wait_secs)
   end
   def iperf_client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
-    #wait_for_text = "/sec"
-    #wait_for_text = " ms    "
     threaded_bandwidth = "#{(udp_bandwidth.to_f / @iperf_threads)}M"
     wait_for_text = "forcing timeout to occur"
     wait_secs = test_time + 10
     command = ""
     command += @iperf_cmd
+    command += "-V " if !@is_ipv4
     command += "-c "
-    command += (is_alpha_side ? @beta_ip : @alpha_ip)
+    command += (is_alpha_side ? (@is_ipv4 ? @beta_ip : @beta_ipv6) : (@is_ipv4 ? @alpha_ip : @alpha_ipv6))
     command += " "
-
-    #command += "-P 2 --format m "
     command += "-P #{@iperf_threads} --format m "
     command += "-u -b #{threaded_bandwidth} --len #{packet_size} " if protocol.downcase == "udp"
-
-    #command += "-u -b #{udp_bandwidth} --len #{packet_size} " if protocol.downcase == "udp"
     command += "-M #{packet_size} -w 128K " if protocol.downcase == "tcp"
-    #command += "-P 2 " if protocol.downcase == "tcp"
     command += "-t #{test_time} "
     command += (is_alpha_side ? @additional_alpha_params : @additional_beta_params)
-    #command += " ; echo 'command_done'"
-    #command += " ; echo $WAITFOR"
     @vatf_helper.log_info(is_alpha_side, "\r\n Starting iperf client... (command: #{command})\r\n")
-    #return @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", @wait_for_text, @error_bit, 0, wait_secs)
     return @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", wait_for_text, @error_bit, 0, wait_secs)
   end
   def client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
@@ -2403,7 +2364,9 @@ class PerfUtilities
     end
   end
   def get_ip_address_for_eth_port_from_static_base(eth_port)
-    static_ip_address_items = get_param_value('dut1', "static_ip_base_address").split(".")
+    static_ip_address = get_equipment_param_value('dut1', "static_ip_base_address")
+    return "" if !static_ip_address
+    static_ip_address_items = static_ip_address.split(".")
     octet_to_change = static_ip_address_items.length - 1
     eth_port_static_ip_address = ""
     separator = ""
@@ -2446,7 +2409,7 @@ class PerfUtilities
   def find_eth_interface_by_ipaddress(ip_address, is_alpha_side)
     eth_iface = ""
     raw_ifconfig = @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ifconfig", "force timeout" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 2)
-    temp = raw_ifconfig.gsub("\n","").scan(/eth[0-9a-zA-Z\s:.]*inet addr:[0-9.]+/)
+    temp = raw_ifconfig.gsub("\n","").scan(/eth[0-9a-zA-Z\s:.]*\W*inet addr:[0-9.]+/)
     temp.each do |eth_item|
       if eth_item.include?(ip_address)
         eth_iface = eth_item.scan(/eth[0-9]*/)[0]
@@ -2462,14 +2425,18 @@ class PerfUtilities
     @vatf_helper.smart_send_cmd_wait(ALPHA_SIDE(), @sudo_cmd, "ifconfig #{eth_iface_pc}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
     @vatf_helper.smart_send_cmd_wait(BETA_SIDE(), @normal_cmd, "ifconfig #{eth_iface_evm}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
   end
-  def perf_typical_config(equipment, dev='dut1', iface_type='eth')
+  def perf_typical_config(equipment, dev='dut1', iface_type='eth', is_ipv4=IPV4())
     # Use the default vatf linux pc ('server1') and evm ('dut1') reference, but set the equipment variable so we can communicate with them
     set_helper_common(equipment, "", "")
 
     # Get IP addresses to use on each side of the IPSEC connection
     @alpha_ip = equipment[@vatf_helper.vatf_server_ref].telnet_ip
     isolate_dut_ethernet_test_port(iface_type)
-    @beta_ip = util_get_ip_addr(equipment, dev, iface_type)
+    @beta_ip = get_ip_addr(dev, iface_type)
+    alpha_iface_type = find_eth_interface_by_ipaddress(@alpha_ip, ALPHA_SIDE())
+    @alpha_ipv6 = get_ipv6_global_addr("#{@vatf_helper.vatf_server_ref}", alpha_iface_type)
+    @beta_ipv6 = get_ipv6_global_addr(dev, iface_type)
+    @is_ipv4 = is_ipv4
     return @result
   end
   def start_log_thread(is_alpha_side, time_secs)
@@ -2747,6 +2714,8 @@ class IpsecUtilitiesVatf
     @beta_side_net_name = "beta.test.org"
     @alpha_side_ipv6 = "2000::1"
     @beta_side_ipv6 = "2000::3"
+    @ipv6_addr_prefix = "2000::"
+    @ipv6_addr_netmask = "/64"
     @alpha_side_ipsec_conf_file = "/etc/ipsec.conf"
     @beta_side_ipsec_conf_file = "/etc/ipsec.conf"
     @alpha_side_ipsec_secrets_file = "/etc/ipsec.secrets"
@@ -2780,6 +2749,9 @@ class IpsecUtilitiesVatf
     @protocol = "udp"
     @connection_name = "Udp"
     @trigger_key_and_cert_rebuild_file_name = "/etc/rebuild_certs_trigger.tmp"
+    @is_ipv4 = IPV4()
+    @ipsec_outer = "ipv4"
+    @ipsec_inner = "ipv4"
     # Static variable settings
     @sudo_cmd = true
     @normal_cmd = false
@@ -2867,6 +2839,9 @@ class IpsecUtilitiesVatf
   def LOCAL_SIDE()
     return false
   end
+  def is_ipv4
+    @is_ipv4
+  end
   def is_failed(is_alpha_side, function_name, error_message)
     location = (is_alpha_side ? "Alpha side" : "Beta side")
     @result_text += "(#{function_name}, #{location}): #{error_message}" if (result() != 0)
@@ -2935,6 +2910,11 @@ class IpsecUtilitiesVatf
     puts("    @result                       : #{@result}\r\n")
     puts("    @is_gen_on_alpha_only         : #{@is_gen_on_alpha_only ? "All certificates & keys are generated on alpha side" : "Certificates & keys are generated on each side"}\r\n")
   end
+  def set_ipsec_ip_operation(ipsec_outer, ipsec_inner, is_ipv4)
+    @ipsec_outer = ipsec_outer if (ipsec_outer != "")
+    @ipsec_inner = ipsec_inner if (ipsec_inner != "")
+    @is_ipv4 = is_ipv4 if (is_ipv4 != "")
+  end
   def set_protocol_encryption_integrity_name(protocol, esp_encryption, esp_integrity, connection_name)
     @protocol = protocol if (protocol != "")
     @esp_encryption = esp_encryption if (esp_encryption != "")
@@ -2987,6 +2967,9 @@ class IpsecUtilitiesVatf
     @beta_side_temp_ca_key_file = bs_temp_ca_key_file if (bs_temp_ca_key_file != "")
     @beta_side_temp_key_file = bs_temp_key_file if (bs_temp_key_file != "")
     @beta_side_temp_file = bs_temp_file if (bs_temp_file != "")
+  end
+  def equipment_set(equipment)
+    @equipment = equipment if (equipment != "")
   end
   def set_helper_common(equipment, vatf_server_ref, vatf_dut_ref)
     @vatf_dut_ref = vatf_dut_ref if (vatf_dut_ref != "")
@@ -3388,9 +3371,7 @@ class IpsecUtilitiesVatf
     end
     local_network_name = (is_alpha_side ? @alpha_side_net_name : @beta_side_net_name)
     remote_network_name = (!is_alpha_side ? @alpha_side_net_name : @beta_side_net_name)
-    local_ip = (is_alpha_side ? @alpha_side_ip : @beta_side_ip)
     local_ip_subnet = get_tunnel_subnet(is_alpha_side, LOCAL_SIDE())
-    remote_ip = (!is_alpha_side ? @alpha_side_ip : @beta_side_ip)
     remote_ip_subnet = get_tunnel_subnet(is_alpha_side, REMOTE_SIDE())
     local_ipv6 = (is_alpha_side ? @alpha_side_ipv6 : @beta_side_ipv6)
     remote_ipv6 = (!is_alpha_side ? @alpha_side_ipv6 : @beta_side_ipv6)
@@ -3401,6 +3382,16 @@ class IpsecUtilitiesVatf
     margintime = @default_margintime
     ike_lifetime = @default_rekey_ike_lifetime
     lifetime = @default_rekey_lifetime
+    
+    # Set outer IP address
+    case "#{@ipsec_outer}"
+      when "ipv4"
+        local_ip = (is_alpha_side ? @alpha_side_ip : @beta_side_ip)
+        remote_ip = (!is_alpha_side ? @alpha_side_ip : @beta_side_ip)
+      when "ipv6"
+        local_ip = (is_alpha_side ? @alpha_side_ipv6 : @beta_side_ipv6)
+        remote_ip = (!is_alpha_side ? @alpha_side_ipv6 : @beta_side_ipv6)
+    end
     
     # Get ipsec template file contents
     fileUtils.get_file_contents(ipsec_conf_template_file)
@@ -3581,8 +3572,22 @@ class IpsecUtilitiesVatf
       set_beta_cert("", "", "#{maj_ver}", "", "", "", "", "", "", "", "", "", "")
     end
   end
+  def get_ipv6_global_ip(dev, ipv4_address, is_save_ipv6_network_mask)
+    eth_iface = get_eth_interface_by_ipaddress(dev, ipv4_address)
+    ipv6_addr = set_ipv6_global_addr_if_not_exist(dev, eth_iface, @ipv6_addr_prefix, @ipv6_addr_netmask)
+    if eth_iface && ipv6_addr && is_save_ipv6_network_mask
+      ipv6_netmask = get_ipv6_global_netmask(dev, eth_iface)
+      @ipv6_addr_netmask = (ipv6_netmask ? ipv6_netmask : @ipv6_addr_netmask)
+    end
+    ipv6_addr ? ipv6_addr : nil
+  end
   def ipsec_typical_config(equipment, tunnel_type, ipsec_conf_input_file)
     function_name = "ipsec_typical_config"
+    # Use the default vatf linux pc ('server1') and evm ('dut1') reference, but set the equipment variable so we can communicate with them
+    set_helper_common(equipment, "", "")
+    
+    save_ipv6_network_mask = true
+    use_saved_ipv6_network_mask = false
     # Typical inputs to this function
     #  equipment will be:  @equipment
     #  tunnel_type could be: ipsecVatf.FQDN_TUNNEL or ipsecVatf.IP_TUNNEL
@@ -3590,22 +3595,19 @@ class IpsecUtilitiesVatf
     
     # Get IP addresses to use on each side of the IPSEC connection
     alpha_ip = equipment[@vatf_helper.vatf_server_ref].telnet_ip
-    beta_ip = util_get_ip_addr(equipment)
+    beta_ip = get_ip_addr("#{@vatf_helper.vatf_dut_ref}")
+    # Get alpha side ipv6 ip address. Save ipv6 network mask that both sides will use based on the Linux PC's ipv6 interface.
+    alpha_side_ipv6 = get_ipv6_global_ip(@vatf_helper.vatf_server_ref, alpha_ip, save_ipv6_network_mask)
+    # Get beta side ipv6 ip address. Use the ipv6 network mask set by the alpha side.
+    beta_side_ipv6 = get_ipv6_global_ip(@vatf_helper.vatf_dut_ref, beta_ip, use_saved_ipv6_network_mask)
     @server_ipsec_tftp_path = File.join(equipment[@vatf_helper.vatf_server_ref].tftp_path, "ipsec_files")
 
-    # Use the default vatf linux pc ('server1') and evm ('dut1') reference, but set the equipment variable so we can communicate with them
-    set_helper_common(equipment, "", "")
     # Set the alpha side IP address and StrongSwan major version number. Leave everything else at default.
-    set_alpha_cert(alpha_ip, tunnel_type, "5", "", "", "", "", "", "", "", "", "", "")
+    set_alpha_cert(alpha_ip, tunnel_type, "5", "", "", "", "", "", "", "", alpha_side_ipv6, "", "")
     # Set the beta side IP address , StrongSwan major version number. Leave everything else at default.
-    #set_beta_cert(beta_ip, tunnel_type, "4", "", "", "", "", "", "", "", "", "", "")
-    set_beta_cert(beta_ip, tunnel_type, "5", "", "", "", "", "", "", "", "", "", "")
+    set_beta_cert(beta_ip, tunnel_type, "5", "", "", "", "", "", "", "", beta_side_ipv6, "", "")
     # Set ipsec.conf input template file to use.
     set_common(ipsec_conf_input_file, "", "", "" ,"")
-    # Add an IPv6 ip address to the Linux PC side and the EVM side
-    #  Need to add the ability to figure out the interface to use instead of hard coding it like it currently is
-    #@lnx_helper.add_ip_address_to_interface(ALPHA_SIDE(), "#{@alpha_side_ipv6}/64", "eth3")
-    #@lnx_helper.add_ip_address_to_interface(BETA_SIDE(), "#{@beta_side_ipv6}/64", "eth0")
   end
   def set_secure_data(is_alpha_side)
       # Get server tftp directory

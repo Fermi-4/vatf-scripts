@@ -88,6 +88,8 @@ end
 def run
   # instantiate perf utility set
   perfUtils = PerfUtilities.new
+  # Set perf utilities global equipment variable
+  perfUtils.equipment_set(@equipment)
   
   # Set default settings
   is_clear_previous_result = true
@@ -175,7 +177,7 @@ def run
     perfUtils.set_auto_bandwidth_detect(auto_bandwidth_detect)
     
     # Set IP addresses for perf to use
-    result |= perfUtils.perf_typical_config(@equipment, dev, iface_type)
+    result |= perfUtils.perf_typical_config(@equipment, dev, iface_type, IpsecConnectionScript.is_ipv4)
 
     if result == 0
       # Set mtu for Jumbo packets if needed

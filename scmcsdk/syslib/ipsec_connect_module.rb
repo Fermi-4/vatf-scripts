@@ -1,5 +1,8 @@
 
 require File.dirname(__FILE__)+'/utilities.rb'
+require File.dirname(__FILE__)+'/../../LSP/network_utils'
+
+include NetworkUtils
 
 # IPSEC connection script
 module IpsecConnectionScript
@@ -14,6 +17,7 @@ module IpsecConnectionScript
   @ipsec_connection_script_is_secure_data = "(not_set)"
   @ipsec_connection_script_is_nat_traversal = "(not_set)"
   @ipsec_connection_script_ipsec_template = "(not_set)"
+  @ipsec_connection_script_is_ipv4 = "(not_set)"
   @is_ipsecVatf_started = false
 
   def equipment()
@@ -103,7 +107,14 @@ module IpsecConnectionScript
     @ipsec_connection_script_esp_integrity = string
   end
 
-  def set_all_vars(comment_text, result, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, ipsec_template)
+  def is_ipv4
+    @ipsec_connection_script_is_ipv4
+  end
+  def is_ipv4_set(string)
+    @ipsec_connection_script_is_ipv4 = string
+  end
+
+  def set_all_vars(comment_text, result, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, ipsec_template, is_ipv4)
     @ipsec_connection_script_comment_text = comment_text if comment_text != ""
     @ipsec_connection_script_result = result  if result != ""
     @ipsec_connection_script_protocol = protocol  if protocol != ""
@@ -113,6 +124,7 @@ module IpsecConnectionScript
     @ipsec_connection_script_is_secure_data = is_secure_data  if is_secure_data  != ""
     @ipsec_connection_script_is_nat_traversal = is_nat_traversal  if is_nat_traversal  != ""
     @ipsec_connection_script_ipsec_template = ipsec_template  if ipsec_template  != ""
+    @ipsec_connection_script_is_ipv4 = is_ipv4  if is_ipv4  != ""
   end
 
   def clear_results()
@@ -130,11 +142,17 @@ module IpsecConnectionScript
     IpsecConnectionScript.ipsecVatf.inflow_stop_offload(IpsecConnectionScript.ipsecVatf.BETA_SIDE())
   end
 
-  def display_ipsec_test_params(ipsec_conf_template, protocol, encryption, integrity, is_pass_through, is_secure_data, is_nat_traversal, alpha_side_nat_public_ip, alpha_side_nat_gateway_ip, beta_side_nat_public_ip, beta_side_nat_gateway_ip)
+  def start_offload_indices()
+    IpsecConnectionScript.ipsecVatf.inflow_offload(IpsecConnectionScript.ipsecVatf.BETA_SIDE())
+  end
+
+  def display_ipsec_test_params(ipsec_conf_template, protocol, encryption, integrity, is_pass_through, is_secure_data, is_nat_traversal, alpha_side_nat_public_ip, alpha_side_nat_gateway_ip, beta_side_nat_public_ip, beta_side_nat_gateway_ip, ipsec_outer, ipsec_inner)
     params_display = ""
     params_display += "IPSEC Test Parameters:\r\n"
     params_display += "  ipsec_conf_template   : \"#{ipsec_conf_template}\"\r\n"
     params_display += "  protocol_enc_auth     : #{protocol}_#{encryption}_#{integrity}\r\n"
+    params_display += "  ipsec_outer           : #{ipsec_outer}\r\n"
+    params_display += "  ipsec_inner           : #{ipsec_inner}\r\n"
     params_display += "  is_pass_through       : #{is_pass_through}\r\n"
     params_display += "  is_secure_data        : #{is_secure_data}\r\n"
     params_display += "  is_nat_traversal      : #{is_nat_traversal}\r\n"
@@ -155,6 +173,12 @@ module IpsecConnectionScript
     end
     # Set local variable to use ipsec utilities set instance
     ipsecVatf = IpsecConnectionScript.ipsecVatf
+
+    # Set this scripts global equipment variable
+    @equipment = equipment
+    
+    # Set ipsec utilities global equipment variable
+    ipsecVatf.equipment_set(equipment)
 
     # clear any previous connection results
     IpsecConnectionScript.clear_results()
@@ -181,6 +205,8 @@ module IpsecConnectionScript
     margintime = ""
     rekey_ike_lifetime = ""
     rekey_lifetime = ""
+    ipsec_outer = "ipv4"
+    ipsec_inner = "ipv4"
 
     # Get IPSEC information from v1 test case
     ipsec_conf_template = get_variable_value(test_params.params_chan.ipsec_test_suite[0])  if test_params.params_chan.instance_variable_defined?(:@ipsec_test_suite)
@@ -207,8 +233,15 @@ module IpsecConnectionScript
     margintime = get_variable_value(test_params.params_chan.rekey_mt[0])  if test_params.params_chan.instance_variable_defined?(:@rekey_mt)
     rekey_ike_lifetime = get_variable_value(test_params.params_chan.rekey_ikelt[0])  if test_params.params_chan.instance_variable_defined?(:@rekey_ikelt)
     rekey_lifetime = get_variable_value(test_params.params_chan.rekey_lt[0])  if test_params.params_chan.instance_variable_defined?(:@rekey_lt)
+    ipsec_outer = get_variable_value(test_params.params_chan.ipsec_outer[0])  if test_params.params_chan.instance_variable_defined?(:@ipsec_outer)
+    ipsec_inner = get_variable_value(test_params.params_chan.ipsec_inner[0])  if test_params.params_chan.instance_variable_defined?(:@ipsec_inner)
+    
+    # Get IPSEC and IP operational mode from test case
+    ipsec_outer = (ipsec_outer.downcase == "ipv4" ? "ipv4" : "ipv6")
+    ipsec_inner = (ipsec_inner.downcase == "ipv4" ? "ipv4" : "ipv6")
+    is_ipv4 = (ipsec_inner == "ipv4" ? ipsecVatf.IPV4 : ipsecVatf.IPV6)
 
-    IpsecConnectionScript.set_all_vars(comment_text, result, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, ipsec_template)
+    IpsecConnectionScript.set_all_vars(comment_text, result, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, ipsec_template, is_ipv4)
       
     # Return immediately with error code if any mandatory parameters are missing
     if protocol == "" or esp_encryption == "" or esp_integrity == ""
@@ -221,7 +254,7 @@ module IpsecConnectionScript
     # Return immediately if user does not want an IPSEC connection started.
     if conn_type == "eth-only"
       comment_text += "\r\n IpsecConnectionScript.establish_ipsec_connection: Bypassing IPSEC connection altogether as specified by user. \r\n"
-      IpsecConnectionScript.set_all_vars(comment_text, result, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, ipsec_template)
+      IpsecConnectionScript.set_all_vars(comment_text, result, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, ipsec_template, is_ipv4)
       return 0
     end
     
@@ -231,18 +264,18 @@ module IpsecConnectionScript
     is_nat_traversal = (is_nat_traversal.downcase == "yes" ? true : false)
 
     # Get IP addresses for the alpha and beta side
-    alpha_ip = equipment['server1'].telnet_ip
-    beta_ip = util_get_ip_addr(equipment) 
+    alpha_ip = @equipment['server1'].telnet_ip
+    beta_ip = get_ip_addr('dut1')
 
     # IMPORTANT NOTICE: To run with NAT you will need to add the nat_gateway_xxx information to your bench.rb file. Please see sample lines below
     #      linux_server.params = {'@dss_dir' => '/home/systest-s1/ccsv5/ccs_base/scripting/bin/', 'nat_gateway_public_ip' => '10.218.104.139'}   # <== Shown here is the VATF's corporate network IP address
     #      dut.params = {'nat_gateway_private_ip' => '192.168.1.80', 'nat_gateway_public_ip' => '10.218.104.131'}   # <== Shown here is the NAT gateways IP address for the EVM's local network and the NAT gateways IP address for the corporate network
     #
     if is_nat_traversal
-        alpha_side_nat_public_ip = get_param_value_local(equipment['server1'], "nat_gateway_public_ip")
-        alpha_side_nat_gateway_ip = get_param_value_local(equipment['server1'], "nat_gateway_private_ip")
-        beta_side_nat_public_ip = get_param_value_local(equipment['server1'], "nat_gateway_public_ip")
-        beta_side_nat_gateway_ip = get_param_value_local(equipment['dut1'], "nat_gateway_private_ip")
+      alpha_side_nat_public_ip = get_equipment_param_value('server1', "nat_gateway_public_ip")
+      alpha_side_nat_gateway_ip = get_equipment_param_value('server1', "nat_gateway_private_ip")
+      beta_side_nat_public_ip = get_equipment_param_value('server1', "nat_gateway_public_ip")
+      beta_side_nat_gateway_ip = get_equipment_param_value('server1', "nat_gateway_private_ip")
     end
 
     # Set IPSEC connection protocol, encryption, authentication and connection name to be used in the ipsec.conf file.
@@ -254,8 +287,11 @@ module IpsecConnectionScript
     # Set result error bit to set if failures occur for IPSEC
     ipsecVatf.set_error_bit_to_set(0)
     
+    # Set IPSEC and IP operational mode
+    ipsecVatf.set_ipsec_ip_operation(ipsec_outer, ipsec_inner, is_ipv4)
+    
     # Set IPSEC config for alpha side as Linux PC (swan version 5) and beta side as EVM (swan version 5). Use the default input ipsec.conf file.
-    ipsecVatf.ipsec_typical_config(equipment, ipsecVatf.FQDN_TUNNEL, "")
+    ipsecVatf.ipsec_typical_config(@equipment, ipsecVatf.FQDN_TUNNEL, "")
 
     # Set rekey parameters that testcase specifies
     ipsecVatf.set_rekey_parameters(margintime, rekey_ike_lifetime, rekey_lifetime)
@@ -290,11 +326,11 @@ module IpsecConnectionScript
     ipsecVatf.set_ipsec_template_file(ipsec_template)
 
     # Generate keys and certificates only.
-    ipsecVatf.ipsec_gen_only_start(ipsecVatf.IPV4, connection_type)
+    ipsecVatf.ipsec_gen_only_start(ipsecVatf.is_ipv4, connection_type)
     result |= ipsecVatf.result
 
     # Restart IPSEC with this template file.
-    result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.IPV4, ipsecVatf.FQDN_TUNNEL, "#{ipsec_template}", is_clear_previous_result, is_pass_through)
+    result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.is_ipv4, ipsecVatf.FQDN_TUNNEL, "#{ipsec_template}", is_clear_previous_result, is_pass_through)
 
     # Offload security policies if crypto_mode is inflow
     if (crypto_mode == "inflow") and (result == 0)
@@ -318,13 +354,13 @@ module IpsecConnectionScript
     comment_text += "\r\n"
     comment_text += ipsecVatf.result_text
     comment_text += ".\r\n"
-    comment_text += "#{display_ipsec_test_params( ipsec_template, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, alpha_side_nat_public_ip, alpha_side_nat_gateway_ip, beta_side_nat_public_ip, beta_side_nat_gateway_ip)}"
+    comment_text += "#{display_ipsec_test_params( ipsec_template, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, alpha_side_nat_public_ip, alpha_side_nat_gateway_ip, beta_side_nat_public_ip, beta_side_nat_gateway_ip, ipsec_outer, ipsec_inner)}"
 
     # Fix dash display for webpage. The dashes are half the size when displayed on the web page so double them to keep the display line size correct.
     comment_text = comment_text.gsub("----", "--------")
 
     # Set externally accessible variables
-    IpsecConnectionScript.set_all_vars(comment_text, result, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, ipsec_template)
+    IpsecConnectionScript.set_all_vars(comment_text, result, protocol, esp_encryption, esp_integrity, is_pass_through, is_secure_data, is_nat_traversal, ipsec_template, is_ipv4)
 
     # Return result code
     return result
