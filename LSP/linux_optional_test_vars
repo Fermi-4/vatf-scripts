@@ -2,6 +2,9 @@ Optional Test Parameters that affect test execution on targets running Linux
 These pararements are not testcase specific, they affect all the tests cases
 on a given test request.
 
+var_boot_attempts:
+How many times to retry booting in case of failure
+  
 var_boot_timeout: 
 Maximum time in seconds that driver should wait from boot command until Linux login: prompt.
 
