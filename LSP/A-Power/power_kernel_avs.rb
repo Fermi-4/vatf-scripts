@@ -21,13 +21,18 @@ def disable_devfreq(e='dut1')
   @equipment[e].send_cmd("rmmod coproc_devfreq", @equipment[e].prompt)
 end
 
+def report(msg, e='dut1')
+  puts msg
+  @equipment[e].log_info(msg)
+end
+
 def set_opp(opp, e='dut1')
   if (@reqs_for_opp.select {|r| r.keys[0].match(/_MPU/)}).length > 0
     begin
       freq = get_frequency_for_opp(@equipment[e].name, opp)
       set_cpu_opp(freq)
     rescue 
-      puts "Warning: #{opp} is not supported by MPU"
+      report "Warning: #{opp} is not supported by MPU"
     end
   end
   if (@reqs_for_opp.select {|r| r.keys[0].match(/_GPU/)}).length > 0
@@ -36,9 +41,31 @@ def set_opp(opp, e='dut1')
       # coproc0 is the node used in the dts for gpu
       set_coproc_opp(freq, 'coproc0')
     rescue 
-      puts "Warning: #{opp} is not supported by GPU"
+      report "Warning: #{opp} is not supported by GPU"
     end
   end
+end
+
+def check_opp(opp, max_deviation)
+  failure = 0
+  result_str = ''
+  set_opp(opp)
+  multimeter_readings = @equipment['multimeter1'].get_multimeter_output(10, 10) # 10 samples
+  @reqs_for_opp.each{|req|
+    domain = req.keys[0]
+    efuse_addr = req[domain][opp]
+    measured_voltage = multimeter_readings['domain_'+domain+'_volt_readings'][0]  # AVG of 10 samples
+    measured_voltage = measured_voltage.to_f * 1000 # Convert to mv, which is unit used in efuse registers
+    expected_voltage = read_address(efuse_addr) & 0xfff # Only use bits 0-11
+    deviation = (measured_voltage - expected_voltage.to_f).abs
+    if deviation > max_deviation
+      result_str += "#{domain}@#{opp} failed. Expected:#{expected_voltage}, Measured:#{measured_voltage}. " 
+      failure += 1
+    else
+      result_str += "#{domain}@#{opp} passed. Expected:#{expected_voltage}, Measured:#{measured_voltage}. " 
+    end
+  }
+  [result_str, failure]
 end
 
 def run
@@ -55,22 +82,11 @@ def run
   requirements.each {|req| req.values.each {|v| v.keys.each {|opp| opps.add(opp)} } }
   opps.to_a.each{|opp|
     @reqs_for_opp =  requirements.select {|req| req.values[0].has_key?(opp)}
-    set_opp(opp)
-    multimeter_readings = @equipment['multimeter1'].get_multimeter_output(10, 10) # 10 samples
-    @reqs_for_opp.each{|req|
-      domain = req.keys[0]
-      efuse_addr = req[domain][opp]
-      measured_voltage = multimeter_readings['domain_'+domain+'_volt_readings'][0]  # AVG of 10 samples
-      measured_voltage = measured_voltage.to_f * 1000 # Convert to mv, which is unit used in efuse registers
-      expected_voltage = read_address(efuse_addr)
-      deviation = (measured_voltage - expected_voltage.to_f).abs
-      if deviation > max_deviation
-        result_str += "#{domain}@#{opp} failed. Expected:#{expected_voltage}, Measured:#{measured_voltage}. " 
-        failure += 1
-      else
-        result_str += "#{domain}@#{opp} passed. Expected:#{expected_voltage}, Measured:#{measured_voltage}. " 
-      end
-    }
+   
+    tmp_result_str, tmp_failure = check_opp(opp, max_deviation)
+    result_str += tmp_result_str
+    failure += tmp_failure
+  
   }
 
   if failure == 0
