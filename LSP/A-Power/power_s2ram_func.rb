@@ -98,7 +98,7 @@ def start_target_tests
     @equipment['dut1'].target.telnet.send_cmd("export IPERFHOST=#{@equipment['server1'].telnet_ip}", @equipment['dut1'].prompt) if @equipment['server1'].respond_to?(:telnet_ip)
     @equipment['dut1'].log_info("Telnet Data: \n #{@equipment['dut1'].target.telnet.response}")
     cmd_timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_i : 600
-    cmd_timeout *= ((suspend_time + resume_time + 15) / resume_time)       #15 is approx max observed wait time to suspend
+    cmd_timeout *= ((suspend_time + resume_time + 60)*1.0 / resume_time).ceil  #60 is approx max observed wait time in suspend/resume transitions
     @queue.push(1)  # Just to get this Thread going for the first time w/out waiting for suspend thread
     @start_suspend_loop = true
     
