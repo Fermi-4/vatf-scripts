@@ -15,7 +15,8 @@ def run
   translated_boot_params = setup_host_side()
   translated_boot_params.each{|k,v| puts "#{k}:#{v}"}
 
-  flash_bootloader = @test_params.params_chan.instance_variable_defined?(:@flash_bootloader) ? @test_params.params_chan.flash_bootloader[0].downcase : 'no'
+  flash_bootloader = @test_params.params_chan.instance_variable_defined?(:@flash_bootloader) ? @test_params.params_chan.flash_bootloader[0].downcase :
+                     @test_params.instance_variable_defined?(:@var_flash_bootloader) ? @test_params.var_flash_bootloader :  'no'
   flash_kernel = @test_params.params_chan.instance_variable_defined?(:@flash_kernel) ? @test_params.params_chan.flash_kernel[0].downcase : 'no'
   flash_fs = @test_params.params_chan.instance_variable_defined?(:@flash_fs) ? @test_params.params_chan.flash_fs[0].downcase : 'no'
 
