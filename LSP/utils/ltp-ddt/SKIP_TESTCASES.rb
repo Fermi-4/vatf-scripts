@@ -4,5 +4,6 @@
 # to Testlink.
 $FILTER_TAGS = [
 /ETH_[SML]_PERF_IPERF/,
+/ETH_IPERF/,
 /WDT_/,
 ]
