@@ -78,12 +78,7 @@ end
 
 # Reboots the DUT and logs back in
 def soft_reboot
-  if @equipment['dut1'].instance_variable_defined?(:@power_port)
-    dut_power_port = @equipment['dut1'].power_port
-    @equipment['dut1'].power_port = nil
-    @equipment['dut1'].power_cycle({'power_handler'=>1})
-    @equipment['dut1'].connect({'type'=>'serial'})
-    @equipment['dut1'].power_port = dut_power_port
+    @equipment['dut1'].send_cmd("reboot")
     @equipment['dut1'].wait_for(/login:/, 600)
 
     @equipment['dut1'].send_cmd(@equipment['dut1'].login,
@@ -96,7 +91,6 @@ def soft_reboot
     puts "'echo Reboot completed'"
     puts "'-----------------------------------------'"
     sleep(5)
-  end
 end
 
 # Public: See if the rmServer is running

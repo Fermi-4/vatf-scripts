@@ -43,6 +43,9 @@ def run
   commands = assign_commands()
   criteria = assign_criteria()
   timeout = assign_timeout()
+  @soft_reboot = @test_params.params_control.instance_variable_defined?(:@soft_reboot) ? \
+                        (@test_params.params_control.soft_reboot[0].to_s) : @test_params.params_chan.instance_variable_defined?(:@soft_reboot) ? \
+						(@test_params.params_chan.soft_reboot[0].to_s) : "false"
   iterations = assign_iterations()
   @platform = get_platform()
   @dsp_cores = get_dsp_cores(@platform)
@@ -460,6 +463,10 @@ end
 # Return true is ready to run commands[0], with comments
 def prepare_for_test(test_folder_location, commands)
   comment = ""
+  if @soft_reboot == "true"
+    puts "Rebooting DUT"
+    soft_reboot()
+  end
   ##Set up files (from archive) to /usr/bin/
   build_files(test_folder_location)
 
@@ -599,20 +606,4 @@ def clean
   end
   @equipment['dut1'].send_cmd("echo", @equipment['dut1'].prompt, 10)
 
-  ##soft reboot if parameter is true.
-  begin
-    soft_reboot = false
-    if defined? @test_params.params_control.soft_reboot
-      soft_reboot = @test_params.params_control.soft_reboot
-    elsif defined? @test_params.params_chan.soft_reboot
-      soft_reboot = @test_params.params_chan.soft_reboot
-    end
-    if soft_reboot
-      puts "Rebooting"
-      soft_reboot()
-    end
-  rescue Exception => e
-    puts e.to_s + "\n" + e.backtrace.to_s
-    raise e
-  end
 end
