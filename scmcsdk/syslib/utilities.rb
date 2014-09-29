@@ -1,3 +1,5 @@
+require File.dirname(__FILE__)+'/../armtest/common_utils.rb'
+
 def get_platform()
   if @equipment['dut1'].id.split("_").grep(/k2.?/).size > 0
     @equipment['dut1'].id.split("_").grep(/k2.?/)[0] 
@@ -3714,6 +3716,10 @@ class IpsecUtilitiesVatf
     raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "env", "/usr/bin/env", @vatf_helper.DONT_SET_ERROR_BIT(), 2)
     # Only start the ipsec manager if the variables do not already exist
     if !@vatf_helper.is_matched_count(raw_buffer, string, count)
+      @vatf_helper.log_info(is_alpha_side, "\r\nrmServer_up?: #{rmServer_up?}\r\n")
+      if !rmServer_up?
+        @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "cd /usr/bin; ./rmServer.out device/#{get_platform()}/global-resource-list.dtb device/#{get_platform()}/policy_dsp_arm.dtb", "", @error_bit, 2)
+      end
       get_ipsec_cmd_additions_using_bench_file()
       @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "insmod #{@vatf_helper.get_file_location(is_alpha_side, @hplib_file_name)}", "", @error_bit, 2)
       if @do_friendly
