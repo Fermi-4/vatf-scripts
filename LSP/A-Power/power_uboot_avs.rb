@@ -26,7 +26,7 @@ def run
     efuse_addr = req[domain].values[0]
     measured_voltage = multimeter_readings['domain_'+domain+'_volt_readings'][0]  # AVG of 10 samples
     measured_voltage = measured_voltage.to_f * 1000 # Convert to mv, which is unit used in efuse registers
-    expected_voltage = read_address(efuse_addr, false)
+    expected_voltage = read_address(efuse_addr, false) & 0xfff # Only use bits 0-11
     deviation = (measured_voltage - expected_voltage.to_f).abs
     if deviation > max_deviation
       result_str += "Domain #{domain} failed. Expected:#{expected_voltage}, Measured:#{measured_voltage}. " 
