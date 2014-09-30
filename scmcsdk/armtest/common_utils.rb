@@ -97,17 +97,14 @@ end
 #
 # Returns true if running, or false if  not
 def rmServer_up?(file_version = "_2sohk")
-  @equipment['dut1'].send_cmd("ps -e | grep rmServer",
-    /rmServer.out/i, 10)
-  @equipment['dut1'].timeout? ? false : true
+  process_running?(@equipment['dut1'],"rmServer")
 end
 
 # Public: See if the rmDspClient is running
 #
 # Returns true if running, or false if not
 def rmDspClient_up?
-  @equipment['dut1'].send_cmd("ps | grep rmDspClient", /rmDspClient/i, 10)
-  @equipment['dut1'].timeout? ? false : true
+  process_running?(@equipment['dut1'],"rmDspClient")
 end
 
 class String
