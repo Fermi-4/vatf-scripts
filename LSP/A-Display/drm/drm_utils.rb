@@ -9,7 +9,7 @@ MODETEST_PIX_FMTS = ['UYVY', 'VYUY', 'YUYV', 'YVYU', 'NV12', 'NV21', 'NV16', 'NV
 def modetest(command, dut, timeout=5, interactive=false)
   response = ''
   t1 = Thread.new do
-    dut.send_cmd("modetest #{command}", dut.prompt, timeout) #Set /home/root/modetest/modetest for now should change to modetest once libdrm in included in fs
+    dut.send_cmd("modetest #{command}", dut.prompt, timeout)
     response = dut.response
   end
   yield if interactive
@@ -80,7 +80,10 @@ end
 #  xyoffset => [<xoffset>,<yoffset>]       : (Optional) x,y offsets array in pixels, 
 def set_plane(params, dut=@equipment['dut1'], timeout=600)
   #-P <crtc_id>:<w>x<h>[+<x>+<y>][*<scale>][@<format>]     set a plane
-  p_string = get_plane_string(params)
+  p_string = ''
+  params.each do |plane_inf|
+    p_string += get_mode_string(plane_inf)
+  end
   modetest(p_string, dut, timeout, true) do
     yield
   end
@@ -89,7 +92,7 @@ end
 #Function to create the string for plane related tests, takes the
 #same params value as required by set_plane
 def get_plane_string(params)
-  p_string = '-P '
+  p_string = ' -P '
   p_string += params['crtc_id']
   p_string += ':'+ params['width'].to_s + 'x' + params['height'].to_s
   p_string += '+'+ params['xyoffset'].join('+') if params['xyoffset']
@@ -99,8 +102,10 @@ def get_plane_string(params)
 end
 
 #Function to set a drm mode, takes:
-#  params, a Hash whose entries are:
-#    format => <value>                     :the format of the data to display, needs to be one of the following
+#  params, an array of hashes where each hash defines a mode to set on
+#          a display by specifying the following hash entries:
+#
+#     format => <value>                     :the format of the data to display, needs to be one of the following
 #                                            /* YUV packed */
 #                                                 UYVY
 #                                                 VYUY
@@ -153,21 +158,22 @@ end
 #                                                 RX30
 #                                                 BA30
 #                                                 BX30
-#    crtc_id => <value>                    : (Optional) id of the crtc to used, for -P and optionally for -s 
-#                                            and -v
-#    connectors_ids => [id1,id2, ..., idx]  : array of connector ids,
-#    mode => <value>                       : string containing the mode, i.e. 800x480
-#  plane_params, (Optional) a Hash whose entries are:
-#    width => <value>                      : width of the plane in pixels
-#    height => <value>                     : height of the plane in pixels
-#    scale => <value>                      : (Optional) fraction to scale, i.e. 0.5,
-#    xyoffset => [<xoffset>,<yoffset>]     : (Optional) x,y offsets array in pixels,
-def set_mode(params, plane_params=nil, dut=@equipment['dut1'], timeout=600)
+#     crtc_id => <value>                    : id of the crtc to used, for -P and optionally for -s and -v.
+#                                             Optional if not specifying plane_params, otherwise required
+#     connectors_ids => [id1,id2, ..., idx] : array of connector ids,
+#     mode => <value>                       : string containing the mode, i.e. 800x480
+#     framerate => <value>                  : expected frame rate in Hz
+#    'plane' => (Optional) a Hash whose entries are:
+#       width => <value>                      : width of the plane in pixels
+#       height => <value>                     : height of the plane in pixels
+#       scale => <value>                      : (Optional) fraction to scale, i.e. 0.5,
+#       xyoffset => [<xoffset>,<yoffset>]     : (Optional) x,y offsets array in pixels, 
+def set_mode(params, dut=@equipment['dut1'], timeout=600)
   #-s <connector_id>[,<connector_id>][@<crtc_id>]:<mode>[@<format>]  set a mode
-  m_str = get_mode_string(params)
-  if plane_params
-    plane_params['crtc_id'] = params['crtc_id']
-    m_str += ' ' + get_plane_string(plane_params)
+  m_str = ''
+  params.each do |disp_inf|
+    disp_inf['plane']['crtc_id'] = disp_inf['crtc_id']  if disp_inf['plane']
+    m_str += get_mode_string(disp_inf, disp_inf['plane'])
   end
   modetest(m_str, dut, timeout, true) do
     yield
@@ -184,8 +190,10 @@ def set_property(id, name, value, dut=@equipment['dut1'])
 end
 
 #Function to run a vsynced page flipping test, takes:
-#  params, a Hash whose entries are:
-#    format => <value>                     :the format of the data to display, needs to be one of the following
+#  params, an array of hashes where each hash defines a mode to set on
+#          a display by specifying the following hash entries:
+#
+#     format => <value>                     :the format of the data to display, needs to be one of the following
 #                                            /* YUV packed */
 #                                                 UYVY
 #                                                 VYUY
@@ -238,19 +246,19 @@ end
 #                                                 RX30
 #                                                 BA30
 #                                                 BX30
-#    crtc_id => <value>                    : id of the crtc to used, for -P and optionally for -s and -v.
-#                                            Optional if not specifying plane_params, otherwise required
-#    connectors_ids => [id1,id2, ..., idx] : array of connector ids,
-#    mode => <value>                       : string containing the mode, i.e. 800x480
-#    framerate => <value>                  : expected frame rate in Hz
-#  plane_params, (Optional) a Hash whose entries are:
-#    width => <value>                      : width of the plane in pixels
-#    height => <value>                     : height of the plane in pixels
-#    scale => <value>                      : (Optional) fraction to scale, i.e. 0.5,
-#    xyoffset => [<xoffset>,<yoffset>]     : (Optional) x,y offsets array in pixels, 
+#     crtc_id => <value>                    : id of the crtc to used, for -P and optionally for -s and -v.
+#                                             Optional if not specifying plane_params, otherwise required
+#     connectors_ids => [id1,id2, ..., idx] : array of connector ids,
+#     mode => <value>                       : string containing the mode, i.e. 800x480
+#     framerate => <value>                  : expected frame rate in Hz
+#    'plane' => (Optional) a Hash whose entries are:
+#       width => <value>                      : width of the plane in pixels
+#       height => <value>                     : height of the plane in pixels
+#       scale => <value>                      : (Optional) fraction to scale, i.e. 0.5,
+#       xyoffset => [<xoffset>,<yoffset>]     : (Optional) x,y offsets array in pixels,
 #Return true if the captured frame rate matches the expected frame rate, specified by framerate 
-def run_sync_flip_test(params, plane_params=nil, dut=@equipment['dut1'], timeout=600)
-  result = run_perf_sync_flip_test(params, plane_params, dut, timeout) do
+def run_sync_flip_test(params, dut=@equipment['dut1'], timeout=600)
+  result = run_perf_sync_flip_test(params, dut, timeout) do
              yield
            end
   
@@ -262,32 +270,42 @@ end
 #Returns an array with two elements: 
 #          [true/false if the captured frame rate matches the expected frame rate or not, 
 #           an array [] containing the fps captured]
-def run_perf_sync_flip_test(params, plane_params=nil, dut=@equipment['dut1'], timeout=600)
+def run_perf_sync_flip_test(params, dut=@equipment['dut1'], timeout=600)
   #-v test vsynced page flipping
-  s_f_test_str = '-v ' + get_mode_string(params)
-  if plane_params
-    plane_params['crtc_id'] = params['crtc_id']
-    s_f_test_str += ' ' + get_plane_string(plane_params)
+  s_f_test_str = '-v '
+  f_rates = []
+  params.each do |disp_inf|
+    disp_inf['plane']['crtc_id'] = disp_inf['crtc_id'] if disp_inf['plane']
+    s_f_test_str += get_mode_string(disp_inf, disp_inf['plane'])
+    f_rates << disp_inf['framerate'].to_f
   end
   output = modetest(s_f_test_str, dut, timeout, true) do
     yield
   end
   fps_arr = output.scan(/^freq:\s*([\d.]+)Hz/).drop(2).flatten
   fps_arr.each do |rate|
-    return [false, fps_arr] if (rate.to_f - params['framerate'].to_f).abs > 2
+    err = f_rates.inject(f_rates[0]) do |error, fr|
+      c_error = (rate.to_f - fr).abs
+      error = c_error < error ? c_error : error
+    end
+    return [false, fps_arr] if err > 2
   end
   [!fps_arr.empty?, fps_arr]
 end
 
-#Function to create the string for the mode related tests, takes the
-#same params value as required by set_mode
-def get_mode_string(params)
-  result = '-s '
+#Function to create the string for the mode related tests, takes:
+#  params, same params value as required by set_mode
+#  plane_params, same params value as required by set_plane
+def get_mode_string(params, plane_params=nil)
+  result = ' -s '
   result += params['connectors_ids'].join(',')
   result += '@' + params['crtc_id'] if params.has_key?('crtc_id')
   result += ':' + params['mode']
   result += '-' + params['framerate'] if params.has_key?('framerate')
   result += '@' + params['format'] if params.has_key?('format')
+  if plane_params
+    result += get_plane_string(plane_params)
+  end
   result
 end
 
@@ -376,10 +394,10 @@ def get_supported_fmts(connectors)
     m_params['connectors_ids'] = [c_info['id']]
     MODETEST_PIX_FMTS.each do |current_fmt|
       m_params['format'] = current_fmt
-      mode_str = set_mode(m_params){sleep 2}
+      mode_str = set_mode([m_params]){sleep 2}
       mode_str = mode_str.downcase()
       pix_fmts[c_info['id']] << current_fmt if ['unsupported pixel format', 'invalid pixel format',
-                                                'invalid argument'].inject(true) do |t, str| 
+                                                'invalid argument', 'segmentation fault'].inject(true) do |t, str| 
                                                     t &&= !mode_str.include?(str)
                                                end
     end
@@ -402,7 +420,7 @@ def get_supported_plane_pix_fmts(crtcs_info)
     p_params['crtc_id'] = c_info['id'] 
     MODETEST_PIX_FMTS.each do |current_fmt|
       p_params['format'] = current_fmt
-      plane_str = set_plane(p_params){sleep 2}
+      plane_str = set_plane([{'plane'=>p_params}]){sleep 2}
       plane_str = plane_str.downcase()
       pix_fmts[c_info['id']] << current_fmt if ['unsupported pixel format', 'invalid pixel format',
                                                 'invalid argument', 'no unused plane available for'].inject(true) do |t, str| 
@@ -413,5 +431,63 @@ def get_supported_plane_pix_fmts(crtcs_info)
   pix_fmts
 end
 
-
-
+#Function that returns the display modes supported by a device, takes a
+#  drm_info, hash whose entries comply with the hash returned by get_entries
+#  formats, hash with entries <connector id> => <array of fmts supported by connector>
+#Returns two arrays whose elements are arrays containing hashes that define a mode
+#expected by the function set_mode and run_per_sync_flip_test. The first array
+#contains modes for individual displays, the second array contains modes for
+#multiple displays. If the device does not support multi-display then the
+#arrays returned by this functions are the same
+def get_test_modes(drm_info, formats)
+  single_disp_modes = []
+  multi_disp_modes = nil         
+  drm_info['Connectors:'].each do |connector|
+    c_modes = []
+    drm_info['Encoders:'].each do |encoder|
+      next if encoder['id'] != connector['encoder']
+      drm_info['CRTCs:'].each do |crtc|
+        next if crtc['id'] != encoder['crtc']
+        #If planes supported and only 1 mode, repeat mode to test with/wout planes
+        if !drm_info['Planes:'].empty? && connector['modes:'].length == 1
+          connector['modes:'] << connector['modes:'][0]
+        end
+        connector['modes:'].each_index do |i| 
+          mode = connector['modes:'][i]
+          formats[connector['id']].each do |format|
+            mode_params = {'connectors_ids' => [connector['id']], 
+                           'crtc_id' => crtc['id'], 
+                           'mode' => mode['name'],
+                           'framerate' => mode['refresh (Hz)'],
+                           'type' => connector['type'],
+                           'encoder' => encoder['id']}
+            mode_params['format'] = format if format != 'default'
+            plane_params = nil
+            if !drm_info['Planes:'].empty? && i % 2 == 1
+              plane = drm_info['Planes:'][0]
+              width, height = mode['name'].match(/(\d+)x(\d+)/).captures
+              plane_params = {'width' => width, 
+                              'height' => height,
+                              'xyoffset' => [i,i],
+                              'scale' => [0.125, 1.to_f/(1+i).to_f].max,
+                              'format' => plane['formats:'][rand(plane['formats:'].length)]}
+            end
+            mode_params['plane'] = plane_params
+            c_modes << [mode_params]
+            single_disp_modes << [mode_params]
+          end
+        end
+      end
+    end
+    if multi_disp_modes
+      m_modes = multi_disp_modes
+      multi_disp_modes = []
+      m_modes.each do |m|
+        c_modes.each {|cm| multi_disp_modes << m + cm}
+      end
+    else
+      multi_disp_modes = c_modes.dup
+    end
+  end
+  [single_disp_modes, multi_disp_modes]
+end

@@ -15,12 +15,12 @@ require File.dirname(__FILE__)+'/drm'
 #the test passed (true) or failed (false); and the res_string is an informational
 #string regarding the result of the test. It also populates perf_data with any
 #performance data collected  
-def run_mode_test(mode_params, plane_params=nil, perf_data=[])
+def run_mode_test(mode_params, perf_data=[])
   test_result = true
   result_string = ''
-  metric_name = "#{mode_params['type']}-#{mode_params['mode']}@#{mode_params['framerate']}-" \
-                "#{mode_params['format']}"
-  fps_res, fps_data = run_perf_sync_flip_test(mode_params, plane_params) do
+  metric_name = "#{mode_params[0]['type']}-#{mode_params[0]['mode']}@#{mode_params[0]['framerate']}-" \
+                "#{mode_params[0]['format']}"
+  fps_res, fps_data = run_perf_sync_flip_test(mode_params) do
     sleep 60
   end
   perf_data << {'name' => metric_name,
