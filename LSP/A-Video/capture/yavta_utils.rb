@@ -97,7 +97,6 @@ def get_test_opts(capture_opts, resolution, pix_fmt, capture_path)
         test_params[opt] = capture_path
       when '-c'
         test_params[opt] = 70
-        test_params[opt] = 1 if ["SBGGR8", "SGBRG8", "SGRBG8", "SRGGB8"].include?(pix_fmt)
       when ''
         test_params[opt] = vals
       else
