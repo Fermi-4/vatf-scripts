@@ -711,7 +711,7 @@ module LspTestScript
   
   def process_running?(this_equipment=@equipment['dut1'],process)
     this_equipment.send_cmd("ps aux | grep '#{process}' | grep -v grep", this_equipment.prompt, 10)
-    this_equipment.response.match(/\d+.*?#{this_equipment.prompt}/m) ? true : false
+    this_equipment.response.match(/\d+\s+\d+\.\d+\s+\d+\.\d+/) ? true : false
   end
    
    # Get the name of local interface that is talking to remote IP
