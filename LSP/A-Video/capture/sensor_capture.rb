@@ -90,13 +90,24 @@ def play_video(params)
                 "SGBRG8" => "SGBRG8",
                 "SGRBG8" => "SGRBG8",
                 "SRGGB8" => "SRGGB8",
+                ##Setting these formats to YUYV since the function will call the tx functions on the file
+                "VYUY" => 'yuyv422',
+                "YVYU" => 'yuyv422',
                 }
   if ["SBGGR8", "SGBRG8", "SGRBG8", "SRGGB8"].include?(params['pix_fmt'])
     converted_file = params['file_path'].gsub(/[^\.]+$/, 'pnm')
     params['sys'].send_cmd("raw2rgbpnm -f #{pixel_fmts[params['pix_fmt']]} -s #{params['width']}x#{params['height']} #{params['file_path']} #{converted_file}", params['sys'].prompt, 600)
     params['sys'].send_cmd("avplay #{converted_file}", params['sys'].prompt, 600)
   else
-    params['sys'].send_cmd("avplay -pixel_format #{pixel_fmts[params['pix_fmt']]} -video_size #{params['width']}x#{params['height']} -f rawvideo #{params['file_path']}", params['sys'].prompt, 600)
+    conv_file = params['file_path']
+    if params['pix_fmt'] == "VYUY"
+      conv_file += '.conv'
+      vyuy_to_yuyv(params['file_path'], conv_file)
+    elsif params['pix_fmt'] == "YVYU"
+      conv_file += '.conv'
+      yvyu_to_yuyv(params['file_path'], conv_file)
+    end
+    params['sys'].send_cmd("avplay -pixel_format #{pixel_fmts[params['pix_fmt']]} -video_size #{params['width']}x#{params['height']} -f rawvideo #{conv_file}", params['sys'].prompt, 600)
   end
 end
 
@@ -116,6 +127,30 @@ def set_capture_app()
     require File.dirname(__FILE__)+'/sens_cap_utils'
   else
     require File.dirname(__FILE__)+'/yavta_utils'
+  end
+end
+
+def vyuy_to_yuyv(in_file, out_file)
+  out_f = File.open(out_file, 'wb') do |ofd|
+    in_f = File.open(in_file, 'rb') do |ifd|
+      while(!ifd.eof?)
+        pixels = ifd.read(4)
+        ofd.write(pixels[1..3])
+        ofd.write(pixels[0])
+      end
+    end
+  end
+end
+
+def yvyu_to_yuyv(in_file, out_file)
+  out_f = File.open(out_file, 'wb') do |ofd|
+    in_f = File.open(in_file, 'rb') do |ifd|
+      while(!ifd.eof?)
+        pixels = ifd.read(4)
+        ofd.write(pixels[0])
+        ofd.write(pixels[1..3].reverse)
+      end
+    end
   end
 end
 
