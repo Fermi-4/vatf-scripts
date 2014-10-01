@@ -2404,7 +2404,7 @@ class PerfUtilities
         @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ifconfig eth#{curr_port} down ; echo 'command_done'", "command_done", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
       end
     end
-    @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ping #{@alpha_ip} -c 3", "seq=2", @error_bit, 0, wait_secs)
+    @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ping #{@alpha_ip} -c 3", /seq=2.*?#{@equipment['dut1'].prompt}/m, @error_bit, 0, wait_secs)
     @result |= @vatf_helper.result
     @result_text += "Ping check for eth#{this_eth_port} did not pass.\r\n" if @result != 0
   end
