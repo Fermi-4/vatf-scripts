@@ -94,9 +94,11 @@ def play_video(params)
                 "SGBRG8" => "SGBRG8",
                 "SGRBG8" => "SGRBG8",
                 "SRGGB8" => "SRGGB8",
-                ##Setting these formats to YUYV since the function will call the tx functions on the file
+                #Setting these formats to an avplay supported pix_fmt, requires using a tx function
                 "VYUY" => 'yuyv422',
                 "YVYU" => 'yuyv422',
+                "NV24" => 'yuv444p',
+                "NV16" => 'yuv422p',
                 }
   if ["SBGGR8", "SGBRG8", "SGRBG8", "SRGGB8"].include?(params['pix_fmt'])
     converted_file = params['file_path'].gsub(/[^\.]+$/, 'pnm')
@@ -116,12 +118,19 @@ def play_video(params)
     end
   else
     conv_file = params['file_path']
-    if params['pix_fmt'] == "VYUY"
-      conv_file += '.conv'
-      vyuy_to_yuyv(params['file_path'], conv_file)
-    elsif params['pix_fmt'] == "YVYU"
-      conv_file += '.conv'
-      yvyu_to_yuyv(params['file_path'], conv_file)
+    case params['pix_fmt']
+      when "VYUY"
+        conv_file += '.conv'
+        vyuy_to_yuyv(params['file_path'], conv_file)
+      when "YVYU"
+        conv_file += '.conv'
+        yvyu_to_yuyv(params['file_path'], conv_file)
+      when "NV24"
+        conv_file += '.conv'
+        nv24_to_yuv444(params['file_path'], conv_file, params['width'], params['height'])
+      when "NV16"
+        conv_file += '.conv'
+        nv16_to_yuv422(params['file_path'], conv_file, params['width'], params['height'])
     end
     params['sys'].send_cmd("avplay -pixel_format #{pixel_fmts[params['pix_fmt']]} -video_size #{params['width']}x#{params['height']} -f rawvideo #{conv_file}", params['sys'].prompt, 600)
   end
@@ -166,6 +175,34 @@ def yvyu_to_yuyv(in_file, out_file)
         pixels = ifd.read(4)
         ofd.write(pixels[0])
         ofd.write(pixels[1..3].reverse)
+      end
+    end
+  end
+end
+
+def nv24_to_yuv444(in_file, out_file, width, height)
+  nvxx_to_yuvxx(in_file, out_file, width, height, 2)
+end
+
+def nv16_to_yuv422(in_file, out_file, width, height)
+  nvxx_to_yuvxx(in_file, out_file, width, height, 1)
+end
+
+def nvxx_to_yuvxx(in_file, out_file, width, height, multiplier, chroma_uv=true)
+  frame_size = width.to_i * height.to_i
+  out_f = File.open(out_file, 'wb') do |ofd|
+    in_f = File.open(in_file, 'rb') do |ifd|
+      while(!ifd.eof?)
+        luma = ifd.read(frame_size)
+        chroma = ifd.read(frame_size*multiplier).unpack('C*').partition.with_index { |_, index| index % 2 ==0 }
+        ofd.write(luma)
+        if chroma_uv #UV
+          ofd.write(chroma[0].pack('C*'))
+          ofd.write(chroma[1].pack('C*'))
+        else #VU
+          ofd.write(chroma[1].pack('C*'))
+          ofd.write(chroma[0].pack('C*'))
+        end
       end
     end
   end
