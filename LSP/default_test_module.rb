@@ -719,7 +719,12 @@ module LspTestScript
       return !equip.timeout?
     end
   end
- 
+
+  # Returns true if module is running.
+  def module_running?(module_name, equip=@equipment['dut1'])
+    check_cmd?("lsmod | grep '#{module_name}'", equip)
+  end
+
   def process_running?(this_equipment=@equipment['dut1'],process)
     this_equipment.send_cmd("ps aux | grep '#{process}' | grep -v grep", this_equipment.prompt, 10)
     this_equipment.response.match(/\d+\s+\d+\.\d+\s+\d+\.\d+/) ? true : false
