@@ -285,7 +285,7 @@ module IpsecConnectionScript
     connection_type = (is_pass_through ? ipsecVatf.PASS_THROUGH : ipsecVatf.IPSEC_CONN)
     
     # Set result error bit to set if failures occur for IPSEC
-    ipsecVatf.set_error_bit_to_set(0)
+    ipsecVatf.set_error_bit_to_set(1)
     
     # Set IPSEC and IP operational mode
     ipsecVatf.set_ipsec_ip_operation(ipsec_outer, ipsec_inner, is_ipv4)

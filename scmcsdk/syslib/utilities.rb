@@ -2744,7 +2744,7 @@ class IpsecUtilitiesVatf
     @equipment = ""
     @is_gen_on_alpha_only = true
     @result = 0
-    @error_bit = 0
+    @error_bit = 1
     @result_text = ""
     @esp_encryption = "aes128ctr"
     @esp_integrity = "sha1"
