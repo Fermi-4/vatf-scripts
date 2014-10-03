@@ -709,6 +709,17 @@ module LspTestScript
     @equipment[child_name].connect({'type'=>conn_type})
   end
   
+  # Returns true if command return value is 0
+  def check_cmd?(cmd, equip=@equipment['dut1'], timeout=10)
+    equip.send_cmd("#{cmd} > /dev/null", equip.prompt, timeout)
+    if equip.is_a?(LinuxLocalHostDriver)
+      return  $? == 0
+    else 
+      equip.send_cmd("echo $?",/^0[\n\r]*/m, 2)
+      return !equip.timeout?
+    end
+  end
+ 
   def process_running?(this_equipment=@equipment['dut1'],process)
     this_equipment.send_cmd("ps aux | grep '#{process}' | grep -v grep", this_equipment.prompt, 10)
     this_equipment.response.match(/\d+\s+\d+\.\d+\s+\d+\.\d+/) ? true : false
