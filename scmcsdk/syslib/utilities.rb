@@ -3083,9 +3083,25 @@ class IpsecUtilitiesVatf
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec stop", "", @vatf_helper.DONT_SET_ERROR_BIT(), 5)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec statusall", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0)
   end
+  def start_ipsecmgr_module_if_needed(is_alpha_side)
+    side_ref = is_alpha_side ? @vatf_helper.vatf_server_ref : @vatf_helper.vatf_dut_ref
+    if side_ref.downcase.include?("dut")
+      module_name = @ipsec_mgr.split(".")[0]
+      if !module_running?(module_name, @equipment[side_ref])
+        @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "pushd /; insmod `find -name #{@ipsec_mgr}`; popd", "", @error_bit, 0) if !is_alpha_side
+        if !module_running?(module_name, @equipment[side_ref])
+          @result_text += "Error: Unable to start module: #{@ipsec_mgr}"
+          @result += @error_bit
+        end
+      end
+    end
+  end
   def ipsec_start(is_alpha_side)
     function_name = "ipsec_start"
     # Return immediately if errors have already occurred.
+    return if (result() != 0)
+    # Load ipsecmgr module before starting IPSEC
+    start_ipsecmgr_module_if_needed(is_alpha_side)
     return if (result() != 0)
     # Display ipsec.conf and ipsec.secrets file contests and the ipsec.conf template file name
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "cat /etc/ipsec.conf", "", @vatf_helper.DONT_SET_ERROR_BIT(), 2)
