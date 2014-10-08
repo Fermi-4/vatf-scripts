@@ -299,20 +299,20 @@ module IpsecConnectionScript
     # Set IPSEC stop offload pre and post commands.
     ipsecVatf.set_stop_offload_commands(stop_offload_pre_command, stop_offload_post_command)
 
-    if is_secure_data
+    if (result |= ipsecVatf.result).to_i == 0 and is_secure_data 
       # Set beta side to use secure data for IPSEC and set template to use for ipsec.conf file generation.
       ipsecVatf.set_secure_data(ipsecVatf.BETA_SIDE())
       ipsec_template = "ipsec_conf_secure_data_template_v2.txt"
     end
     
-    if is_nat_traversal
+    if (result |= ipsecVatf.result).to_i == 0 and is_nat_traversal 
       # Set alpha and beta side to use nat_traversal and set template to use for ipsec.conf file generation.
       ipsecVatf.set_nat_traversal(ipsecVatf.ALPHA_SIDE(), is_nat_traversal, alpha_side_nat_public_ip, alpha_side_nat_gateway_ip, beta_side_nat_public_ip)
       ipsecVatf.set_nat_traversal(ipsecVatf.BETA_SIDE(), is_nat_traversal, beta_side_nat_public_ip, beta_side_nat_gateway_ip, alpha_side_nat_public_ip)
       ipsec_template = "ipsec_conf_nat_traversal_template_v2.txt"
     end
     
-    if is_nat_traversal and is_secure_data
+    if (result |= ipsecVatf.result).to_i == 0 and is_nat_traversal and is_secure_data
       # If both nat and secure data then make sure to use the nat traversal template which has the modifications needed for secure data as well.
       ipsec_template = "ipsec_conf_nat_traversal_template_v2.txt"
     end
@@ -326,12 +326,15 @@ module IpsecConnectionScript
     ipsecVatf.set_ipsec_template_file(ipsec_template)
 
     # Generate keys and certificates only.
-    ipsecVatf.ipsec_gen_only_start(ipsecVatf.is_ipv4, connection_type)
-    result |= ipsecVatf.result
+    if (result |= ipsecVatf.result).to_i == 0
+      ipsecVatf.ipsec_gen_only_start(ipsecVatf.is_ipv4, connection_type)
+    end
 
     # Restart IPSEC with this template file.
-    result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.is_ipv4, ipsecVatf.FQDN_TUNNEL, "#{ipsec_template}", is_clear_previous_result, is_pass_through)
-
+    if (result |= ipsecVatf.result).to_i == 0
+      result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.is_ipv4, ipsecVatf.FQDN_TUNNEL, "#{ipsec_template}", is_clear_previous_result, is_pass_through)
+    end
+    
     # Offload security policies if crypto_mode is inflow
     if (crypto_mode == "inflow") and (result == 0)
       this_result = 0
