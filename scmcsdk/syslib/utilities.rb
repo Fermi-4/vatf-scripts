@@ -333,7 +333,7 @@ class VatfHelperUtilities
     equipment_ref = (is_alpha_side ? @vatf_server_ref : @vatf_dut_ref)
     @equipment[equipment_ref].log_info(info_message)
   end
-  def smart_send_cmd_wait(is_alpha_side, is_sudo, command_to_send, wait_message, error_bit_set, sleep_before_return, wait_secs)
+  def smart_send_cmd_wait(is_alpha_side, is_sudo, command_to_send, wait_message, error_bit_set, sleep_before_return, wait_secs, chk_cmd_echo=true)
     equipment_ref = (is_alpha_side ? @vatf_server_ref : @vatf_dut_ref)
     is_sudo_local = (is_alpha_side ? is_sudo : false)
     command_wait_message = (wait_message=="" ? @equipment[equipment_ref].prompt : "#{wait_message}")
@@ -348,7 +348,7 @@ class VatfHelperUtilities
     else
       #@equipment[equipment_ref].send_cmd("#{command_to_send} 2>&1", /#{command_wait_message}/, wait_secs)
       #puts("\r\n\r\n send_cmd: #{@equipment}, #{equipment_ref}, #{command_to_send} \r\n\r\n")
-      @equipment[equipment_ref].send_cmd("#{command_to_send}", /#{command_wait_message}/, wait_secs)
+      @equipment[equipment_ref].send_cmd("#{command_to_send}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
       server_prompt_wait_workaround(equipment_ref, wait_message)
     end
     if ( (@equipment[equipment_ref].timeout?) and (error_bit_set != DONT_SET_ERROR_BIT()) )
@@ -358,8 +358,8 @@ class VatfHelperUtilities
     sleep(sleep_before_return) if (sleep_before_return > 0)
     return @equipment[equipment_ref].response
   end
-  def smart_send_cmd(is_alpha_side, is_sudo, command_to_send, wait_message, error_bit_set, sleep_before_return)
-    return smart_send_cmd_wait(is_alpha_side, is_sudo, command_to_send, wait_message, error_bit_set, sleep_before_return, 20)
+  def smart_send_cmd(is_alpha_side, is_sudo, command_to_send, wait_message, error_bit_set, sleep_before_return, chk_cmd_echo=true)
+    return smart_send_cmd_wait(is_alpha_side, is_sudo, command_to_send, wait_message, error_bit_set, sleep_before_return, 20, chk_cmd_echo)
   end
   def get_policy_id(is_alpha_side, direction_type)
     get_index_command = "echo `ip -s xfrm policy | grep \"dir #{direction_type}\" | grep -v grep | awk '{print $6}'`"
@@ -1431,12 +1431,16 @@ class SmartCardUtilities
     @vatf_helper = VatfHelperUtilities.new
     @lnx_helper = LinuxHelperUtilities.new
     
-    @pin_number = "1234"
+    @result = 0
+    @result_text = ""
     
+    @pin_number = "1234"
     @alpha_side_working_directory = ""
     @beta_side_working_directory = "/home/root/download"
     @alpha_side_tftp_server_directory = ""
     @beta_side_tftp_server_directory = ""
+    @libsecstore = "/usr/lib/softhsm/libsecstore.so.1"
+    @secure_store_label = "token-0"
     
     @vatf_dut_ref = 'dut1'
     @vatf_server_ref = 'server1'
@@ -1445,6 +1449,17 @@ class SmartCardUtilities
     @openssl_prompt = "OpenSSL>"
     @sudo_cmd = true
     @normal_cmd = false
+    @command_done_addition = ";cmddoneprefix=command;echo $cmddoneprefix done."
+    @command_done_trigger = "command done."
+    @pin_prompt1 = /SO PIN:/
+    @pin_prompt2 = /user PIN:/
+    @token_initialized = "initialized."
+  end
+  def clear_result()
+    @lnx_helper.clear_result()
+    @vatf_helper.clear_result()
+    @result = 0
+    @result_text = ""
   end
   def set_pin_number(pin_number)
     @pin_number = pin_number if (pin_number != "")
@@ -1455,7 +1470,6 @@ class SmartCardUtilities
     @equipment = equipment if (equipment != "")
     @vatf_helper.set_common(@equipment, @vatf_server_ref, @vatf_dut_ref)
     @lnx_helper.set_vatf_equipment(@equipment)
-    #puts("\r\n Smart Card common: @equipment: \"#{@equipment}\"\r\n")
   end
   def set_alpha_side_directories(working_directory, tftp_directory)
     @alpha_side_working_directory = working_directory if (working_directory != "")
@@ -1465,12 +1479,55 @@ class SmartCardUtilities
     @beta_side_working_directory = working_directory if (working_directory != "")
     @beta_side_tftp_server_directory = tftp_directory if (tftp_directory != "")
   end
+  def show_secure_store(is_alpha_side)
+    command = "softhsm-util --show-slots --module #{@libsecstore} #{@command_done_addition}"
+    return @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", @command_done_trigger, @error_bit, 0, 45)
+  end
+  def is_error_result?(is_alpha_side, error_area="setting up secure store")
+    is_error = (@vatf_helper.result != 0 ? true : false)
+    if is_error
+      @result_text += "\r\n An error occurred while #{error_area}...\r\n" if (@result == 0)
+      @result |= @error_bit
+      @vatf_helper.log_info(is_alpha_side, @result_text)
+    end
+    return is_error
+  end
+  def fix_strongswan_conf_file_if_needed(is_alpha_side)
+    equip = @equipment[(is_alpha_side ? @vatf_server_ref : @vatf_dut_ref)]
+    if !check_cmd?("cat /etc/strongswan.conf | grep libsecstore.so.1", equip)
+      command = "sed -i 's/libsecstore.so/libsecstore.so.1/g' /etc/strongswan.conf"
+      @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", "#{@pin_prompt1}", @error_bit, 0, 5)
+    end
+  end
+  def initialize_secure_store(is_alpha_side)
+    equip = @equipment[(is_alpha_side ? @vatf_server_ref : @vatf_dut_ref)]
+    return @vatf_helper.result if is_error_result?(is_alpha_side)
+    no_cmd_echo_chk = false
+    command = "softhsm-util  --init-token --slot 0 --label #{@secure_store_label} --module #{@libsecstore}"
+    @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, command, @pin_prompt1, @error_bit, 0, 5)
+    @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, @pin_number, @pin_prompt1, @vatf_helper.DONT_SET_ERROR_BIT(), 0, 2, no_cmd_echo_chk)
+    @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, @pin_number, @pin_prompt2, @vatf_helper.DONT_SET_ERROR_BIT(), 0, 2, no_cmd_echo_chk)
+    @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, @pin_number, @pin_prompt2, @vatf_helper.DONT_SET_ERROR_BIT(), 0, 2, no_cmd_echo_chk)
+    @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, @pin_number, @token_initialized, @error_bit, 0, 15, no_cmd_echo_chk)
+    return @vatf_helper.result if is_error_result?(is_alpha_side, "initializing secure store")
+    # Soft reboot
+    reboot(equip)
+    show_secure_store(is_alpha_side)
+    fix_strongswan_conf_file_if_needed(is_alpha_side)
+  end
+  def initialize_secure_store_if_needed(is_alpha_side)
+    command_response = show_secure_store(is_alpha_side)
+    secure_store_match = /Label:\s*#{@secure_store_label}/.match(command_response)
+    if secure_store_match == nil
+      initialize_secure_store(is_alpha_side)
+    end
+  end
   def open_openssl_shell(is_alpha_side)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "openssl", @openssl_prompt, @error_bit, 0)
   end
   def load_pkcs11_engine(is_alpha_side)
-    #send_smartcard_command(is_alpha_side, "engine -vvvv dynamic -pre SO_PATH:/usr/lib/engines/engine_pkcs11.so -pre ID:pkcs11 -pre LIST_ADD:1 -pre LOAD -pre MODULE_PATH:/usr/lib/softhsm/libsecstore.so -pre \"VERBOSE\" -pre \"PIN:#{@pin_number}\"")
-    @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "engine -vvvv dynamic -pre SO_PATH:/usr/lib/engines/engine_pkcs11.so -pre ID:pkcs11 -pre LIST_ADD:1 -pre LOAD -pre MODULE_PATH:/usr/lib/softhsm/libsecstore.so -pre \"VERBOSE\" -pre \"PIN:#{@pin_number}\"", @openssl_prompt, @error_bit, 0)
+    return @vatf_helper.result if is_error_result?(is_alpha_side)
+    @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "engine -vvvv dynamic -pre SO_PATH:/usr/lib/engines/engine_pkcs11.so -pre ID:pkcs11 -pre LIST_ADD:1 -pre LOAD -pre MODULE_PATH:#{@libsecstore} -pre \"VERBOSE\" -pre \"PIN:#{@pin_number}\"", @openssl_prompt, @error_bit, 0)
   end
   def open_smartcard_session(is_alpha_side)
     open_openssl_shell(is_alpha_side)
@@ -1480,6 +1537,7 @@ class SmartCardUtilities
     @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "quit", "", @error_bit, 0)
   end
   def send_smartcard_command(is_alpha_side, command)
+    return @vatf_helper.result if is_error_result?(is_alpha_side)
     working_directory = (is_alpha_side ? @alpha_side_working_directory : @beta_side_working_directory)
     # Change to working directory
     @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "cd #{working_directory}", "", @error_bit, 0)
@@ -1518,9 +1576,11 @@ class SmartCardUtilities
     remove_key_set(is_alpha_side, slot_num, id_num, label_name)
   end
   def start_smartcard(is_alpha_side)
+    return if is_error_result?(is_alpha_side)
     @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "/etc/init.d/softhsm-daemon.sh start", "", @error_bit, 0)
   end
   def stop_smartcard(is_alpha_side)
+    return if is_error_result?(is_alpha_side)
     @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "/etc/init.d/softhsm-daemon.sh stop", "", @error_bit, 0)
   end
   def get_pubic_key_via_tftp(is_alpha_side, host_ip, slot_num, id_num, label_name, key_file_name)
@@ -1531,20 +1591,19 @@ class SmartCardUtilities
   end
   def put_cert_file_via_tftp(is_alpha_side, host_ip, slot_num, id_num, label_name, cert_file_name)
     # The directories used here are from the point of view of the EVM tftping from the Linux PC or the EVM tftping to the Linux PC
-    #from_path = (!is_alpha_side ? @beta_side_working_directory : @alpha_side_tftp_directory)
-    #to_path = (!is_alpha_side ? @beta_side_tftp_server_directory : @_side_working_directory)
     from_path = (is_alpha_side ? @alpha_side_tftp_server_directory : @beta_side_tftp_server_directory)
     to_path = (is_alpha_side ? @alpha_side_working_directory : @beta_side_working_directory)
     @lnx_helper.tftp_file(cert_file_name, from_path, to_path, host_ip, @vatf_helper.BETA_SIDE())
-    #if is_alpha_side
-    #  @lnx_helper.tftp_file(cert_file_name, from_path, to_path, host_ip, @vatf_helper.BETA_SIDE())
-    #else
-    #  @lnx_helper.tftp_file(cert_file_name, from_path, to_path, host_ip, @vatf_helper.BETA_SIDE())
-    #end
     store_certificate(is_alpha_side, slot_num, id_num, label_name, cert_file_name)
   end
   def secrets_store(key_id)
     return ": PIN %smartcard0@secstore:#{key_id} #{@pin_number}"
+  end
+  def result
+    @result
+  end
+  def result_text
+    @result_text
   end
 end
 
@@ -2796,6 +2855,7 @@ class IpsecUtilitiesVatf
   def clear_results()
     @lnx_helper.clear_result()
     @vatf_helper.clear_result()
+    @smart_card.clear_result()
     @result = 0
     @result_text = ""
   end
@@ -3040,6 +3100,8 @@ class IpsecUtilitiesVatf
         @smart_card.remove_certificate_based_on_file(is_alpha_side, @slot_num, @id_num, @alpha_side_ip_cert_file)
         @smart_card.remove_certificate_based_on_file(is_alpha_side, @slot_num, @id_num, @alpha_side_ca_cert_file)
         @smart_card.list_objects_in_key_store(is_alpha_side, @slot_num)
+        @result |= @smart_card.result
+        @result_text += @smart_card.result_text
       end
       
       @vatf_helper.smart_send_cmd(is_alpha_side_local, @sudo_cmd, "rm #{get_file_tftp_server_file_name_path(is_alpha_side, @alpha_side_key_file)}", "", @error_bit, 0)
@@ -3067,6 +3129,8 @@ class IpsecUtilitiesVatf
         @smart_card.remove_certificate_based_on_file(is_alpha_side, @slot_num, @id_num, @beta_side_ip_cert_file)
         @smart_card.remove_certificate_based_on_file(is_alpha_side, @slot_num, @id_num, @beta_side_ca_cert_file)
         @smart_card.list_objects_in_key_store(is_alpha_side, @slot_num)
+        @result |= @smart_card.result
+        @result_text += @smart_card.result_text
       end
       
       @vatf_helper.smart_send_cmd(is_alpha_side_local, @sudo_cmd, "rm #{get_file_tftp_server_file_name_path(is_alpha_side, @beta_side_key_file)}", "", @error_bit, 0)
@@ -3159,6 +3223,8 @@ class IpsecUtilitiesVatf
       key_file_name = "#{label_name}.pem"
       @smart_card.generate_rsa_key_pair(is_alpha_side, slot_num, id_num, label_name)
       @smart_card.get_pubic_key_via_tftp(is_alpha_side, host_ip, slot_num, id_num, label_name, key_file_name)
+      @result |= @smart_card.result
+      @result_text += @smart_card.result_text
       #exit
     end
   end
@@ -3169,6 +3235,8 @@ class IpsecUtilitiesVatf
     label_name = File.basename(cert_file_name_and_path).split(".")[0]
     cert_file_name = File.basename(cert_file_name_and_path)
     @smart_card.put_cert_file_via_tftp(is_alpha_side, host_ip, slot_num, id_num, label_name, cert_file_name)
+    @result |= @smart_card.result
+    @result_text += @smart_card.result_text
   end
   def create_side_specific_ipsec_certificates(is_alpha_side, ca_key_file, ca_cert_file)
     function_name = "create_side_specific_ipsec_certificates"
@@ -3261,6 +3329,8 @@ class IpsecUtilitiesVatf
     
     if is_secure_data
       @smart_card.list_objects_in_key_store(BETA_SIDE(), @slot_num)
+      @result |= @smart_card.result
+      @result_text += @smart_card.result_text
       @vatf_helper.smart_send_cmd(BETA_SIDE(), @normal_cmd, "ls -l /etc/ipsec.d/cacerts/", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0)
       @vatf_helper.smart_send_cmd(BETA_SIDE(), @normal_cmd, "ls -l /etc/ipsec.d/certs/", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0)
       @vatf_helper.smart_send_cmd(BETA_SIDE(), @normal_cmd, "ls -l /etc/ipsec.d/private/", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0)
@@ -3628,19 +3698,26 @@ class IpsecUtilitiesVatf
     set_common(ipsec_conf_input_file, "", "", "" ,"")
   end
   def set_secure_data(is_alpha_side)
-      # Get server tftp directory
-      server_tftp_directory = File.dirname(get_file_tftp_server_file_name_path(is_alpha_side, @alpha_side_cert_file)).gsub("/tftpboot/", "")
+    # Get server tftp directory
+    server_tftp_directory = File.dirname(get_file_tftp_server_file_name_path(is_alpha_side, @alpha_side_cert_file))
+    if server_tftp_directory.downcase.include?("/tftpboot/")
+      server_tftp_directory = server_tftp_directory.split("/tftpboot/")[1]
+    end
     if is_alpha_side
       # Set the alpha side to use secure data (TI SIMULATED SMARTCARD). Leave everything else at default.
       set_alpha_cert("", "", "", "", "", "", "", "", "", "", "", "", SECURE_DATA())
       set_alpha_temp_locations("", "", "/etc/alphaKey.pem")
       @smart_card.set_alpha_side_directories(server_tftp_directory, server_tftp_directory)
+      @smart_card.initialize_secure_store_if_needed(ALPHA_SIDE())
     else
       # Set the beta side to use secure data (TI SIMULATED SMARTCARD). Leave everything else at default.
       set_beta_cert("", "", "", "", "", "", "", "", "", "", "", "", SECURE_DATA())
       set_beta_temp_locations("", "", "/etc/betaKey.pem")
       @smart_card.set_beta_side_directories("", server_tftp_directory)
+      @smart_card.initialize_secure_store_if_needed(BETA_SIDE())
     end
+    @result |= @smart_card.result
+    @result_text += @smart_card.result_text
   end
   def set_new_default_route(is_alpha_side, current_gateway, new_gateway)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "route add default gw #{new_gateway}", "", @error_bit, 0)
