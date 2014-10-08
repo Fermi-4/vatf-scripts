@@ -76,21 +76,25 @@ def mpm_stop_all(file,num_of_cores = @dsp_cores,look_for,timeout)
   end
 end
 
-# Reboots the DUT and logs back in
-def soft_reboot
-    @equipment['dut1'].send_cmd("reboot")
-    @equipment['dut1'].wait_for(/login:/, 600)
+# Reboots the DUT and logs back in. Reboot is done by either soft reboot or cycling power,
+# depending on user specified parameter. The default without specifying any parameters
+# is to soft reboot dut1.
+def reboot(equip=@equipment['dut1'], cycle_power=false)
+  params = Hash.new
+  params['var_use_default_env'] = 2
+  params['dut'] = equip
+  saved_power_port = equip.power_port
+  saved_sys_loader = equip.system_loader
+  equip.system_loader = nil
+  equip.power_port = nil if !cycle_power
+  equip.boot(params)
+  equip.power_port = saved_power_port
+  equip.system_loader = saved_sys_loader 
+end
 
-    @equipment['dut1'].send_cmd(@equipment['dut1'].login,
-      @equipment['dut1'].prompt, 10) #login to the unit
-    if @equipment['dut1'].timeout?
-      raise "reboot failed"
-    end
-    puts "\n"
-    puts "'-----------------------------------------'"
-    puts "'echo Reboot completed'"
-    puts "'-----------------------------------------'"
-    sleep(5)
+# Reboots the DUT and logs back in
+def soft_reboot(equip=@equipment['dut1'])
+  reboot(equip)
 end
 
 # Public: See if the rmServer is running
