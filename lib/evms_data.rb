@@ -76,14 +76,33 @@ module EvmData
 
   def get_platform_string(params)
     machines = {}
-    machines['am335x-evm']  = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x EVM/}
-    machines['am335x-sk']   = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x EVM-SK/}
-    machines['beaglebone']  = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x BeagleBone/}
-    machines['beaglebone-black'] = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x BeagleBone/}
-    machines['dra7xx-evm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/}
-    machines['omap5-evm']   = {'0.0' => /Machine: Generic OMAP5 \(Flattened Device Tree\), model: TI OMAP5 uEVM board/}
-    machines['am43xx-epos'] = {'0.0' => /Machine: Generic AM43 \(Flattened Device Tree\), model: TI AM43x EPOS EVM/}
-    machines['am43xx-gpevm'] = {'0.0' => /Machine: Generic AM43 \(Flattened Device Tree\), model: TI AM437x gp EVM/i}
+    machines['am335x-evm']  = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x EVM/,
+                              '3.14' => /Machine model: TI AM335x EVM/,
+                              }
+    machines['am335x-sk']   = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x EVM-SK/,
+                              '3.14' => /Machine model: TI AM335x EVM-SK/,
+                              }
+    machines['beaglebone']  = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x BeagleBone/,
+                              '3.14' => /Machine model: TI AM335x BeagleBone/,
+                              }
+    machines['beaglebone-black'] = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x BeagleBone/,
+                                   '3.14' => /Machine model: TI AM335x BeagleBone/,
+                                   }
+    machines['dra7xx-evm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/,
+                              '3.14' => /Machine model: TI DRA742/,
+                              }
+    machines['dra72x-evm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/,
+                              '3.14' => /Machine model: TI DRA722/,
+                              }
+    machines['omap5-evm']   = {'0.0' => /Machine: Generic OMAP5 \(Flattened Device Tree\), model: TI OMAP5 uEVM board/,
+                              '3.14' => /Machine model: TI OMAP5 uEVM board/,
+                              }
+    machines['am43xx-epos'] = {'0.0' => /Machine: Generic AM43 \(Flattened Device Tree\), model: TI AM43x EPOS EVM/,
+                              '3.14' => /Machine model: TI AM43x EPOS EVM/,
+                              }
+    machines['am43xx-gpevm'] = {'0.0' => /Machine: Generic AM43 \(Flattened Device Tree\), model: TI AM437x gp EVM/i,
+                               '3.14' => /Machine model: TI AM437x GP EVM/,
+                              }
                                           
     params.merge!({'dict' => machines})
     get_cmd(params)
