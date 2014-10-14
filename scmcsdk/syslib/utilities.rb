@@ -3697,6 +3697,11 @@ class IpsecUtilitiesVatf
     # Set ipsec.conf input template file to use.
     set_common(ipsec_conf_input_file, "", "", "" ,"")
   end
+  def secure_store_initialize(is_alpha_side)
+    @smart_card.initialize_secure_store_if_needed(is_alpha_side ? ALPHA_SIDE() : BETA_SIDE())
+    @result |= @smart_card.result
+    @result_text += @smart_card.result_text
+  end
   def set_secure_data(is_alpha_side)
     # Get server tftp directory
     server_tftp_directory = File.dirname(get_file_tftp_server_file_name_path(is_alpha_side, @alpha_side_cert_file))
@@ -3708,13 +3713,11 @@ class IpsecUtilitiesVatf
       set_alpha_cert("", "", "", "", "", "", "", "", "", "", "", "", SECURE_DATA())
       set_alpha_temp_locations("", "", "/etc/alphaKey.pem")
       @smart_card.set_alpha_side_directories(server_tftp_directory, server_tftp_directory)
-      @smart_card.initialize_secure_store_if_needed(ALPHA_SIDE())
     else
       # Set the beta side to use secure data (TI SIMULATED SMARTCARD). Leave everything else at default.
       set_beta_cert("", "", "", "", "", "", "", "", "", "", "", "", SECURE_DATA())
       set_beta_temp_locations("", "", "/etc/betaKey.pem")
       @smart_card.set_beta_side_directories("", server_tftp_directory)
-      @smart_card.initialize_secure_store_if_needed(BETA_SIDE())
     end
     @result |= @smart_card.result
     @result_text += @smart_card.result_text

@@ -178,7 +178,7 @@ module IpsecConnectionScript
     @equipment = equipment
     
     # Set ipsec utilities global equipment variable
-    ipsecVatf.equipment_set(equipment)
+    ipsecVatf.set_helper_common(equipment, "", "")
 
     # clear any previous connection results
     IpsecConnectionScript.clear_results()
@@ -278,6 +278,12 @@ module IpsecConnectionScript
       beta_side_nat_gateway_ip = get_equipment_param_value('server1', "nat_gateway_private_ip")
     end
 
+    if (result |= ipsecVatf.result).to_i == 0 and is_secure_data 
+      # Initialize secure store if needed. If secure store needs to be initialized then the EVM will reboot,
+      # so this should be done before any volatile EVM setup is done such as temporary IPv6 address settting.
+      ipsecVatf.secure_store_initialize(ipsecVatf.BETA_SIDE())
+    end
+    
     # Set IPSEC connection protocol, encryption, authentication and connection name to be used in the ipsec.conf file.
     ipsecVatf.set_protocol_encryption_integrity_name(protocol, esp_encryption, esp_integrity, "Conn")
 
