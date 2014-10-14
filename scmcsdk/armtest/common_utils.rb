@@ -43,13 +43,30 @@ end
 def mpm_load_all(out_file,num_of_cores = @dsp_cores,look_for,timeout)
   for count in 0..(num_of_cores-1)
     puts " 'Loading and Running #{out_file}...'"
-    @equipment['dut1'].send_cmd("./mpmcl load dsp#{count} #{out_file}",
+    if (@secure_device)
+      @equipment['dut1'].send_cmd("mpmcl load_withpreload dsp#{count} /usr/bin/bootMainGem.out #{out_file}",
       @equipment['dut1'].prompt, 10)
+    else
+      @equipment['dut1'].send_cmd("mpmcl load dsp#{count} #{out_file}",
+      /(^load\ssucceeded.*?){1}/, 10)
+    end
     if @equipment['dut1'].timeout?
       return false
     end
-    @equipment['dut1'].send_cmd("./mpmcl run dsp#{count}",
-      @equipment['dut1'].prompt, 10)
+    puts "Done"
+  end
+end
+
+def mpm_run_all(num_of_cores = @dsp_cores,look_for,timeout)
+  for count in 0..(num_of_cores-1)
+    puts "Running #{count}...'"
+   if (@secure_device)
+          @equipment['dut1'].send_cmd("mpmcl run_withpreload dsp#{count}",
+        @equipment['dut1'].prompt, 10)
+    else
+        @equipment['dut1'].send_cmd("mpmcl run dsp#{count}",
+          @equipment['dut1'].prompt, 10)
+    end
     if @equipment['dut1'].timeout?
       return false
     end
@@ -59,16 +76,16 @@ end
 
 # For DSP + ARM Linux Test Project
 # ./stop_all.sh rmK2KArmv7LinuxDspClientTestProject.out
-def mpm_stop_all(file,num_of_cores = @dsp_cores,look_for,timeout)
+def mpm_stop_all(num_of_cores = @dsp_cores,look_for,timeout)
   for count in 0..(num_of_cores-1)
-    puts "'Resetting core #{file}...'"
+    puts "'Resetting core #{count}...'"
     @equipment['dut1'].send_cmd("mpmcl reset dsp#{count}",
-      @equipment['dut1'].prompt, 10)
+      /(^reset\ssucceeded.*?){1}/, 10)
     if @equipment['dut1'].timeout?
       return false
     end
     @equipment['dut1'].send_cmd("mpmcl status dsp#{count}",
-      @equipment['dut1'].prompt, 10)
+      /(^dsp\d\sis\sin\sreset\sstate.*?){1}/, 10)
     if @equipment['dut1'].timeout?
       return false
     end

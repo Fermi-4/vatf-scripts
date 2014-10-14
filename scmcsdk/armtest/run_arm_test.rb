@@ -49,6 +49,7 @@ def run
   iterations = assign_iterations()
   @platform = get_platform()
   @dsp_cores = get_dsp_cores(@platform)
+  @secure_device = is_secure_device?()
   test_folder_location = nil
   setup_required = get_setup_required()
   #for debugging, test_folder_location = @test_params.lld_test_archive
@@ -88,7 +89,7 @@ def run
 	end
     end
     cmd_result = run_command(Array.new.push(test_cmd),
-    look_for = Regexp.new(criteria[0], Regexp::IGNORECASE), timeout)
+      look_for = (criteria != nil) ? Regexp.new(criteria[0], Regexp::IGNORECASE) : nil, timeout)
     if cmd_result[0] == false
       set_result(test_done_result,comment + cmd_result[1])
       return
@@ -97,7 +98,15 @@ def run
     end
     std_response = @equipment['dut1'].update_response
     puts "'#{ test_cmd }' run. Now to test."
-    criteria_result = analyze_criteria(count, test_cmd, std_response, criteria)
+    if criteria != nil
+      criteria_result = analyze_criteria(count, test_cmd, std_response, criteria)
+    else
+      if @equipment['dut1'].timeout?
+        criteria_result = [false, "DUT timeout executing #{test_cmd}"]
+      else
+        criteria_result = [true]
+      end
+    end
     if criteria_result[0] == false
       set_result(test_done_result, comment + criteria_result[1])
       return
@@ -152,7 +161,7 @@ def analyze_criteria(count, test_cmd, std_response, criteria)
         return [false, comment]
       end
     #else, scan buffer to see if send_cmd result matches criterion
-    elsif std_response[/#{criterion}/io]
+      elsif std_response[/#{criterion}/imo]
       puts "Output has criterion #{criterion}"
       comment += "Iteration #{count+1}: \
         Output has criterion \"#{criterion}\".\n"
@@ -181,8 +190,10 @@ end
 def assign_criteria
   if defined? @test_params.params_control.constraints
     @test_params.params_control.constraints
-  else
+  elsif defined? @test_params.params_chan.constraints
     @test_params.params_chan.constraints
+  else
+    nil
   end
 end
 
@@ -210,6 +221,14 @@ def get_platform()
     @equipment['dut1'].id.split("_").grep(/k2.?/)[0] 
   else
     "k2h"
+  end
+end
+
+def is_secure_device?()
+  if @equipment['dut1'].id.split("_").grep(/secdev/).size > 0
+    true
+  else
+    false
   end
 end
 
@@ -244,42 +263,6 @@ end
 #
 # test_folder_location = "@test_params.lld_test_archive"
 def build_files(test_folder_location)
-  if test_folder_location
-    #copy tar.gz from server to flat_n_tar, untar, flatten, tar, mv to tftpboot
-    puts "'***Begin server side archive flattening***'"
-    flat_n_tar = "unassembles"
-    @equipment['server1'].send_cmd("mkdir #{ flat_n_tar }",
-      @equipment['server1'].prompt, 10)
-    @equipment['server1'].send_cmd("chmod 777 #{ flat_n_tar }",
-      @equipment['server1'].prompt, 10)
-    @equipment['server1'].send_cmd("cd #{ flat_n_tar }; \
-      cp #{test_folder_location} test_archive.tar.gz",
-      @equipment['server1'].prompt, 20)
-    @equipment['server1'].send_cmd("cd #{ flat_n_tar }; \
-      tar -xvzf test_archive.tar.gz --transform=\'s/.*\\///\'",
-      @equipment['server1'].prompt, 10)
-    @equipment['server1'].send_cmd("cd #{ flat_n_tar }; \
-      tar -cvzf test_archive.tar.gz *.out *.dtb",
-      @equipment['server1'].prompt, 20)
-    @equipment['server1'].send_cmd("cd #{ flat_n_tar };
-      cp test_archive.tar.gz #{ @equipment['server1'].tftp_path }
-      /test_archive.tar.gz",
-      @equipment['server1'].prompt, 10)
-    @equipment['server1'].send_cmd("rm -r #{ flat_n_tar }",
-      @equipment['server1'].prompt, 20)
-    puts "'***end server side archive flattening***'"
-
-    @equipment['dut1'].send_cmd("cd /usr/bin/", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("tftp -g -r test_archive.tar.gz \
-      #{ @equipment['server1'].telnet_ip }", @equipment['server1'].prompt, 20)
-    @equipment['dut1'].send_cmd("tar -xvzf test_archive.tar.gz",
-      @equipment['dut1'].prompt, 10)
-    puts "Done rebuilding archive."
-  else
-    puts "No archive flattening"
-  end
-
-
   ##copy platform specific dtb files
   @equipment['dut1'].send_cmd("cd /usr/bin/device/#{@platform}",
     @equipment['dut1'].prompt, 10)
