@@ -9,7 +9,7 @@ MODETEST_PIX_FMTS = ['UYVY', 'VYUY', 'YUYV', 'YVYU', 'NV12', 'NV21', 'NV16', 'NV
 def modetest(command, dut, timeout=5, interactive=false)
   response = ''
   t1 = Thread.new do
-    dut.send_cmd("modetest #{command}", dut.prompt, timeout)
+    dut.send_cmd("modetest #{command}", /trying\s*to\s*open\s*device.*?#{dut.prompt}/im, timeout)
     response = dut.response
   end
   yield if interactive
@@ -397,7 +397,7 @@ def get_supported_fmts(connectors)
       mode_str = set_mode([m_params]){sleep 2}
       mode_str = mode_str.downcase()
       pix_fmts[c_info['id']] << current_fmt if ['unsupported pixel format', 'invalid pixel format',
-                                                'invalid argument', 'segmentation fault'].inject(true) do |t, str| 
+                                                'invalid argument', 'segmentation fault', 'invalid pitch'].inject(true) do |t, str| 
                                                     t &&= !mode_str.include?(str)
                                                end
     end
