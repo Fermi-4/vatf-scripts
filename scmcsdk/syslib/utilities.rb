@@ -410,13 +410,12 @@ class VatfHelperUtilities
   def stop_offload_indices(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal, offload_command_pre_fix)
     offload_indices_common(is_alpha_side, policy_index_out, policy_index_in, offload_command_post_fix, is_fatal, offload_command_pre_fix)
   end
-  def get_file_location(is_alpha_side, filename)
+  def get_file_location(is_alpha_side, filename, locations_to_scan="/")
     file_name_path = ""
-    find_cmd = "find -iname"
-    smart_send_cmd(is_alpha_side, @normal_cmd, "cd /", "", @error_bit, 5)
+    find_cmd = "find #{locations_to_scan} -iname"
     raw_buffer = smart_send_cmd(is_alpha_side, @normal_cmd, "#{find_cmd} #{filename}", "", @error_bit, 5)
     items = raw_buffer.split("\n")
-    # Get line that contains the filename
+    # Get first line that contains the file name
     items.each do |item|
       if item.include?(filename) and !item.include?(find_cmd)
         file_name_path = item.gsub("./", "/")
@@ -3152,7 +3151,7 @@ class IpsecUtilitiesVatf
     if side_ref.downcase.include?("dut")
       module_name = @ipsec_mgr.split(".")[0]
       if !module_running?(module_name, @equipment[side_ref])
-        @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "pushd /; insmod `find -name #{@ipsec_mgr}`; popd", "", @error_bit, 0) if !is_alpha_side
+        @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "insmod #{@vatf_helper.get_file_location(is_alpha_side, @ipsec_mgr)}", "", @error_bit, 2)
         if !module_running?(module_name, @equipment[side_ref])
           @result_text += "Error: Unable to start module: #{@ipsec_mgr}"
           @result += @error_bit
