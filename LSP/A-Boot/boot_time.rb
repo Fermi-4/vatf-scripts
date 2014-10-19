@@ -28,7 +28,7 @@ def run
   boottimes_initialize_fs = []  # from 'INIT' to 'login'
   boottimes_total = []
 
-  regex_spl = /U-Boot\s+SPL/
+  regex_spl = /U-Boot\s+SPL|SPL:/
   regex_uboot = /U-Boot\s+[\d.]+/
   regex_startkernel = /Starting\s+kernel/
   regex_startfs = /INIT:\s+version/
