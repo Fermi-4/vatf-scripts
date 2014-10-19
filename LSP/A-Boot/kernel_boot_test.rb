@@ -16,7 +16,7 @@ def run
       is_soft_boot = @test_params.params_control.is_soft_boot[0] if @test_params.params_control.instance_variable_defined?(:@is_soft_boot)
       if is_soft_boot == 'yes'
         puts "soft-reboot....\n\n"
-        @equipment['dut1'].send_cmd('reboot', translated_boot_params['dut'].login_prompt, 40)
+        @equipment['dut1'].send_cmd('reboot', translated_boot_params['dut'].login_prompt, 150)
         @equipment['dut1'].send_cmd(translated_boot_params['dut'].login, translated_boot_params['dut'].prompt, 10) # login to the unit
         raise 'Could not soft-reboot' if @equipment['dut1'].timeout?
       else
