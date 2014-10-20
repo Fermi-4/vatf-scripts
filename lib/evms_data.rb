@@ -70,7 +70,7 @@ module EvmData
 
   def get_nand_loc(key)
     nand_loc = {}
-    nand_loc['am335x-evm'] = {'primary_bootloader' => 'SPL', 'secondary_bootloader' => 'u-boot', 'u-boot-env' => 'u-boot-env', 'kernel' => 'kernel', 'fs' => 'rootfs'}
+    nand_loc['am335x-evm'] = {'primary_bootloader' => 'NAND.SPL', 'secondary_bootloader' => 'NAND.u-boot', 'u-boot-env' => 'NAND.u-boot-env', 'kernel' => 'NAND.kernel', 'dtb' => 'NAND.u-boot-spl-os', 'fs' => 'NAND.rootfs'}
     return nand_loc[key]
   end
 
