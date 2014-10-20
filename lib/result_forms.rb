@@ -152,6 +152,11 @@ class ResultWindow
       app.main_loop
       Marshal.dump(app.get_result(),write)
     end
+    ['EXIT','INT','QUIT','ABRT','KILL','TERM','STOP'].each do |s|
+      Signal.trap(s) do
+        Process.kill('KILL',w_pid)
+      end
+    end
     write.close
     result = read.read
     Process.wait(w_pid)
