@@ -605,6 +605,7 @@ module LspTestScript
       this_equipment.send_cmd("echo '=====================';echo 'START DEBUG DATA';echo '====================='", this_equipment.prompt)
       this_equipment.send_cmd("dmesg", this_equipment.prompt)
       this_equipment.send_cmd("cat /var/log/messages", this_equipment.prompt)
+      this_equipment.send_cmd("which omapconf && omapconf --cpuinfo", this_equipment.prompt)
       this_equipment.send_cmd("cat /proc/cpuinfo", this_equipment.prompt)
       this_equipment.send_cmd("cat /proc/meminfo", this_equipment.prompt)
       this_equipment.send_cmd("cat /proc/devices", this_equipment.prompt)
