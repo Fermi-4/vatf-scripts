@@ -4,9 +4,7 @@
 ##Common utilities, used by runlld.rb
 #####################################################################
 
-# For DSP + ARM Linux Test Project
-#./dump_trace.sh
-def dump_trace(num_of_cores = @dsp_cores, look_for,timeout)
+def dump_trace(look_for,timeout,num_of_cores=@dsp_cores)
   for count in 0..(num_of_cores-1)
     puts "'Core #{count} Trace...'"
     @equipment['dut1'].send_cmd(
@@ -38,9 +36,7 @@ def exampleC
   puts "'running exampleC() 3'"
 end
 
-# For DSP + ARM Linux Test Project
-#./stop_all.sh rmK2HArmv7LinuxDspClientTestProject.out
-def mpm_load_all(out_file,num_of_cores = @dsp_cores,look_for,timeout)
+def mpm_load_all(out_file,look_for,timeout,num_of_cores=@dsp_cores)
   for count in 0..(num_of_cores-1)
     puts " 'Loading and Running #{out_file}...'"
     if (@secure_device)
@@ -57,7 +53,7 @@ def mpm_load_all(out_file,num_of_cores = @dsp_cores,look_for,timeout)
   end
 end
 
-def mpm_run_all(num_of_cores = @dsp_cores,look_for,timeout)
+def mpm_run_all(look_for,timeout,num_of_cores=@dsp_cores)
   for count in 0..(num_of_cores-1)
     puts "Running #{count}...'"
    if (@secure_device)
@@ -74,9 +70,7 @@ def mpm_run_all(num_of_cores = @dsp_cores,look_for,timeout)
   end
 end
 
-# For DSP + ARM Linux Test Project
-# ./stop_all.sh rmK2KArmv7LinuxDspClientTestProject.out
-def mpm_stop_all(num_of_cores = @dsp_cores,look_for,timeout)
+def mpm_stop_all(look_for,timeout,num_of_cores=@dsp_cores)
   for count in 0..(num_of_cores-1)
     puts "'Resetting core #{count}...'"
     @equipment['dut1'].send_cmd("mpmcl reset dsp#{count}",
