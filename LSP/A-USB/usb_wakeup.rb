@@ -1,4 +1,7 @@
 require File.dirname(__FILE__)+'/../default_test_module'
+require File.dirname(__FILE__)+'/../A-Power/power_functions' 
+
+include PowerFunctions
 
 include LspTestScript
 
@@ -12,8 +15,8 @@ def setup
 end
 
 def enable_usb_wakeup
-  @equipment['dut1'].send_cmd("cd /sys/devices/platform/omap/musb-ti81xx || exit 1", /#{@equipment['dut1'].prompt}/, 3)
-  @equipment['dut1'].send_cmd("lst=`find . -name wakeup`; for ent in $lst; do echo $ent; echo enabled > $ent; done", /#{@equipment['dut1'].prompt}/, 10)
+  power_state = @test_params.params_control.instance_variable_defined?(:@power_state) ? @test_params.params_control.power_state[0] : 'mem'
+  power_wakeup_configuration("usb", power_state)
 end
 
 def connect_to_extra_equipment
