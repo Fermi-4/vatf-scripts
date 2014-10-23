@@ -88,30 +88,30 @@ def run
     @equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 2) 
     check_configuration = @equipment['dut1'].response.to_s
     #set uart configuration back to the default at the end.
-    set_serial_default_config(serial_port,dut_serial_port,serial_default_config)
     if check_configuration.include?(config_value) != nil and connectivity__test != nil
       status = 0
     else
       status = 1
     end
-   else 
-     puts "testing cs6"
-     baud = config_value.include?('speed') ? config_value.match(/speed\s+([0-9]+)/).captures[0] : @equipment['dut1'].serial_params['baud']
-     databit = config_value.include?('cs6')? 'cs6' :  @equipment['dut1'].serial_params['data_bits']
-     stop_bits = config_value.include?('cstopb')? config_value.match(/(-{0,1}cstopb)/).captures[0] :  @equipment['dut1'].serial_params['stop_bits']
-     parity =   config_value.include?('parodd')?  config_value.match(/(-{0,1}parodd)/).captures[0] :  @equipment['dut1'].serial_params['parity']
-     status = six_databit_test(databit,serial_port,stop_bits,baud,parity)
-   end
+  else 
+   puts "testing cs6"
+   baud = config_value.include?('speed') ? config_value.match(/speed\s+([0-9]+)/).captures[0] : @equipment['dut1'].serial_params['baud']
+   databit = config_value.include?('cs6')? 'cs6' :  @equipment['dut1'].serial_params['data_bits']
+   stop_bits = config_value.include?('cstopb')? config_value.match(/(-{0,1}cstopb)/).captures[0] :  @equipment['dut1'].serial_params['stop_bits']
+   parity =   config_value.include?('parodd')?  config_value.match(/(-{0,1}parodd)/).captures[0] :  @equipment['dut1'].serial_params['parity']
+   status = six_databit_test(databit,serial_port,stop_bits,baud,parity)
+  end
 
-    if status == 0
-      puts "\nUart Test PASS"
-      set_result(FrameworkConstants::Result[:pass], "UART Test Pass","")
-    else
-      puts "\nUart Test FAILED"
-      set_result(FrameworkConstants::Result[:fail], "UART Test Fail","")   
-    end
+  set_serial_default_config(serial_port,dut_serial_port,serial_default_config)
 
-  
+  if status == 0
+    puts "\nUart Test PASS"
+    set_result(FrameworkConstants::Result[:pass], "UART Test Pass","")
+  else
+    puts "\nUart Test FAILED"
+    set_result(FrameworkConstants::Result[:fail], "UART Test Fail","")   
+  end
+ 
 end
 
 #Function puts the serial port configuration of the host and the platform
@@ -119,28 +119,11 @@ end
 #input parameter is: serial_port interface to be configured. 
 #return: None
 def set_serial_default_config(serial_port,dut_serial_port,serial_default_config)
-  #speed default value
-  cmd = "stty -F #{dut_serial_port} #{serial_default_config['baud']}"
-  @equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 2)
-  cmd = "stty -F #{serial_port} #{serial_default_config['baud']}"
-  @equipment['server1'].send_cmd(cmd, @equipment['server1'].prompt, 10)
-  cmd = "stty -F #{dut_serial_port} #{serial_default_config['parodd']}"
-  @equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 2)
-  cmd = "stty -F #{serial_port} #{serial_default_config['parodd']}"
-  @equipment['server1'].send_cmd(cmd, @equipment['server1'].prompt, 10)
-  cmd = "stty -F #{dut_serial_port} #{serial_default_config['crtscts']}"
-  @equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 2)
-  cmd = "stty -F #{serial_port} #{serial_default_config['crtscts']}"
-  @equipment['server1'].send_cmd(cmd, @equipment['server1'].prompt, 10)
-  cmd = "stty -F #{dut_serial_port} #{serial_default_config['cs8']}"
-  @equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 2)
-  cmd = "stty -F #{serial_port} #{serial_default_config['cs8']}"
-  @equipment['server1'].send_cmd(cmd, @equipment['server1'].prompt, 10)
-  cmd = "stty -F #{dut_serial_port} #{serial_default_config['cstopb']}"
-  @equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 2)
-  cmd = "stty -F #{serial_port} #{serial_default_config['cstopb']}"
-  @equipment['server1'].send_cmd(cmd, @equipment['server1'].prompt, 10)
-
+  serial_default_config.each {|k,v|
+    puts "Setting #{k} to #{v}"
+    @equipment['dut1'].send_cmd("stty -F #{dut_serial_port} #{v}", @equipment['dut1'].prompt, 2)
+    @equipment['server1'].send_cmd("stty -F #{serial_port} #{v}", @equipment['server1'].prompt, 2)
+  }
 end 
 
 
