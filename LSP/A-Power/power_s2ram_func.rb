@@ -151,7 +151,7 @@ def suspend_resume_loop
         puts "Timeout while waiting for RTC suspend/resume completion"
         @queue.push(1)  # Inform test thread that dut is awake
         @global_stop = true
-        raise "DUT took more than #{suspend_time+60} seconds to suspend/resume" 
+        report_and_exit "DUT took more than #{suspend_time+60} seconds to suspend/resume" 
       end
       @queue.push(1)  # Inform test thread that dut is awake
       sleep resume_time 
@@ -168,7 +168,7 @@ def suspend_resume_loop
       end
       if @equipment['dut1'].timeout?
         puts "Timeout while waiting to suspend"
-        raise "DUT took more than 120 seconds to suspend" 
+        report_and_exit "DUT took more than 120 seconds to suspend" 
       end
       sleep suspend_time    
       # Resume from console
@@ -181,7 +181,7 @@ def suspend_resume_loop
         puts "Timeout while waiting to resume"
         @queue.push(1)  # Inform test thread that dut is awake
         @global_stop = true
-        raise "DUT took more than 60 seconds to resume" 
+        report_and_exit "DUT took more than 60 seconds to resume" 
       end
       @queue.push(1)  # Inform test thread that dut is awake
       sleep resume_time 
