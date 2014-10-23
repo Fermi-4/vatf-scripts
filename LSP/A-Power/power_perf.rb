@@ -165,6 +165,11 @@ def start_target_tests(cmd, timeout, e='dut1')
     result = [FrameworkConstants::Result[:pass], "Test completed without errors"]
 
     @eth_ip_addr = get_ip_addr()
+    if !@eth_ip_addr
+      @equipment[e].send_cmd("ifup eth0")
+      @eth_ip_addr = get_ip_addr()
+    end
+
     @equipment[e].target.platform_info.telnet_ip = @eth_ip_addr
     old_telnet_port = @equipment[e].target.platform_info.telnet_port
     @equipment[e].target.platform_info.telnet_port = 23
