@@ -106,11 +106,13 @@ def run_mode_test(mode_params, perf_data=[])
   end
   sf_result = test_result ? FrameworkConstants::Result[:nry] : FrameworkConstants::Result[:fail]
   while(sf_result == FrameworkConstants::Result[:nry])
+    sf_string = ''
     fps_res = run_sync_flip_test(mode_params) do
       sf_result, sf_string = get_drm_test_result("#{title_string} sync flip test")
       test_result &= sf_result == FrameworkConstants::Result[:pass]
       result_string += ', ' + sf_string
     end
+    fps_res = true if sf_string.match(/negative\s*test/im) 
   end
   if !fps_res
     result_string += ", fps Failed in sync flip test "
