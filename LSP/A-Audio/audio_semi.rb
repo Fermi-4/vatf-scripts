@@ -18,24 +18,6 @@ def run
   @equipment['server1'].send_cmd("rm -rf #{local_test_file}*",@equipment['server1'].prompt)
   @equipment['server1'].send_cmd("avprobe #{ref_path}",@equipment['server1'].prompt,file_op_wait)
   wav_info = @equipment['server1'].response
-  #Turning on playout/capture ctrls
-  [['Speaker Driver', 0], 'Speaker Left', 'Speaker Right', ['SP Driver', 0], 
-   'SP Left', 'SP Right', 'Output Left From Left DAC', 'Output Right From Right DAC',
-   ['HP Driver',0], 'HP Left', 'HP Right', 'Left PGA Mixer Line1L', 'Right PGA Mixer Line1R', 
-   'Left PGA Mixer Mic3L', 'Right PGA Mixer Mic3R', 'Output Left From MIC1LP',
-   'Output Left From MIC1RP', 'Output Right From MIC1RP'].each do |ctrl|
-    puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl)
-  end
-  cset_state('on','ADC Capture Switch')
-  if @equipment['dut1'].name == 'am43xx-epos'
-    ['MIC1RP P-Terminal', 'MIC1LP P-Terminal'].each {|ctrl| set_state('FFR 10 Ohm', ctrl)}
-  end
-  #Setting volume
-  set_volume(0, 'ADC')
-  ['PCM', 'HP DAC', 'PGA', 'DAC', 'HP Analog', 'SP Analog', 'Speaker Analog',
-   'Mic PGA'].each do |ctrl|
-    puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.9,ctrl)
-  end
   audio_info, duration = case(wav_info)
                            when /Audio:\s*pcm/i
                              info = parse_wav_audio_info(wav_info)
@@ -60,8 +42,35 @@ def run
     play_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@play_device)
     d_rec_dev = get_audio_rec_dev(rec_dev_info)
     d_play_dev = get_audio_play_dev(play_dev_info)
-    dut_rec_dev << d_rec_dev if d_rec_dev
-    dut_play_dev << d_play_dev if d_play_dev
+    #Turning on playout/capture ctrls
+    if d_rec_dev
+      ['Left PGA Mixer Line1L', 'Right PGA Mixer Line1R', 
+       'Left PGA Mixer Mic3L', 'Right PGA Mixer Mic3R', 'Output Left From MIC1LP',
+       'Output Left From MIC1RP', 'Output Right From MIC1RP'].each do |ctrl|
+          puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl, d_rec_dev['card'])
+      end
+    cset_state('on','ADC Capture Switch', d_rec_dev['card'])
+    if @equipment['dut1'].name == 'am43xx-epos'
+      ['MIC1RP P-Terminal', 'MIC1LP P-Terminal'].each {|ctrl| set_state('FFR 10 Ohm', ctrl, d_rec_dev['card'])}
+    end
+    #Setting volume
+    set_volume(0, 'ADC', d_rec_dev['card'])
+      ['PCM', 'PGA', 'Mic PGA'].each do |ctrl|
+        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.9,ctrl, d_play_dev['card'])
+      end
+      dut_rec_dev << d_rec_dev
+    end
+    if d_play_dev
+      [['Speaker Driver', 0], 'Speaker Left', 'Speaker Right', ['SP Driver', 0], 
+        'SP Left', 'SP Right', 'Output Left From Left DAC', 'Output Right From Right DAC',
+        ['HP Driver',0], 'HP Left', 'HP Right'].each do |ctrl|
+        puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl, d_play_dev['card'])
+      end
+      ['PCM', 'HP DAC', 'DAC', 'HP Analog', 'SP Analog', 'Speaker Analog', 'Mic PGA'].each do |ctrl|
+        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.9,ctrl, d_play_dev['card'])
+      end
+      dut_play_dev << d_play_dev
+    end
     table_title += "Rec Dev #{dut_rec_dev[-1].to_s}\n\n" if test_type.include?('record')
     table_title += "Play Dev #{dut_play_dev[-1].to_s}\n\n" if test_type.include?('play')
   end

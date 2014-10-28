@@ -283,16 +283,17 @@ end
 #Function to set the volume of an audio control, takes
 #  level, float in the range [0,1] that specify the volume (0-no volume, 1-max volume)
 #  ctrl, mixer control whose volume will be set
+#  card, id of the card where the volume will be set
 #  sys, object used to communicate with the system where the volume of the control will
 #       be set
 #Returns, true if the volume was set successfully false otherwise
-def set_volume(level=0.75, ctrl='PCM', sys=@equipment['dut1'])
-  sys.send_cmd("amixer sget '#{ctrl}'", sys.prompt, 10)
+def set_volume(level=0.75, ctrl='PCM', card=0,sys=@equipment['dut1'])
+  sys.send_cmd("amixer -c #{card} sget '#{ctrl}'", sys.prompt, 10)
   return true if sys.response.match(/Unable\s*to\s*find.*?#{ctrl}/im)
   vol_limit = sys.response.match(/Limits:\s*(?:playback|capture)\s*\d+\s*-\s*(\d+)/i).captures[0].to_i
   new_volume = (vol_limit*level).ceil().to_int
   new_volume = level < 0 ? 0 : level > 1 ? vol_limit : new_volume
-  sys.send_cmd("amixer sset '#{ctrl}' #{new_volume}", sys.prompt, 10)
+  sys.send_cmd("amixer -c #{card} sset '#{ctrl}' #{new_volume}", sys.prompt, 10)
   new_level = sys.response.match(/(?:playback|capture)\s*(\d+).*?dB\]/i).captures[0].to_i
   new_volume == new_level
 end
@@ -300,17 +301,18 @@ end
 #Function to set the state of an audio control, takes
 #  state, string containing the state of the control i.e on
 #  ctrl, mixer control whose state will be set
+#  card, id of the card where the ctrl will be set
 #  sys, object used to communicate with the system where the volume of the control will
 #       be set
 #Returns, true if the volume was set successfully false otherwise
-def set_state(state, ctrl, sys=@equipment['dut1'])
+def set_state(state, ctrl, card=0, sys=@equipment['dut1'])
   ctrl_arr = ctrl
   ctrl_arr = [ctrl] if !ctrl.kind_of?(Array)
   local_ctrl = "'#{ctrl_arr[0]}'"
   ctrl_arr[1..-1].each {|c_info| local_ctrl += " '#{c_info}'"}
-  sys.send_cmd("amixer sget #{local_ctrl}", sys.prompt, 10)
+  sys.send_cmd("amixer -c #{card} sget #{local_ctrl}", sys.prompt, 10)
   return true if sys.response.match(/Unable\s*to\s*find.*?#{ctrl_arr[0]}/im)
-  sys.send_cmd("amixer sset #{local_ctrl} '#{state}'", sys.prompt, 10)
+  sys.send_cmd("amixer -c #{card} sset #{local_ctrl} '#{state}'", sys.prompt, 10)
   new_state = sys.response.match(/(?:playback|capture|item\d+:).*?(#{state})\]*/i).captures[0].to_i
   state == new_state
 end
@@ -318,17 +320,18 @@ end
 #Function to set the state of an audio control using amixer cset, takes
 #  state, string containing the state of the control i.e on
 #  ctrl, mixer control whose state will be set
+#  card, id of the card where the ctrl will be set
 #  sys, object used to communicate with the system where the volume of the control will
 #       be set
 #Returns, true if the volume was set successfully false otherwise
-def cset_state(state, ctrl, sys=@equipment['dut1'])
+def cset_state(state, ctrl, card=0, sys=@equipment['dut1'])
   ctrl_arr = ctrl
   ctrl_arr = [ctrl] if !ctrl.kind_of?(Array)
   local_ctrl = "'#{ctrl_arr[0]}'"
   ctrl_arr[1..-1].each {|c_info| local_ctrl += " '#{c_info}'"}
-  sys.send_cmd("amixer cget name=#{local_ctrl}", sys.prompt, 10)
-  return true if sys.response.match(/Cannot\s*find\s*the\s*given\s*element\s*from\s*control\s*default/im)
-  sys.send_cmd("amixer cset name=#{local_ctrl} #{state}", sys.prompt, 10)
-  new_state = sys.response.match(/values=\s*(#{state})/i).captures[0].to_i
+  sys.send_cmd("amixer -c #{card} cget name=#{local_ctrl}", sys.prompt, 10)
+  return true if sys.response.match(/Cannot\s*find\s*the\s*given\s*element\s*from\s*control/im)
+  sys.send_cmd("amixer -c #{card} cset name=#{local_ctrl} #{state}", sys.prompt, 10)
+  new_state = sys.response.match(/values=\s*(#{state})/i).captures[0].to_i if 
   state == new_state
 end
