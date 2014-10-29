@@ -288,9 +288,9 @@ def run_perf_sync_flip_test(params, dut=@equipment['dut1'], timeout=600)
       c_error = (rate.to_f - fr).abs
       error = c_error < error ? c_error : error
     end
-    return [false, fps_arr] if err > 2
+    return [false, fps_arr, output] if err > 2
   end
-  [!fps_arr.empty?, fps_arr]
+  [!fps_arr.empty?, fps_arr, output]
 end
 
 #Function to create the string for the mode related tests, takes:
