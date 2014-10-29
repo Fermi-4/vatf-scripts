@@ -64,6 +64,12 @@ module EvmData
                                                        'VDDA_1V8_PLL' => '0.01', 'VDD_GPU' => '0.002', 'VUSB_3V3' => '0.01',
                                                        'VDDS18V' => '0.01', 'VDD_SHV' => '0.001', 'CORE_VDD' => '0.002', 
                                                        'VDD_IVA' => '0.002', 'DDR_MEM' => '0.005', 'VDDA_1V8_PHY' => '0.01'}}
+    power_data['dra72x-evm'] = {'power_domains' => ['VDD_MPU', 'VDD_GPU_IVA_DSPEVE', 'VDD_CORE', 'J6_VDD_1V8', 'EVM_VDD_1V8', 'J6_VDD_DDR',
+                                                    'EVM_VDD_DDR', 'VDD_SHV8', 'VDD_SHV5', 'VDDA_PHY', 'VDDA_USB3V3', 'VDDA_PLL'], 
+                                'domain_resistors' => {'VDD_MPU' => '0.001', 'VDD_GPU_IVA_DSPEVE' => '0.001', 'VDD_CORE' => '0.002', 
+                                                       'J6_VDD_1V8' => '0.005', 'EVM_VDD_1V8' => '0.01', 'J6_VDD_DDR' => '0.005',
+                                                       'EVM_VDD_DDR' => '0.005', 'VDD_SHV8' => '0.01', 'VDD_SHV5' => '0.005', 
+                                                       'VDDA_PHY' => '0.01', 'VDDA_USB3V3' => '0.01', 'VDDA_PLL' => '0.01'}}
 
     return power_data[key]
   end
@@ -170,6 +176,10 @@ module EvmData
                                'VDD_GPU' => {'OPP_NOM'=>'0x4A003B08','OPP_OD'=>'0x4A003B0C','OPP_HIGH'=>'0x4A003B10'}, 
                                'VDD_MPU' => {'OPP_NOM'=>'0x4A003B20','OPP_OD'=>'0x4A003B24','OPP_HIGH'=>'0x4A003B28'}, 
                               }
+    machines['dra72x-evm']  = {'VDD_CORE' => {'OPP_NOM'=>'0x4A0025F4'}, 
+                               'VDD_GPU_IVA_DSPEVE' => {'OPP_NOM'=>'0x4A003B08','OPP_OD'=>'0x4A003B0C','OPP_HIGH'=>'0x4A003B10'}, 
+                               'VDD_MPU' => {'OPP_NOM'=>'0x4A003B20','OPP_OD'=>'0x4A003B24','OPP_HIGH'=>'0x4A003B28'}, 
+                              }                      
     raise "AVS class0 data not defined for #{platform}" if !machines.key?(platform)
     machines[platform]
   end
@@ -179,7 +189,7 @@ module EvmData
     data = get_avs_class0_data(platform)
     case platform
     
-    when "dra7xx-evm"
+    when "dra7xx-evm", "dra72x-evm"
       return data.map{|domain,opps| { domain => opps.select{|name,address| name == "OPP_NOM"} } }
     
     else
@@ -202,6 +212,8 @@ module EvmData
           { domain => opps.select{|name,address| name == "OPP_NOM"} }
         end
       }
+    when "dra72x-evm"
+      return data.map{|domain,opps| { domain => opps.select{|name,address| name == "OPP_NOM"} } }
 
     else
       raise "AVS class0 Linux requirements are not defined for #{platform}" 
@@ -216,6 +228,7 @@ module EvmData
     machines['dra7xx-evm']  = {'CPU' => {'OPP_NOM'=>'1000000','OPP_OD'=>'1176000','OPP_HIGH'=>'1500000'},
                                'GPU' => {'OPP_NOM'=>'425600','OPP_HIGH'=>'532000'},
                               }
+    machines['dra72x-evm']  = machines['dra7xx-evm']      
 
     raise "OPP #{opp} not defined for #{platform}[#{proc}]" if !machines.key?(platform) or !machines[platform][proc][opp]
     machines[platform][proc][opp]
