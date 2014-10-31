@@ -109,6 +109,7 @@ module EvmData
     machines['am43xx-gpevm'] = {'0.0' => /Machine: Generic AM43 \(Flattened Device Tree\), model: TI AM437x gp EVM/i,
                                '3.14' => /Machine model: TI AM437x GP EVM/,
                               }
+    machines['am437x-sk'] = {'3.14' => /Machine model: TI AM437x SK EVM/, }
                                           
     params.merge!({'dict' => machines})
     get_cmd(params)
@@ -124,6 +125,7 @@ module EvmData
     machines['omap5-evm']   = {'0.0' => '1500000'}
     machines['am43xx-epos'] = {'0.0' => '1000000'}
     machines['am43xx-gpevm'] = {'0.0' => '1000000'}
+    machines['am437x-sk'] = {'0.0' => '1000000'}
     params.merge!({'dict' => machines})
     get_cmd(params)
   end
@@ -138,6 +140,7 @@ module EvmData
     machines['omap5-evm']   = {'0.0' => nil}
     machines['am43xx-epos'] = {'0.0' => {'VDD_CORE' => 0.95, 'VDD_MPU' => 0.95}}
     machines['am43xx-gpevm'] = {'0.0' => {'VDD_CORE' => 0.95, 'VDD_MPU' => 0.95}}
+    machines['am437x-sk'] = {'0.0' => {'VDD_CORE' => 0.95, 'VDD_MPU' => 0.95}}
     params.merge!({'dict' => machines})
     get_cmd(params)
   end
