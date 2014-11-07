@@ -537,41 +537,47 @@ module LspTestScript
 
   # Start collecting system metrics (i.e. cpu load, mem load)
   def run_start_stats
+    begin
+      # Dont collect stats if user asked so
+      return if @test_params.instance_variable_defined?(:@var_test_no_stats)
 
-    # Dont collect stats if user asked so
-    return if @test_params.instance_variable_defined?(:@var_test_no_stats)
-
-    @eth_ip_addr = get_ip_addr()
-    if @eth_ip_addr
-      connect_to_telnet(@eth_ip_addr)
-      @equipment['dut1'].target.telnet.send_cmd("pwd", @equipment['dut1'].prompt , 3)    
-      @collect_stats = @test_params.params_control.collect_stats[0] if @test_params.params_control.instance_variable_defined?(:@collect_stats)
-      @collect_stats_interval = @test_params.params_control.collect_stats_interval[0].to_i if @test_params.params_control.instance_variable_defined?(:@collect_stats_interval)
-      start_collecting_stats(@collect_stats, @collect_stats_interval) do |cmd| 
-        if cmd
-          @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
-          @equipment['dut1'].target.telnet.response
+      @eth_ip_addr = get_ip_addr()
+      if @eth_ip_addr
+        connect_to_telnet(@eth_ip_addr)
+        @equipment['dut1'].target.telnet.send_cmd("pwd", @equipment['dut1'].prompt , 3)    
+        @collect_stats = @test_params.params_control.collect_stats[0] if @test_params.params_control.instance_variable_defined?(:@collect_stats)
+        @collect_stats_interval = @test_params.params_control.collect_stats_interval[0].to_i if @test_params.params_control.instance_variable_defined?(:@collect_stats_interval)
+        start_collecting_stats(@collect_stats, @collect_stats_interval) do |cmd| 
+          if cmd
+            @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
+            @equipment['dut1'].target.telnet.response
+          end
         end
       end
+    rescue Exception => e
+      report_msg "WARNING: Could not start collecting stats due to error trying to telnet to DUT"
     end
   end
   
   # Stop collecting system metrics 
   def run_stop_stats
+    begin
+      # Dont stop stats if user asked not to collect in the first place.
+      return if @test_params.instance_variable_defined?(:@var_test_no_stats)
 
-    # Dont stop stats if user asked not to collect in the first place.
-    return if @test_params.instance_variable_defined?(:@var_test_no_stats)
-
-    @eth_ip_addr = get_ip_addr()
-    if @eth_ip_addr
-      @equipment['dut1'].disconnect('telnet') if @equipment['dut1'].target.telnet
-      connect_to_telnet(@eth_ip_addr)
-      @target_sys_stats = stop_collecting_stats(@collect_stats) do |cmd| 
-        if cmd
-          @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
-          @equipment['dut1'].target.telnet.response
+      @eth_ip_addr = get_ip_addr()
+      if @eth_ip_addr
+        @equipment['dut1'].disconnect('telnet') if @equipment['dut1'].target.telnet
+        connect_to_telnet(@eth_ip_addr)
+        @target_sys_stats = stop_collecting_stats(@collect_stats) do |cmd| 
+          if cmd
+            @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
+            @equipment['dut1'].target.telnet.response
+          end
         end
       end
+    rescue Exception => e
+      report_msg "WARNING: Could not stop collecting stats due to error trying to telnet to DUT"
     end
   end
 
@@ -725,5 +731,10 @@ module LspTestScript
     this_equipment.send_cmd("ip route get #{remote_ipaddr}")
     return this_equipment.response.match(/dev\s(\w+\d+)/)[1].to_s
    end
+
+  def report_msg(msg, e='dut1')
+    puts msg
+    @equipment[e].log_info(msg)
+  end
 end
 
