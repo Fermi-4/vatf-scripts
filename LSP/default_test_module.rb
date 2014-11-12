@@ -648,8 +648,14 @@ module LspTestScript
     @equipment['dut1'].send_cmd("export PATH=#{dut_orig_path} ", @equipment['dut1'].prompt, 10)
   end
 
-  def kill_process(this_equipment=@equipment['dut1'],process)
-    this_equipment.send_cmd("kill $(ps aux | grep `echo #{process} | sed -r 's/^/[/g' | sed 's/^\\(.\\{2\\}\\)/\\1]/'` | awk '{print $2}')", @equipment['dut1'].prompt, 10)
+  def kill_process(process,opts={})
+    this_equipment = opts[:this_equipment] || @equipment['dut1']
+    use_sudo = opts[:use_sudo] || false 
+    if (use_sudo)
+      this_equipment.send_sudo_cmd("kill `ps aux | grep #{process} | grep -v grep | awk '{print $2}'`", this_equipment.prompt, 10)
+    else
+      this_equipment.send_cmd("kill `ps aux | grep #{process} | grep -v grep | awk '{print $2}'`", this_equipment.prompt, 10)
+    end  
   end
 
   # Preserve current governor

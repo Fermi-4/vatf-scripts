@@ -23,7 +23,7 @@ def setup
   @total_readings = 0
   if (@dir == "rx")
     server_iface = get_local_iface_name(@equipment['server1'],get_ip_addr('dut1',@iface))
-    kill_process(@equipment['server1'],'timestamping')
+    kill_process('timestamping',:this_equipment => @equipment['server1'],:use_sudo => true)
     @equipment['server1'].send_sudo_cmd_nonblock("timestamping #{server_iface} SOF_TIMESTAMPING_TX_SOFTWARE SOF_TIMESTAMPING_SOFTWARE",/.*/,@timeout)  
     if (process_running?(@equipment['server1'],'timestamping'))
       #do nothing
