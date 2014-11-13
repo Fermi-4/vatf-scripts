@@ -106,6 +106,12 @@ module PowerFunctions
       cmd = CmdTranslator.get_linux_cmd({'cmd'=>'disable_tsc_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment[e].get_linux_version})
       @equipment[e].send_cmd(cmd , @equipment[e].prompt) if cmd.to_s != ''
     end
+
+    if wakeup_domain != 'adc'
+      # Disable adc wakeup tp reduce standby power
+      cmd = CmdTranslator.get_linux_cmd({'cmd'=>'disable_adc_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment[e].get_linux_version})
+      @equipment[e].send_cmd(cmd , @equipment[e].prompt) if cmd.to_s != ''
+    end
   end
 
   def report_power_stats(cpu=0, e='dut1')
