@@ -1,5 +1,12 @@
 module EvmData
 
+  def get_default_params(e='dut1')
+    params = {'platform' => @equipment[e].name}
+    @equipment[e].send_cmd('uname -r', @equipment[e].prompt)
+    params['version'] = @equipment[e].response.match(/^([\d\.]+)/i).captures[0]
+    return params
+  end
+
   def get_power_domain_data(key)
 
     power_data =  Hash.new()
@@ -145,6 +152,17 @@ module EvmData
     get_cmd(params)
   end
 
+  def get_expected_poweroff_domains(params=nil)
+    machines = {}
+    params = get_default_params if !params
+    data = get_power_domain_data(params['platform'])['power_domains']
+    machines['am335x-evm']  = {'0.0' => data}
+    machines['am43xx-gpevm'] = {'0.0' => data}
+    machines['dra7xx-evm']  = {'0.0' => data}
+    machines['dra72x-evm']  = {'0.0' => data}
+    params.merge!({'dict' => machines})
+    get_cmd(params)
+  end
 
   def get_cmd(params)
     raise "'platform' and 'version' are both mandatory params" if !params.key?('platform') or !params.key?('version')
