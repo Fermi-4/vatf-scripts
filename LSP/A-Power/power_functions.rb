@@ -127,4 +127,14 @@ module PowerFunctions
     }
   end
 
+  def setup_multimeter(dut='dut1',mm='multimeter1')
+    multimeter = @equipment[dut].params[mm]
+    conn_type = multimeter.params && multimeter.params.has_key?('conn_type') ? multimeter.params['conn_type'] : 'serial'
+    add_equipment(mm) do |log_path|
+      Object.const_get(@equipment[dut].params[mm].driver_class_name).new(@equipment[dut].params[mm],log_path)
+    end
+    # Connect to multimeter
+    @equipment[mm].connect({'type'=>conn_type})
+  end
+
 end
