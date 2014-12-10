@@ -110,5 +110,96 @@ module NetworkUtils
     end
     ipv6_global_addr ? ipv6_global_addr : nil
   end
+  
+  def get_iperf_cmd(type="client", ipaddr=nil, port=nil, proto="udp", interval=nil, len=nil, bw=nil, time=nil, is_ipv6=false, bind_addr=nil)
+    iperf_cmd = ""
+    iperf_cmd += "iperf "
+    type == "client" ? iperf_cmd += "-c #{ipaddr} " : iperf_cmd += "-s "
+    port != nil ? iperf_cmd += "-p #{port} " : iperf_cmd
+    proto != nil ? (proto == "tcp" ? iperf_cmd : iperf_cmd += "-u " ) : iperf_cmd += "-u "
+    interval != nil ? iperf_cmd += "-i #{interval} " : iperf_cmd
+    len != nil ? iperf_cmd += "-l #{len} " : iperf_cmd
+    bw != nil ? iperf_cmd += "-b #{bw} " : iperf_cmd
+    time != nil ? iperf_cmd += "-t #{time} " : iperf_cmd
+    type == "client" ? iperf_cmd += "> #{port}.txt & " : iperf_cmd 
+    # iperf_cmd += "& "
+    puts "iperf command is "
+    puts "#{iperf_cmd}"
+    iperf_cmd
+  end
+  
+  def get_iperf_reported_bw(log)
+    x = log.match(/^\[[\s\d]+\]\sServer\s+Report:.+?sec[\s\d\.]+[KMG]Bytes\s+([\d\.]+)\s+([\w\/]+)/m).captures[0].to_f
+    x_unit = log.match(/^\[[\s\d]+\]\sServer\s+Report:.+?sec[\s\d\.]+[KMG]Bytes\s+([\d\.]+)\s+([KMG])bits\/sec/m).captures[1].to_s
+    (x.to_s + "#{x_unit}")
+  end
+  
+  def convert_to_mbps(x,unit_x)
+    if unit_x == /M/
+      return x
+    elsif unit_x == /K/
+      return x.to_f/1000
+    end
+  end
+  
+  def common_units?(a,b)
+    unit_x = a.match(/\d+(M|G|K)/).captures[0].to_s
+    unit_y = b.match(/\d+(M|G|K)/).captures[0].to_s
+    if unit_x == unit_y
+     true
+    else
+      false
+    end
+  end
+  
+  def split_units(rate)
+    x = rate.match(/(\d+.*\d*)[M|G|K]/).captures[0].to_f
+    unit_x = rate.match(/\d+(M|G|K)/).captures[0].to_s
+	return x,unit_x
+  end
+  def get_values(a,b)
+    # returns values in common units, to make comparisons easier. 
+    # For example if a=3M,b=5K, will return 3000000,"",5000,""
+    # For example if a=3K,b=5K, will return 3,K,5,K
+    x, unit_x = split_units(a)
+    y, unit_y = split_units(b)
+    if common_units?(a,b)
+     return x,y,unit_x,unit_y
+    else
+      return convert_to_bits_per_sec(a),convert_to_bits_per_sec(b),"",""
+    end
+  end
+ 
+  def get_percent_error(measured_bw,expected_bw)
+    x,y,unit_x,unit_y = get_values(measured_bw,expected_bw)
+    x = x.abs
+    y = y.abs
+    puts "x: #{x}"  
+    puts "y: #{y}"
+    return (((y-x)/y)*100).abs.to_f
+  end
+  
+  def convert_to_bytes_per_sec(bitrate)
+    if bitrate.match(/M/)
+      return (bitrate.match(/([0-9]*\.[0-9]+|[0-9]+)M/).captures[0].to_f*1000000)/8
+    elsif bitrate.match(/K/)
+      return (bitrate.match(/([0-9]*\.[0-9]+|[0-9]+)K/).captures[0].to_f*1000)/8
+    else
+      return bitrate/8
+    end
+  end
 
+  def convert_to_bits_per_sec(bitrate)
+    if bitrate.match(/M/)
+      return (bitrate.match(/([0-9]*\.[0-9]+|[0-9]+)M/).captures[0].to_f*1000000)
+    elsif bitrate.match(/K/)
+      return (bitrate.match(/([0-9]*\.[0-9]+|[0-9]+)K/).captures[0].to_f*1000)
+    else
+      return bitrate
+    end
+  end
+
+  def convert_to_mbps(bytes_per_sec)
+    return bytes_per_sec.to_f*8/1000000
+  end
 end
