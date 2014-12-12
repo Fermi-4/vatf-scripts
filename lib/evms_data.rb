@@ -81,10 +81,17 @@ module EvmData
     return power_data[key]
   end
 
-  def get_nand_loc(key)
-    nand_loc = {}
-    nand_loc['am335x-evm'] = {'primary_bootloader' => 'NAND.SPL', 'secondary_bootloader' => 'NAND.u-boot', 'u-boot-env' => 'NAND.u-boot-env', 'kernel' => 'NAND.kernel', 'dtb' => 'NAND.u-boot-spl-os', 'fs' => 'NAND.rootfs'}
-    return nand_loc[key]
+  def get_nand_loc(platform)
+    # default nand location names for each partitions
+    case platform
+    when "am335x-evm"
+      # if there is difference from the default, add value here
+      return {'primary_bootloader' => 'NAND.SPL', 'secondary_bootloader' => 'NAND.u-boot', 'u-boot-env' => 'NAND.u-boot-env', 'kernel' => 'NAND.kernel', 'dtb' => 'NAND.u-boot-spl-os', 'fs' => 'NAND.rootfs'}
+    else
+      # default nand location names for each partitions
+      return {'primary_bootloader' => 'NAND.SPL', 'secondary_bootloader' => 'NAND.u-boot', 'u-boot-env' => 'NAND.u-boot-env', 'kernel' => 'NAND.kernel', 'dtb' => 'NAND.u-boot-spl-os', 'fs' => 'NAND.rootfs'}
+    end
+    return nand_loc
   end
 
   def get_platform_string(params)
