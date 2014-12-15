@@ -119,7 +119,7 @@ end
 # get nand env partition start addr in uboot prompt
 def get_nand_env_part_addr
   @equipment['dut1'].send_cmd("saveenv",@equipment['dut1'].boot_prompt, 5)
-  env_start_addr = /Erasing\s+at\s+(0x\d+)/.match(@equipment['dut1'].response).captures[0]
+  env_start_addr = /Erasing\s+at\s+(0x\h+)/.match(@equipment['dut1'].response).captures[0]
   return env_start_addr
   
 end
