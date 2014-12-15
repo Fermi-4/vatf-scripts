@@ -169,11 +169,12 @@ end
 #                                         system in whic the audio will be recorded
 def rec_audio(audio_info)
   r_sys = audio_info[0]['sys']
-  r_string = 'arecord ' + prep_audio_string(audio_info[0])
+  r_string = 'pids=( ) ; arecord ' + prep_audio_string(audio_info[0]) + ' & pids+=( $! )' 
   audio_info[1..-1].each do |r_info|
-    r_string += " &\n arecord " + prep_audio_string(r_info)
+    r_string += " & arecord " + prep_audio_string(r_info)
     r_sys = r_info['sys']
   end
+  r_string += ' & wait ${pids[@]}'
   r_sys.send_cmd(r_string, r_sys.prompt, audio_info[0]['duration'].to_i)
 end
 
@@ -203,10 +204,11 @@ end
 #                                         system in which the audio will be played
 def play_audio(audio_info)
   p_sys = audio_info[0]['sys']
-  p_string = 'aplay ' + prep_audio_string(audio_info[0])
+  p_string = 'pids=( ) ; aplay ' + prep_audio_string(audio_info[0])  + ' & pids+=( $! )' 
   audio_info[1..-1].each do |p_info|
-    p_string += " &\n aplay " + prep_audio_string(p_info)
+    p_string += " &  aplay " + prep_audio_string(p_info)
   end
+  p_string += ' & wait ${pids[@]}'
   p_sys.send_cmd(p_string, p_sys.prompt, audio_info[0]['duration'].to_i)
 end
 
@@ -236,16 +238,17 @@ end
 #                                         system in which the audio will be played/recorded
 def play_rec_audio(play_audio_info, rec_audio_info)
   r_sys = rec_audio_info[0]['sys']
-  r_string = 'arecord ' + prep_audio_string(rec_audio_info[0]) + " &\n"
+  r_string = 'arecord ' + prep_audio_string(rec_audio_info[0]) + " & "
   rec_audio_info[1..-1].each do |r_info|
-    r_string += ' arecord ' + prep_audio_string(r_info) + " &\n"
+    r_string += ' arecord ' + prep_audio_string(r_info) + " & "
   end
   r_sys.send_cmd(r_string, /Recording\s*.+/im, 5)
   p_sys = play_audio_info[0]['sys']
-  p_string = 'aplay ' + prep_audio_string(play_audio_info[0])
+  p_string = 'pids=( ) ; aplay ' + prep_audio_string(play_audio_info[0]) + ' & pids+=( $! )'
   play_audio_info[1..-1].each do |p_info|
-    p_string += " &\n aplay " + prep_audio_string(p_info)
+    p_string += " & aplay " + prep_audio_string(p_info) + ' & pids+=( $! )'
   end
+  p_string += ' & wait ${pids[@]}'
   p_sys.send_cmd(p_string, p_sys.prompt, play_audio_info[0]['duration'].to_i)
   sleep(5) #wait 5 secs for recording to finish
 end
