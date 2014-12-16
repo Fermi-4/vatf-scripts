@@ -124,8 +124,7 @@ def execute_cmd(commands)
 end
 
 def stop_boot()
-	@equipment['dut1'].wait_for(/I2C:/, 10) if @test_params.platform.match('am387x-evm')
-	@equipment['dut1'].wait_for(/cpsw/, 10) if @test_params.platform.match('am335x-evm')
+	@equipment['dut1'].wait_for(/U-Boot/, 10) 
 	@equipment['dut1'].stop_boot
 end
 
