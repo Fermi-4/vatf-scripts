@@ -232,7 +232,7 @@ def run_dsmark()
   @output_rate_arr.each_index { |i|
     dport = 5000 + i + 1
     queue = i + 1
-    @equipment['dut1'].send_cmd("tc filter add dev eth0 parent 1:0 \
+    @equipment['dut1'].send_cmd("tc filter add dev #{@interface} parent 1:0 \
                     protocol ip prio 1 u32 match ip dport #{dport} 0xffff action skbedit queue_mapping #{queue}", @equipment['dut1'].prompt,10)
    }
 end
