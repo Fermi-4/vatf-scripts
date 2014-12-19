@@ -202,4 +202,23 @@ module NetworkUtils
   def convert_to_mbps(bytes_per_sec)
     return bytes_per_sec.to_f*8/1000000
   end
+  
+  def run_dhclient(dev,interface)
+    this_equipment = @equipment["#{dev}"]
+    this_equipment.send_cmd("/sbin/dhclient #{interface}",this_equipment.prompt,10)
+  end
+  
+   # Get the name of local interface that is talking to remote IP
+   def get_local_iface_name(this_equipment=@equipment['dut1'],remote_ipaddr)
+    this_equipment.send_cmd("ip route get #{remote_ipaddr}")
+    return this_equipment.response.match(/dev\s(\w+\d+)/)[1].to_s
+   end
+   
+  # Get the IP address of remote interface talking with local_if 
+  def get_remote_ip(local_if,local_dev,remote_dev)
+    # get name of remote interface talking with local interface 
+    remote_if = get_local_iface_name(@equipment["#{remote_dev}"],get_ifconfig_common(local_dev, local_if, get_mode="ip"))
+    # get ip of remote interface talking with local interface 
+    return get_ifconfig_common(remote_dev, remote_if, get_mode="ip") 
+  end
 end

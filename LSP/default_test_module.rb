@@ -732,12 +732,6 @@ module LspTestScript
     this_equipment.response.match(/\d+\s+\d+\.\d+\s+\d+\.\d+/) ? true : false
   end
    
-   # Get the name of local interface that is talking to remote IP
-   def get_local_iface_name(this_equipment=@equipment['dut1'],remote_ipaddr)
-    this_equipment.send_cmd("ip route get #{remote_ipaddr}")
-    return this_equipment.response.match(/dev\s(\w+\d+)/)[1].to_s
-   end
-
   def report_msg(msg, e='dut1')
     puts msg
     @equipment[e].log_info(msg)
