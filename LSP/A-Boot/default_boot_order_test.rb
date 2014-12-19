@@ -329,18 +329,18 @@ end
 def get_image
   params={}
   params['primary_bootloader_mmc'] = @test_params.instance_variable_defined?(:@primary_bootloader_mmc) ? @test_params.primary_bootloader_mmc : ''
-  params['primary_bootloader_mmc_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_mmc_src_dev) ? @test_params.params_chan.primary_bootloader_mmc_src_dev[0] : ''
+  params['primary_bootloader_mmc_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_mmc_src_dev) ? @test_params.params_chan.primary_bootloader_mmc_src_dev[0] : 'eth'
   params['secondary_bootloader_mmc'] = @test_params.instance_variable_defined?(:@secondary_bootloader_mmc) ? @test_params.secondary_bootloader_mmc : ''
-  params['secondary_bootloader_mmc_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_mmc_src_dev) ? @test_params.params_chan.secondary_bootloader_mmc_src_dev[0] : ''
+  params['secondary_bootloader_mmc_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_mmc_src_dev) ? @test_params.params_chan.secondary_bootloader_mmc_src_dev[0] : 'eth'
 
   params['primary_bootloader_usbspl'] = @test_params.instance_variable_defined?(:@primary_bootloader_usbspl) ? @test_params.primary_bootloader_usbspl : ''
-  params['primary_bootloader_usbspl_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_usbspl_src_dev) ? @test_params.params_chan.primary_bootloader_usbspl_src_dev[0] : ''                               
+  params['primary_bootloader_usbspl_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_usbspl_src_dev) ? @test_params.params_chan.primary_bootloader_usbspl_src_dev[0] : 'eth'                               
   params['secondary_bootloader_usbspl'] = @test_params.instance_variable_defined?(:@secondary_bootloader_usbspl) ? @test_params.secondary_bootloader_usbspl : ''
-  params['secondary_bootloader_usbspl_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_usbspl_src_dev) ? @test_params.params_chan.secondary_bootloader_usbspl_src_dev[0] : ''                               
+  params['secondary_bootloader_usbspl_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_usbspl_src_dev) ? @test_params.params_chan.secondary_bootloader_usbspl_src_dev[0] : 'eth'                               
   params['primary_bootloader_nand'] = @test_params.instance_variable_defined?(:@primary_bootloader_nand) ? @test_params.primary_bootloader_nand : ''
-  params['primary_bootloader_nand_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_nand_src_dev) ? @test_params.params_chan.primary_bootloader_nand_src_dev[0] : ''
+  params['primary_bootloader_nand_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_nand_src_dev) ? @test_params.params_chan.primary_bootloader_nand_src_dev[0] : 'eth'
   params['secondary_bootloader_nand'] = @test_params.instance_variable_defined?(:@secondary_bootloader_nand) ? @test_params.secondary_bootloader_nand : ''
-  params['secondary_bootloader_nand_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_nand_src_dev) ? @test_params.params_chan.secondary_bootloader_nand_src_dev[0] : ''
+  params['secondary_bootloader_nand_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_nand_src_dev) ? @test_params.params_chan.secondary_bootloader_nand_src_dev[0] : 'eth'
 
   translated_params = setup_host_side(params)
 

@@ -1,27 +1,24 @@
 require File.dirname(__FILE__)+'/default_boot_order_test' 
 
 def run
-  regexp = /Hit\s+any\s+key\s+to\s+stop\s+autoboot/i
   @translated_boot_params = get_image()
   @equipment['dut1'].disconnect()
   boot_to_bootloader()
-  puts "At this Stage booted from any media"
-  puts "Made sure emmc is invalide"
+  puts "Invalidate both blocks on eMMC"
   disable_blocks(1,100, 100)
   disable_blocks(1,200, 100)
-  puts "Boot from the network"
   uart_boot()
-  puts "Boot default emmc block 1"
+  puts "Boot from default emmc block 1"
   enable_blocks(1,100, 100,@translated_boot_params)
-  reboot_dut(regexp)
+  reboot_dut
   status = uboot_sanity_test()
   if status < 1
     puts "Now invalidate emmc block 1"
     disable_blocks(1,100, 100)
     uart_boot()
-    puts "Boot default emmc block 2"
+    puts "Boot from default emmc block 2"
     enable_blocks(1,200, 100,@translated_boot_params)
-    reboot_dut(regexp)
+    reboot_dut
     status = uboot_sanity_test()
   end 
   if status  < 1
@@ -40,7 +37,8 @@ def enable_blocks(part,blocks, count,translated_params)
   @equipment['dut1'].send_cmd("", @equipment['dut1'].boot_prompt, 2)
   configut_dut(part)
   # Load MLO
-  uboot_cmd = "tftp ${loadaddr} #{translated_params['primary_bootloader_MLO_image_name']}"
+  raise "no MLO to be tftp-ed" if translated_params['primary_bootloader_mmc_image_name']==nil
+  uboot_cmd = "tftp ${loadaddr} #{translated_params['primary_bootloader_mmc_image_name']}"
   @equipment['dut1'].send_cmd(uboot_cmd, @equipment['dut1'].boot_prompt, 2)
   tftp_load =  @equipment['dut1'].response.to_s.scan(/done/)
   raise "MLO tftp load failed" if tftp_load == nil
@@ -102,9 +100,6 @@ def uart_boot()
   @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
   @equipment['dut1'].disconnect()
   boot_to_bootloader()
-  puts "turn ON USB Switch !!!!!!!!!" 
-  @usb_switch_handler.select_input(@equipment['dut1'].params['usb_port'])
-  
 end 
 
 
