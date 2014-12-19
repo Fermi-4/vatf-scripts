@@ -234,8 +234,10 @@ def runTestComparison(outFile, goldenFile, resultsFile)
         return 'FAIL'
     end
 
+    xdcPath = (@equipment['dut1'].params.key?('xdcRoot')) ? @equipment['dut1'].params['xdcRoot'] : '/home/a0273433/ti/xdctools_3_25_04_88/'
+
     `export XDCPATH=#{File.dirname(__FILE__)}; \
-         /home/a0273433/ti/xdctools_3_25_04_88/xs -c #{File.join(File.dirname(__FILE__), "mainCompare.xs")} #{outFile} #{goldenFile} #{resultsFile}`
+         #{xdcPath}/xs -c #{File.join(File.dirname(__FILE__), "mainCompare.xs")} #{outFile} #{goldenFile} #{resultsFile}`
 
     if (File.zero?(resultsFile))
         return 'PASS'
