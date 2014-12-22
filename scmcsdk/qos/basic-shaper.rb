@@ -50,6 +50,10 @@ end
 
 
 def run()
+  if (@interface == "eth1")
+    run_dhclient('dut1',@interface)
+  end
+  server_ip = get_remote_ip(@interface,'dut1','server1')
   # Find qos tree root
   @equipment['dut1'].send_cmd("cd ",@equipment['dut1'].prompt,10)
   @qos_tree_root = get_qos_trees(@interface_shapers,@shaper_name)
@@ -186,7 +190,7 @@ def run()
     if (@traffic_rates[i] == nil)
       # do nothing
     else
-      cmd = get_iperf_cmd("client", @equipment['server1'].telnet_ip, "#{dport}", "udp", "4", "1470", "#{@traffic_rates[i]}", 300, nil, nil)
+      cmd = get_iperf_cmd("client", server_ip, "#{dport}", "udp", "4", "1470", "#{@traffic_rates[i]}", 300, nil, nil)
       puts "cmd is #{cmd}"
       @equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt,10)
     end
