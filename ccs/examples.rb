@@ -117,7 +117,7 @@ def run_apps(apps, res_table, board = nil)
 
             # If a script exists, didn't abort, and printed 'PASS', then the
             # script passed 
-            if (script.exists() && (script.status == 0) && script.stdout.match(/.*PASS.*/))
+            if (script.exists() && (script.status == 0))
                 scriptPass = true
             end
 
