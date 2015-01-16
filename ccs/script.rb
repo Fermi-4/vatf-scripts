@@ -36,7 +36,6 @@ Need to pass in the @test_params and @equipment instances so we can extract them
                 end
             else
                 equipment['dut1'].log_info("Script #{script} was not found")
-                set_result(FrameworkConstants::Result[:fail], "Script #{script} was not found")
             end
         else
             puts "No host script was selected."
