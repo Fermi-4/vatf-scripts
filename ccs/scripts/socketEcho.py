@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import argparse
+from testlink import Testlink
 import socket
 import sys
 import time
@@ -153,41 +153,30 @@ def run4(ip, port, bufsize, socketType="tcp", cert=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='TCP/UDP Send receive test script')
-
-    parser.add_argument("--cio", help="C I/O input file", type=argparse.FileType('r',0), required=True)
+    testlink = Testlink(description='TCP/UDP Send receive test script')
 
     # Override args
-    parser.add_argument("-ip", "--ip", help="IP address of the target")
-    parser.add_argument("-p",  "--port", help="Port number of the target", type=int, default=1000)
-    parser.add_argument("-l",  "--bufsize", help="Buffer size", type=int, default=1024)
-    parser.add_argument("-s",  "--socket", help="tcp or udp socket", choices=['tcp', 'udp'], default='tcp')
-    parser.add_argument("-c",  "--cert", help="CA certificate path")
+    testlink.add_argument("-ip", "--ip", help="IP address of the target")
+    testlink.add_argument("-p",  "--port", help="Port number of the target", type=int, default=1000)
+    testlink.add_argument("-l",  "--bufsize", help="Buffer size", type=int, default=1024)
+    testlink.add_argument("-s",  "--socket", help="tcp or udp socket", choices=['tcp', 'udp'], default='tcp')
+    testlink.add_argument("-c",  "--cert", help="CA certificate path")
 
-    args = parser.parse_args()
+    args = testlink.parse_args()
 
-    ipv4RegEx = re.compile("(\d{1,3}\.?){4}")
-    ipv6RegEx = re.compile("(Address:\s)(([\dA-Fa-f]+:*)+)")
+    ipv4RegEx = "(\d{1,3}\.){3}\d{1,3}"
+    ipv6RegEx = "(Address:\s)(([\dA-Fa-f]+:*)+)"
 
     for i in range(120):
-        print "%s attempt to start..." % i
-        args.cio.seek(0)
-        readString = args.cio.read()
-
-        ipv6Address = ipv6RegEx.search(readString)
-        ipAddress   = ipv4RegEx.search(readString)
-
-        if (ipv6Address):
+        if testlink.block(ipv4RegEx, 2):
+            args.ip = ipAddress.group(0)
+            run4(args.ip, args.port, args.bufsize, args.socket, args.cert)
+            break
+        if testlink.block(ipv6RegEx, 2):
             args.ip = readString[ipv6Address.start(2):ipv6Address.end()]
             print "IPv6:'%s'" % readString[ipv6Address.start(2):ipv6Address.end()]
             run6(args.ip, args.port, args.bufsize, args.socket, args.cert)
             break
-        if (ipAddress):
-            args.ip = ipAddress.group(0)
-            run4(args.ip, args.port, args.bufsize, args.socket, args.cert)
-            break
-
-        time.sleep(2)
 
 if __name__ == '__main__':
     main()

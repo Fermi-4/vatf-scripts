@@ -44,6 +44,16 @@ def run_apps(apps, res_table, board = nil)
     script = Script.new(@test_params, @equipment)
     script.addArg("--cio=#{@equipment['dut1'].target.ccs.cioFile()}")
 
+    # If the bench file defines additional parameter to be passed to testlink
+    # scripts, then pass them as well
+    if (@equipment['dut1'].params.key?('benchArgs'))
+        benchArgs = ""
+        @equipment['dut1'].params['benchArgs'].each { |k,v|
+            benchArgs.concat("#{k}=#{v}~")
+        }
+        script.addArg("--bench=\"#{benchArgs[0..-2]}\"")
+    end
+
     # Check if need to test a specific target application, otherwise filter
     # on applications with a 'board' prefix. If no board is specified, it will
     # find test all applications.
