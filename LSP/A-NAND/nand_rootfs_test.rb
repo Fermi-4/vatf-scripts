@@ -71,6 +71,8 @@ def run
       @equipment['dut1'].send_cmd(@equipment['dut1'].login, @equipment['dut1'].prompt, 10) # login to the unit
     end
 
+   sleep 5
+
     # do read write test under nand filesystem
     test_loop.to_i.times {|j|
       puts "=========read write test loop: #{j}\n"
