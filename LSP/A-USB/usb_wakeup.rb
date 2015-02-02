@@ -155,7 +155,7 @@ def verify_devices_detected(enum_data, wakeup_event)
     return 1
   else
     # Check detection based on lsusb output
-    ['Mouse', 'Drive', 'Keyboard'].each{|device|
+    ['Mouse', 'Keyboard'].each{|device|
       return 0 if !enum_data.match(/#{device}/i)
     }
     return 1
