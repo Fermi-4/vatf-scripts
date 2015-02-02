@@ -3,6 +3,18 @@
 #              2) no mmc card present (due to mmc failover doesn't work)
 require File.dirname(__FILE__)+'/default_boot_order_test' 
 
+def connect_to_extra_equipment
+  usb_switch = @usb_switch_handler.usb_switch_controller[@equipment['dut1'].params['usb_port'].keys[0]]
+  if usb_switch.respond_to?(:serial_port) && usb_switch.serial_port != nil
+    usb_switch.connect({'type'=>'serial'})
+  #elsif usb_switch.respond_to?(:serial_server_port) && usb_switch.serial_server_port != nil
+  #  usb_switch.connect({'type'=>'serial'})
+  else
+    raise "Something wrong with usb switch connection. Please check your setup"
+  end
+
+end
+
 def uart_boot()
   puts "##### UART BOOT START #####" 
   @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
@@ -35,7 +47,7 @@ end
 # Input parameters: None 
 # Return Parameter: pass or fail.  
 
-def usb_boot()
+def usbrndis_boot()
   puts "##### USB-ETH BOOT START #####" 
   init_dhcp()
 

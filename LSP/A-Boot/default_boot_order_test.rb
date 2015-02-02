@@ -30,25 +30,14 @@ def setup
   connect_to_extra_equipment() 
 end
 
-def connect_to_extra_equipment
-  usb_switch = @usb_switch_handler.usb_switch_controller[@equipment['dut1'].params['usb_port'].keys[0]]
-  if usb_switch.respond_to?(:serial_port) && usb_switch.serial_port != nil
-    usb_switch.connect({'type'=>'serial'})
-  elsif usb_switch.respond_to?(:serial_server_port) && usb_switch.serial_server_port != nil
-    usb_switch.connect({'type'=>'serial'})
-  else
-    raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the USB switch. Please check your bench file"
-  end
-end
 
 def run
   status =  1
   @translated_boot_params = get_image()
   platform_boot_order = {}
-  platform_boot_order['beaglebone-black'] = [:emmc_boot, :uart_boot, :usb_boot] 
-  #platform_boot_order['beaglebone-black'] = [ :usb_boot] 
-  #platform_boot_order['beaglebone-black'] = [ :uart_boot] 
+  platform_boot_order['beaglebone-black'] = [:emmc_boot, :uart_boot, :usbrndis_boot] 
   platform_boot_order['am335x-evm'] = [:uart_boot,:nand_boot] 
+  platform_boot_order['am43xx-gpevm'] = [:nand_boot, :usbhost_boot, :usbrndis_boot] 
   platform_boot_order[@test_params.platform.downcase].each{|func|
      test_method=self.method(func)
      status = test_method.call()
@@ -87,11 +76,6 @@ def init_dhcp()
   if check_config_dhcp(dhcp_conf_file_full_path) ==  1
     append_config_dhcp(dhcp_conf_file_full_path)
   end
-  #now update the dhcp file with boot image locations.
-  line_to_insert = "filename " + "\"" + @translated_boot_params['primary_bootloader_usbspl_image_name'] + "\"; #" + @test_params.platform.downcase
-  insert_line_to_a_file("#" + @test_params.platform.downcase,line_to_insert,dhcp_conf_file_full_path)
-  line_to_insert = "filename " + "\"" + @translated_boot_params['secondary_bootloader_usbspl_image_name'] + "\"; #uboot_image" 
-  insert_line_to_a_file('#uboot_image',line_to_insert,dhcp_conf_file_full_path)
   dhcp_sever_setup_file_full_path = CmdTranslator::get_ubuntu_cmd({'cmd'=>'dhcp_sever_setup_file', 'version'=>get_ubuntu_version()})
   line_to_insert = "INTERFACES=\"usb0\""
   insert_line_to_a_file('INTERFACES=',"INTERFACES=\"usb0\"",dhcp_sever_setup_file_full_path)
@@ -178,15 +162,49 @@ def ubuntu_package_installer(package_name)
 end 
 
 
+def dhcp_spl_config
+  dhcp_spl_config  = """
+#OpenTest: Boot images spl loading block
+
+## Match the ROM and U-Boot SPL strings for am335x and am43xx
+if substring (option vendor-class-identifier, 0, 10) = \"DM814x ROM\" {
+  filename \"usbspl/u-boot-spl.bin\"; #DM814x
+} elsif substring (option vendor-class-identifier, 0, 10) = \"AM335x ROM\" {
+  filename \"usbspl/u-boot-spl.bin.am335x\"; #beaglebone-black,am335x-evm
+} elsif substring (option vendor-class-identifier, 0, 17) = \"AM335x U-Boot SPL\" {
+  filename \"usbspl/u-boot.img.am335x\"; #uboot_image
+} elsif substring (option vendor-class-identifier, 0, 10) = \"AM43xx ROM\" {
+filename \"usbspl/u-boot-spl.bin.am43xx\"; #am43xx-gpevm
+} elsif substring (option vendor-class-identifier, 0, 17) = \"AM43xx U-Boot SPL\" {
+filename \"usbspl/u-boot.img.am43xx\"; #uboot_image
+} else {
+  filename \"usbspl/uImage-3.2.0+\";
+}
+
+allow bootp;
+subnet 192.168.0.0 netmask 255.255.255.0 {
+}
+
+subnet 192.168.2.0 netmask 255.255.255.0 {
+  max-lease-time 120;
+  range dynamic-bootp 192.168.2.2 192.168.2.10;
+}
+ """     
+return dhcp_spl_config 
+end 
+
+
+
 # Function does sanity integrity test on uboot, after the system booted from chosen media.
 # Input parameters: None 
 # Return Parameter: pass or fail.  
 
 def uboot_sanity_test()
   puts "UBOOT SANITY TEST .........."
-  @equipment['dut1'].send_cmd('', @equipment['dut1'].boot_prompt, 2)
-  @equipment['dut1'].send_cmd("help", @equipment['dut1'].boot_prompt, 5)
-  @equipment['dut1'].send_cmd("printenv", @equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd('print ver', @equipment['dut1'].boot_prompt, 2)
+  #@equipment['dut1'].send_cmd("help", @equipment['dut1'].boot_prompt, 5)
+  #@equipment['dut1'].send_cmd("printenv", @equipment['dut1'].boot_prompt, 5)
+  # TODO: check if we can boot to kernel
 
   if @equipment['dut1'].timeout?
     return 1
@@ -204,6 +222,7 @@ end
 
 def set_dut_ipaddr()
   # Force dut not to do tftp automatically. 
+  @equipment['dut1'].send_cmd("setenv serverip #{@equipment['server1'].telnet_ip}", @equipment['dut1'].boot_prompt, 2)
   @equipment['dut1'].send_cmd("setenv autoload no", @equipment['dut1'].boot_prompt, 2)
   # Force dut not to do tftp automatically. 
   dhcp = CmdTranslator::get_uboot_cmd({'cmd'=>'dhcp', 'version'=>'0.0'})
@@ -220,8 +239,6 @@ end
 def restore_mmc(part) 
   puts "RESTORING MMC Part " + part.to_s + " ..."
 
-  uboot_cmd = "setenv serverip #{@equipment['server1'].telnet_ip}"
-  @equipment['dut1'].send_cmd(uboot_cmd, @equipment['dut1'].boot_prompt, 2)
   set_dut_ipaddr()
   # Set device either to EMMC = 1 or MMC = 0
   uboot_cmd = "mmc dev #{part}"
@@ -263,8 +280,6 @@ end
 
 def invalidate_mmc(part)
   puts "INVALIDATING MMC part " + part.to_s + " ..."
-  uboot_cmd = "setenv serverip #{@equipment['server1'].telnet_ip}"
-  @equipment['dut1'].send_cmd(uboot_cmd, @equipment['dut1'].boot_prompt, 2)
   set_dut_ipaddr()
   uboot_cmd = "mmc dev #{part}"
   @equipment['dut1'].send_cmd(uboot_cmd, @equipment['dut1'].boot_prompt, 2)
@@ -298,14 +313,11 @@ def reboot_dut()
   puts "REBOOTING DUT ..."
   @equipment['dut1'].power_cycle(@translated_boot_params)
   connect_to_equipment('dut1')
-  5.times {
+  30.times {
     @equipment['dut1'].send_cmd("", @equipment['dut1'].boot_prompt, 1)
+    break if !@equipment['dut1'].timeout?
   }
 
-  #@equipment['dut1'].power_cycle(@translated_boot_params)
-  #connect_to_equipment('dut1')
-  #@equipment['dut1'].wait_for(regexp,60)
-  #raise "Platform did not boot successfully" if @equipment['dut1'].timeout?
 end
 
 
@@ -344,6 +356,19 @@ def get_image
 
   translated_params = setup_host_side(params)
 
+  # copy the usbspl images to image names specified in dhcp if there is usbspl images
+  if params['primary_bootloader_usbspl'] != ''
+    soc_name = get_soc_name_for_platform(@test_params.platform.downcase)
+    srcfile = File.join(translated_params['server'].tftp_path, translated_params['primary_bootloader_usbspl_image_name'] ) 
+    dstfile = File.join(translated_params['server'].tftp_path, "usbspl/u-boot-spl\.bin\.#{soc_name}")
+    copy_with_path(srcfile, dstfile)
+  end
+  if params['secondary_bootloader_usbspl'] != ''
+    srcfile = File.join(translated_params['server'].tftp_path, translated_params['secondary_bootloader_usbspl_image_name'] ) 
+    dstfile = File.join(translated_params['server'].tftp_path, "usbspl/u-boot\.img\.#{soc_name}")
+    copy_with_path(srcfile, dstfile)
+  end
+
   return translated_params
 end 
 
@@ -367,40 +392,85 @@ def erase_emmc_device(part, blocks, count)
 
 end 
 
-
-def dhcp_spl_config
-  dhcp_spl_config  = """
-#OpenTest: Boot images spl loading block
-
-## Match the ROM and U-Boot SPL strings for am335x
-if substring (option vendor-class-identifier, 0, 10) = \"DM814x ROM\" {
-  filename \"spl_usb/u-boot-spl.bin\"; #DM814x
-} elsif substring (option vendor-class-identifier, 0, 10) = \"AM335x ROM\" {
-  filename \"spl_usb/u-boot-spl.bin\"; #beaglebone-black,am335x-evm
-} elsif substring (option vendor-class-identifier, 0, 17) = \"AM335x U-Boot SPL\" {
-  filename \"spl_usb/u-boot.img\"; #uboot_image
-} else {
-  filename \"spl_usb/uImage-3.2.0+\";
-}
-
-allow bootp;
-subnet 192.168.0.0 netmask 255.255.255.0 {
-}
-
-subnet 192.168.122.0 netmask 255.255.255.0 {
-}
-
-subnet 192.168.1.0 netmask 255.255.255.0 {
-  max-lease-time 120;
-  range dynamic-bootp 192.168.1.2 192.168.1.10;
-}
-
-subnet 192.168.2.0 netmask 255.255.255.0 {
-  max-lease-time 120;
-  range dynamic-bootp 192.168.2.2 192.168.2.10;
-}
- """     
-return dhcp_spl_config 
-end 
+# Function erase nand
+# Input
+# Return
+def erase_nand
+  puts "ERASE NAND..."
+  @equipment['dut1'].send_cmd("nand erase.chip", @equipment['dut1'].boot_prompt, 5)
+  rtn = @equipment['dut1'].response.to_s.scan(/OK/)
+  puts "rtn:"+rtn.to_s
+  raise "Erase nand failed" if ! @equipment['dut1'].response.to_s.scan(/OK/)
+end
 
 
+# Function does boot from nand.
+# Input parameters: None 
+# Return Parameter: pass or fail. 
+def flash_nand()
+  puts "#### FLASH NAND BOOT START ####"
+  #@equipment['dut1'].send_cmd("#check_prompt", @equipment['dut1'].boot_prompt, 2)
+  raise "flash_nand::Dut is not in uboot prompt" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+
+  #Because platform booted from UART, needed to change from uart to nand 
+  @translated_boot_params['primary_bootloader_dev'] = 'nand'
+  @translated_boot_params['primary_bootloader_src_dev'] = @translated_boot_params['primary_bootloader_nand_src_dev']
+  @translated_boot_params['primary_bootloader'] = @translated_boot_params['primary_bootloader_nand']
+  @translated_boot_params['primary_bootloader_image_name'] = @translated_boot_params['primary_bootloader_nand_image_name']
+  @translated_boot_params['secondary_bootloader_dev'] = 'nand'
+  @translated_boot_params['secondary_bootloader_src_dev'] = @translated_boot_params['secondary_bootloader_nand_src_dev']
+  @translated_boot_params['secondary_bootloader'] = @translated_boot_params['secondary_bootloader_nand']
+  @translated_boot_params['secondary_bootloader_image_name'] = @translated_boot_params['secondary_bootloader_nand_image_name']
+  # since just set nand to primary/secondary_bootloader_dev, need call add_dev_loc_to_params again
+  # to set nand partition location names 
+  @translated_boot_params = add_dev_loc_to_params(@translated_boot_params, 'primary_bootloader')
+  @translated_boot_params = add_dev_loc_to_params(@translated_boot_params, 'secondary_bootloader')
+
+  @translated_boot_params.each{|k,v| puts "#{k}:#{v}"}
+  boot_loader = UbootFlashBootloaderSystemLoader.new()
+  boot_loader.run(@translated_boot_params)
+
+end
+
+
+def flash_usbhost()
+  @equipment['dut1'].send_cmd("usb start", @equipment['dut1'].boot_prompt, 5)
+  raise "No usb host device being found" if ! @equipment['dut1'].response.match(/[0-9]+\s+Storage\s+Device.*found/i)
+  set_dut_ipaddr()
+  uboot_cmd = "tftp ${loadaddr}  #{@translated_boot_params['primary_bootloader_mmc_image_name']}"
+  @equipment['dut1'].send_cmd(uboot_cmd, @equipment['dut1'].boot_prompt, 2)
+  tftp_load =  @equipment['dut1'].response.to_s.scan(/done/)
+  raise "MLO tftp load failed" if tftp_load == nil
+  @equipment['dut1'].send_cmd("fatwrite usb 0 ${loadaddr} MLO ${filesize}", @equipment['dut1'].boot_prompt, 5)
+  raise "fatwrite usb failed! Please check if usbmsc has fat partition on it." if ! @equipment['dut1'].response.match(/bytes\s+written/)
+
+  uboot_cmd = "tftp ${loadaddr}  #{@translated_boot_params['secondary_bootloader_mmc_image_name']}"
+  @equipment['dut1'].send_cmd(uboot_cmd, @equipment['dut1'].boot_prompt, 2)
+  tftp_load =  @equipment['dut1'].response.to_s.scan(/done/)
+  raise "u-boot.img tftp load failed" if tftp_load == nil
+  @equipment['dut1'].send_cmd("fatwrite usb 0 ${loadaddr} u-boot.img ${filesize}", @equipment['dut1'].boot_prompt, 5)
+  raise "fatwrite usb failed" if ! @equipment['dut1'].response.match(/bytes\s+written/)
+  
+end
+
+
+def get_soc_name_for_platform(platform)
+  case platform.downcase
+    when /beaglebone/, /am335x-evm/
+      rtn = 'am335x'
+    when /am43xx-gpevm/, /am43xx-epos/
+      rtn = 'am43xx'
+    else
+      rtn = platform.downcase
+  end
+  rtn
+end
+
+def copy_with_path(src, dst)
+  if File.exist?(src)
+    FileUtils.mkdir_p(File.dirname(dst))
+    FileUtils.cp(src, dst)
+  else
+    raise "File: #{src} doesn't exist"
+  end
+end

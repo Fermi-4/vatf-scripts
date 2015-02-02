@@ -41,33 +41,15 @@ end
 # Return Parameter: pass or fail. 
 def nand_boot()
   puts "#### NAND BOOT START ####"
-  #@equipment['dut1'].send_cmd("#check_prompt", @equipment['dut1'].boot_prompt, 2)
-  raise "nand_boot::Dut is not in uboot prompt" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
-
-  #Because platform booted from UART, needed to change from uart to nand 
-  @translated_boot_params['primary_bootloader_dev'] = 'nand'
-  @translated_boot_params['primary_bootloader_src_dev'] = @translated_boot_params['primary_bootloader_nand_src_dev']
-  @translated_boot_params['primary_bootloader'] = @translated_boot_params['primary_bootloader_nand']
-  @translated_boot_params['primary_bootloader_image_name'] = @translated_boot_params['primary_bootloader_nand_image_name']
-  @translated_boot_params['secondary_bootloader_dev'] = 'nand'
-  @translated_boot_params['secondary_bootloader_src_dev'] = @translated_boot_params['secondary_bootloader_nand_src_dev']
-  @translated_boot_params['secondary_bootloader'] = @translated_boot_params['secondary_bootloader_nand']
-  @translated_boot_params['secondary_bootloader_image_name'] = @translated_boot_params['secondary_bootloader_nand_image_name']
-  # since just set nand to primary/secondary_bootloader_dev, need call add_dev_loc_to_params again
-  # to set nand partition location names 
-  @translated_boot_params = add_dev_loc_to_params(@translated_boot_params, 'primary_bootloader')
-  @translated_boot_params = add_dev_loc_to_params(@translated_boot_params, 'secondary_bootloader')
-
-  @translated_boot_params.each{|k,v| puts "#{k}:#{v}"}
-  boot_loader = UbootFlashBootloaderSystemLoader.new()
-  boot_loader.run(@translated_boot_params)
+  flash_nand()
 
   # set boot_loader to nil to not boot from uart
   @equipment['dut1'].boot_loader = nil
   boot_to_bootloader()
   status =  uboot_sanity_test()
-  puts "#### NAND BOOT END ####"
-  return status 
+  puts "#### VALIDATE NAND BOOT END ####"
+  return status
+
 end 
 
 
