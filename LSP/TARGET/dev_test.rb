@@ -113,7 +113,7 @@ def run_call_script
   @equipment['dut1'].send_cmd("chmod +x test.sh",@equipment['dut1'].prompt)
   cmd_timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_i : 600
   @equipment['dut1'].send_cmd("./test.sh 2> stderr.log > stdout.log 3> result.log",@equipment['dut1'].prompt, cmd_timeout)
-  @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
+  @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 5, false)
   @equipment['dut1'].timeout?
 end
 
