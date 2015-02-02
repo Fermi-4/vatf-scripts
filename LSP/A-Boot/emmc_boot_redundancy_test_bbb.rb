@@ -1,3 +1,6 @@
+# This test is to test the target can boot not only from default emmc block; but also be able to
+# boot from redundancy block
+
 require File.dirname(__FILE__)+'/default_boot_order_test' 
 
 def run
@@ -7,24 +10,26 @@ def run
   puts "Invalidate both blocks on eMMC"
   disable_blocks(1,100, 100)
   disable_blocks(1,200, 100)
+  # use uart boot so the board can be in uboot prompt
   uart_boot()
-  puts "Boot from default emmc block 1"
+  puts "Test Boot from default emmc block 1"
   enable_blocks(1,100, 100,@translated_boot_params)
   reboot_dut
   status = uboot_sanity_test()
-  if status < 1
+  if status == 0 
+    # continue to test second redundancy block
     puts "Now invalidate emmc block 1"
-    disable_blocks(1,100, 100)
-    uart_boot()
-    puts "Boot from default emmc block 2"
-    enable_blocks(1,200, 100,@translated_boot_params)
+    disable_blocks(1, 100, 100)
+    #uart_boot()
+    puts " Test Boot from default emmc block 2"
+    enable_blocks(1, 200, 100,@translated_boot_params)
     reboot_dut
     status = uboot_sanity_test()
   end 
-  if status  < 1
-    set_result(FrameworkConstants::Result[:pass], "Boot redundancy pass!","")
+  if status != 0 
+    set_result(FrameworkConstants::Result[:pass], "Boot redundancy Failed!","")
   else
-    set_result(FrameworkConstants::Result[:fail], "Boot redundancy Failed!","")   
+    set_result(FrameworkConstants::Result[:fail], "Boot redundancy Passed!","")   
   end  
 end
 
@@ -33,7 +38,7 @@ end
 # Input parameters: part (partition), block (starting block), count 
 # Return Parameter: None.  
 
-def enable_blocks(part,blocks, count,translated_params) 
+def enable_blocks(part, blocks, count,translated_params) 
   @equipment['dut1'].send_cmd("", @equipment['dut1'].boot_prompt, 2)
   configut_dut(part)
   # Load MLO
