@@ -14,7 +14,7 @@ def setup
 end
 
 def enable_devfreq(e='dut1')
-  @equipment[e].send_cmd("insmod /opt/ltp/testcases/bin/ddt/coproc_devfreq.ko", @equipment[e].prompt)
+  @equipment[e].send_cmd("modprobe coproc_devfreq", @equipment[e].prompt)
 end
 
 def disable_devfreq(e='dut1')
