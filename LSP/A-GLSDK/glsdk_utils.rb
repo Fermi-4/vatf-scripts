@@ -225,10 +225,11 @@ module GlsdkUtils
   def generate_glsdk_report(equip, glsdk_dir)
     command_wait_message = equip.prompt
     wait_secs = 120
+    gen_wait_secs = 900
     chk_cmd_echo = true
     file_and_path = File.join(glsdk_dir, "scripts/Systeminfo.csv")
     equip.send_cmd("cd #{glsdk_dir}; cp #{file_and_path} .", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-    equip.send_cmd("cd #{glsdk_dir}; ./generate-report.sh test_report.txt logs", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+    equip.send_cmd("cd #{glsdk_dir}; ./generate-report.sh test_report.txt logs", /#{command_wait_message}/, gen_wait_secs, chk_cmd_echo)
   end
 
   def copy_glsdk_results_to_log_server(equip_evm, equip_srv, glsdk_dir, tee_instance_id, glsdk_test_report_tar_name, report_file_name)
