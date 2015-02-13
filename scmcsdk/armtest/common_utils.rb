@@ -93,6 +93,7 @@ end
 def reboot(equip=@equipment['dut1'], cycle_power=false)
   params = Hash.new
   params['var_use_default_env'] = 2
+  params['var_boot_timeout'] = @test_params.instance_variable_defined?(:@var_boot_timeout) ? @test_params.var_boot_timeout : nil
   params['dut'] = equip
   saved_power_port = equip.power_port
   saved_sys_loader = equip.system_loader
