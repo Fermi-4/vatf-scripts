@@ -252,6 +252,10 @@ def restore_mmc(part)
   tftp_load =  @equipment['dut1'].response.to_s.scan(/done/)
   raise "MLO tftp load failed" if tftp_load == nil
   # Write MLO to device 
+  uboot_cmd = 'mmc write ${loadaddr} 0 100'
+  @equipment['dut1'].send_cmd(uboot_cmd, @equipment['dut1'].boot_prompt, 2)
+  mmc_write =  @equipment['dut1'].response.to_s.scan(/blocks\s+write:\s+OK/)
+  raise "MMC write failed" if mmc_write == nil
   uboot_cmd = 'mmc write ${loadaddr} 100 100'
   @equipment['dut1'].send_cmd(uboot_cmd, @equipment['dut1'].boot_prompt, 2)
   mmc_write =  @equipment['dut1'].response.to_s.scan(/blocks\s+write:\s+OK/)
@@ -295,6 +299,9 @@ def invalidate_mmc(part)
   raise "write garbage data to memory failed" if mem_data == nil
  
   # Write MLO to device 
+  uboot_cmd = 'mmc write ${loadaddr} 0 100'
+  @equipment['dut1'].send_cmd(uboot_cmd, @equipment['dut1'].boot_prompt, 2)
+  mmc_write = @equipment['dut1'].response.to_s.scan(/blocks\s+write:\s+OK/)
   uboot_cmd = 'mmc write ${loadaddr} 100 100'
   @equipment['dut1'].send_cmd(uboot_cmd, @equipment['dut1'].boot_prompt, 2)
   mmc_write = @equipment['dut1'].response.to_s.scan(/blocks\s+write:\s+OK/)
@@ -313,7 +320,7 @@ def reboot_dut()
   puts "REBOOTING DUT ..."
   @equipment['dut1'].power_cycle(@translated_boot_params)
   connect_to_equipment('dut1')
-  30.times {
+  40.times {
     @equipment['dut1'].send_cmd("", @equipment['dut1'].boot_prompt, 1)
     break if !@equipment['dut1'].timeout?
   }
@@ -434,6 +441,79 @@ end
 
 
 def flash_usbhost()
+  puts "#### FLASH USBHOST BOOT START ####"
+  #@equipment['dut1'].send_cmd("#check_prompt", @equipment['dut1'].boot_prompt, 2)
+  raise "flash_usbhost::Dut is not in uboot prompt" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+
+  #Because platform booted from UART, needed to change from uart to nand 
+  @translated_boot_params['primary_bootloader_dev'] = 'usbmsc'
+  @translated_boot_params['primary_bootloader_src_dev'] = @translated_boot_params['primary_bootloader_mmc_src_dev']
+  @translated_boot_params['primary_bootloader'] = @translated_boot_params['primary_bootloader_mmc']
+  @translated_boot_params['primary_bootloader_image_name'] = @translated_boot_params['primary_bootloader_mmc_image_name']
+  @translated_boot_params['secondary_bootloader_dev'] = 'usbmsc'
+  @translated_boot_params['secondary_bootloader_src_dev'] = @translated_boot_params['secondary_bootloader_mmc_src_dev']
+  @translated_boot_params['secondary_bootloader'] = @translated_boot_params['secondary_bootloader_mmc']
+  @translated_boot_params['secondary_bootloader_image_name'] = @translated_boot_params['secondary_bootloader_mmc_image_name']
+  @translated_boot_params.each{|k,v| puts "#{k}:#{v}"}
+  boot_loader = UbootFlashBootloaderSystemLoader.new()
+  boot_loader.run(@translated_boot_params)
+end
+
+def flash_kernel_to_usbhost_tobedeleted()
+  puts "#### FLASH KERNEL TO USBHOST START ####"
+  raise "flash_kernel_to_usbhost::Dut is not in uboot prompt" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+
+  #Because platform booted from UART, needed to change from uart to nand 
+  @translated_boot_params['kernel_dev'] = 'usbmsc'
+  @translated_boot_params['dtb_dev'] = 'usbmsc'
+  @translated_boot_params.each{|k,v| puts "#{k}:#{v}"}
+  boot_loader = UbootFlashKernelSystemLoader.new()
+  boot_loader.run(@translated_boot_params)
+end
+
+def boot_kernel_from_usbhost_tobedeleted()
+  puts "#### Boot kernel from USBHOST START ####"
+  raise "boot_kernel_from_usbhost::Dut is not in uboot prompt" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+  
+  # load kernel
+  @translated_boot_params['kernel_dev'] = 'usbmsc'
+  @translated_boot_params['dtb_dev'] = 'usbmsc'
+  boot_loader = UbootSystemLoader.new()
+  boot_loader.run(@translated_boot_params) 
+end
+
+def flash_kernel_to_media(media)
+  puts "#### FLASH KERNEL TO #{media.upcase} START ####"
+  raise "flash_kernel_to_media::Dut is not in uboot prompt" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+
+  #Because platform booted from UART, needed to change from uart to nand 
+  @translated_boot_params['kernel_dev'] = media
+  #@translated_boot_params['kernel_src_dev'] = @translated_boot_params['kernel_src_dev']
+  #@translated_boot_params['kernel'] 
+  #@translated_boot_params['primary_bootloader_image_name'] = @translated_boot_params['primary_bootloader_mmc_image_name']
+  @translated_boot_params['dtb_dev'] = media
+
+  @translated_boot_params = add_dev_loc_to_params(@translated_boot_params, 'kernel')
+  @translated_boot_params = add_dev_loc_to_params(@translated_boot_params, 'dtb')
+  @translated_boot_params.each{|k,v| puts "#{k}:#{v}"}
+
+  boot_loader = UbootFlashKernelSystemLoader.new()
+  boot_loader.run(@translated_boot_params)
+end
+
+def boot_kernel_from_media(media)
+  puts "#### Boot kernel from #{media.upcase} START ####"
+  raise "boot_kernel_from_media::Dut is not in uboot prompt" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+  
+  # load kernel
+  @translated_boot_params['kernel_dev'] = media
+  @translated_boot_params['dtb_dev'] = media
+  boot_loader = UbootSystemLoader.new()
+  boot_loader.run(@translated_boot_params) 
+end
+
+
+def flash_usbhost_orig()
   @equipment['dut1'].send_cmd("usb start", @equipment['dut1'].boot_prompt, 5)
   raise "No usb host device being found" if ! @equipment['dut1'].response.match(/[0-9]+\s+Storage\s+Device.*found/i)
   set_dut_ipaddr()

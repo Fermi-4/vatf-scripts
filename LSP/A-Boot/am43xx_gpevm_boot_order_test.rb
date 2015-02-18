@@ -1,4 +1,5 @@
 # This script is to test am43xx-gpevm boot from nand->usbmsc->mmc->usbrndis. 
+#              Sysboot[4:0]=00000b which is default boot switch setting
 # Asssumption: 1) Intially the board can be boot to uboot prompt
 #              2) usbmsc device has fat partition in it
 require File.dirname(__FILE__)+'/default_boot_order_test' 
@@ -51,6 +52,10 @@ def nand_boot()
     raise e
   end
 
+  # check if the board can boot kernel from nand
+  flash_kernel_to_media('nand')
+  boot_kernel_from_media('nand')  
+  
   puts "##### NAND BOOT END #####" 
   return status 
 end 
@@ -86,6 +91,10 @@ def usbhost_boot()
     raise e
   end
 
+  # check if board can boot kernel from usbhost
+  flash_kernel_to_media('usbmsc')
+  boot_kernel_from_media('usbmsc')  
+
   puts "##### USB-MSC BOOT END #####" 
   return status 
 end 
@@ -98,9 +107,14 @@ def usbrndis_boot()
   puts "##### USB-ETH BOOT START #####" 
   init_dhcp()
 
+  if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+    reboot_dut()
+  end
+  raise "usbrndis_boot::Dut is not in uboot prompt" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+
   begin
-    raise "usbrndis_boot::Dut is not in uboot prompt" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
     invalidate_mmc(0) 
+    puts "disconnecting usbhost..."
     @usb_switch_handler.disconnect(@equipment['dut1'].params['usbhost_port'].keys[0])
     erase_nand
 
@@ -122,6 +136,9 @@ def usbrndis_boot()
     raise e
   end
  
+  # check if the dut can boot to kernel under usbrndis booting mode
+  boot_kernel_from_media('eth')
+  
   puts "##### USB-ETH BOOT END #####" 
   return status 
 end 
