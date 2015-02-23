@@ -94,6 +94,18 @@ module EvmData
     return nand_loc
   end
 
+  def get_rawmmc_loc(platform)
+    case platform
+    when "am335x-evm"
+      # if there is difference from the default, add value here
+      return {'primary_bootloader' => '0x0', 'secondary_bootloader' => '0x300', 'kernel' => '0x3000', 'dtb' => '0x2000', 'fs' => '0x8000'}
+    else
+      # default raw mmc location names for each partitions
+      return {'primary_bootloader' => '0x0', 'secondary_bootloader' => '0x300', 'kernel' => '0x3000', 'dtb' => '0x2000', 'fs' => '0x8000'}
+    end
+    return rawmmc_loc
+  end
+
   def get_platform_string(params)
     machines = {}
     machines['am335x-evm']  = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x EVM/,

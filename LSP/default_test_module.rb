@@ -165,6 +165,9 @@ module LspTestScript
     when 'spi'
       spi_loc = get_spi_loc(@equipment['dut1'].name)
       new_params["spi_#{part}_loc"] = spi_loc["#{part}"]
+    when 'rawmmc'
+      rawmmc_loc = get_rawmmc_loc(@equipment['dut1'].name)
+      new_params["rawmmc_#{part}_loc"] = rawmmc_loc["#{part}"]
     else
       puts "There is no dev location to be added to params for #{part}_dev: #{params["#{part}_dev"]}"
     end
