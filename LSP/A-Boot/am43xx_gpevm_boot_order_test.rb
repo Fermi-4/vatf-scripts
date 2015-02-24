@@ -53,8 +53,8 @@ def nand_boot()
   end
 
   # check if the board can boot kernel from nand
-  flash_kernel_to_media('nand')
-  boot_kernel_from_media('nand')  
+  flash_or_boot_kernel_fromto_media('flash', 'nand')
+  flash_or_boot_kernel_fromto_media('boot', 'nand')
   
   puts "##### NAND BOOT END #####" 
   return status 
@@ -92,8 +92,8 @@ def usbhost_boot()
   end
 
   # check if board can boot kernel from usbhost
-  flash_kernel_to_media('usbmsc')
-  boot_kernel_from_media('usbmsc')  
+  flash_or_boot_kernel_fromto_media('flash', 'usbmsc')
+  flash_or_boot_kernel_fromto_media('boot', 'usbmsc')
 
   puts "##### USB-MSC BOOT END #####" 
   return status 
@@ -137,7 +137,7 @@ def usbrndis_boot()
   end
  
   # check if the dut can boot to kernel under usbrndis booting mode
-  boot_kernel_from_media('eth')
+  flash_or_boot_kernel_fromto_media('boot', 'eth')
   
   puts "##### USB-ETH BOOT END #####" 
   return status 

@@ -7,8 +7,6 @@ def connect_to_extra_equipment
   usb_switch = @usb_switch_handler.usb_switch_controller[@equipment['dut1'].params['usb_port'].keys[0]]
   if usb_switch.respond_to?(:serial_port) && usb_switch.serial_port != nil
     usb_switch.connect({'type'=>'serial'})
-  #elsif usb_switch.respond_to?(:serial_server_port) && usb_switch.serial_server_port != nil
-  #  usb_switch.connect({'type'=>'serial'})
   else
     raise "Something wrong with usb switch connection. Please check your setup"
   end
@@ -38,6 +36,9 @@ def uart_boot()
     restore_mmc(1)
     raise e
   end
+
+  # check if the dut can boot to kernel under uart booting mode
+  flash_or_boot_kernel_fromto_media('boot', 'eth')
 
   puts "##### UART BOOT END #####" 
   return status 
@@ -79,6 +80,9 @@ def usbrndis_boot()
     raise e
   end
  
+  # check if the dut can boot to kernel under usbrndis booting mode
+  flash_or_boot_kernel_fromto_media('boot', 'eth')
+
   puts "##### USB-ETH BOOT END #####" 
   return status 
 end 
@@ -117,6 +121,10 @@ def emmc_boot()
   }
   raise "eMMC boot failed" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
   status= uboot_sanity_test()
+
+  # check if the board can boot kernel from nand
+  flash_or_boot_kernel_fromto_media('flash', 'rawmmc', 1)
+  flash_or_boot_kernel_fromto_media('boot', 'rawmmc', 1)
 
   puts "##### EMMC BOOT END #####" 
   return status 
