@@ -32,6 +32,10 @@ def uart_boot()
   @equipment['dut1'].disconnect()
   boot_to_bootloader()
   status =  uboot_sanity_test()
+
+  # check if the board can boot kernel when the boot from uart 
+  flash_or_boot_kernel_fromto_media('boot', 'eth')
+
   puts "#### UART BOOT END ####"
   return status 
 end 
@@ -47,6 +51,11 @@ def nand_boot()
   @equipment['dut1'].boot_loader = nil
   boot_to_bootloader()
   status =  uboot_sanity_test()
+
+  # check if the board can boot kernel from nand
+  flash_or_boot_kernel_fromto_media('flash', 'nand')
+  flash_or_boot_kernel_fromto_media('boot', 'nand')
+
   puts "#### VALIDATE NAND BOOT END ####"
   return status
 
