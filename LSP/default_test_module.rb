@@ -148,6 +148,7 @@ module LspTestScript
     new_params = add_dev_loc_to_params(new_params, 'primary_bootloader')
     new_params = add_dev_loc_to_params(new_params, 'secondary_bootloader')
     new_params = add_dev_loc_to_params(new_params, 'kernel')
+    new_params = add_dev_loc_to_params(new_params, 'dtb')
     new_params = add_dev_loc_to_params(new_params, 'fs')
 
     new_params
