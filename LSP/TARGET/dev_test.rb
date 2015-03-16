@@ -16,18 +16,31 @@ def run_generate_script
   isScriptACommand = !ftp_file_version.match(/ftp:\/\//i)
   if (!isScriptACommand)  # Need to retrieve script using ftp bee
     # Resolve Dispatcher name
-    my_staf_handle = STAFHandle.new("my_staf") 
-    staf_req = my_staf_handle.submit("local","VAR","GET SHARED VAR STAF/TMC/Machine") 
+    my_staf_handle = STAFHandle.new("my_staf")
+    staf_req = my_staf_handle.submit("local","VAR","GET SHARED VAR STAF/TMC/Machine")
     if(staf_req.rc == 0)
       tmc_machine = staf_req.result
     else
       tmc_machine = nil
       raise "Could not resolve VAR STAF/TMC/Machine. Make sure that STAF is running and the TEE is reqistered with TMC Dispatcher"
     end
-    
+    staf_req = my_staf_handle.submit("local","VAR","GET SYSTEM VAR STAF/Config/Machine")
+    if(staf_req.rc == 0)
+      local_machine = staf_req.result
+    else
+      local_machine = nil
+      raise "Could not resolve VAR STAF/Config/Machine. Make sure that STAF is running and STAF/Config/Machine is set"
+    end
+
     begin
       # Request FTP BEE to RESMGR
       staf_req = my_staf_handle.submit(tmc_machine,"RESMGR","REQUEST TYPE ftp TIMEOUT 1w") 
+      staf_reqid = staf_req.result
+      loop do
+        staf_req = my_staf_handle.submit(tmc_machine,"RESMGR","free request #{staf_reqid} type ftp")
+        break if staf_req.rc != 45
+        sleep 5
+      end
       if(staf_req.rc != 0)
        raise "Could not find a FTP BEE available. This test scripts requires a FTP Bee to run"
       end
@@ -62,7 +75,7 @@ def run_generate_script
       dst_file = "#{dst_dir}/#{File.basename(bee_file_path.gsub(/\\/,'/'))}"
       if (!File.exists?(dst_file))
         FileUtils.mkdir_p dst_dir
-  	  staf_req = my_staf_handle.submit(bee_machine,"fs","COPY FILE #{bee_file_path} TOFILE #{dst_file}") 
+      staf_req = my_staf_handle.submit(bee_machine,"fs","COPY FILE #{bee_file_path} TOMACHINE #{local_machine} TOFILE #{dst_file}")
         if(staf_req.rc != 0)
           raise "Could not copy file from FTP Bee to TEE machine"
         end
