@@ -2,6 +2,7 @@
 require File.dirname(__FILE__)+'/../../default_target_test'  
 require File.dirname(__FILE__)+'/../../../lib/utils'
 require File.dirname(__FILE__)+'/../../../lib/result_forms'
+require File.dirname(__FILE__)+'/../play_utils'
 
 include LspTargetTestScript
 
@@ -19,6 +20,9 @@ def run
   video_width = @test_params.params_chan.video_width[0].to_i
   video_height = @test_params.params_chan.video_height[0].to_i
   src_video_height = video_height
+  src_video_width = video_width
+  scaling = @test_params.params_chan.instance_variable_defined?(:@scaling) ? @test_params.params_chan.scaling[0].to_f : 1
+  video_width, video_height = get_scaled_resolution(src_video_width, src_video_height, scaling) if scaling != 1
   interlace = 0
   if @test_params.params_chan.instance_variable_defined?(:@deinterlace)
     interlace = 1
@@ -29,7 +33,7 @@ def run
   local_test_file = File.join(@linux_temp_folder, 'video_tst_file.yuv')
   @equipment['dut1'].send_cmd("rm -rf #{dut_test_file}", @equipment['dut1'].prompt)
   @equipment['server1'].send_cmd("rm -rf #{local_test_file}",@equipment['server1'].prompt)
-  @equipment['dut1'].send_cmd("testvpem2m #{dut_src_file} #{video_width} #{src_video_height} #{src_format} #{dut_test_file} #{video_width} #{video_height} #{test_format} #{interlace} #{translen}", @equipment['dut1'].prompt, 300)
+  @equipment['dut1'].send_cmd("testvpem2m #{dut_src_file} #{src_video_width} #{src_video_height} #{src_format} #{dut_test_file} #{video_width} #{video_height} #{test_format} #{interlace} #{translen}", @equipment['dut1'].prompt, 300)
   dut_ip = get_ip_addr()
   scp_pull_file(dut_ip, dut_test_file, local_test_file)
   if @test_params.params_chan.instance_variable_defined?(:@auto)
@@ -51,7 +55,7 @@ def run
 	  test_string = ''
 	  while(test_result == FrameworkConstants::Result[:nry])
 	    res_win = ResultWindow.new("VPE #{video_width}x#{video_height} Test. Formats: #{src_format}->#{test_format}, Interlace #{interlace}, Tx length #{translen}")
-	    video_info = {'pix_fmt' => test_format, 'width' => video_width,
+	    video_info = {'pix_fmt' => test_format.upcase(), 'width' => video_width,
 	                  'height' => video_height, 'file_path' => ref_path,
 	                  'sys'=> @equipment['server1']}
 	    res_win.add_buttons({'name' => 'Play Ref file', 
@@ -59,7 +63,7 @@ def run
                            'action_params' => video_info})
       res_win.add_buttons({'name' => 'Play Test file', 
                            'action' => :play_video, 
-                           'action_params' => video_info.merge({'file_path'=>local_test_file, 'pix_fmt' => test_format})})
+                           'action_params' => video_info.merge({'file_path'=>local_test_file, 'pix_fmt' => test_format.upcase()})})
       res_win.show()
       test_result, test_string = res_win.get_result()
     end
@@ -87,22 +91,12 @@ def get_file_from_url(url, ref_file_url=nil)
  	[host_path, dut_path]
 end
 
-def play_video(params)
-  p_fmt = case(params['pix_fmt'])
-            when /yuyv/i, /uyvy/i, /vyuy/i, /yvyu/i
-              params['pix_fmt'] + '422'
-            when /yuv444/i, /nv16/i, /nv61/i
-              puts "avplay does not support #{pix_fmt} format"
-              return
-            when /argb32/i, /abgr32/
-              params['pix_fmt'].gsub(/\d+$/,'').gsub(/^a/,'') + 'a'
-            when /yuv420/
-              params['pix_fmt'] + 'p'
-            else
-              params['pix_fmt']
-          end
-  params['sys'].send_cmd("avplay -pixel_format #{p_fmt} -video_size #{params['width']}x#{params['height']} -f rawvideo #{params['file_path']}", params['sys'].prompt, 300)
+def get_scaled_resolution(width, height, scaling)
+  res_width = (width.to_i * scaling).to_i
+  res_width += res_width % 16 > 0 ? 16 - res_width % 16 : 0  
+  res_height = (height.to_i * scaling).to_i
+  res_height += res_height % 16 > 0 ? 16 - res_height % 16 : 0
+  [res_width, res_height]
 end
-
 
 
