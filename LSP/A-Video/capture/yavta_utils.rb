@@ -14,7 +14,7 @@ def get_fmt_options(capture_device, dut=@equipment['dut1'])
   if frame_sizes.empty?
     size_ranges = Set.new(opts_string.scan(/Frame\s*size:\s*(\d+x\d+)\s*-\s*(\d+x\d+)\s*\(.*?\)/i)).to_a
     size_ranges.each do |s_range|
-      possible_res = ['172x144', '352x240', '352x288', '640x480', '720x480', '720x576', '1280x720', '1920x1080']
+      possible_res = ['176x144', '352x240', '352x288', '640x480', '720x480', '720x576', '1280x720', '1920x1080']
       min_width, min_height = s_range[0].split(/x/)
       max_width, max_height = s_range[1].split(/x/)
       possible_res.each do |c_res|
