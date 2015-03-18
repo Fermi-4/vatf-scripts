@@ -42,7 +42,7 @@ def run
         while(trial_result == FrameworkConstants::Result[:nry])
           @equipment['dut1'].send_cmd("rm -rf #{capture_path}", @equipment['dut1'].prompt, 100)
           @equipment['server1'].send_cmd("rm -rf #{local_test_file}",@equipment['server1'].prompt)
-          sensor_capture(test_params, width.to_f * height.to_f / 2000)
+          sensor_capture(test_params, [width.to_f * height.to_f / 2000, 30].max)
           if @equipment['dut1'].response.downcase.include?('unsupported video format')
             trial_result = FrameworkConstants::Result[:pass]
             res_string = "Negative test"

@@ -11,11 +11,30 @@ def get_fmt_options(capture_device, dut=@equipment['dut1'])
   opts_string = dut.send_cmd("yavta --enum-formats #{capture_device}", dut.prompt, 10).gsub(/#{dut.prompt}[^\n]+/,'')
   formats = opts_string.scan(/Format\s*\d+:\s*\w+\s*\(\w+\)/i)
   frame_sizes = opts_string.scan(/Frame\s*size:\s*\d+x\d+\s*\(.*?\)/i)
+  if frame_sizes.empty?
+    size_ranges = Set.new(opts_string.scan(/Frame\s*size:\s*(\d+x\d+)\s*-\s*(\d+x\d+)\s*\(.*?\)/i)).to_a
+    size_ranges.each do |s_range|
+      possible_res = ['172x144', '352x240', '352x288', '640x480', '720x480', '720x576', '1280x720', '1920x1080']
+      min_width, min_height = s_range[0].split(/x/)
+      max_width, max_height = s_range[1].split(/x/)
+      possible_res.each do |c_res|
+        c_width, c_height = c_res.split(/x/)
+        
+        if c_width.to_i >= min_width.to_i &&
+           c_width.to_i <= max_width.to_i &&
+           c_height.to_i >= min_height.to_i &&
+           c_height.to_i <= max_height.to_i
+          result['frame-size'] << c_res
+        end
+      end
+    end
+  else
+    frame_sizes.each do |siz|
+      result['frame-size'] << siz.match(/Frame\s*size:\s*(\d+x\d+)\s*\(.*?\)/i).captures[0]
+    end
+  end
   formats.each do |fmt_str|
     result['pixel-format'] << fmt_str.match(/Format\s*\d+:\s*(\w+)\s*\(\w+\)/i).captures[0]
-  end
-  frame_sizes.each do |siz|
-    result['frame-size'] << siz.match(/Frame\s*size:\s*(\d+x\d+)\s*\(.*?\)/i).captures[0]
   end
   result['frame-size'] = Set.new(result['frame-size']).to_a
   result
