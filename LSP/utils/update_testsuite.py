@@ -58,7 +58,12 @@ def update_custom_field(e):
     text = e.text
     ts = extract_test_suite(text)
     tc = extract_test_case(text)
-    if ts == None or tc == None or test_case_exists(ts,tc): return
+    tc_exists = test_case_exists(ts,tc)
+    if tc_exists:
+        print ts + ": " + tc + ": exists"
+    else:
+        print ts + ": " + tc + ": does NOT exist"
+    if ts == None or tc == None or tc_exists: return
     new_testcase = find_closest_match(ts,tc)
     warnings.append("Replacing {0} with {1}".format(tc, new_testcase))
     e.text = text.replace(tc, new_testcase, 1)
