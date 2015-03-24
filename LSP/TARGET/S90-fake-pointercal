@@ -5,12 +5,21 @@ if [ -d /media/mmcblk0p1 ]
 then
   echo "Creating a fake pointercal file in /media/mmcblk0p1"
   touch /media/mmcblk0p1/pointercal
+elif [ -d /run/media/mmcblk0p1 ]
+then
+  echo "Creating a fake pointercal file in /run/media/mmcblk0p1"
+  touch /run/media/mmcblk0p1/pointercal
 fi
 
+# Check if mmcblk1p1 is mounted.  If so create a pointercal file there
 if [ -d /media/mmcblk1p1 ]
 then
   echo "Creating a fake pointercal file in /media/mmcblk1p1"
   touch /media/mmcblk1p1/pointercal
+elif [ -d /run/media/mmcblk1p1 ]
+then
+  echo "Creating a fake pointercal file in /run/media/mmcblk1p1"
+  touch /run/media/mmcblk1p1/pointercal
 fi
 
 touch /etc/pointercal
