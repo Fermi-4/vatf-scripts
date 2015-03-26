@@ -18,6 +18,7 @@ module PlatformSpecificVarNames
       'am335x-evm'=>'0x81000000',
       'am43xx-gpevm'=>'0x81000000',
       'dra7xx-evm'=>'0x80200000',
+      'am57xx-evm'=>'0x80200000',
       'dra72x-evm'=>'0x80200000',
       'beaglebone'=>'0x81000000',
       'am18x-evm'=>'0xc0700000', 
@@ -35,6 +36,7 @@ module PlatformSpecificVarNames
       'am335x-evm'=>'0x82000000',
       'am43xx-gpevm'=>'0x82000000',
       'dra7xx-evm'=>'0x81200000',
+      'am57xx-evm'=>'0x81200000',
       'dra72x-evm'=>'0x81200000',
       'omap5-evm' => '0x83000000',
       'k2hk-evm' => 'f0000000',
@@ -47,6 +49,7 @@ module PlatformSpecificVarNames
       'am335x-evm'=>'0x84000000',
       'am43xx-gpevm'=>'0x84000000',
       'dra7xx-evm'=>'0x84000000',
+      'am57xx-evm'=>'0x84000000',
       'dra72x-evm'=>'0x84000000',
       },
     'nextramaddress' => {  
@@ -65,6 +68,7 @@ module PlatformSpecificVarNames
       'am335x-evm'=>'81000004',
       'am43xx-gpevm'=>'81000004',
       'dra7xx-evm'=>'80200004',
+      'am57xx-evm'=>'80200004',
       'dra72x-evm'=>'80200004',
       'beaglebone'=>'81000004',
       'am18x-evm'=>'c0700004',
@@ -107,7 +111,8 @@ module PlatformSpecificVarNames
       'da850-omapl138-evm'=>'',
       'k2hk-evm' => '0x50',
       'k2l-evm' => '0x50',
-      'k2e-evm' => '0x50'
+      'k2e-evm' => '0x50',
+      'am57xx-evm' => '0x48',
       },
     )
 
@@ -117,7 +122,8 @@ module PlatformSpecificVarNames
       'da850-omapl138-evm'=>'',
       'k2hk-evm' => '0',
       'k2l-evm' => '0',
-      'k2e-evm' => '0'  
+      'k2e-evm' => '0',  
+      'am57xx-evm' => '0x2'
       },
     )
 
