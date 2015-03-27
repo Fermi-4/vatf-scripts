@@ -17,9 +17,8 @@ Need to pass in the @test_params and @equipment instances so we can extract them
     def initialize(test_params, equipment)
         @hostScriptName = nil
         @hostScriptArgs = []
-        @appStatus = nil
-        @appStdOut = nil
-        @appStdErr = nil
+        @hostScriptEquipment = equipment
+        reset()
 
         if (test_params.params_chan.instance_variable_defined?(:@script))
             script = test_params.params_chan.instance_variable_get(:@script)[0]
@@ -27,7 +26,7 @@ Need to pass in the @test_params and @equipment instances so we can extract them
             file = File.dirname(__FILE__) + "/" + script
 
             if (File.exists?(file) == true)
-                equipment['dut1'].log_info("Using script #{script}")
+                @hostScriptEquipment['dut1'].log_info("Using script #{script}")
                 @hostScriptName = script
 
                 #Extract script arguments if they exist
@@ -35,7 +34,7 @@ Need to pass in the @test_params and @equipment instances so we can extract them
                     @hostScriptArgs.push(test_params.params_chan.instance_variable_get(:@scriptarg))
                 end
             else
-                equipment['dut1'].log_info("Script #{script} was not found")
+                @hostScriptEquipment['dut1'].log_info("Script #{script} was not found")
             end
         else
             puts "No host script was selected."
@@ -43,31 +42,39 @@ Need to pass in the @test_params and @equipment instances so we can extract them
         end
     end
 
-    def execute(timeout = 60)
+    def reset()
+        @appStatus = 'Not Executed!'
+        @appStdOut = nil
+        @appStdErr = nil
+    end
+
+    def execute(timeout=60)
         if (@hostScriptName != nil)
-            puts "Starting script executing #{@hostScriptName} #{@hostScriptArgs.join(" ")}"
+            puts "Executing script (Timeout: #{timeout}) #{@hostScriptName} #{@hostScriptArgs.join(" ")}"
+            @hostScriptEquipment['dut1'].log_info("Executing script (Timeout: #{timeout}) #{@hostScriptName} #{@hostScriptArgs.join(" ")}")
+            reset()
 
-            @appStatus = nil
-            @appStdOut = nil
-            @appStdErr = nil
 
-            #status is of type Process::Status
-            begin
-                output = error = stat = nil
+            stdin, stdout, stderr, wait_thr = Open3.popen3(@hostScriptName + " " +  @hostScriptArgs.join(" "),
+                                                           :chdir => File.dirname(__FILE__),
+                                                           :in => :close)
 
-                Timeout::timeout(timeout) do
-                    output, error, stat = Open3.capture3(@hostScriptName + " " +  @hostScriptArgs.join(" "), :chdir => File.dirname(__FILE__))
-                end
+            puts "Waiting for host script to finish..."
+            @hostScriptEquipment['dut1'].log_info("Waiting for host script to finish...")
 
-                if stat.exited?
-                    @appStatus = stat.exitstatus()
-                    @appStdOut = output
-                    @appStdErr = error
-                end
-            rescue Timeout::Error => e
-                @appStdOut = output
-                @appStdErr = error
-                puts "Error running host script #{e}"
+            if wait_thr.join(timeout)
+                puts "Host script finshed."
+                @hostScriptEquipment['dut1'].log_info("Host script finished.")
+                @appStatus = wait_thr.value.exitstatus.to_s
+                @appStdOut = stdout.read
+                @appStdErr = stderr.read
+            else
+                puts "Timeout waiting for the host script to finish."
+                @hostScriptEquipment['dut1'].log_info("Timeout waiting for the host script to finish.")
+                wait_thr.kill
+                @appStatus = "Scripted timeout!"
+                @appStdOut = stdout.read
+                @appStdErr = stderr.read
             end
         end
     end

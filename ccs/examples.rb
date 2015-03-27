@@ -39,6 +39,7 @@ end
 def run_apps(apps, res_table, board = nil)
     tests = 0
     failures = 0
+    timeout = 90
     targetApps = ""
 
     script = Script.new(@test_params, @equipment)
@@ -70,11 +71,16 @@ def run_apps(apps, res_table, board = nil)
         targetApps = board
     end
 
+    if (@test_params.params_chan.instance_variable_defined?(:@timeout))
+        timeout = @test_params.params_chan.instance_variable_get(:@timeout)[0].to_i
+    end
+
     # for each app in apps
     apps.each { |app|
         goldPass = false
         scriptPass = false
         result = []
+        script.reset()
 
         # Filter subDirectory with tests for board
         if (File.basename(app).match(targetApps))
@@ -82,26 +88,22 @@ def run_apps(apps, res_table, board = nil)
             tests += 1
 
             begin
-            @equipment['dut1'].log_info("Loading and run application ...")
-            if script.exists()
-                puts "Loading app..."
-                thr = load_program(File.join(@apps_dir,app), get_autotest_env('ccsConfig'), 150)
-                @equipment['dut1'].log_info("Loading program started with #{thr.status}.")
+                @equipment['dut1'].log_info("Loading and run application ...")
+                puts "Loading and run application ..."
+                thr = load_program(File.join(@apps_dir,app), get_autotest_env('ccsConfig'), timeout)
 
-                puts "Executing host script..."
-                @equipment['dut1'].log_info("Executing host script ...")
-                script.execute(150)
+                if script.exists()
+                    @equipment['dut1'].log_info("Executing host script ...")
+                    puts "Executing host script..."
+                    script.execute((timeout + 10 > 180) ? timeout + 10 : 180)
+                end
 
-                puts "Waiting for target thread to join..."
                 @equipment['dut1'].log_info("Waiting for target thread to join...")
+                puts "Waiting for target thread to join..."
                 thr.join()
-            else
-                thr = load_program(File.join(@apps_dir,app), get_autotest_env('ccsConfig'), 150)
-                thr.join()
-            end
             rescue Exception => e
-                puts "Exception test #{app} with #{e}"
                 @equipment['dut1'].log_info("Test #{app} had an exception #{e}")
+                puts "Exception test #{app} with #{e}"
             end
 
             # C I/O outputfile, golden file, compare results file name
@@ -117,7 +119,7 @@ def run_apps(apps, res_table, board = nil)
 
             # If a script exists, didn't abort, and printed 'PASS', then the
             # script passed 
-            if (script.exists() && (script.status == 0))
+            if (script.exists() && (script.status == '0'))
                 scriptPass = true
             end
 
@@ -145,6 +147,8 @@ def run_apps(apps, res_table, board = nil)
                                   script.stdout() + 
                                  "\n======== Script STDERR ========\n" +
                                   script.stderr() +
+                                 "\n======== Script returned ========\n" +
+                                  script.status() +
                                  "\n======== Script args ========\n" +
                                   script.hostScriptArgs.join(" ").to_s
                 end
@@ -158,7 +162,6 @@ def run_apps(apps, res_table, board = nil)
         else
             puts "Skipping test: #{app}"
         end
-
     }
     [tests, failures]
 end
@@ -167,19 +170,23 @@ end
 def load_program(app, config, timeout = 100, async = false)
   # Enable this if you have CCS Debugger logs enabled
   #`rm -f /home/a0273433/ccsDebugLog.log`
+
   puts "Starting new thread to load #{app}"
   `cat /dev/null > #{@equipment['dut1'].target.ccs.cioFile()}` 
+
   # Let the script time out instead of the thread. Otherwise, this will cause
   # some issues when using MSP430F5529
   thread = Thread.new() {
-      @equipment['dut1'].run(app, timeout + 30, {
+      @equipment['dut1'].run(app, 0, {
         'no_profile' => 'yes',
         'config' => config,
-        "timeout" => timeout*1000,
+        # This timeout is only a target execution timeout
+        "timeout" => timeout.to_i * 1000,
        #'verbose' => 'yes',
         'reset' => 'yes'
       })
   }
+  sleep 5
   return thread
 end
 
