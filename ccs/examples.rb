@@ -133,9 +133,9 @@ def run_apps(apps, res_table, board = nil)
                 @equipment['dut1'].log_info("Test #{app} passed.\n\n")
             else
                 failures += 1
-                retString = "Test failed\n ======== Loadti script ========\n" +
-                            @equipment['dut1'].target.ccs.response() +
-                            "Test failed\n ======== C I/O ========\n" +
+                retString = "======== Loadti script ========\n" +
+                            @equipment['dut1'].target.ccs.response()[-256..-1] +
+                            "\n======== C I/O ========\n" +
                             @equipment['dut1'].target.ccs.cio()
                 
                 if (!gldFile.nil?)
@@ -145,7 +145,7 @@ def run_apps(apps, res_table, board = nil)
 
                 if script.exists()
                     retString += "\n======== Script STDOUT ========\n" +
-                                  script.stdout() + 
+                                  script.stdout() +
                                  "\n======== Script STDERR ========\n" +
                                   script.stderr() +
                                  "\n======== Script returned ========\n" +
