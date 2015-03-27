@@ -50,7 +50,7 @@ def runTest(serialObject, loopcount, verbose=False):
             sent = serialObject.write(test)
             data = serialObject.read(len(test))
             if sent != len(data) and test != data:
-                print ('Test failed')
+                print ('Test[%02d] failed' % loop)
                 if (verbose == True):
                     print ('Sent %d and received %d' % (sent, len(data)))
                     print ('Sent:  \"%s\"\nRecv:  \"%s\"' % (test, data))
@@ -70,6 +70,7 @@ def main():
 
     regexString = "Starting.*example"
 
+    print ("Waiting for regex pattern '%s'..." % regexString)
     if testlink.block(regexString):
         # Needed to allow the target to call UART_read()...
         time.sleep(3)
