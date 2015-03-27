@@ -91,10 +91,10 @@ def runSocket(sock, buf):
                 break;
             else:
                 print("MSG %d OK" % msgSize)
-        print "PASS"
+        print ("PASS")
 
     except socket.error:
-        print "FAIL"
+        print ("FAIL")
         print("Socket error")
         print(sys.exc_info())
 
@@ -120,7 +120,7 @@ def run6(ip, port, bufsize, socketType="tcp", cert=None):
                     test.settimeout(20)
                     test.connect(sa)
 
-                    print r
+                    print (r)
 
                     runSocket(test, bufsize)
 
@@ -164,18 +164,25 @@ def main():
 
     args = testlink.parse_args()
 
-    ipv4RegEx = "(\d{1,3}\.){3}\d{1,3}"
-    ipv6RegEx = "(Address:\s)(([\dA-Fa-f]+:*)+)"
+    ipv4 = "(\d{1,3}\.){3}\d{1,3}"
+    ipv6 = "(Address:\s)(([\dA-Fa-f]+:*)+)"
+
+    ipv4RegEx = re.compile(ipv4)
+    ipv6RegEx = re.compile(ipv6)
 
     for i in range(120):
-        if testlink.block(ipv4RegEx, 2):
-            args.ip = ipAddress.group(0)
-            run4(args.ip, args.port, args.bufsize, args.socket, args.cert)
-            break
-        if testlink.block(ipv6RegEx, 2):
+        readString = testlink.read()
+        ipv6Address = ipv6RegEx.search(readString)
+        ipAddress = ipv4RegEx.search(readString)
+        if ipv6Address:
             args.ip = readString[ipv6Address.start(2):ipv6Address.end()]
             print "IPv6:'%s'" % readString[ipv6Address.start(2):ipv6Address.end()]
             run6(args.ip, args.port, args.bufsize, args.socket, args.cert)
+            break
+
+        if ipAddress:
+            args.ip = ipAddress.group(0)
+            run4(args.ip, args.port, args.bufsize, args.socket, args.cert)
             break
 
 if __name__ == '__main__':
