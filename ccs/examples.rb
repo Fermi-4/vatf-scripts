@@ -19,12 +19,13 @@ def run
         @equipment['dut1'].log_info("Running tests in \"#{subdirectory[0]}/")
         tests, failures = run_apps(apps, res_table, board)
 
-        if failures > 0 || tests == 0
+        if    tests == 0
+            set_result(FrameworkConstants::Result[:nry], "No tests found.")
+        elsif failures > 0
             set_result(FrameworkConstants::Result[:fail], "#{failures} tests failed out of #{tests} tests.")
         else
             set_result(FrameworkConstants::Result[:pass], "All #{tests} tests Passed.")
         end
-
     else
         set_result(FrameworkConstants::Result[:fail], "Tests need to be placed into a subdirectory.\n" +
                                                       "Check to see if you defined a 'subdirectory=value " +
