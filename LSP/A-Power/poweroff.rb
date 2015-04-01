@@ -35,7 +35,8 @@ def run
   #Compare measured against expected
   expected_poweroff_domains.each {|domain|
     puts "Checking domain #{domain}"
-    max_measured_volt = volt_readings["domain_" + domain  + "_volt_readings"].max
+    measurement_domain = map_domain_to_measurement_rail(@equipment['dut1'].name, domain)
+    max_measured_volt = volt_readings["domain_" + measurement_domain  + "_volt_readings"].max
     if  max_measured_volt > 0.1
       set_result(FrameworkConstants::Result[:fail], "Measured voltage #{max_measured_volt} for #{domain} domain is higher than 0.1v")
       return
