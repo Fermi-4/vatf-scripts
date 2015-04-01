@@ -38,10 +38,17 @@ def set_opp(opp, e='dut1')
   if (@reqs_for_opp.select {|r| r.keys[0].match(/_GPU/)}).length > 0
     begin
       freq = get_frequency_for_opp(@equipment[e].name, opp, 'gpu')
-      # coproc0 is the node used in the dts for gpu
-      set_coproc_opp(freq, 'coproc0')
+      set_coproc_opp(freq, 'coproc-g')
     rescue 
       report "Warning: #{opp} is not supported by GPU"
+    end
+  end
+  if (@reqs_for_opp.select {|r| r.keys[0].match(/_IVA/)}).length > 0
+    begin
+      freq = get_frequency_for_opp(@equipment[e].name, opp, 'iva')
+      set_coproc_opp(freq, 'coproc-i')
+    rescue
+      report "Warning: #{opp} is not supported by IVA"
     end
   end
 end
@@ -54,7 +61,8 @@ def check_opp(opp, max_deviation)
   @reqs_for_opp.each{|req|
     domain = req.keys[0]
     efuse_addr = req[domain][opp]
-    measured_voltage = multimeter_readings['domain_'+domain+'_volt_readings'][0]  # AVG of 10 samples
+    measurement_domain = map_domain_to_measurement_rail(@equipment['dut1'].name, domain)
+    measured_voltage = multimeter_readings['domain_'+measurement_domain+'_volt_readings'][0]  # AVG of 10 samples
     measured_voltage = measured_voltage.to_f * 1000 # Convert to mv, which is unit used in efuse registers
     expected_voltage = read_address(efuse_addr) & 0xfff # Only use bits 0-11
     deviation = (measured_voltage - expected_voltage.to_f).abs
