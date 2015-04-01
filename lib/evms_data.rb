@@ -77,8 +77,22 @@ module EvmData
                                                        'J6_VDD_1V8' => '0.005', 'EVM_VDD_1V8' => '0.01', 'J6_VDD_DDR' => '0.005',
                                                        'EVM_VDD_DDR' => '0.005', 'VDD_SHV8' => '0.01', 'VDD_SHV5' => '0.005', 
                                                        'VDDA_PHY' => '0.01', 'VDDA_USB3V3' => '0.01', 'VDDA_PLL' => '0.01'}}
+    power_data['am57xx-evm'] = {'power_domains' => ['3V3', 'VDD_DSP','CORE_VDD', '5V0', 'VDD_MPU'],
+                                'domain_resistors' => {'3V3' => '0.002', 'VDD_DSP' => '0.002','CORE_VDD' => '0.002',
+                                                       '5V0' => '0.002', 'VDD_MPU' => '0.001'}}
 
     return power_data[key]
+  end
+
+  def map_domain_to_measurement_rail(platform, domain)
+    case platform
+    when "am57xx-evm"
+      case domain
+      when "VDD_DSPEVE", "VDD_GPU", "VDD_IVA"
+        return 'VDD_DSP'
+      end
+    end
+    return domain
   end
 
   def get_nand_loc(platform)
@@ -179,6 +193,7 @@ module EvmData
     machines['am43xx-gpevm'] = {'0.0' => data}
     machines['dra7xx-evm']  = {'0.0' => data}
     machines['dra72x-evm']  = {'0.0' => data}
+    machines['am57xx-evm']  = {'0.0' => data.select{|item| /VDD/.match(item)}}
     params.merge!({'dict' => machines})
     get_cmd(params)
   end
@@ -219,7 +234,8 @@ module EvmData
     machines['dra72x-evm']  = {'VDD_CORE' => {'OPP_NOM'=>'0x4A0025F4'}, 
                                'VDD_GPU_IVA_DSPEVE' => {'OPP_NOM'=>'0x4A003B08','OPP_OD'=>'0x4A003B0C','OPP_HIGH'=>'0x4A003B10'}, 
                                'VDD_MPU' => {'OPP_NOM'=>'0x4A003B20','OPP_OD'=>'0x4A003B24','OPP_HIGH'=>'0x4A003B28'}, 
-                              }                      
+                              }
+    machines['am57xx-evm']   = machines['dra7xx-evm']
     raise "AVS class0 data not defined for #{platform}" if !machines.key?(platform)
     machines[platform]
   end
@@ -229,7 +245,7 @@ module EvmData
     data = get_avs_class0_data(platform)
     case platform
     
-    when "dra7xx-evm", "dra72x-evm"
+    when "dra7xx-evm", "dra72x-evm", "am57xx-evm"
       return data.map{|domain,opps| { domain => opps.select{|name,address| name == "OPP_NOM"} } }
     
     else
@@ -242,12 +258,10 @@ module EvmData
     data = get_avs_class0_data(platform)
     case platform
     
-    when "dra7xx-evm"
+    when "dra7xx-evm", "am57xx-evm"
       return data.map{|domain,opps| 
-        if domain == 'VDD_MPU' 
-          { domain => opps.select{|name,address| name == "OPP_NOM" or name == "OPP_HIGH"} }
-        elsif domain == 'VDD_GPU' 
-          { domain => opps.select{|name,address| name == "OPP_NOM" or name == "OPP_HIGH"} }
+        if domain == 'VDD_MPU' or domain == 'VDD_GPU' or domain == 'VDD_IVA'
+          { domain => opps.select{|name,address| name == "OPP_NOM" or name == "OPP_HIGH" or name == "OPP_OD"} }
         else
           { domain => opps.select{|name,address| name == "OPP_NOM"} }
         end
@@ -266,9 +280,11 @@ module EvmData
     opp  = opp.upcase
     machines = {}
     machines['dra7xx-evm']  = {'CPU' => {'OPP_NOM'=>'1000000','OPP_OD'=>'1176000','OPP_HIGH'=>'1500000'},
-                               'GPU' => {'OPP_NOM'=>'425600','OPP_HIGH'=>'532000'},
+                               'GPU' => {'OPP_NOM'=>'425600','OPP_OD'=>'500000', 'OPP_HIGH'=>'532000'},
+                               'IVA' => {'OPP_NOM'=>'388300','OPP_OD'=>'430000','OPP_HIGH'=>'532000'},
                               }
     machines['dra72x-evm']  = machines['dra7xx-evm']      
+    machines['am57xx-evm']  = machines['dra7xx-evm']
 
     raise "OPP #{opp} not defined for #{platform}[#{proc}]" if !machines.key?(platform) or !machines[platform][proc][opp]
     machines[platform][proc][opp]
