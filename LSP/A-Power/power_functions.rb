@@ -11,10 +11,10 @@ module PowerFunctions
     raise "Could not set #{opp} KHz for cpu #{cpu}" if !new_opp.include?(opp)
   end
 
-  def set_coproc_opp(opp, coproc='coproc0', e='dut1')
+  def set_coproc_opp(opp, coproc='coproc-g', e='dut1')
     @equipment[e].send_cmd("(x=`ls /sys/devices/#{coproc}*/devfreq/#{coproc}*/userspace/set_freq`" \
       " && echo #{opp.to_i*1000} > $x && echo 'OK') || echo 'FAILED'", @equipment[e].prompt)
-    raise "Could not set #{opp} KHz for #{coproc}" if @equipment[e].response.match(/FAILED/)
+    raise "Could not set #{opp} KHz for #{coproc}" if @equipment[e].response.match(/^FAILED/)
   end
 
   def suspend(wakeup_domain, power_state, suspend_time, e='dut1')
