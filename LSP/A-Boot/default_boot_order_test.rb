@@ -352,10 +352,16 @@ def get_image
   params['secondary_bootloader_mmc'] = @test_params.instance_variable_defined?(:@secondary_bootloader_mmc) ? @test_params.secondary_bootloader_mmc : ''
   params['secondary_bootloader_mmc_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_mmc_src_dev) ? @test_params.params_chan.secondary_bootloader_mmc_src_dev[0] : 'eth'
 
+  params['primary_bootloader_usbhost'] = @test_params.instance_variable_defined?(:@primary_bootloader_usbhost) ? @test_params.primary_bootloader_usbhost : ''
+  params['primary_bootloader_usbhost_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_usbhost_src_dev) ? @test_params.params_chan.primary_bootloader_usbhost_src_dev[0] : 'eth'                               
+  params['secondary_bootloader_usbhost'] = @test_params.instance_variable_defined?(:@secondary_bootloader_usbhost) ? @test_params.secondary_bootloader_usbhost : ''
+  params['secondary_bootloader_usbhost_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_usbhost_src_dev) ? @test_params.params_chan.secondary_bootloader_usbhost_src_dev[0] : 'eth'                               
+
   params['primary_bootloader_usbspl'] = @test_params.instance_variable_defined?(:@primary_bootloader_usbspl) ? @test_params.primary_bootloader_usbspl : ''
   params['primary_bootloader_usbspl_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_usbspl_src_dev) ? @test_params.params_chan.primary_bootloader_usbspl_src_dev[0] : 'eth'                               
   params['secondary_bootloader_usbspl'] = @test_params.instance_variable_defined?(:@secondary_bootloader_usbspl) ? @test_params.secondary_bootloader_usbspl : ''
   params['secondary_bootloader_usbspl_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_usbspl_src_dev) ? @test_params.params_chan.secondary_bootloader_usbspl_src_dev[0] : 'eth'                               
+
   params['primary_bootloader_nand'] = @test_params.instance_variable_defined?(:@primary_bootloader_nand) ? @test_params.primary_bootloader_nand : ''
   params['primary_bootloader_nand_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_nand_src_dev) ? @test_params.params_chan.primary_bootloader_nand_src_dev[0] : 'eth'
   params['secondary_bootloader_nand'] = @test_params.instance_variable_defined?(:@secondary_bootloader_nand) ? @test_params.secondary_bootloader_nand : ''
@@ -447,13 +453,13 @@ def flash_usbhost()
 
   #Because platform booted from UART, needed to change from uart to nand 
   @translated_boot_params['primary_bootloader_dev'] = 'usbmsc'
-  @translated_boot_params['primary_bootloader_src_dev'] = @translated_boot_params['primary_bootloader_mmc_src_dev']
-  @translated_boot_params['primary_bootloader'] = @translated_boot_params['primary_bootloader_mmc']
-  @translated_boot_params['primary_bootloader_image_name'] = @translated_boot_params['primary_bootloader_mmc_image_name']
+  @translated_boot_params['primary_bootloader_src_dev'] = @translated_boot_params['primary_bootloader_usbhost_src_dev']
+  @translated_boot_params['primary_bootloader'] = @translated_boot_params['primary_bootloader_usbhost']
+  @translated_boot_params['primary_bootloader_image_name'] = @translated_boot_params['primary_bootloader_usbhost_image_name']
   @translated_boot_params['secondary_bootloader_dev'] = 'usbmsc'
-  @translated_boot_params['secondary_bootloader_src_dev'] = @translated_boot_params['secondary_bootloader_mmc_src_dev']
-  @translated_boot_params['secondary_bootloader'] = @translated_boot_params['secondary_bootloader_mmc']
-  @translated_boot_params['secondary_bootloader_image_name'] = @translated_boot_params['secondary_bootloader_mmc_image_name']
+  @translated_boot_params['secondary_bootloader_src_dev'] = @translated_boot_params['secondary_bootloader_usbhost_src_dev']
+  @translated_boot_params['secondary_bootloader'] = @translated_boot_params['secondary_bootloader_usbhost']
+  @translated_boot_params['secondary_bootloader_image_name'] = @translated_boot_params['secondary_bootloader_usbhost_image_name']
   @translated_boot_params.each{|k,v| puts "#{k}:#{v}"}
   boot_loader = UbootFlashBootloaderSystemLoader.new()
   boot_loader.run(@translated_boot_params)
