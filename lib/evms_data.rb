@@ -240,6 +240,16 @@ module EvmData
     machines[platform]
   end
 
+  # Define usb controller instance for usb gadget
+  def get_usb_gadget_number(platform)
+    case platform.downcase
+    when "am57xx-evm"
+      return 1
+    else
+      return 0
+    end
+  end
+
   # Define AVS requirements for uboot
   def get_required_uboot_avs(platform)
     data = get_avs_class0_data(platform)
