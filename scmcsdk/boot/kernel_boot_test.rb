@@ -15,6 +15,7 @@ def run
   success_times = 0
   fail_times = 0
   boot_arr = []   
+  timeout = @test_params.instance_variable_defined?(:@var_boot_timeout) ? @test_params.var_boot_timeout.to_i : 150
   power_port = @equipment['dut1'].power_port
   boot_times = @test_params.params_control.loop_count[0].to_i
   @equipment['dut1'].send_cmd("ifconfig",@equipment['dut1'].prompt, 30)
@@ -24,7 +25,7 @@ def run
     begin
 	  if is_soft_boot == 'yes'
 	      puts "Rebooting for # #{i}th iteration"
-		  @equipment['dut1'].send_cmd('reboot', translated_boot_params['dut'].login_prompt, 85)
+		  @equipment['dut1'].send_cmd('reboot', translated_boot_params['dut'].login_prompt, timeout)
 		  @equipment['dut1'].send_cmd(translated_boot_params['dut'].login, translated_boot_params['dut'].prompt, 10) # login to the unit
 		  if @equipment['dut1'].timeout?
 		    raise "reboot failed"
@@ -35,7 +36,7 @@ def run
 		sleep(5)
 		@power_handler.switch_on(power_port)
 		if @equipment['dut1'].target.serial
-		  @equipment['dut1'].wait_for(/login:/, 120)
+		  @equipment['dut1'].wait_for(/login:/, timeout)
 		  @equipment['dut1'].send_cmd(translated_boot_params['dut'].login, translated_boot_params['dut'].prompt, 10) # login to the unit
 		else
 		  sleep(120)
@@ -61,7 +62,7 @@ def run
 	  @power_handler.switch_off(power_port)
 	  sleep(5)
 	  @power_handler.switch_on(power_port)
-	  @equipment['dut1'].wait_for(/login:/, 120)
+	  @equipment['dut1'].wait_for(/login:/, timeout)
 	  @equipment['dut1'].send_cmd(translated_boot_params['dut'].login, translated_boot_params['dut'].prompt, 10) # login to the unit
     end
   }
