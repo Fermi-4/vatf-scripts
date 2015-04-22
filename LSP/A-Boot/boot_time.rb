@@ -20,7 +20,7 @@ end
 def run
   res = 0
   perf_data = []
-
+  timeout = @test_params.instance_variable_defined?(:@var_boot_timeout) ? @test_params.var_boot_timeout.to_i  :  60
   boottimes_load_spl = []     # from powercycle to 'SPL'
   boottimes_load_uboot = []   # from 'U-boot SPL' to 'U-boot'
   boottimes_load_kernel = []  # from 'boot' cmd to 'Starting Linux...'
@@ -79,7 +79,7 @@ def run
 
     time_bootcmd = Time.now
     #@equipment['dut1'].log_info( "-----------------------time_bootcmd is: "+time_bootcmd.to_s)
-    @equipment['dut1'].send_cmd("boot", regex_startkernel, 30)
+    @equipment['dut1'].send_cmd("boot", regex_startkernel, timeout)
     if !@equipment['dut1'].timeout?
       time_initkernel = Time.now
       #@equipment['dut1'].log_info( "---------------------------time_initkernel is: "+time_initkernel.to_s)
@@ -89,7 +89,7 @@ def run
     end
 
     if !skip_fs 
-      @equipment['dut1'].wait_for(regex_startfs,60)
+      @equipment['dut1'].wait_for(regex_startfs,timeout)
       if !@equipment['dut1'].timeout?
         time_initfs = Time.now
         #@equipment['dut1'].log_info( "---------------------------time_initfs is: "+time_initfs.to_s)
@@ -99,7 +99,7 @@ def run
       end
     end
 
-    @equipment['dut1'].wait_for(regex_doneboot,60)
+    @equipment['dut1'].wait_for(regex_doneboot,timeout)
     if !@equipment['dut1'].timeout?
       time_doneboot = Time.now
       #@equipment['dut1'].log_info( "---------------------------time_doneboot is: "+time_doneboot.to_s)
