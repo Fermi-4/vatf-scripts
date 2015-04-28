@@ -1,11 +1,11 @@
 require File.dirname(__FILE__)+'/../default_target_test'
-require File.dirname(__FILE__)+'/audio_utils'
 require File.dirname(__FILE__)+'/../../lib/result_forms'
 require File.dirname(__FILE__)+'/../../lib/utils'
 
 include LspTargetTestScript
 
 def run
+  set_audio_iface()
   test_result = true
   file_op_wait = 100
   @equipment['dut1'].send_cmd("mkdir /test", @equipment['dut1'].prompt) #Make sure test folder exists
@@ -29,51 +29,9 @@ def run
   rec_duration = duration + 2
   table_title = ''
   test_type = @test_params.params_chan.test_type[0].strip.downcase
-  dut_rec_dev = []
-  dut_play_dev = []
-  @equipment['dut1'].send_cmd("ls /sys/class/sound/ | grep 'card'", @equipment['dut1'].prompt,10)
-  c_dirs = @equipment['dut1'].response.scan(/^card[^\s]*/)
-  c_dirs.each do |card|
-    @equipment['dut1'].send_cmd("echo \"TI $(cat /sys/class/sound/#{card}/id)\"", @equipment['dut1'].prompt,10)
-    rec_dev_info = @equipment['dut1'].response.match(/^TI\s*([^\n\r]+)/).captures[0].gsub(/\s*/,'')
-    rec_dev_info += '|' + rec_dev_info.gsub(/x/,'')
-    play_dev_info = rec_dev_info
-    rec_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@rec_device)
-    play_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@play_device)
-    d_rec_dev = get_audio_rec_dev(rec_dev_info)
-    d_play_dev = get_audio_play_dev(play_dev_info)
-    #Turning on playout/capture ctrls
-    if d_rec_dev
-      ['Left PGA Mixer Line1L', 'Right PGA Mixer Line1R', 
-       'Left PGA Mixer Mic3L', 'Right PGA Mixer Mic3R', 'Output Left From MIC1LP',
-       'Output Left From MIC1RP', 'Output Right From MIC1RP'].each do |ctrl|
-          puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl, d_rec_dev['card'])
-      end
-    cset_state('on','ADC Capture Switch', d_rec_dev['card'])
-    if @equipment['dut1'].name == 'am43xx-epos'
-      ['MIC1RP P-Terminal', 'MIC1LP P-Terminal'].each {|ctrl| set_state('FFR 10 Ohm', ctrl, d_rec_dev['card'])}
-    end
-    #Setting volume
-    set_volume(0, 'ADC', d_rec_dev['card'])
-      ['PCM', 'PGA', 'Mic PGA'].each do |ctrl|
-        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.9,ctrl, d_play_dev['card'])
-      end
-      dut_rec_dev << d_rec_dev
-    end
-    if d_play_dev
-      [['Speaker Driver', 0], 'Speaker Left', 'Speaker Right', ['SP Driver', 0], 
-        'SP Left', 'SP Right', 'Output Left From Left DAC', 'Output Right From Right DAC',
-        ['HP Driver',0], 'HP Left', 'HP Right'].each do |ctrl|
-        puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl, d_play_dev['card'])
-      end
-      ['PCM', 'HP DAC', 'DAC', 'HP Analog', 'SP Analog', 'Speaker Analog', 'Mic PGA'].each do |ctrl|
-        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.9,ctrl, d_play_dev['card'])
-      end
-      dut_play_dev << d_play_dev
-    end
-    table_title += "Rec Dev #{dut_rec_dev[-1].to_s}\n\n" if test_type.include?('record')
-    table_title += "Play Dev #{dut_play_dev[-1].to_s}\n\n" if test_type.include?('play')
-  end
+  dut_rec_dev, dut_play_dev = setup_devices()
+  table_title += "\n\nRec Dev " + dut_rec_dev.join("\nRec Dev ") if test_type.include?('record') && !dut_rec_dev.empty?
+  table_title += "\n\nPlay Dev " + dut_play_dev.join("\nPlay Dev ") if test_type.include?('play') && !dut_play_dev.empty?
   host_play_dev = get_audio_play_dev(nil,'analog',@equipment['server1'])
   dut_ip = get_ip_addr()
   @results_html_file.add_paragraph("")
@@ -128,21 +86,22 @@ def run
             play_rec_audio([host_audio_info.merge({'sys'=>@equipment['server1'],
                                                    'file'=>ref_path,
                                                    'duration'=>duration,
-                                                   'type'=>'wav'})], 
+                                                   'type'=>'wav',
+                                                   'playout_func' => :host_playout})], 
                                                    dut_rec_info)
             dut_rec_dev.each do |r_dev|
-              scp_pull_file(dut_ip, "#{dut_test_file}.card#{r_dev['card']}", "local_test_file.card#{r_dev['card']}")
+              scp_pull_file(dut_ip, "#{dut_test_file}.card#{r_dev['card']}", File.join(@linux_temp_folder, "local_test_file.card#{r_dev['card']}"))
               res_win.add_buttons({'name' => "Play Recorded card#{r_dev['card']} (HOST) ", 
-                                   'action' => :play_audio, 
-                                   'action_params' => [host_chk_rec_info.merge({'file'=>"local_test_file.card#{r_dev['card']}"})]})
+                                   'action' => :host_playout, 
+                                   'action_params' => [host_chk_rec_info.merge({'file'=>File.join(@linux_temp_folder, "local_test_file.card#{r_dev['card']}")})]})
             end
           when 'play+record'
             play_rec_audio(dut_play_info, dut_rec_info)
             dut_rec_dev.each do |r_dev|
-              scp_pull_file(dut_ip, "#{dut_test_file}.card#{r_dev['card']}", "local_test_file.card#{r_dev['card']}")
+              scp_pull_file(dut_ip, "#{dut_test_file}.card#{r_dev['card']}", File.join(@linux_temp_folder, "local_test_file.card#{r_dev['card']}"))
               res_win.add_buttons({'name' => "Play Recorded card#{r_dev['card']} (HOST) ", 
-                                   'action' => :play_audio, 
-                                   'action_params' => [host_chk_rec_info.merge({'file'=>"local_test_file.card#{r_dev['card']}"})]})
+                                   'action' => :host_playout, 
+                                   'action_params' => [host_chk_rec_info.merge({'file'=>File.join(@linux_temp_folder, "local_test_file.card#{r_dev['card']}")})]})
             end
           else
             raise "Test type #{test_type} not supported"
@@ -171,11 +130,20 @@ def get_file_from_url(file_url)
   url = file_url
   host_path = File.join(@linux_temp_folder, 'audio_src_file.wav')
   dut_path = File.join(@linux_dst_dir, 'audio_src_file.wav')
-  @equipment['server1'].send_cmd("wget --no-proxy --tries=1 -T10 #{url} -O #{host_path}", @equipment['server1'].prompt, 100)
-  @equipment['server1'].send_cmd("wget #{url} -O #{host_path}", @equipment['server1'].prompt, 100) if @equipment['server1'].response.match(/failed/im)
+  @equipment['server1'].send_cmd("wget --no-proxy --tries=1 -T10 #{url} -O #{host_path}", @equipment['server1'].prompt, 200)
+  @equipment['server1'].send_cmd("wget #{url} -O #{host_path}", @equipment['server1'].prompt, 200) if @equipment['server1'].response.match(/failed/im)
   raise "Host is unable to fetch file from #{url}" if @equipment['server1'].response.match(/error/im)
-  @equipment['dut1'].send_cmd("wget #{url} -O #{dut_path}", @equipment['dut1'].prompt, 100)
+  @equipment['dut1'].send_cmd("wget #{url} -O #{dut_path}", @equipment['dut1'].prompt, 200)
  # raise "Dut is unable to fetch file from #{url}" if @equipment['dut1'].response.match(/error/im)
  	[host_path, dut_path]
 end
 
+#Function to load the appropriate interface func depending on the audio
+#interface used to test
+def set_audio_iface()
+	if @test_params.params_chan.instance_variable_defined?(:@audio_iface) && @test_params.params_chan.audio_iface[0] == 'pulseaudio'
+		require File.dirname(__FILE__)+'/audio_utils_pulse'
+	else
+		require File.dirname(__FILE__)+'/audio_utils'
+	end
+end

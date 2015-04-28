@@ -171,10 +171,10 @@ def rec_audio(audio_info)
   r_sys = audio_info[0]['sys']
   r_string = 'pids=( ) ; arecord ' + prep_audio_string(audio_info[0]) + ' & pids+=( $! )' 
   audio_info[1..-1].each do |r_info|
-    r_string += " & arecord " + prep_audio_string(r_info)
+    r_string += " ; arecord " + prep_audio_string(r_info) + ' & pids+=( $! )' 
     r_sys = r_info['sys']
   end
-  r_string += ' & wait ${pids[@]}'
+  r_string += ' ; wait ${pids[@]}'
   r_sys.send_cmd(r_string, r_sys.prompt, audio_info[0]['duration'].to_i)
 end
 
@@ -206,9 +206,9 @@ def play_audio(audio_info)
   p_sys = audio_info[0]['sys']
   p_string = 'pids=( ) ; aplay ' + prep_audio_string(audio_info[0])  + ' & pids+=( $! )' 
   audio_info[1..-1].each do |p_info|
-    p_string += " &  aplay " + prep_audio_string(p_info)
+    p_string += " ; aplay " + prep_audio_string(p_info)  + ' & pids+=( $! )' 
   end
-  p_string += ' & wait ${pids[@]}'
+  p_string += ' ; wait ${pids[@]}'
   p_sys.send_cmd(p_string, p_sys.prompt, audio_info[0]['duration'].to_i)
 end
 
@@ -246,9 +246,9 @@ def play_rec_audio(play_audio_info, rec_audio_info)
   p_sys = play_audio_info[0]['sys']
   p_string = 'pids=( ) ; aplay ' + prep_audio_string(play_audio_info[0]) + ' & pids+=( $! )'
   play_audio_info[1..-1].each do |p_info|
-    p_string += " & aplay " + prep_audio_string(p_info) + ' & pids+=( $! )'
+    p_string += " ; aplay " + prep_audio_string(p_info) + ' & pids+=( $! )'
   end
-  p_string += ' & wait ${pids[@]}'
+  p_string += ' ; wait ${pids[@]}'
   p_sys.send_cmd(p_string, p_sys.prompt, play_audio_info[0]['duration'].to_i)
   sleep(5) #wait 5 secs for recording to finish
 end
@@ -337,4 +337,69 @@ def cset_state(state, ctrl, card=0, sys=@equipment['dut1'])
   sys.send_cmd("amixer -c #{card} cset name=#{local_ctrl} #{state}", sys.prompt, 10)
   new_state = sys.response.match(/values=\s*(#{state})/i).captures[0].to_i if 
   state == new_state
+end
+
+#Function to setup (enable/disable, gains, etc) the audio devices
+#before running the play/capture test, takes
+#  sys, object used to communicate with the system where the volume of the control will
+#       be set
+#Returns, two arrays. Element 0 contains the rec devices info and element
+#         1 containg the playout devices info  
+def setup_devices(sys=@equipment['dut1'])
+  dut_rec_dev = []
+  dut_play_dev = []
+  sys.send_cmd("ls /sys/class/sound/ | grep 'card'", sys.prompt,10)
+  c_dirs = sys.response.scan(/^card[^\s]*/)
+  c_dirs.each do |card|
+    sys.send_cmd("echo \"TI $(cat /sys/class/sound/#{card}/id)\"", sys.prompt,10)
+    rec_dev_info = sys.response.match(/^TI\s*([^\n\r]+)/).captures[0].gsub(/\s*/,'')
+    rec_dev_info += '|' + rec_dev_info.gsub(/x/,'')
+    play_dev_info = rec_dev_info
+    rec_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@rec_device)
+    play_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@play_device)
+    d_rec_dev = get_audio_rec_dev(rec_dev_info)
+    d_play_dev = get_audio_play_dev(play_dev_info)
+    #Turning on playout/capture ctrls
+    if d_rec_dev
+      ['Left PGA Mixer Line1L', 'Right PGA Mixer Line1R', 
+       'Left PGA Mixer Mic3L', 'Right PGA Mixer Mic3R', 'Output Left From MIC1LP',
+       'Output Left From MIC1RP', 'Output Right From MIC1RP',
+       'Left PGA Mixer Mic2L', 'Right PGA Mixer Mic2R'
+       ].each do |ctrl|
+          puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl, d_rec_dev['card'])
+      end
+    cset_state('on','ADC Capture Switch', d_rec_dev['card'])
+    if @equipment['dut1'].name == 'am43xx-epos'
+      ['MIC1RP P-Terminal', 'MIC1LP P-Terminal'].each {|ctrl| set_state('FFR 10 Ohm', ctrl, d_rec_dev['card'])}
+    end
+    #Setting volume
+    set_volume(0, 'ADC', d_rec_dev['card'])
+      ['PCM', 'PGA', 'Mic PGA'].each do |ctrl|
+        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.9,ctrl, d_play_dev['card'])
+      end
+      dut_rec_dev << d_rec_dev
+    end
+    if d_play_dev
+      [['Speaker Driver', 0], 'Speaker Left', 'Speaker Right', ['SP Driver', 0], 
+        'SP Left', 'SP Right', 'Output Left From Left DAC', 'Output Right From Right DAC',
+        ['HP Driver',0], 'HP Left', 'HP Right'].each do |ctrl|
+        puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl, d_play_dev['card'])
+      end
+      ['PCM', 'HP DAC', 'DAC', 'HP Analog', 'SP Analog', 'Speaker Analog', 'Mic PGA'].each do |ctrl|
+        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.9,ctrl, d_play_dev['card'])
+      end
+      dut_play_dev << d_play_dev
+    end
+  end
+  [dut_rec_dev, dut_play_dev]
+end
+
+#Function used to play an audio file on the host, takes
+#  audio_info and array whose element are the data structure used by 
+#  function prep_audio_string
+def host_playout(audio_info)
+  p_sys = audio_info[0]['sys']
+  p_sys.send_cmd("aplay -D hw:0,0 -d #{audio_info[0]['duration']} -t #{audio_info[0]['type']} " \
+  "-r #{audio_info[0]['rate']} -f #{audio_info[0]['format']} " \
+  "-c #{audio_info[0]['channels']} #{audio_info[0]['file']}", p_sys.prompt, audio_info[0]['duration'].to_i + 1)
 end
