@@ -28,15 +28,15 @@ end
 # Return Parameter: pass or fail. 
 def uart_boot()
   @translated_boot_params['primary_bootloader_dev'] = 'uart'
-  puts "#### UART BOOT START ####"
+  report_msg "#### UART BOOT START ####"
   @equipment['dut1'].disconnect()
   boot_to_bootloader()
   status =  uboot_sanity_test()
+  report_msg "#### UART BOOT END ####"
 
   # check if the board can boot kernel when the boot from uart 
   flash_or_boot_kernel_fromto_media('boot', 'eth')
 
-  puts "#### UART BOOT END ####"
   return status 
 end 
 
@@ -44,19 +44,25 @@ end
 # Input parameters: None 
 # Return Parameter: pass or fail. 
 def nand_boot()
-  puts "#### NAND BOOT START ####"
+  report_msg "#### NAND BOOT START ####"
+  if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+    reboot_dut()
+  end
+  reboot_dut()
+  raise "This test require the board is able to boot to uboot prompt initially! please check if mmc has valid bootloaders in it" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+
   flash_nand()
 
   # set boot_loader to nil to not boot from uart
   @equipment['dut1'].boot_loader = nil
   boot_to_bootloader()
   status =  uboot_sanity_test()
+  report_msg "#### NAND BOOT END ####"
 
   # check if the board can boot kernel from nand
   flash_or_boot_kernel_fromto_media('flash', 'nand')
   flash_or_boot_kernel_fromto_media('boot', 'nand')
 
-  puts "#### VALIDATE NAND BOOT END ####"
   return status
 
 end 
