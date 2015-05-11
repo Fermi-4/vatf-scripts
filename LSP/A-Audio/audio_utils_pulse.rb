@@ -206,7 +206,7 @@ def play_rec_audio(play_audio_info, rec_audio_info)
 		else
 		  p_string = "pacat -p -d #{play_audio_info[0]['card']} --raw --passthrough #{play_audio_info[0]['file']}  & pids+=( $! )"
 		  play_audio_info[1..-1].each do |p_info|
-			  p_string += " ; pacat -p -d #{p_info['card']} --raw --passthrough #{p_info[0]['file']}  & pids+=( $! )"
+			  p_string += " ; pacat -p -d #{p_info['card']} --raw --passthrough #{p_info['file']}  & pids+=( $! )"
 		  end
 		end
 		p_string += " ; pidof pacat && sleep #{rec_audio_info[0]['duration']} ; kill ${pids[@]}"
