@@ -18,11 +18,12 @@ module PowerFunctions
   end
 
   def suspend(wakeup_domain, power_state, suspend_time, e='dut1')
+    suspend_regex=/Suspending\s+console/i
     @equipment[e].send_cmd("sync", @equipment[e].prompt, 120)
     if wakeup_domain == 'uart' or wakeup_domain == 'gpio'
-      @equipment[e].send_cmd("echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/i, suspend_time, false)
+      @equipment[e].send_cmd("echo #{power_state} > /sys/power/state", suspend_regex, suspend_time, false)
     elsif wakeup_domain == 'rtc'
-      @equipment[e].send_cmd("rtcwake -d /dev/rtc0 -m #{power_state} -s #{suspend_time}", /Freezing remaining freezable tasks/i, suspend_time, false)
+      @equipment[e].send_cmd("rtcwake -d /dev/rtc0 -m #{power_state} -s #{suspend_time}", suspend_regex, suspend_time, false)
     else
       raise "#{wakeup_domain} wakeup domain is not supported"
     end
