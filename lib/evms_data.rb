@@ -189,7 +189,7 @@ module EvmData
     machines = {}
     params = get_default_params if !params
     data = get_power_domain_data(params['platform'])['power_domains']
-    machines['am335x-evm']  = {'0.0' => data}
+    machines['am335x-evm']  = {'0.0' => data.select{|item| ! /RTC/.match(item)}}
     machines['am43xx-gpevm'] = {'0.0' => data}
     machines['dra7xx-evm']  = {'0.0' => data}
     machines['dra72x-evm']  = {'0.0' => data}
