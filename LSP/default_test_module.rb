@@ -322,9 +322,9 @@ module LspTestScript
 
   def check_dut_booted
     raise "UUT may be hanging!" if !is_uut_up?
-    @equipment['dut1'].send_cmd("cat /proc/cmdline", /#{@equipment['dut1'].prompt}/, 10)
-    @equipment['dut1'].send_cmd("uname -a", /#{@equipment['dut1'].prompt}/, 10)
-    @equipment['dut1'].send_cmd("cat /proc/mtd", /#{@equipment['dut1'].prompt}/, 10)
+    @equipment['dut1'].send_cmd("cat /proc/cmdline", /#{@equipment['dut1'].prompt}/, 10, false)
+    @equipment['dut1'].send_cmd("uname -a", /#{@equipment['dut1'].prompt}/, 10, false)
+    @equipment['dut1'].send_cmd("cat /proc/mtd", /#{@equipment['dut1'].prompt}/, 10, false)
   end
 
   # Optionally install binaries provided by user in filesystem 
