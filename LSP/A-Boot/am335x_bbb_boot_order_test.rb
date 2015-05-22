@@ -14,8 +14,11 @@ def connect_to_extra_equipment
 end
 
 def uart_boot()
-  puts "##### UART BOOT START #####" 
+  report_msg "##### UART BOOT START #####" 
   @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
+  if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+    reboot_dut()
+  end
   raise "uart_boot::DUT is not in uboot prompt" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
 
   begin
@@ -30,8 +33,6 @@ def uart_boot()
     status =  uboot_sanity_test()
     puts "uart_boot:: RESTORING EMMC ..." 
     restore_mmc(1)
-    puts "uart_boot:: TURNING ON USB Swtich ..." 
-    @usb_switch_handler.select_input(@equipment['dut1'].params['usb_port'])
   rescue Exception => e
     restore_mmc(1)
     raise e
@@ -40,7 +41,7 @@ def uart_boot()
   # check if the dut can boot to kernel under uart booting mode
   flash_or_boot_kernel_fromto_media('boot', 'eth')
 
-  puts "##### UART BOOT END #####" 
+  report_msg "##### UART BOOT END #####" 
   return status 
 end 
 
@@ -49,8 +50,13 @@ end
 # Return Parameter: pass or fail.  
 
 def usbrndis_boot()
-  puts "##### USB-ETH BOOT START #####" 
+  report_msg "##### USB-ETH BOOT START #####" 
   init_dhcp()
+
+  if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+    reboot_dut()
+  end
+  raise "usbrndis_boot::DUT is not in uboot prompt" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
 
   begin
     invalidate_mmc(1) 
@@ -77,56 +83,65 @@ def usbrndis_boot()
 
   rescue Exception => e
     restore_mmc(1)
+    @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
     raise e
   end
+  restore_mmc(1)
+  @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
  
   # check if the dut can boot to kernel under usbrndis booting mode
   flash_or_boot_kernel_fromto_media('boot', 'eth')
 
-  puts "##### USB-ETH BOOT END #####" 
+  report_msg "##### USB-ETH BOOT END #####" 
   return status 
 end 
 
 
 # Function does boot the dut from EMMC.
+#     Try boot from exising emmc first; if failed, then try to boot from uart;
+#     Then, update emmc with the to-be-tested bootloaders. Then verify the emmc
+#     boot.
 # Input parameters: None 
 # Return Parameter: pass or fail.  
 def emmc_boot()
-  puts "##### EMMC BOOT START #####" 
+  report_msg "##### EMMC BOOT START #####" 
   
-  2.times {
-    # remove uart from boot sequence
-    @translated_boot_params['primary_bootloader_dev'] = 'none'
+  # remove uart from boot sequence
+  @translated_boot_params['primary_bootloader_dev'] = 'none'
+  @equipment['dut1'].boot_loader = nil
+
+  # remove usb from boot sequence
+  @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
+
+  # the board should boot from emmc now 
+  puts "The board suppose to boot from emmc on power cycle"
+  reboot_dut()  
+  if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+    puts "Oops, the board could not boot from emmc, now try to boot from uart to update emmc"
+    # if emmc boot fails, update emmc using uart boot
+    puts "suppose the board boot from uart here"
+    @translated_boot_params['primary_bootloader_dev'] = 'uart'
     @equipment['dut1'].boot_loader = nil
+    boot_to_bootloader()
+    raise "emmc_boot::DUT is not in uboot prompt after uart boot" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+  else
+    puts "DUT boots from existing emmc successfully."
+  end
+  puts "Updating emmc..."
+  restore_mmc(1)
+  # remove uart from boot sequence so board boot from emmc
+  @translated_boot_params['primary_bootloader_dev'] = 'none'
+  @equipment['dut1'].boot_loader = nil
+  reboot_dut()
+  raise "emmc_boot: EMMC boot failed!" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
 
-    # remove usb from boot sequence
-    @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
-
-    # the board should boot from emmc now 
-    puts "The board suppose to boot from emmc on power cycle"
-    reboot_dut()  
-    if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
-      puts "Oops, the board could not boot from emmc, now try to boot from uart to restore emmc"
-      # if emmc boot fails, restore emmc using uart boot
-      @translated_boot_params['primary_bootloader_dev'] = 'uart'
-      @equipment['dut1'].boot_loader = nil
-      puts "suppose the board boot from uart here"
-      boot_to_bootloader()
-      raise "emmc_boot::DUT is not in uboot prompt after uart boot" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
-      restore_mmc(1)
-    else
-      puts "DUT boots from emmc successfully!"
-      break
-    end
-  }
-  raise "eMMC boot failed" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
   status= uboot_sanity_test()
 
   # check if the board can boot kernel from nand
   flash_or_boot_kernel_fromto_media('flash', 'rawmmc', 1)
   flash_or_boot_kernel_fromto_media('boot', 'rawmmc', 1)
 
-  puts "##### EMMC BOOT END #####" 
+  report_msg "##### EMMC BOOT END #####" 
   return status 
 end 
 
