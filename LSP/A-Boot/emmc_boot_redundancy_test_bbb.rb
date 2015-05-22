@@ -27,9 +27,9 @@ def run
     status = uboot_sanity_test()
   end 
   if status != 0 
-    set_result(FrameworkConstants::Result[:pass], "Boot redundancy Failed!","")
+    set_result(FrameworkConstants::Result[:fail], "Boot redundancy Failed!","")
   else
-    set_result(FrameworkConstants::Result[:fail], "Boot redundancy Passed!","")   
+    set_result(FrameworkConstants::Result[:pass], "Boot redundancy Passed!","")   
   end  
 end
 
