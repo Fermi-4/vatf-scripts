@@ -54,10 +54,24 @@ def run
   end  
 end
 
+def clean
+   puts "clean"
+end
+
 def get_ubuntu_version()
    @equipment['server1'].send_cmd("lsb_release -a", @equipment['server1'].prompt, 10)
    return @equipment['server1'].response.scan(/Release:\s+([0-9]+.[0-9]+)/)[0][0] 
 end 
+
+def connect_to_extra_equipment
+  usb_switch = @usb_switch_handler.usb_switch_controller[@equipment['dut1'].params['usb_port'].keys[0]]
+  if usb_switch.respond_to?(:serial_port) && usb_switch.serial_port != nil
+    usb_switch.connect({'type'=>'serial'})
+  else
+    raise "Something wrong with usb switch connection. Please check your setup"
+  end
+
+end
 
 # Function does DHCP initialization.
 # Input parameters: None 
