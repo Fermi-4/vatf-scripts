@@ -68,7 +68,7 @@ def run
 
   # download mlo
   start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /usb_dnload/, /download.*ok/i) do
-    host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['primary_bootloader_image_name'])}", alt_name_mlo)
+    host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['primary_bootloader_mmc_image_name'])}", alt_name_mlo)
   end
   # send ctrl+c to back to uboot prompt
   @equipment['dut1'].send_cmd("\x3", @equipment['dut1'].boot_prompt, 5)
@@ -76,7 +76,7 @@ def run
   sleep 1
   # download u-boot.img
   start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /usb_dnload/, /download.*ok/i) do
-    host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['secondary_bootloader_image_name'])}", alt_name_uboot)
+    host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['secondary_bootloader_mmc_image_name'])}", alt_name_uboot)
   end
   # send ctrl+c to back to uboot prompt
   @equipment['dut1'].send_cmd("\x3", @equipment['dut1'].boot_prompt, 5)
