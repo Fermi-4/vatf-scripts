@@ -23,7 +23,13 @@ module NetworkUtils
   end
 
   def get_ip_addr(dev='dut1', iface_type='eth')
+    addr = get_ifconfig_common(dev, iface_type, "ip")
+    restart_networking(dev) if !addr
     get_ifconfig_common(dev, iface_type, "ip")
+  end
+
+  def restart_networking(dev='dut1')
+    @equipment[dev].send_cmd("/etc/init.d/networking restart", @equipment[dev].prompt, 15)
   end
     
   def get_mac_addr(dev='dut1', iface_type='eth')
