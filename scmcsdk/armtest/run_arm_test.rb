@@ -540,11 +540,6 @@ def run_command(cmds, look_for = @equipment['dut1'].prompt,timeout=30)
       puts cmd + " run. command sent as ruby method"
     else
       @equipment['dut1'].send_cmd(cmd, look_for, timeout)
-      if @equipment['dut1'].timeout?
-        puts comment += "FAILURE to meet criteria '#{ look_for }'**"
-        comment += "cmd " + cmd.to_s + " not sent correctly. "
-        return [false, comment]
-      end
     end
 
     std_response = @equipment['dut1'].response.to_s
