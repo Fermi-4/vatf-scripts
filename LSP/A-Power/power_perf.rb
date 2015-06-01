@@ -38,11 +38,11 @@ def enable_off_mode(e='dut1')
   end
 end
 
-def set_opp(opp, cpu=0, e='dut1')
+def set_opp(cpu=0, e='dut1')
   dvfs_governor = @test_params.params_chan.instance_variable_defined?(:@dvfs_governor)? @test_params.params_chan.dvfs_governor[0].strip.downcase : "userspace"
   @equipment[e].send_cmd("echo #{dvfs_governor} > /sys/devices/system/cpu/cpu#{cpu}/cpufreq/scaling_governor", @equipment[e].prompt)
   if @test_params.params_chan.cpufreq[0] != '0' && !@test_params.params_chan.instance_variable_defined?(:@suspend) && dvfs_governor == "userspace"
-    set_cpu_opp(opp, cpu, e)
+    set_cpu_opp(@test_params.params_chan.dvfs_freq[0], cpu, e)
   end
 end
 
@@ -50,7 +50,7 @@ def configure_dut(e='dut1')
   enable_smartreflex
   enable_sleep_while_idle
   enable_off_mode
-  set_opp @test_params.params_chan.dvfs_freq[0] if @test_params.params_chan.instance_variable_defined?(:@dvfs_freq)
+  set_opp
 end
 
 def start_app(e='dut1')
