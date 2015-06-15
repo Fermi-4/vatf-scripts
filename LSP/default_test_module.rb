@@ -656,12 +656,20 @@ module LspTestScript
   def kill_process(process,opts={})
     this_equipment = opts[:this_equipment] || @equipment['dut1']
     use_sudo = opts[:use_sudo] || false 
-    if (use_sudo)
-      this_equipment.send_sudo_cmd("kill `ps aux | grep #{process} | grep -v grep | awk '{print $2}'`", this_equipment.prompt, 10)
+    if this_equipmet.is_a?(LinuxLocalHostDriver)
+      if (use_sudo)
+        this_equipment.send_sudo_cmd("kill `ps aux | grep #{process} | grep -v grep | awk '{print $2}'`", this_equipment.prompt, 10)
+      else
+        this_equipment.send_cmd("kill `ps aux | grep #{process} | grep -v grep | awk '{print $2}'`", this_equipment.prompt, 10)
+      end
     else
-      this_equipment.send_cmd("kill `ps aux | grep #{process} | grep -v grep | awk '{print $2}'`", this_equipment.prompt, 10)
-    end  
-  end
+      if (use_sudo)
+        this_equipment.send_sudo_cmd("kill `ps | grep #{process} | grep -v grep | awk '{print $1}'`", this_equipment.prompt, 10)  
+      else
+        this_equipment.send_cmd("kill `ps | grep #{process} | grep -v grep | awk '{print $1}'`", this_equipment.prompt, 10)
+      end  
+    end
+   end
 
   # Preserve current governor
   def create_save_cpufreq_governors
@@ -733,8 +741,13 @@ module LspTestScript
   end
 
   def process_running?(this_equipment=@equipment['dut1'],process)
-    this_equipment.send_cmd("ps aux | grep '#{process}' | grep -v grep", this_equipment.prompt, 10)
-    this_equipment.response.match(/\d+\s+\d+\.\d+\s+\d+\.\d+/) ? true : false
+    if this_equipment.is_a?(LinuxLocalHostDriver) 
+      this_equipment.send_cmd("ps aux | grep '#{process}' | grep -v grep", this_equipment.prompt, 10)
+      this_equipment.response.match(/\d+\s+\d+\.\d+\s+\d+\.\d+/) ? true : false
+    else
+      this_equipment.send_cmd("ps | grep '#{process}' | grep -v grep", this_equipment.prompt, 10)
+      this_equipment.response.match(/\d+\s+.+\s+\d+/) ? true : false
+    end
   end
    
   def report_msg(msg, e='dut1')
