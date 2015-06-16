@@ -507,12 +507,16 @@ def rubify(some_string,look_for,timeout)
     method = some_string[/.*?\(/].to_s.sub('(', '')
     some_string.gsub(/\(.*\)/) do |substr|
       args = substr[1..-2]
-      args_array = args.split(":")
+      if args[/\(.*\)/]
+        args_array = args.split
+      else
+        args_array = args.split(",")
+      end
       if @show_debug_messages
         puts 'Method= ' + method + ', Argument(s)= ' + args_array.to_s + '.'      
       end
       begin
-        self.send(method, *args_array, look_for, timeout)
+        self.send(method, *args_array)
         true
       rescue => detail
         error = detail.backtrace.join("\n")
@@ -553,9 +557,9 @@ def run_command(cmds, look_for = @equipment['dut1'].prompt,timeout=30)
   return [true, comment]
 end
 
-def eval_and_send(cmd,look_for,timeout)
+def eval_and_send(cmd)
   cmd_to_send = eval('"'+cmd+'"')
-  run_command(Array.new.push(cmd_to_send),look_for,timeout)
+  run_command(Array.new.push(cmd_to_send))
 end
 
 def clean

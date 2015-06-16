@@ -4,7 +4,9 @@
 ##Common utilities, used by runlld.rb
 #####################################################################
 
-def dump_trace(look_for,timeout,num_of_cores=@dsp_cores)
+def dump_trace(opts={:cores => @dsp_cores, :look_for => @equipment['dut1'].prompt, :timeout => 30})
+  options = eval("{"+opts+"}")
+  num_of_cores = options.has_key?(:cores) ? options[:cores].to_i : @dsp_cores
   for count in 0..(num_of_cores-1)
     puts "'Core #{count} Trace...'"
     @equipment['dut1'].send_cmd(
@@ -14,29 +16,9 @@ def dump_trace(look_for,timeout,num_of_cores=@dsp_cores)
   end
 end
 
-def exampleA(argA, argB)
-  @equipment['dut1'].send_cmd("echo 'running exampleA(#{argA}, #{argB})'",
-    @equipment['dut1'].prompt, 10)
-  puts "exampleA: I have found #{argA} and #{argB}"
-end
-
-def exampleB(argA, argB)
-  @equipment['dut1'].send_cmd("echo 'running exampleB(#{argA}, #{argB})'",
-    @equipment['dut1'].prompt, 10)
-  argB.to_i.times do |count|
-    puts "iteration #{count}"
-    puts " exampleB: I have found #{argA} and #{argB}"
-  end
-end
-
-def exampleC
-  #tested to see that this format will not cause errors when echo-ing
-  @equipment['dut1'].send_cmd("echo 'running exampleC()'",
-    @equipment['dut1'].prompt, 10)
-  puts "'running exampleC() 3'"
-end
-
-def mpm_load_all(out_file,look_for,timeout,num_of_cores=@dsp_cores)
+def mpm_load_all(out_file,opts={:cores => @dsp_cores, :look_for => @equipment['dut1'].prompt, :timeout => 30})
+  options = eval("{"+opts+"}")
+  num_of_cores = options.has_key?(:cores) ? options[:cores].to_i : @dsp_cores
   for count in 0..(num_of_cores-1)
     puts " 'Loading and Running #{out_file}...'"
     if (@secure_device)
@@ -53,7 +35,9 @@ def mpm_load_all(out_file,look_for,timeout,num_of_cores=@dsp_cores)
   end
 end
 
-def mpm_run_all(look_for,timeout,num_of_cores=@dsp_cores)
+def mpm_run_all(opts={:cores => @dsp_cores, :look_for => @equipment['dut1'].prompt, :timeout => 30})
+  options = eval("{"+opts+"}")
+  num_of_cores = options.has_key?(:cores) ? options[:cores].to_i : @dsp_cores
   for count in 0..(num_of_cores-1)
     puts "Running #{count}...'"
    if (@secure_device)
@@ -70,7 +54,9 @@ def mpm_run_all(look_for,timeout,num_of_cores=@dsp_cores)
   end
 end
 
-def mpm_stop_all(look_for,timeout,num_of_cores=@dsp_cores)
+def mpm_stop_all(opts={:cores => @dsp_cores, :look_for => @equipment['dut1'].prompt, :timeout => 30})
+  options = eval("{"+opts+"}")
+  num_of_cores = options.has_key?(:cores) ? options[:cores].to_i : @dsp_cores
   for count in 0..(num_of_cores-1)
     puts "'Resetting core #{count}...'"
     @equipment['dut1'].send_cmd("mpmcl reset dsp#{count}",
