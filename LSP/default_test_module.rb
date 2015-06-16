@@ -656,7 +656,7 @@ module LspTestScript
   def kill_process(process,opts={})
     this_equipment = opts[:this_equipment] || @equipment['dut1']
     use_sudo = opts[:use_sudo] || false 
-    if this_equipmet.is_a?(LinuxLocalHostDriver)
+    if this_equipment.is_a?(LinuxLocalHostDriver)
       if (use_sudo)
         this_equipment.send_sudo_cmd("kill `ps aux | grep #{process} | grep -v grep | awk '{print $2}'`", this_equipment.prompt, 10)
       else
