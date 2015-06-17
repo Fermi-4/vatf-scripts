@@ -5,7 +5,7 @@
 #####################################################################
 
 def dump_trace(opts={:cores => @dsp_cores, :look_for => @equipment['dut1'].prompt, :timeout => 30})
-  options = eval("{"+opts+"}")
+  options = eval(opts.to_s)
   num_of_cores = options.has_key?(:cores) ? options[:cores].to_i : @dsp_cores
   for count in 0..(num_of_cores-1)
     puts "'Core #{count} Trace...'"
@@ -17,7 +17,7 @@ def dump_trace(opts={:cores => @dsp_cores, :look_for => @equipment['dut1'].promp
 end
 
 def mpm_load_all(out_file,opts={:cores => @dsp_cores, :look_for => @equipment['dut1'].prompt, :timeout => 30})
-  options = eval("{"+opts+"}")
+  options = eval(opts.to_s)
   num_of_cores = options.has_key?(:cores) ? options[:cores].to_i : @dsp_cores
   for count in 0..(num_of_cores-1)
     puts " 'Loading and Running #{out_file}...'"
@@ -36,7 +36,7 @@ def mpm_load_all(out_file,opts={:cores => @dsp_cores, :look_for => @equipment['d
 end
 
 def mpm_run_all(opts={:cores => @dsp_cores, :look_for => @equipment['dut1'].prompt, :timeout => 30})
-  options = eval("{"+opts+"}")
+  options = eval(opts.to_s)
   num_of_cores = options.has_key?(:cores) ? options[:cores].to_i : @dsp_cores
   for count in 0..(num_of_cores-1)
     puts "Running #{count}...'"
@@ -55,7 +55,7 @@ def mpm_run_all(opts={:cores => @dsp_cores, :look_for => @equipment['dut1'].prom
 end
 
 def mpm_stop_all(opts={:cores => @dsp_cores, :look_for => @equipment['dut1'].prompt, :timeout => 30})
-  options = eval("{"+opts+"}")
+  options = eval(opts.to_s)
   num_of_cores = options.has_key?(:cores) ? options[:cores].to_i : @dsp_cores
   for count in 0..(num_of_cores-1)
     puts "'Resetting core #{count}...'"
