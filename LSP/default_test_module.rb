@@ -217,6 +217,23 @@ module LspTestScript
         params['server'].send_sudo_cmd("mkdir -p  #{nfs_root_path_temp}", params['server'].prompt, 10)    
         params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} #{tar_options} #{fs}", params['server'].prompt, 300)
       end
+      # Add workaround for disabling weston
+      weston_start_dst = "#{nfs_root_path_temp}/etc/init.d/weston.bak"
+      matrix_start_dst = "#{nfs_root_path_temp}/etc/rc5.d/K97matrix-gui-2.0"
+      weston_start_src = "#{nfs_root_path_temp}/etc/init.d/weston"
+      matrix_start_src = "#{nfs_root_path_temp}/etc/rc5.d/S97matrix-gui-2.0"
+      if @test_params.instance_variable_defined?(:@var_disable_weston) && @test_params.var_disable_weston.to_i == 1
+        puts "Disabling Weston and Matrix"
+        if !File.exists?(weston_start_dst) && !File.exists?(matrix_start_dst)
+          params['server'].send_sudo_cmd("mv #{weston_start_src} #{weston_start_dst}", params['server'].prompt, 10)
+          params['server'].send_sudo_cmd("mv #{matrix_start_src} #{matrix_start_dst}", params['server'].prompt, 10)
+        end
+      else
+        if File.exists?(weston_start_dst) && File.exists?(matrix_start_dst)
+          params['server'].send_sudo_cmd("mv #{weston_start_dst} #{weston_start_src}", params['server'].prompt, 10)
+          params['server'].send_sudo_cmd("mv #{matrix_start_dst} #{matrix_start_src}", params['server'].prompt, 10)
+        end
+      end
       # Add workaround for touch screen calibration
       pointercal_rule_dst = "#{nfs_root_path_temp}/etc/rc5.d/S90-fake-pointercal"
       if !File.exists?(pointercal_rule_dst)
