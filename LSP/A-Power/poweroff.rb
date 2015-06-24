@@ -1,7 +1,9 @@
 # This script is used to validate that domains are voltage shutdown during poweroff
 
 require File.dirname(__FILE__)+'/../default_test_module'
+require File.dirname(__FILE__)+'/../../lib/multimeter_power'
 require File.dirname(__FILE__)+'/power_functions'
+require File.dirname(__FILE__)+'/power_func'
 
 include LspTestScript
 include PowerFunctions
@@ -32,6 +34,8 @@ def run
   #Measure voltage
   volt_readings = @equipment['multimeter1'].get_multimeter_output(3, @test_params.params_equip.timeout[0].to_i)
   puts "volt_readings size is #{volt_readings.size} and class is #{volt_readings.class}"
+  power_readings = calculate_power_consumption(volt_readings, @equipment['multimeter1'])
+  save_results(power_readings, volt_readings)
   #Compare measured against expected
   expected_poweroff_domains.each {|domain|
     puts "Checking domain #{domain}"
