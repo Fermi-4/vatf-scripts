@@ -24,6 +24,9 @@ module PowerFunctions
       @equipment[e].send_cmd("echo #{power_state} > /sys/power/state", suspend_regex, suspend_time, false)
     elsif wakeup_domain == 'rtc'
       @equipment[e].send_cmd("rtcwake -d /dev/rtc0 -m #{power_state} -s #{suspend_time}", suspend_regex, suspend_time, false)
+    elsif wakeup_domain == 'rtc_only'
+      suspend_regex=/System halted|System will go to power_off|Power down|reboot: Power/i
+      @equipment[e].send_cmd("rtcwake -d /dev/rtc0 -m poweroff -s #{suspend_time}", suspend_regex, suspend_time, false)
     else
       raise "#{wakeup_domain} wakeup domain is not supported"
     end
@@ -52,7 +55,20 @@ module PowerFunctions
         report_and_exit "DUT took more than #{max_resume_time} seconds to resume"
       end
       response = @equipment[e].response
-    
+
+    elsif wakeup_domain == 'rtc_only'
+      @equipment[e].wait_for(@equipment[e].login_prompt, max_resume_time)
+      login_attempts = 3
+      login_attempts.times do |trial|
+        begin
+          @equipment[e].send_cmd(@equipment[e].login, @equipment[e].prompt, 20, false)
+          break
+        rescue Exception => e
+          puts "Login attempt #{trial} failed, trying again....."
+          raise e if trial == login_attempts - 1
+        end
+      end
+
     else
       response = ''
       max_resume_time.times do |i|
