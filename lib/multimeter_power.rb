@@ -21,7 +21,7 @@ def calculate_power_consumption(volt_reading, multimeter=@equipment['multimeter'
     end
     total_power = 0
     for k in (1..num_channels) 
-      total_power = total_power + power_consumption["domain_" + multimeter.dut_power_domains[k - 1]+ "_power_readings"][i]
+      total_power = total_power + power_consumption["domain_" + multimeter.dut_power_domains[k - 1]+ "_power_readings"][i] if power_consumption["domain_" + multimeter.dut_power_domains[k - 1]+ "_power_readings"][i]
     end
     power_consumption["all_domains"] << total_power
   }
