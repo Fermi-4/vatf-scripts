@@ -3,6 +3,7 @@
 
 require File.dirname(__FILE__)+'/../default_test_module'
 require File.dirname(__FILE__)+'/power_functions'
+require File.dirname(__FILE__)+'/power_func'
 
 include LspTestScript
 include PowerFunctions
@@ -20,20 +21,9 @@ def run
   # Configure multimeter 
   @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name).merge({'dut_type'=>@equipment['dut1'].name}))
 
-  # set uart to gpio in standby_gpio_pad_conf so that uart can wakeup from standby
-  if power_state == 'standby' && wakeup_domain == 'uart'
-    @equipment['dut1'].send_cmd("mkdir /debug", @equipment['dut1'].prompt)
-    @equipment['dut1'].send_cmd("mount -t debugfs debugfs /debug", @equipment['dut1'].prompt)
-    @equipment['dut1'].send_cmd("cd /debug/omap_mux/board", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'set_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})}" , @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("#{CmdTranslator.get_linux_cmd({'cmd'=>'get_uart_to_gpio_standby', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})}", @equipment['dut1'].prompt, 10)
-  end
+  power_wakeup_configuration(wakeup_domain, power_state)
 
-  # Work around to enable uart wakeup on some platforms (e.g. J6)
-  if wakeup_domain == 'uart' 
-    cmd = CmdTranslator.get_linux_cmd({'cmd'=>'enable_uart_wakeup', 'platform'=>@test_params.platform, 'version'=>@equipment['dut1'].get_linux_version})
-    @equipment['dut1'].send_cmd(cmd , @equipment['dut1'].prompt) if cmd.to_s != ''
-  end
+  @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.enable_off_mode[0]} > /sys/kernel/debug/pm_debug/enable_off_mode", @equipment['dut1'].prompt)
 
   test_loop = @test_params.params_control.test_loop[0].to_i
   params = {'platform' => @equipment['dut1'].name}
@@ -46,34 +36,40 @@ def run
   end
 
   i = 0
-  resume_wtime = 60
+  test_failed = false
+  err_msg = ''
+  max_suspend_time = 30
+  max_resume_time = 60
+  measurement_time = get_power_domain_data(@equipment['dut1'].name)['power_domains'].size # approx 1 sec per channel to get 3 measurements
+  rtc_only_extra_time = (wakeup_domain == 'rtc_only' ? 15 : 0)
+  min_sleep_time   = 30 + rtc_only_extra_time # to guarantee that RTC alarm does not fire prior to board reaching suspend state
+  measurement_time += rtc_only_extra_time
+  rtc_suspend_time = [measurement_time, min_sleep_time].max
+  suspend_time = (wakeup_domain == 'rtc'  or wakeup_domain == 'rtc_only') ? rtc_suspend_time : max_suspend_time
   while i < test_loop do
-    puts "GOING TO SUSPEND DUT"
-    @equipment['dut1'].send_cmd("sync; echo #{power_state} > /sys/power/state", /Freezing remaining freezable tasks/, 120, false)
-    if @equipment['dut1'].timeout?
-      puts "Timeout while waiting to suspend"
-      raise "DUT took more than 120 seconds to suspend"
-    end
+    suspend(wakeup_domain, power_state, suspend_time)
     sleep 2 # Let system reach deep sleep state
+
     #Measure voltage
     volt_readings = @equipment['multimeter1'].get_multimeter_output(3, @test_params.params_equip.timeout[0].to_i)
+    power_readings = calculate_power_consumption(volt_readings, @equipment['multimeter1'])
+    save_results(power_readings, volt_readings)
     #Compare measured against expected
     expected_volt_reductions.each {|domain,volt|
       # Allows 2.5% deviation from theoretical value
       max_measured_volt = volt_readings["domain_" + domain  + "_volt_readings"].max
       if  max_measured_volt > (volt*1.025)
-        set_result(FrameworkConstants::Result[:fail], "On iteration #{i}, Measured voltage #{max_measured_volt} for #{domain} domain is higher than expected #{volt}")
-        @equipment['dut1'].send_cmd("\n", @equipment['dut1'].prompt, resume_wtime)  
-        return
+        test_failed = true
+        err_msg += "On iteration #{i}, Measured voltage #{max_measured_volt} for #{domain} domain is higher than expected #{volt}"
       end
     }
 
-    # Resume from console
-    puts "GOING TO RESUME DUT"
-    @equipment['dut1'].send_cmd("\n", @equipment['dut1'].prompt, resume_wtime)  
-    if @equipment['dut1'].timeout?
-      raise "DUT took more than #{resume_wtime} seconds to resume"
+    resume(wakeup_domain, max_resume_time)
+    if test_failed
+      set_result(FrameworkConstants::Result[:fail], err_msg)
+      return
     end
+
     sleep 2 # Stay awake couple of seconds
 
     i += 1
