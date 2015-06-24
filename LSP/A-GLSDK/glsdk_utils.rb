@@ -52,7 +52,7 @@ module GlsdkUtils
   end
   
   def item_exists?(equip, path_or_file)
-    return check_cmd?("ls #{File.dirname(path_or_file)} | grep #{File.basename(path_or_file)}", equip)
+    return check_cmd?("ls #{path_or_file}", equip)
   end
 
   def clone_git_repository(equip, to_directory, chk_exists_dir)
@@ -86,10 +86,16 @@ module GlsdkUtils
     command_wait_message = equip.prompt
     wait_secs = 10
     chk_cmd_echo = true
+    response_isolator = "@@@"
     command = "cat #{file_and_path} | grep #{current_phrase}"
-    equip.send_cmd("#{command}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-    file_current_phrase = equip.response.split("\n")[1].chomp
-    sed_file_phrase(equip, file_and_path, file_current_phrase, new_phrase)
+    if check_cmd?(command, equip)
+      command = "echo \"#{response_isolator}$(#{command})#{response_isolator}\""
+      equip.send_cmd("#{command}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+      # Use the response contained between the response isolator strings to avoid random kernel messages contained in the response buffer
+      response_items = equip.response.split(response_isolator)
+      file_current_phrase = equip.response.split(response_isolator)[response_items.length - 2].chomp
+      sed_file_phrase(equip, file_and_path, file_current_phrase, new_phrase)
+    end
   end
 
   def get_glsdk_platform(equip)
@@ -161,13 +167,14 @@ module GlsdkUtils
 
     # Create the clean_results.sh file which will be used to clear the previous resutls
     if is_full_config
-      equip.send_cmd("cd #{glsdk_dir}; echo rm *.csv > clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-      equip.send_cmd("cd #{glsdk_dir}; echo rm *.gz >> clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-      equip.send_cmd("cd #{glsdk_dir}; echo rm *.txt >> clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-      equip.send_cmd("cd #{glsdk_dir}; echo rm error_reports/* >> clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-      equip.send_cmd("cd #{glsdk_dir}; echo rm logs/* >> clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-      equip.send_cmd("cd #{glsdk_dir}; echo rm report.html >> clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-      equip.send_cmd("cd #{glsdk_dir}; echo rm wkar >> clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+      equip.send_cmd("cd #{glsdk_dir}; echo \"rm *.csv\" > clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+      equip.send_cmd("cd #{glsdk_dir}; echo \"rm *.gz\" >> clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+      equip.send_cmd("cd #{glsdk_dir}; echo \"rm *.txt\" >> clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+      equip.send_cmd("cd #{glsdk_dir}; echo \"rm scripts/Systeminfo.csv\" >> clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+      equip.send_cmd("cd #{glsdk_dir}; echo \"rm error_reports/*\" >> clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+      equip.send_cmd("cd #{glsdk_dir}; echo \"rm logs/*\" >> clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+      equip.send_cmd("cd #{glsdk_dir}; echo \"rm report.html\" >> clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+      equip.send_cmd("cd #{glsdk_dir}; echo \"rm wkar\" >> clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
       equip.send_cmd("cd #{glsdk_dir}; chmod 777 clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
     end
     
@@ -211,15 +218,81 @@ module GlsdkUtils
     return result_text
   end
   
-  def run_glsdk(equip, glsdk_dir, test_mins)
+  def kill_parent_and_children_processes(parent_process, equip)
+    error_text = ""
+    # Stop current process (Control-Z)
+    equip.send_cmd("\x1A",equip.prompt, 10)
+    # Put stopped process in the background. Find parent process ID, use parent process ID to find child processes and then kill parent and child processes
+    equip.send_cmd("bg ; kill -9 $(top -n 1 | grep $(top -n 1 | grep -v grep | grep #{parent_process} | awk '{print $1}') | sort -u | awk '{printf \"%s \", $1}')",equip.prompt, 10)
+    error_text = "###ERROR: Unable to gain access to command prompt.###" if equip.timeout?
+    return error_text
+  end
+  
+  def disable_gui_applications(equip, gui_app_files_to_disable, rename_suffix)
+    apps_renamed = false
+    command_wait_message = equip.prompt
+    wait_secs = 10
+    chk_cmd_echo = true
+    gui_app_files_to_disable.each do |g_app|
+      if item_exists?(equip, g_app)
+        apps_renamed = true
+        file_name = File.basename(g_app)
+        equip.send_cmd("cd #{File.dirname(g_app)}; mv #{file_name} #{file_name}#{rename_suffix}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+      end
+    end
+    # Reboot the EVM if GUI applications files were renamed
+    if apps_renamed
+      # Clear @old_keys to ensure that the EVM reboots.
+      @old_keys = ''
+      setup 
+    end
+  end
+  
+  def restore_gui_application_names(equip, gui_app_files_to_disable, rename_suffix)
+    command_wait_message = equip.prompt
+    wait_secs = 10
+    chk_cmd_echo = true
+    gui_app_files_to_disable.each do |g_app|
+      if item_exists?(equip, "#{g_app}#{rename_suffix}")
+        file_name = File.basename(g_app)
+        equip.send_cmd("cd #{File.dirname(g_app)}; mv #{file_name}#{rename_suffix} #{file_name}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+      end
+    end
+  end
+  
+  def run_glsdk(equip, equip_srv, glsdk_dir, test_mins, evm_ip_address)
+    error_text = ""
     command_wait_message = equip.prompt
     wait_secs = 60
     chk_cmd_echo = true
     # Remove previous results
     equip.send_cmd("cd #{glsdk_dir}; ./clean_results.sh", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-    wait_secs = test_mins * 60
+    wait_secs = (test_mins + 2) * 60
+    command_wait_message = "GLSDK test framework execution is complete."
     # Run GLSDK script. Make sure command line echo is turned back on.
-    equip.send_cmd("cd #{glsdk_dir}/scripts; ./INIT_TEST.sh; stty echo; echo \"stty echo on\"", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+    equip.send_cmd("cd #{glsdk_dir}/scripts; ./INIT_TEST.sh; stty echo; echo \"stty echo on\"; echo \"#{command_wait_message}\"", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+    if equip.timeout?
+      error_text = "###ERROR: Script Timeout - GLSDK Product Test Framework did not finish within alloted time. (Timeout minutes: #{test_mins})### "
+      command_wait_message = equip.prompt
+      wait_secs = 5
+      no_chk_cmd_echo = false
+      3.times do
+        # Send Control-C to stop the currently running script to gain access to the command prompt
+        equip.log_info("Sending Control-C to stop currently running script...\r\n")
+        equip.send_cmd("\x03", /#{command_wait_message}/, wait_secs, no_chk_cmd_echo)
+        break if !equip.timeout?
+      end
+      if equip.timeout?
+        # Next try to kill INIT_TEST.sh parent and child processes
+        equip.log_info("Killing parent and children processes...\r\n")
+        this_error_text = kill_parent_and_children_processes("INIT_TEST.sh", equip) if equip.timeout?
+        if this_error_text != ""
+          # Only choice left is to reboot the EVM to gain access to the command prompt
+          setup
+        end
+      end
+    end
+    return error_text
   end
 
   def generate_glsdk_report(equip, glsdk_dir)
@@ -329,6 +402,11 @@ module GlsdkUtils
     equip_srv = @equipment['server1']
     equip_evm = @equipment['dut1']
 
+    # Set the list of files to be disabled to allow the GLSDK product framework to run properly
+    gui_app_files_to_disable = Array.new
+    gui_app_files_to_disable.push("/etc/init.d/weston")
+    gui_app_files_to_disable.push("/etc/rc5.d/S97matrix-gui-2.0")
+  
     # Set default test values
     error_text = ""
     test_mins = 350
@@ -338,7 +416,8 @@ module GlsdkUtils
     tee_instance_id = @test_params.staf_service_name.tr("\"", "").strip
     glsdk_test_report_tar_name = "glsdk_test_report.tar.gz"
     srv_tftp_dir = File.join(equip_srv.tftp_path, tee_instance_id)
-    
+    evm_ip_address = get_ip_addr('dut1')
+
     # Get parameter values from test case
     test_mins = @test_params.params_chan.test_mins[0].to_i if @test_params.params_chan.instance_variable_defined?(:@test_mins)
     loop = @test_params.params_chan.loop[0].tr("\"", "") if @test_params.params_chan.instance_variable_defined?(:@loop)
@@ -372,6 +451,7 @@ module GlsdkUtils
     equip_srv.log_info("  g_clone_to_dir : #{g_clone_to_dir}")
     equip_srv.log_info("  g_glsdk_dir    : #{g_glsdk_dir}")
     equip_srv.log_info("  srv_tftp_dir   : #{srv_tftp_dir}")
+    equip_srv.log_info("  evm_ip_address : #{evm_ip_address}")
     equip_srv.log_info("  report_tar_name: #{glsdk_test_report_tar_name}")
     equip_srv.log_info("\r\n")
 
@@ -391,12 +471,18 @@ module GlsdkUtils
       sleep(15)
     end
     if error_text == ""
+      # Suffix to use when renaming the GUI applications on the EVM to disable them.
+      rename_suffix = "_aglsdk.bak"
+      # Disable the GUI applications before running the GLSDK framework
+      disable_gui_applications(equip_evm, gui_app_files_to_disable, rename_suffix)
       # Configure GLSDK framework files
       configure_glsdk(equip_evm, glsdk_dir, test_mins, loop, run_once, modules)
       # Run GLSDK framework
-      run_glsdk(equip_evm, glsdk_dir, test_mins)
+      error_text += run_glsdk(equip_evm, equip_srv, glsdk_dir, test_mins, evm_ip_address)
       # Generate GLSDK test report
       generate_glsdk_report(equip_evm, glsdk_dir)
+      # Restore the proper names of the GUI applications if necessary.
+      restore_gui_application_names(equip_evm, gui_app_files_to_disable, rename_suffix)
     end
     # Upload results files/logs and set the TestLink test result
     set_glsdk_test_result(equip_evm, equip_srv, tee_instance_id, glsdk_dir, glsdk_test_report_tar_name, error_text)
@@ -413,7 +499,10 @@ module GlsdkUtils
     result = 0
     test_counts_string = ""
     
-    if error_text == ""
+    if error_text == "" or error_text.include?("Script Timeout")
+      if error_text != ""
+        result = 1
+      end
       # Copy test result files to log path and get web link to glsdk test report html
       report_html_web_path = copy_glsdk_results_to_log_server(equip_evm, equip_srv, glsdk_dir, tee_instance_id, glsdk_test_report_tar_name, report_file_name)
       report_link  = "<p><a href=\"http://#{report_html_web_path}\" target=\"_blank\">GLSDK Test Report</a></p>"

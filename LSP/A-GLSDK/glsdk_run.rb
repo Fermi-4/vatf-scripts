@@ -17,4 +17,7 @@ end
 
 def clean
   super
+  # Clear @old_keys to ensure that the EVM reboots.
+  @old_keys = ''
+  setup
 end
