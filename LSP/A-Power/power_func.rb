@@ -65,9 +65,11 @@ def run
     
   volt_readings={}
   measurement_time = get_power_domain_data(@equipment['dut1'].name)['power_domains'].size # approx 1 sec per channel to get 3 measurements
-  min_sleep_time   = 30 # to guarantee that RTC alarm does not fire prior to board reaching suspend state
+  rtc_only_extra_time = (wakeup_domain == 'rtc_only' ? 15 : 0)
+  min_sleep_time   = 30 + rtc_only_extra_time # to guarantee that RTC alarm does not fire prior to board reaching suspend state
+  measurement_time += rtc_only_extra_time
   rtc_suspend_time = [measurement_time, min_sleep_time].max
-  suspend_time = wakeup_domain == 'rtc' ? rtc_suspend_time : max_suspend_time 
+  suspend_time = (wakeup_domain == 'rtc'  or wakeup_domain == 'rtc_only') ? rtc_suspend_time : max_suspend_time
   if @test_params.params_chan.instance_variable_defined?(:@suspend) && @test_params.params_chan.suspend[0] == '1'
     @test_params.params_control.loop_count[0].to_i.times do
       # Suspend
