@@ -9,13 +9,13 @@ def connect_to_extra_equipment
   if usb_switch1.respond_to?(:serial_port) && usb_switch1.serial_port != nil
     usb_switch1.connect({'type'=>'serial'})
   else
-    raise "Something wrong with usb switch connection 1. Please check your setup"
+    raise "Something wrong with usb switch connection for usbclient. Please check your setup"
   end
   usb_switch2 = @usb_switch_handler.usb_switch_controller[@equipment['dut1'].params['usbhost_port'].keys[0]]
   if usb_switch2.respond_to?(:serial_port) && usb_switch2.serial_port != nil
     usb_switch2.connect({'type'=>'serial'})
   else
-    raise "Something wrong with usb switch connection 1. Please check your setup"
+    raise "Something wrong with usb switch connection for usbhost. Please check your setup"
   end
 
 end
