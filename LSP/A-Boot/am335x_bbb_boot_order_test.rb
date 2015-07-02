@@ -86,11 +86,13 @@ def usbrndis_boot()
     @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
     raise e
   end
-  restore_mmc(1)
-  @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
  
   # check if the dut can boot to kernel under usbrndis booting mode
+  sleep 1
   flash_or_boot_kernel_fromto_media('boot', 'eth')
+
+  @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
+  @power_handler.switch_on(@equipment['dut1'].power_port)
 
   report_msg "##### USB-ETH BOOT END #####" 
   return status 
