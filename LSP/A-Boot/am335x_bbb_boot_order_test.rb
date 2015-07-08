@@ -4,7 +4,7 @@
 require File.dirname(__FILE__)+'/default_boot_order_test' 
 
 def connect_to_extra_equipment
-  usb_switch = @usb_switch_handler.usb_switch_controller[@equipment['dut1'].params['usb_port'].keys[0]]
+  usb_switch = @usb_switch_handler.usb_switch_controller[@equipment['dut1'].params['usbclient_port'].keys[0]]
   if usb_switch.respond_to?(:serial_port) && usb_switch.serial_port != nil
     usb_switch.connect({'type'=>'serial'})
   else
@@ -15,7 +15,7 @@ end
 
 def uart_boot()
   report_msg "##### UART BOOT START #####" 
-  @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
+  @usb_switch_handler.disconnect(@equipment['dut1'].params['usbclient_port'].keys[0])
   if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
     reboot_dut()
   end
@@ -66,9 +66,9 @@ def usbrndis_boot()
 
     # Once the usb cable is connected, usb0 interface is established and dhcp server will be restarted
     # per /etc/NetworkManager/dispatcher.d rule
-    @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
+    @usb_switch_handler.disconnect(@equipment['dut1'].params['usbclient_port'].keys[0])
     sleep 1
-    @usb_switch_handler.select_input(@equipment['dut1'].params['usb_port'])
+    @usb_switch_handler.select_input(@equipment['dut1'].params['usbclient_port'])
 
     # Dut should boot from usb-eth by now
     @equipment['dut1'].wait_for(/Bytes\s+transferred/i, 60)
@@ -83,7 +83,7 @@ def usbrndis_boot()
 
   rescue Exception => e
     restore_mmc(1)
-    @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
+    @usb_switch_handler.disconnect(@equipment['dut1'].params['usbclient_port'].keys[0])
     raise e
   end
  
@@ -91,7 +91,7 @@ def usbrndis_boot()
   sleep 1
   flash_or_boot_kernel_fromto_media('boot', 'eth')
 
-  @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
+  @usb_switch_handler.disconnect(@equipment['dut1'].params['usbclient_port'].keys[0])
   @power_handler.switch_on(@equipment['dut1'].power_port)
 
   report_msg "##### USB-ETH BOOT END #####" 
@@ -113,7 +113,7 @@ def emmc_boot()
   @equipment['dut1'].boot_loader = nil
 
   # remove usb from boot sequence
-  @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
+  @usb_switch_handler.disconnect(@equipment['dut1'].params['usbclient_port'].keys[0])
 
   # the board should boot from emmc now 
   puts "The board suppose to boot from emmc on power cycle"

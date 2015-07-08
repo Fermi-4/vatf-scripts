@@ -3,6 +3,16 @@
 
 require File.dirname(__FILE__)+'/default_boot_order_test' 
 
+def connect_to_extra_equipment
+  usb_switch = @usb_switch_handler.usb_switch_controller[@equipment['dut1'].params['usbclient_port'].keys[0]]
+  if usb_switch.respond_to?(:serial_port) && usb_switch.serial_port != nil
+    usb_switch.connect({'type'=>'serial'})
+  else
+    raise "Something wrong with usb switch connection. Please check your setup"
+  end
+
+end
+
 def run
   @translated_boot_params = get_image()
   @equipment['dut1'].disconnect()
@@ -102,7 +112,7 @@ end
 
 def uart_boot()
   puts "turn OFF USB Swtich !!!!!!!!!" 
-  @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_port'].keys[0])
+  @usb_switch_handler.disconnect(@equipment['dut1'].params['usbclient_port'].keys[0])
   @equipment['dut1'].disconnect()
   boot_to_bootloader()
 end 
