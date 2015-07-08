@@ -7,16 +7,31 @@ require File.dirname(__FILE__)+'/../default_test_module'
    
 include LspTestScript   
 
+def connect_to_extra_equipment
+  usb_switch1 = @usb_switch_handler.usb_switch_controller[@equipment['dut1'].params['usbclient_port'].keys[0]]
+  if usb_switch1.respond_to?(:serial_port) && usb_switch1.serial_port != nil
+    usb_switch1.connect({'type'=>'serial'})
+  else
+    raise "Something wrong with usb switch connection for usbclient. Please check your setup"
+  end
+end
+
 def setup
 	@equipment['dut1'].set_api('psp')
   @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
-
+  connect_to_extra_equipment()
   install_dfu_util()
 end
 
 def run
   result = 0
-  translated_boot_params = setup_host_side()
+  params = {}
+  params['primary_bootloader_mmc'] = @test_params.instance_variable_defined?(:@primary_bootloader_mmc) ? @test_params.primary_bootloader_mmc : ''
+  params['primary_bootloader_mmc_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_mmc_src_dev) ? @test_params.params_chan.primary_bootloader_mmc_src_dev[0] : 'eth'
+  params['secondary_bootloader_mmc'] = @test_params.instance_variable_defined?(:@secondary_bootloader_mmc) ? @test_params.secondary_bootloader_mmc : ''
+  params['secondary_bootloader_mmc_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_mmc_src_dev) ? @test_params.params_chan.secondary_bootloader_mmc_src_dev[0] : 'eth'
+
+  translated_boot_params = setup_host_side(params)
   translated_boot_params.each{|k,v| puts "#{k}:#{v}"}
   
   alt_name_mlo_fat = "MLO"
@@ -55,9 +70,15 @@ def run
 
   # boot to uboot prompt if it is not in uboot prompt
   if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+    if @test_params.platform.downcase == "beaglebone-black"
+      puts "Disconnect usb cable; otherwise, BBB won't reboot"
+      @usb_switch_handler.disconnect(@equipment['dut1'].params['usbclient_port'].keys[0])
+    end
     @equipment['dut1'].boot_to_bootloader(translated_boot_params)
   end
-  
+  # connect usb port to pc  
+  @usb_switch_handler.select_input(@equipment['dut1'].params['usbclient_port'])
+
   # check if dfu env is exist
   @equipment['dut1'].send_cmd("version", @equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("setenv dfu_alt_info #{dfu_alt_info}", @equipment['dut1'].boot_prompt, 5)
@@ -94,7 +115,7 @@ end
 def start_dfu_on_target(cmd, exp1, exp2)
   Thread.abort_on_exception = true
   thr = Thread.new {
-    @equipment['dut1'].send_cmd(cmd, exp1, 10)
+    @equipment['dut1'].send_cmd(cmd, exp1, 20)
     raise "DFU could not be started, Check if the usb cable was connected to host pc." if @equipment['dut1'].timeout?
     @equipment['dut1'].wait_for(exp2, 120)
     raise "Did not get expected string; Downloading failed" if @equipment['dut1'].timeout?
@@ -105,7 +126,7 @@ def start_dfu_on_target(cmd, exp1, exp2)
 end
 
 def host_dfu_download_image(image, alt_name)
-  sleep 2 #make sure the target thread dfu command was executed
+  sleep 10 #make sure the target thread dfu command was executed
   raise "host_dfu_download_image: File #{image} doesn't exist" if ! File.exist?(image)
   @equipment['server1'].send_sudo_cmd("dfu-util -D #{image} -a #{alt_name}", "Done!", 120)
   raise "Downloading data from PC to DFU device failed!" if ! @equipment['server1'].response.match(/Starting\s+download:.*finished!/i)
@@ -120,3 +141,5 @@ def install_dfu_util()
   @equipment['server1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
   raise "Could not install dfu-util!" if @equipment['server1'].timeout?
 end
+
+
