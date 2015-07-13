@@ -27,8 +27,14 @@ def run
   result_msg = ''
   ecc_bits = 1
   chunk_size = 512
-  nand_env_part_addr_start = get_nand_env_part_addr()
+
   nand_pagesize = get_nand_pagesize()
+  nand_test_addr = get_nand_test_addr(@test_params.platform)
+  
+  testfile = "#{@linux_temp_folder}/nand_testfile"
+  @equipment['server1'].send_cmd("dd if=/dev/urandom of=#{testfile} bs=1 count=#{nand_pagesize.to_i(16)}", @equipment['server1'].prompt, 60)
+  transfer_testdata_to_dut(testfile)
+  write_testdata_to_nand(nand_test_addr, nand_pagesize)
   ramaddress = PlatformSpecificVarNames.translate_var_name(@test_params.platform,'ramaddress')
   ramaddress_2 = PlatformSpecificVarNames.translate_var_name(@test_params.platform,'ramaddress_2')
   ramaddress_3 = PlatformSpecificVarNames.translate_var_name(@test_params.platform,'ramaddress_3')
@@ -36,11 +42,8 @@ def run
   chunk_size = @test_params.params_chan.chunk_size[0] if @test_params.params_chan.instance_variable_defined?(:@chunk_size)
   err_byte = 0xFF >> (8 - ecc_bits.to_i) 
 
-  @equipment['dut1'].send_cmd("nand erase #{nand_env_part_addr_start} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
-  @equipment['dut1'].send_cmd("saveenv",@equipment['dut1'].boot_prompt, 5)
-  @equipment['dut1'].send_cmd("saveenv",@equipment['dut1'].boot_prompt, 5)
-  @equipment['dut1'].send_cmd("nand dump #{nand_env_part_addr_start} page",@equipment['dut1'].boot_prompt, 5)
-  @equipment['dut1'].send_cmd("nand read.raw #{ramaddress} #{nand_env_part_addr_start} 1",@equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("nand dump #{nand_test_addr} page",@equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("nand read.raw #{ramaddress} #{nand_test_addr} 1",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("md.b #{ramaddress} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
 
   # modify the data
@@ -60,15 +63,15 @@ def run
   end
 
   # write the modified data into nand 
-  @equipment['dut1'].send_cmd("nand erase #{nand_env_part_addr_start} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
-  @equipment['dut1'].send_cmd("nand write.raw #{ramaddress} #{nand_env_part_addr_start}",@equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("nand erase #{nand_test_addr} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("nand write.raw #{ramaddress} #{nand_test_addr}",@equipment['dut1'].boot_prompt, 5)
 
   # show modified data
-  @equipment['dut1'].send_cmd("nand read.raw #{ramaddress_2} #{nand_env_part_addr_start} 1",@equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("nand read.raw #{ramaddress_2} #{nand_test_addr} 1",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("md.b #{ramaddress_2} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
 
   # show corrected data
-  @equipment['dut1'].send_cmd("nand read #{ramaddress_3} #{nand_env_part_addr_start} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 10)
+  @equipment['dut1'].send_cmd("nand read #{ramaddress_3} #{nand_test_addr} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 10)
   @equipment['dut1'].send_cmd("md.b #{ramaddress_3} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
 
   # compare orig with the corrected data below
@@ -95,8 +98,7 @@ def run
 end
 
 def clean
-  	#super
-  	self.as(LspTestScript).clean
+  puts "uboot nandecc test cleaning"
 end
 
 # get the first byte from memeory
@@ -116,11 +118,45 @@ def get_nand_pagesize
   return pagesize
 end
 
+# get nand test add, it could be any addr in nand. now choose an addr in file-system partition
+# this addr should work for every platforms; if not, it can be overwritten.
+def get_nand_test_addr(platform)
+  case platform
+  when "am335x-evm"
+    nand_addr = "0x1000000"
+  else
+    nand_addr = "0x1000000"
+  end
+  return nand_addr
+end
+
 # get nand env partition start addr in uboot prompt
 def get_nand_env_part_addr
   @equipment['dut1'].send_cmd("saveenv",@equipment['dut1'].boot_prompt, 5)
   env_start_addr = /Erasing\s+at\s+(0x\h+)/.match(@equipment['dut1'].response).captures[0]
   return env_start_addr
   
+end
+
+# transfer data from linux host to ${loadaddr} in dut
+def transfer_testdata_to_dut(testfile)
+  # copy testfile to tftpboot
+  tmp_path = @test_params.staf_service_name.to_s.strip.gsub('@','_')
+  dst_dir = File.join(@equipment['server1'].tftp_path, tmp_path)
+  copy_asset(@equipment['server1'], testfile, dst_dir)
+  # tftp to dut
+  @equipment['dut1'].send_cmd("setenv serverip #{@equipment['server1'].telnet_ip}", @equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("setenv autoload no", @equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("dhcp", @equipment['dut1'].boot_prompt, 30)
+  @equipment['dut1'].send_cmd("tftp ${loadaddr} #{tmp_path}/#{File.basename(testfile)}", @equipment['dut1'].boot_prompt, 60)
+  raise "Could not tftp nand testfile to dut" if !@equipment['dut1'].response.match(/Bytes\s+transferred/im)  
+end
+
+# write data from ${loadaddr} to nand
+def write_testdata_to_nand(nand_test_addr, nand_pagesize)
+  @equipment['dut1'].send_cmd("nand erase #{nand_test_addr} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
+  # nand write - addr off|partition size
+  @equipment['dut1'].send_cmd("nand write ${loadaddr} #{nand_test_addr} #{nand_pagesize}", @equipment['dut1'].boot_prompt, 60)
+  raise "Nand write failed" if !@equipment['dut1'].response.match(/bytes\s+written:\s+OK/im)
 end
 
