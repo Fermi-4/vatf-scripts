@@ -42,7 +42,7 @@ def run
 
   commands = assign_commands()
   criteria = assign_criteria()
-  timeout = assign_timeout()
+  @timeout = assign_timeout()
   @soft_reboot = @test_params.params_control.instance_variable_defined?(:@soft_reboot) ? \
                         (@test_params.params_control.soft_reboot[0].to_s) : @test_params.params_chan.instance_variable_defined?(:@soft_reboot) ? \
 						(@test_params.params_chan.soft_reboot[0].to_s) : "false"
@@ -88,8 +88,8 @@ def run
 	    return
 	end
     end
-    cmd_result = run_command(Array.new.push(test_cmd),
-      look_for = (criteria != nil) ? Regexp.new(criteria[0], Regexp::IGNORECASE) : nil, timeout)
+    cmd_result = run_command(Array.new.push(test_cmd),{
+      :look_for => (criteria != nil) ? Regexp.new(criteria[0], Regexp::IGNORECASE) : nil, :timeout => @timeout})
     if cmd_result[0] == false
       set_result(test_done_result,comment + cmd_result[1])
       return
@@ -511,7 +511,21 @@ def rubify(some_string,look_for,timeout)
         args_array = args.split
       else
         args_array = args.split(",")
-      end
+     end
+     if args_array.any? { |word| word.match(/\(.*\)/) } || !args_array.any? { |word| word.match(/\{\:.*\}/) }
+       # insert hash of look_for and timeout
+       args_array << {:look_for=>look_for, :timeout=>timeout}
+     else 
+       # If arguments passed are not a method requiring rubify() and already contain a hash of optional args, merge look_for and timeout
+       if args_array.any? { |word| word.match(/\{\:.*\}/) }
+         args_array.each { |word| 
+           if word.is_a?(Hash)  
+             word = eval(word.to_s)
+             word.merge({:look_for=>look_for, :timeout=>timeout})
+           end
+         }
+       end
+     end
       if @show_debug_messages
         puts 'Method= ' + method + ', Argument(s)= ' + args_array.to_s + '.'      
       end
@@ -536,8 +550,10 @@ end
 # look_for  - Criteria to look for in cmds output
 #
 # Return if cmds sent succesfully, with comments
-def run_command(cmds, look_for = @equipment['dut1'].prompt,timeout=30)
+def run_command(cmds,opts={:look_for => @equipment['dut1'].prompt, :timeout => 30})
   comment = ""
+  look_for = opts[:look_for].to_s
+  timeout = opts[:timeout].to_i
   cmds.each do |cmd|
     comment += "Running " + cmd.to_s + ". "
     if rubify(cmd,look_for,timeout)
@@ -557,9 +573,9 @@ def run_command(cmds, look_for = @equipment['dut1'].prompt,timeout=30)
   return [true, comment]
 end
 
-def eval_and_send(cmd)
+def eval_and_send(cmd,args_array)
   cmd_to_send = eval('"'+cmd+'"')
-  run_command(Array.new.push(cmd_to_send))
+  run_command(Array.new.push(cmd_to_send),args_array)
 end
 
 def clean
