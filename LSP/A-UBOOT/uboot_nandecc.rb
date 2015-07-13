@@ -38,9 +38,19 @@ def run
   ramaddress = PlatformSpecificVarNames.translate_var_name(@test_params.platform,'ramaddress')
   ramaddress_2 = PlatformSpecificVarNames.translate_var_name(@test_params.platform,'ramaddress_2')
   ramaddress_3 = PlatformSpecificVarNames.translate_var_name(@test_params.platform,'ramaddress_3')
-  ecc_bits = @test_params.params_chan.ecc_bits[0] if @test_params.params_chan.instance_variable_defined?(:@ecc_bits)
   chunk_size = @test_params.params_chan.chunk_size[0] if @test_params.params_chan.instance_variable_defined?(:@chunk_size)
-  err_byte = 0xFF >> (8 - ecc_bits.to_i) 
+  ecc_bits = @test_params.params_chan.ecc_bits[0] if @test_params.params_chan.instance_variable_defined?(:@ecc_bits)
+  err_mask = []
+  if ecc_bits.to_i <= 8
+    byte_num = 1
+    err_mask[0] = 0xFF >> (8 - ecc_bits.to_i) 
+  elsif (ecc_bits.to_i > 8) && (ecc_bits.to_i <= 16)
+    byte_num = 2
+    err_mask[0] = 0xFF
+    err_mask[1] = 0xFF >> (8 - (ecc_bits.to_i - 8))
+  else
+    raise "ecc_bits is too big, this nandecc script does not support it yet"
+  end
 
   @equipment['dut1'].send_cmd("nand dump #{nand_test_addr} page",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("nand read.raw #{ramaddress} #{nand_test_addr} 1",@equipment['dut1'].boot_prompt, 5)
@@ -49,16 +59,16 @@ def run
   # modify the data
   # assume nand page size is multiple of 512 which is chunk size
   cnt = nand_pagesize.to_i(16) / chunk_size.to_i 
+  byte_orig_arr = Array.new(cnt) {Array.new(byte_num) }
   x = 0
-  byte_orig_arr = []
   while x < cnt do
-    this_addr = (ramaddress.to_i(16) + x*chunk_size.to_i).to_s(16)
-    byte_orig = get_first_byte(this_addr)
-    byte_orig_arr << byte_orig
-    byte_mod = (byte_orig.hex.to_i ^ err_byte).to_s(16)
-    @equipment['dut1'].send_cmd("mm.b #{this_addr}", /\?/, 5)
-    @equipment['dut1'].send_cmd("#{byte_mod}", /\?/, 5)
-    @equipment['dut1'].send_cmd("q", @equipment['dut1'].boot_prompt, 5)
+    for index in 0..(byte_num-1) do
+      this_addr = (ramaddress.to_i(16) + x*chunk_size.to_i + index.to_i).to_s(16)
+      byte_orig = retrieve_byte(this_addr)
+      byte_orig_arr[x][index] = byte_orig
+      modify_byte(this_addr, byte_orig, err_mask[index])
+    end
+
     x += 1
   end
 
@@ -78,14 +88,16 @@ def run
   cnt = nand_pagesize.to_i(16) / chunk_size.to_i 
   x = 0
   while x < cnt do
-    this_addr_2 = (ramaddress_2.to_i(16) + x*chunk_size.to_i).to_s(16)
-    this_addr_3 = (ramaddress_3.to_i(16) + x*chunk_size.to_i).to_s(16)
-    err_byte = get_first_byte(this_addr_2)
-    corrected_byte = get_first_byte(this_addr_3)
-    if byte_orig_arr[x] != corrected_byte
-      result += 1
+    for index in 0..(byte_num-1) do
+      this_addr_2 = (ramaddress_2.to_i(16) + x*chunk_size.to_i + index.to_i).to_s(16)
+      this_addr_3 = (ramaddress_3.to_i(16) + x*chunk_size.to_i + index.to_i).to_s(16)
+      err_byte = retrieve_byte(this_addr_2)
+      corrected_byte = retrieve_byte(this_addr_3)
+      if byte_orig_arr[x][index] != corrected_byte
+        result += 1
+      end
+      result_msg = result_msg + "For cnt=#{x.to_s}: Original byte is 0x#{byte_orig_arr[x][index]}, err_byte is 0x#{err_byte} and the corrected_byte is 0x#{corrected_byte}; "
     end
-    result_msg = result_msg + "For cnt=#{x.to_s}: Original byte is 0x#{byte_orig_arr[x]}, err_byte is 0x#{err_byte} and the corrected_byte is 0x#{corrected_byte}; "
     x += 1
   end
 
@@ -101,12 +113,22 @@ def clean
   puts "uboot nandecc test cleaning"
 end
 
-# get the first byte from memeory
-def get_first_byte(ramaddress)
-  @equipment['dut1'].send_cmd("md.b #{ramaddress} 1", @equipment['dut1'].boot_prompt, 5)
+
+# modify byte on this_addr 
+def modify_byte(this_addr, byte_orig, err_mask)
+    byte_mod = (byte_orig.hex.to_i ^ err_mask).to_s(16)
+    @equipment['dut1'].send_cmd("mm.b #{this_addr}", /\?/, 5)
+    @equipment['dut1'].send_cmd("#{byte_mod}", /\?/, 5)
+    @equipment['dut1'].send_cmd("q", @equipment['dut1'].boot_prompt, 5)
+
+end
+
+# get the byte from memeory
+def retrieve_byte(ramaddr)
+  @equipment['dut1'].send_cmd("md.b #{ramaddr} 1", @equipment['dut1'].boot_prompt, 5)
   md_response = @equipment['dut1'].response if !@equipment['dut1'].timeout?
-  first_byte = /\d+\s*:\s*([0-9A-Fa-f]+)/m.match(md_response).captures[0]
-  return first_byte
+  this_byte = /\d+\s*:\s*([0-9A-Fa-f]+)/m.match(md_response).captures[0]
+  return this_byte
 end
 
 # get nand pagesize in hex dynamically in uboot prompt
