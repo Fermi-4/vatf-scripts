@@ -1,10 +1,15 @@
 require File.dirname(__FILE__)+'/../default_target_test'
-require File.dirname(__FILE__)+'/../../lib/result_forms'
 require File.dirname(__FILE__)+'/../../lib/utils'
+begin
+  require File.dirname(__FILE__)+'/../../lib/result_forms'
+rescue Exception => e
+  @stop_semi_test = "Unable to load #{File.dirname(__FILE__)+'/../../lib/result_forms'}\n#{e.to_s}"
+end
 
 include LspTargetTestScript
 
 def run
+  raise @stop_semi_test if @stop_semi_test
   set_audio_iface()
   test_result = true
   file_op_wait = 100
