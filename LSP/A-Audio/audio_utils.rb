@@ -345,7 +345,7 @@ end
 #       be set
 #Returns, two arrays. Element 0 contains the rec devices info and element
 #         1 containg the playout devices info  
-def setup_devices(sys=@equipment['dut1'])
+def setup_devices(sys=@equipment['dut1'], volume=0.6)
   dut_rec_dev = []
   dut_play_dev = []
   sys.send_cmd("ls /sys/class/sound/ | grep 'card'", sys.prompt,10)
@@ -375,7 +375,7 @@ def setup_devices(sys=@equipment['dut1'])
     #Setting volume
     set_volume(0, 'ADC', d_rec_dev['card'])
       ['PCM', 'PGA', 'Mic PGA'].each do |ctrl|
-        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.9,ctrl, d_play_dev['card'])
+        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(volume, ctrl, d_play_dev['card'])
       end
       dut_rec_dev << d_rec_dev
     end
@@ -386,7 +386,7 @@ def setup_devices(sys=@equipment['dut1'])
         puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl, d_play_dev['card'])
       end
       ['PCM', 'HP DAC', 'DAC', 'HP Analog', 'SP Analog', 'Speaker Analog', 'Mic PGA'].each do |ctrl|
-        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(0.9,ctrl, d_play_dev['card'])
+        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(volume, ctrl, d_play_dev['card'])
       end
       dut_play_dev << d_play_dev
     end
@@ -400,6 +400,16 @@ end
 def host_playout(audio_info)
   p_sys = audio_info[0]['sys']
   p_sys.send_cmd("aplay -D hw:0,0 -d #{audio_info[0]['duration']} -t #{audio_info[0]['type']} " \
+  "-r #{audio_info[0]['rate']} -f #{audio_info[0]['format']} " \
+  "-c #{audio_info[0]['channels']} #{audio_info[0]['file']}", p_sys.prompt, audio_info[0]['duration'].to_i + 1)
+end
+
+#Function used to play an audio file on the host, takes
+#  audio_info and array whose element are the data structure used by 
+#  function prep_audio_string
+def host_rec(audio_info)
+  p_sys = audio_info[0]['sys']
+  p_sys.send_cmd("arecord -D hw:0,0 -d #{audio_info[0]['duration']} -t #{audio_info[0]['type']} " \
   "-r #{audio_info[0]['rate']} -f #{audio_info[0]['format']} " \
   "-c #{audio_info[0]['channels']} #{audio_info[0]['file']}", p_sys.prompt, audio_info[0]['duration'].to_i + 1)
 end
