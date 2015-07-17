@@ -65,8 +65,8 @@ end
 #  username, (Optiona) string containing the ssh username, defaults to root
 #  password, (Optional) string containing the password associated with user 
 #            username, defaults to ''
-def scp_pull_file(ip_addr, rem_path, local_path, username='root', password='') 
-  Net::SSH.start(ip_addr, username, :password => password) do |ssh|
+def scp_pull_file(ip_addr, rem_path, local_path, username='root', password='', paranoid=false) 
+  Net::SSH.start(ip_addr, username, :password => password, :paranoid => paranoid) do |ssh|
     ssh.scp.download!(rem_path, local_path)
   end
 end
