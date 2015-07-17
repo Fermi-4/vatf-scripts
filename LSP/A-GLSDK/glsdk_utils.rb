@@ -14,12 +14,14 @@
 #   e) Right click on raw next to upwardTranslater.xsl and then "Save Target As" to desired location
 #
 #  Build variables which will override the defaults:
-#     var_glsdk_git_repo      ; To specify a different GSLDK git repository
-#     var_glsdk_clone_to_dir  ; To specify a different GSLDK clone to directory on the EVM
-#     var_glsdk_dir           ; To specify a different GSLDK execution directory on the EVM
+#     var_glsdk_git_repo             ; To specify a different GLSDK git repository
+#     var_glsdk_clone_to_dir         ; To specify a different GLSDK clone to directory on the EVM
+#     var_glsdk_dir                  ; To specify a different GLSDK execution directory on the EVM
+#     var_glsdk_framework_commit_id  ; To specify the checkout commit id for GLSDK git repository
+#     glsdk_framework_patch_file     ; To specify the patch file to apply to GLSDK git repository
 #
 #  Test case parameters:
-#     test_mins               ; Max time to allow the GSLDK framework to run          (range: 0 to infinity, default = 350)
+#     test_mins               ; Max time to allow the GLSDK framework to run          (range: 0 to infinity, default = 350)
 #     loop                    ; Loop through modules until time expires               (range: "yes" or "no", default = "no")
 #     run_once                ; Run through modules only once                         (range: "yes" or "no", default = "yes")
 #     modules                 ; GLSDK modules to run (such as modules="graphics vpe") (range: list of modules separated by spaces, default = ""     )
@@ -39,6 +41,18 @@ module GlsdkUtils
     return glsdk_git_repository
   end
   
+  def get_glsdk_framework_commit_id()
+    glsdk_framework_commit_id = ""
+    glsdk_framework_commit_id = @test_params.var_glsdk_framework_commit_id.tr("\"", "") if @test_params.instance_variable_defined?(:@var_glsdk_framework_commit_id)
+    return glsdk_framework_commit_id
+  end
+  
+  def get_glsdk_framework_patch_file()
+    glsdk_framework_patch_file = ""
+    glsdk_framework_patch_file = @test_params.glsdk_framework_patch_file.tr("\"", "") if @test_params.instance_variable_defined?(:@glsdk_framework_patch_file)
+    return glsdk_framework_patch_file
+  end
+  
   def get_glsdk_clone_to_directory()
     glsdk_clone_to_dir = "/test"
     glsdk_clone_to_dir = @test_params.var_glsdk_clone_to_dir.tr("\"", "") if @test_params.instance_variable_defined?(:@var_glsdk_clone_to_dir)
@@ -54,19 +68,91 @@ module GlsdkUtils
   def item_exists?(equip, path_or_file)
     return check_cmd?("ls #{path_or_file}", equip)
   end
+  
+  def run_and_check_command(equip, command_line, previous_result_text="", wait_secs=10)
+    result_text = previous_result_text
+    if result_text == ""
+      # Verify that command is successful
+      if !check_cmd?(command_line, equip, wait_secs)
+        result_text = "Error: Command was not successful (#{command_line})"
+      end
+    end
+    return result_text
+  end
+  
+  def clean_and_refresh_git_repository(equip, repo_dir, previous_result_text="", pull_wait_secs=180)
+    result_text = previous_result_text
+    result_text = run_and_check_command(equip, "cd #{repo_dir}; git clean -xfq", result_text)
+    result_text = run_and_check_command(equip, "cd #{repo_dir}; git reset --hard", result_text)
+    result_text = run_and_check_command(equip, "cd #{repo_dir}; git checkout master", result_text)
+    result_text = run_and_check_command(equip, "cd #{repo_dir}; git pull", result_text, pull_wait_secs)
+    return result_text
+  end
 
-  def clone_git_repository(equip, to_directory, chk_exists_dir)
+  def clone_git_repository(equip, to_directory, chk_exists_dir, do_not_modify_repo_file)
     result_text = ""
+    wait_secs = 180
     if !item_exists?(equip, chk_exists_dir)
       git_repository = get_glsdk_git_repository()
       command_wait_message = equip.prompt
-      wait_secs = 180
       chk_cmd_echo = true
       # Clone the git repository to the specified directory
       equip.send_cmd("cd #{to_directory}; git clone #{git_repository}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
       # Check to see if cloned directory exists after git clone is run
       if !item_exists?(equip, chk_exists_dir)
         result_text = "Error: Clone of git repository was not successful (#{git_repository})"
+      end
+    else
+      # Clean local git repository and pull down the latest changes when do_not_modify_git_repository file is not present
+      if !item_exists?(equip, do_not_modify_repo_file)
+        result_text = clean_and_refresh_git_repository(equip, chk_exists_dir, result_text, wait_secs)
+      else
+        equip.log_info("\r\n#### The \"#{do_not_modify_repo_file}\" file is present and therefore not cleaning git repository. ####\r\n")
+      end
+    end
+    return result_text
+  end
+  
+  def tftp_build_config_file_to_evm(build_param_value, destination_dir, equip=@equipment['dut1'], equip_srv=@equipment['server1'])
+    if build_param_value != ""
+      tmp_relative_path = @test_params.staf_service_name.to_s.strip.gsub('@','_')
+      tftp_file_name = File.basename(build_param_value)
+      server_tftp_path = File.join(equip_srv.tftp_path, tmp_relative_path)
+      server_tftp_file_and_path = File.join(server_tftp_path, tftp_file_name)
+      equip_srv.log_info("\r\n src: #{build_param_value}, dst: #{server_tftp_path}\r\n")
+      copy_asset(equip_srv, build_param_value, server_tftp_path)
+      tftp_file_and_path = File.join(tmp_relative_path, tftp_file_name)
+      tftp_server_ip = equip_srv.telnet_ip
+      equip.send_cmd("cd #{destination_dir}; tftp -g -r #{tftp_file_and_path} #{tftp_server_ip} ; echo command_done", equip.prompt, 10)
+    end
+  end
+  
+  def patch_applied?(patch_file, repo_dir, equip, applied_post_fix="_applied")
+    is_applied = false
+    is_applied = true if item_exists?(equip, File.join(repo_dir, "#{patch_file}#{applied_post_fix}"))
+    return is_applied
+  end
+  
+  def set_patch_as_applied(patch_file, repo_dir, equip, applied_post_fix="_applied")
+    equip.send_cmd("cd #{repo_dir}; mv #{File.join(repo_dir, "#{patch_file}")} #{File.join(repo_dir, "#{patch_file}#{applied_post_fix}")}", equip.prompt, 10)
+  end
+  
+  def checkout_and_apply_patch_to_git_repository(equip, repo_dir, commit_id, patch_file)
+    result_text = ""
+    wait_secs = 10
+    chk_cmd_echo = true
+    if commit_id != ""
+      # Check if commit ID is already checked out
+      if !check_cmd?("cd #{repo_dir}; git rev-parse HEAD | grep #{commit_id}", equip, wait_secs)
+        # Checkout using commit id
+        result_text = run_and_check_command(equip, "cd #{repo_dir}; git checkout #{commit_id}", result_text, wait_secs)
+      end
+    end
+    if patch_file != "" and result_text == ""
+      if !patch_applied?(patch_file, repo_dir, equip)
+        # Go to the local git repository directory and apply patch
+        result_text = run_and_check_command(equip, "cd #{repo_dir}; git apply #{patch_file}", result_text, wait_secs)
+        set_patch_as_applied(patch_file, repo_dir, equip) if result_text == ""
       end
     end
     return result_text
@@ -437,6 +523,7 @@ module GlsdkUtils
     g_clone_equip = (is_clone_git_repo_on_pc ? equip_srv : equip_evm)
     g_clone_to_dir = File.join(base_dir, clone_to_dir)
     g_glsdk_dir = File.join(base_dir, glsdk_dir)
+    g_dev_chk_file = File.join(g_clone_to_dir, "do_not_modify_git_repository")
     
     # Log test case parameters used
     equip_srv.log_info("GLSDK framework run parameters:")
@@ -450,6 +537,7 @@ module GlsdkUtils
     equip_srv.log_info("  modules        : #{modules}")
     equip_srv.log_info("  g_clone_to_dir : #{g_clone_to_dir}")
     equip_srv.log_info("  g_glsdk_dir    : #{g_glsdk_dir}")
+    equip_srv.log_info("  g_dev_chk_file : #{g_dev_chk_file}")
     equip_srv.log_info("  srv_tftp_dir   : #{srv_tftp_dir}")
     equip_srv.log_info("  evm_ip_address : #{evm_ip_address}")
     equip_srv.log_info("  report_tar_name: #{glsdk_test_report_tar_name}")
@@ -466,10 +554,24 @@ module GlsdkUtils
     error_text = remove_file(equip_srv, File.join(srv_tftp_dir, glsdk_test_report_tar_name), is_sudo) if error_text == ""
     # Clone GLSDK git repository. Retry up to 3 times.
     3.times do
-      error_text = clone_git_repository(g_clone_equip, g_clone_to_dir, g_glsdk_dir)
+      error_text = clone_git_repository(g_clone_equip, g_clone_to_dir, g_glsdk_dir, g_dev_chk_file)
       break if error_text == ""
       sleep(15)
     end
+    if error_text == ""
+      if !item_exists?(g_clone_equip, g_dev_chk_file)
+        # Transfer patch file to DUT
+        if !patch_applied?(File.basename(get_glsdk_framework_patch_file()), g_glsdk_dir, g_clone_equip)
+          tftp_build_config_file_to_evm(get_glsdk_framework_patch_file(), get_glsdk_directory())
+        end
+        # Checkout using commit id and apply patch
+        error_text = checkout_and_apply_patch_to_git_repository(g_clone_equip, g_glsdk_dir, get_glsdk_framework_commit_id(), File.basename(get_glsdk_framework_patch_file()))
+      else
+        if get_glsdk_framework_commit_id() != "" or get_glsdk_framework_patch_file() != ""
+          g_clone_equip.log_info("\r\n#### The \"#{g_dev_chk_file}\" file is present and therefore not checking out commit ID or applying patch to git repository. ####\r\n")
+        end
+      end
+    end  
     if error_text == ""
       # Suffix to use when renaming the GUI applications on the EVM to disable them.
       rename_suffix = "_aglsdk.bak"
