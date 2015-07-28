@@ -51,6 +51,20 @@ module NetworkUtils
   def get_ipv6_link_netmask(dev='dut1', iface_type='eth')
     get_ifconfig_common(dev, iface_type, "ipv6_link_netmask")
   end
+  
+  def get_eth_interfaces(dev='dut1')
+    interface_arr = Array.new
+    this_equipment = @equipment["#{dev}"]
+    this_equipment.send_cmd("ls /sys/class/net|grep eth")
+    eth_interface_list = this_equipment.response
+    eth_interface_arr = eth_interface_list.split(/[\n\r]+/)
+    eth_interface_arr.each{|eth|
+      if (eth.match(/eth\d/))
+         interface_arr << eth
+      end
+    }
+    return interface_arr
+  end
 
   def get_eth_interface_by_ipaddress(dev='dut1', ip_address)
     this_equipment = @equipment["#{dev}"]
@@ -214,6 +228,13 @@ module NetworkUtils
     this_equipment.send_cmd("/sbin/dhclient #{interface}",this_equipment.prompt,10)
   end
   
+  def run_down_up_udhcpc(dev, interface)
+    this_equipment = @equipment["#{dev}"]
+    this_equipment.send_cmd("ifconfig #{interface} down", this_equipment.prompt, 10)
+    this_equipment.send_cmd("ifconfig #{interface} up", this_equipment.prompt, 10)
+    this_equipment.send_cmd("udhcpc -i #{interface}", this_equipment.prompt, 10)
+  end
+
    # Get the name of local interface that is talking to remote IP
    def get_local_iface_name(this_equipment=@equipment['dut1'],remote_ipaddr)
     this_equipment.send_cmd("ip route get #{remote_ipaddr}")
@@ -227,4 +248,27 @@ module NetworkUtils
     # get ip of remote interface talking with local interface 
     return get_ifconfig_common(remote_dev, remote_if, get_mode="ip") 
   end
+
+  def get_eth_server(interface_name, local_device='dut1', remote_device='server1')
+
+    ip_addr = ''
+    ip_addr = get_remote_ip(interface_name, local_device, remote_device)
+    if (ip_addr == '')
+       return [FrameworkConstants::Result[:fail], "Server #{remote_device} does not have ethernet interface corresponding to dut's #{interface_name} where dut is #{local_device}. Please emsure host machine has an interface on subnet of each dut interface.\n"]
+    end
+    ip_addr
+
+  end
+
+  def set_eth_sys_control_optimize(device='dut1')
+ 
+    @equipment[device].send_cmd("sysctl -w net.core.rmem_max=33554432", @equipment[device].prompt, 3)
+    @equipment[device].send_cmd("sysctl -w net.core.wmem_max=33554432", @equipment[device].prompt, 3)
+    @equipment[device].send_cmd("sysctl -w net.core.rmem_default=33554432", @equipment[device].prompt, 3)
+    @equipment[device].send_cmd("sysctl -w net.core.wmem_default=33554432", @equipment[device].prompt, 3)
+    @equipment[device].send_cmd("sysctl -w net.ipv4.udp_mem='4096 87380 33554432'", @equipment[device].prompt, 3)
+    @equipment[device].send_cmd("sysctl -w net.ipv4.route.flush=1", @equipment[device].prompt, 3)
+
+  end
+
 end
