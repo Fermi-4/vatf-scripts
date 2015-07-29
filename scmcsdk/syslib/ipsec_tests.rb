@@ -246,4 +246,5 @@ end
 
 def clean
   super
-end
+  @equipment['dut1'].send_cmd("rmServer.out \-k ", @equipment['dut1'].prompt, 10)
+ end
