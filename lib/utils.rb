@@ -47,16 +47,6 @@ def cross_correlation(arr1, arr2)
   sum/((arr1.length-1)*dev1*dev2)
 end
 
-# Function to obtain the ip address assigned to the ethernet interface specified, takes
-#  iface, the interface name to be for which the address will be parsed
-#  eq, driver object used to communicate with the system, used to send commands
-#Returns a string containing the ip address of the interface specified
-def get_ip_addr(iface='eth0', eq=@equipment['dut1'])
-  eq.send_cmd("ifconfig #{iface}", eq.prompt)
-  dut_ip = (/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?=\s+(Bcast))/.match(eq.response)).captures[0] 
-  dut_ip
-end
-
 #Function to perform a scp from a ssh server (require gems net-ssh and net-scp)
 #to the host, takes
 #  ip_addr, string containing the ip address of the ssh server
