@@ -327,7 +327,7 @@ module LspTestScript
   # Please note that preferred way is to let udev install modules instead of using this function
   def install_modules(translated_boot_params)
     if translated_boot_params['kernel_modules'].to_s != ''
-      @equipment['dut1'].send_cmd("depmod -a", /#{@equipment['dut1'].prompt}/, 30) 
+      @equipment['dut1'].send_cmd("depmod -a", /#{@equipment['dut1'].prompt}/, 120) 
       @equipment['dut1'].send_cmd("lsmod", /#{@equipment['dut1'].prompt}/, 10)
       if @test_params.params_chan.instance_variable_defined?(:@kernel_modules_list)
         @test_params.params_chan.kernel_modules_list.each {|mod|
