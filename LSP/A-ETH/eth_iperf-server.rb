@@ -26,7 +26,9 @@ def setup
   end
 
   array_of_interfaces.each{|dut_eth|
-         run_down_up_udhcpc('dut1', dut_eth)
+         if (dut_eth != 'eth0')
+            run_down_up_udhcpc('dut1', dut_eth)
+         end
          ip_addr=get_ip_addr('dut1', dut_eth)
          test_cmd = test_type.match(/udp/i) ? "iperf -s -B #{ip_addr} -u -w 128k &": "iperf -s -B #{ip_addr} &"
          @equipment['dut1'].send_cmd(test_cmd, /Server\s+listening.*?#{test_type}\sport.*?/i, 10)
