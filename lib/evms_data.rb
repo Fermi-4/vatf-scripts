@@ -120,6 +120,18 @@ module EvmData
     return rawmmc_loc
   end
 
+  def get_dtb_name(platform)
+    dtb_names = {
+      'am335x-evm' => 'am335x-evm.dtb',
+      'am43xx-gpevm' => 'am437x-gp-evm.dtb',
+      'dra7xx-evm' => 'dra7-evm-lcd10.dtb',
+      'am57xx-evm' => 'am57xx-evm.dtb',
+    }
+    raise "The dtbname table does not have the entry for #{platform}; Please add the entry in 'lib/get_dtb_name'!" if !dtb_names.has_key?(platform)
+    return dtb_names["#{platform}"]
+  end
+
+
   def get_platform_string(params)
     machines = {}
     machines['am335x-evm']  = {'0.0' => /Machine: Generic AM33XX \(Flattened Device Tree\), model: TI AM335x EVM/,
