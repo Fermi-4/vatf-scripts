@@ -16,6 +16,7 @@
 #    %PROTOCOL%             = Protocol to be used for link (udp, tcp, sctp ...)
 #    %ESP_ENCRYPTION%       = Esp encryption to be used (aes128, aes192, 3des ...)
 #    %ESP_INTEGRITY%        = Esp integrity to be used (sha1, aesxcbc ...)
+#    %ESP_CIPHER_SUITE%     = Esp to be used is cipher_null or other encryption
 
 # basic configuration
 config setup
@@ -34,7 +35,7 @@ conn %default
     ike=aes128-sha1-modp2048!
     type=tunnel
     pfs=yes
-    esp=%ESP_ENCRYPTION%-%ESP_INTEGRITY%-modp2048-noesn!
+    esp=%ESP_CIPHER_SUITE%
     margintime=%MARGINTIME%
     ikelifetime=%IKE_LIFETIME%
     lifetime=%LIFETIME%

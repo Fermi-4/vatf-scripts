@@ -2806,6 +2806,7 @@ class IpsecUtilitiesVatf
     @result_text = ""
     @esp_encryption = "aes128ctr"
     @esp_integrity = "sha1"
+    @esp = "cipher_null"
     @protocol = "udp"
     @connection_name = "Udp"
     @trigger_key_and_cert_rebuild_file_name = "/etc/rebuild_certs_trigger.tmp"
@@ -3496,6 +3497,12 @@ class IpsecUtilitiesVatf
       left_cert_disable = "#"
     end
     
+    if(@esp_encryption == "cipher_null")
+      @esp = "cipher_null"
+    else
+      @esp = @esp_encryption+"-"+@esp_integrity+"-"+"modp2048-noesn!"
+    end
+ 
     # Substitute template contents with ipsec variables
     fileUtils.file_contents.each do |item|
       file_line = item
@@ -3523,6 +3530,7 @@ class IpsecUtilitiesVatf
           file_line.gsub!("%PROTOCOL%", @protocol)
           file_line.gsub!("%ESP_ENCRYPTION%", @esp_encryption)
           file_line.gsub!("%ESP_INTEGRITY%", @esp_integrity)
+          file_line.gsub!("%ESP_CIPHER_SUITE%", @esp)
         end
       end
       if ss_version == "5"
