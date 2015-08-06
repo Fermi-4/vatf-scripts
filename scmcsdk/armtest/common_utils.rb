@@ -46,6 +46,7 @@ def mpm_run_all(opts={:cores => @dsp_cores, :look_for => @equipment['dut1'].prom
     else
         @equipment['dut1'].send_cmd("mpmcl run dsp#{count}",
           @equipment['dut1'].prompt, 10)
+	sleep 8
     end
     if @equipment['dut1'].timeout?
       return false
