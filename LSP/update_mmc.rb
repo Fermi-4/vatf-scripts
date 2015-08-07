@@ -59,7 +59,7 @@ module UpdateMMC
     params['dut'].send_cmd("rm -rf #{params['mmc_fs_mnt_point']}/*", params['dut'].prompt, 120)
     # populate the fs tarball into mnt_fs_mnt_point
     tar_options = get_tar_options(params['fs'], params)
-    params['dut'].send_cmd("tar -C #{params['mmc_fs_mnt_point']} #{tar_options} #{fs_tarball_src}", params['dut'].prompt, 300)
+    params['dut'].send_cmd("tar -C #{params['mmc_fs_mnt_point']} #{tar_options} #{fs_tarball_src}", params['dut'].prompt, 600)
     params['dut'].send_cmd("echo $?", /^0[\0\n\r]+/m, 2)
     raise "There is error when untar rootfs tarball #{fs_tarball_src} to #{params['mmc_fs_mnt_point']}; Updating MMC rootfs failed; The content of MMC P2 was being deleted and you will not be able to boot rootfs from MMC. Sorry! Please check why untar failed and re-try again " if params['dut'].timeout?
 
@@ -83,8 +83,14 @@ module UpdateMMC
     # copy boot/zImage and dtb to tftpboot
     kernel_name = "zImage"
     dtb_name = get_dtb_name(params['platform'])
-    kernel_path = params['nfs_path'].sub("#{params['server'].telnet_ip}:","") + "/boot/" + kernel_name
-    dtb_path = params['nfs_path'].sub("#{params['server'].telnet_ip}:","") + "/boot/" + dtb_name
+    nfs_base_dir = params['nfs_path'].sub("#{params['server'].telnet_ip}:","")
+    kernel_path = nfs_base_dir + "/boot/" + kernel_name
+    if !File.exist?(kernel_path)
+      Dir.chdir("#{nfs_base_dir}/boot")
+      kernel_name = Dir.glob('zImage-*')[0]
+      kernel_path = nfs_base_dir + "/boot/" + kernel_name
+    end
+    dtb_path = nfs_base_dir + "/boot/" + dtb_name
     raise "#{kernel_name} or #{dtb_name} is not found in rootfs; Those files are needed for updating rootfs in MMC." if !File.exist?(kernel_path) || !File.exist?(dtb_path)
     tmp_path = @test_params.staf_service_name.to_s.strip.gsub('@','_')
     copy_asset(params['server'], kernel_path, File.join(params['server'].tftp_path, tmp_path))

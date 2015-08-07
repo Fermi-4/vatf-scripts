@@ -18,8 +18,8 @@ module LspHelpers
     params['server'].send_cmd("mkdir -p #{@linux_temp_folder}", params['server'].prompt)
     if params['fs_type'] == 'nfs' and !params.has_key?('var_nfs')
       fs = params['fs']
-          fs.gsub!(/\\/,'/')
-          build_id = /\/([^\/\\]+?)\/[\w\.\-]+?$/.match("#{fs.strip}").captures[0]
+      fs.gsub!(/\\/,'/')
+      build_id = /\/([^\/\\]+?)\/[\w\.\-]+?$/.match("#{fs.strip}").captures[0]
       params['server'].send_sudo_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/autofs", params['server'].prompt, 10)  if !File.directory?("#{nfs_root_path_temp}/autofs")
       nfs_root_path_temp  = nfs_root_path_temp + "/autofs/#{build_id}"
       # Untar nfs filesystem if it doesn't exist
