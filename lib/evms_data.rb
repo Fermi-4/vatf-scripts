@@ -320,5 +320,14 @@ module EvmData
     ! unsupported.include? platform 
   end
 
-  
-end 
+  # Define uart boot method name
+  def get_uart_boot_method(platform)
+    case platform.downcase
+    when /^k2.{0,2}-evm/
+      return :LOAD_FROM_SERIAL_UBOOT
+    else
+      return :LOAD_FROM_SERIAL
+    end
+  end
+
+end
