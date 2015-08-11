@@ -124,8 +124,13 @@ module EvmData
     dtb_names = {
       'am335x-evm' => 'am335x-evm.dtb',
       'am43xx-gpevm' => 'am437x-gp-evm.dtb',
-      'dra7xx-evm' => 'dra7-evm-lcd10.dtb',
+      'dra7xx-evm' => 'dra7-evm.dtb',
       'am57xx-evm' => 'am57xx-evm.dtb',
+      'beaglebone-black' => 'am335x-boneblack.dtb',
+      'am335x-sk' => 'am335x-evmsk.dtb',
+      'am437x-sk' => 'am437x-sk-evm.dtb',
+      'am43xx-epos' => 'am43x-epos-evm.dtb',
+      'dra72x-evm' => 'dra72-evm.dtb',
     }
     raise "The dtbname table does not have the entry for #{platform}; Please add the entry in 'lib/get_dtb_name'!" if !dtb_names.has_key?(platform)
     return dtb_names["#{platform}"]
