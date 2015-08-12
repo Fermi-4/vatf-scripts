@@ -1,7 +1,5 @@
 # -*- coding: ISO-8859-1 -*-
-require File.dirname(__FILE__)+'/../../default_test_module'
-require File.dirname(__FILE__)+'/../../../lib/result_forms'
-require File.dirname(__FILE__)+'/drm'   
+require File.dirname(__FILE__)+'/drm_base'   
 
 
 
