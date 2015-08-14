@@ -66,6 +66,7 @@ module UpdateMMC
     flush_to_mmc(params['mmc_fs_mnt_point'])
 
     # save signature after mmc rootfs is successfully updated 
+    params['mmc_boot_mnt_point'] = find_mmc_mnt_point('boot')
     save_signature(fs_signature, params['mmc_boot_mnt_point']+"/#{FS_MD5_FILE}")
   end
 
