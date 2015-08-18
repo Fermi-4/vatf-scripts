@@ -74,6 +74,7 @@ module LspTargetTestScript
       @equipment['dut1'].send_cmd(current_line.gsub(/\\[^\\]\$/,"\\$"))
     end
     @equipment['dut1'].send_cmd("EOF", @equipment['dut1'].prompt)
+    raise "Write error creating test script. Check rootfs has enough space" if /write\s+error:/i.match(@equipment['dut1'].response)
   end
   
   # Calls shell script (test.sh)
