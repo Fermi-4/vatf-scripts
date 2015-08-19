@@ -61,8 +61,6 @@ def run
     end
   end
   
-  power_wakeup_configuration(wakeup_domain, power_state)
-    
   volt_readings={}
   measurement_time = get_power_domain_data(@equipment['dut1'].name)['power_domains'].size # approx 1 sec per channel to get 3 measurements
   rtc_only_extra_time = (wakeup_domain == 'rtc_only' ? 15 : 0)
@@ -72,6 +70,7 @@ def run
   suspend_time = (wakeup_domain == 'rtc'  or wakeup_domain == 'rtc_only') ? rtc_suspend_time : max_suspend_time
   if @test_params.params_chan.instance_variable_defined?(:@suspend) && @test_params.params_chan.suspend[0] == '1'
     @test_params.params_control.loop_count[0].to_i.times do
+      power_wakeup_configuration(wakeup_domain, power_state)
       # Suspend
       start_time = Time.now
       suspend(wakeup_domain, power_state, suspend_time)
@@ -93,8 +92,8 @@ def run
       elapsed_time = Time.now - start_time
       #sleep (suspend_time - elapsed_time) if elapsed_time < suspend_time and wakeup_domain == 'rtc'
       resume(wakeup_domain, max_resume_time)
+      sleep 5
       @equipment['dut1'].send_cmd(" cat #{cpufreq_0}/stats/time_in_state", @equipment['dut1'].prompt, 1)
-      sleep 1
     end
     
     volt_readings.each_key {|k|

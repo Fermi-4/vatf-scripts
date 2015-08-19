@@ -21,8 +21,6 @@ def run
   # Configure multimeter 
   @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name).merge({'dut_type'=>@equipment['dut1'].name}))
 
-  power_wakeup_configuration(wakeup_domain, power_state)
-
   @equipment['dut1'].send_cmd("echo #{@test_params.params_chan.enable_off_mode[0]} > /sys/kernel/debug/pm_debug/enable_off_mode", @equipment['dut1'].prompt)
 
   test_loop = @test_params.params_control.test_loop[0].to_i
@@ -47,6 +45,7 @@ def run
   rtc_suspend_time = [measurement_time, min_sleep_time].max
   suspend_time = (wakeup_domain == 'rtc'  or wakeup_domain == 'rtc_only') ? rtc_suspend_time : max_suspend_time
   while i < test_loop do
+    power_wakeup_configuration(wakeup_domain, power_state)
     suspend(wakeup_domain, power_state, suspend_time)
     sleep 2 # Let system reach deep sleep state
 
@@ -70,7 +69,7 @@ def run
       return
     end
 
-    sleep 2 # Stay awake couple of seconds
+    sleep 5 # Stay awake couple of seconds
 
     i += 1
   end # end of while

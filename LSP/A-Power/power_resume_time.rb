@@ -19,8 +19,6 @@ def run
   @equipment['dut1'].send_cmd("mount -t debugfs debugfs /debug", @equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd("cd /debug/omap_mux/board", @equipment['dut1'].prompt, 10)
   
-  power_wakeup_configuration(wakeup_domain, power_state)
-  
   # dut will be suspend with random suspend time
   max_s_time = @test_params.params_chan.max_suspend_time[0].to_i
   max_resume_time = 60
@@ -29,6 +27,7 @@ def run
 
   i = 0
   while i < test_loop do
+    power_wakeup_configuration(wakeup_domain, power_state)
     suspend_time = rand(max_s_time-1) + 30   # Adding 30 seconds to make sure that alarm event happens on suspend state
     @equipment['dut1'].log_info("Random suspend time: #{suspend_time}\n")
     puts "Random suspend time: #{suspend_time}\n"
@@ -47,6 +46,7 @@ def run
     # here assume the printed unit is same for all iterations
     unit = time_captures[2]
     i += 1
+    sleep 5
   end # end of while
 
   puts "unit: " + unit
