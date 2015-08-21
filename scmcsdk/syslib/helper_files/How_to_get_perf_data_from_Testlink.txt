@@ -1,22 +1,47 @@
 Instructions on how to get the performance data from Testlink to the results spreadsheet
 
-1) Goto Results-> Query Metrics
-2) Select the appropriate buld(s)
-3) Select IPSEC & ETH test suites
-4) Select start time from before the first test case was run
-5) Select Result Set as Latest Results Only
-6) Select Totals as Yes
-7) Select Test Suite Summaries as Yes
-8) Click the Submit Query button
-9) Once the Query is complete hit Ctrl & a keys together to select all of the results
-10) Copy the results to an Excel spreadsheet
-11) Save the results to a MSDOS .csv file
-12) Run the perf_gen.bat file specifying the name of the .csv file you just created. (perf_gen.bat MCSDK304.csv)
-13) Copy the MCSDK304 iperf spread sheets from \\gtsnowball\System_Test\Automation\gtsystst_logs\MCSDK-304
-14) Rename the sheets to the release being tested.
-15) Use excel to edit the spreadsheet
-16) Unhide the 3 _raw sheets
-17) Copy the appropriate data from the three spreadsheets created by perf_gen.bat to the 3 _raw spreadsheets
-18) Re-hide the _raw spreadsheets.
-19) Copy the new spreadsheets to the appropriate results directory.
-20) You are done.
+ 1) Goto Results-> Query Metrics
+ 2) Select the appropriate build(s)  (Usually you will just leave all builds selected)
+ 3) Select ETH & IPSEC test suites from "Top level Test Suites" section
+    (Click on ETH then press and hold the control key and click on IPSEC, let go of the control key)
+ 4) Select start time from before the first test case was run from "Start Time" section
+ 5) Under the "Report display options" section do the following:
+    a) Select "Result Set" as Latest Results Only
+    b) Select "Totals" as Yes
+    c) Select "Test Suite Summaries" as Yes
+    d) Click the Submit Query button
+ 6) Once the Query is complete press Ctrl & A keys together to select all of the results
+    a) Right click on one of the blue shaded areas and then click Copy
+ 7) Bring up Microsoft Excel
+    a) Right click on cell A1 then click paste
+    b) You should now see the data for the Test Plan: than you copied data from.
+    c) Click file then save
+    d) Select CSV (MS-DOS)(*.csv) as the "Save as type"
+    e) The "File name" should be similar to MCSDK314GA_k2hk.csv  (File name should reflect the release and the platform)
+       (For real time data the file name should be similar to MCSDK314GA_k2hk-rt.csv)
+    f) Click the "Save" button
+    g) Click the "OK" button to save the active sheet
+    h) Click the "Yes" button to keep this format
+    i) Close the Microsoft Excel
+    j) Click "No" button since you have already saved the file
+ 8) Run the perf_gen.bat file specifying the name of the .csv file you just created. (perf_gen.bat MCSDK314GA_k2hk.csv)
+ 9) You will need to do steps 1 through 8 for each platform/kernel (k2hk, k2hk-rt, k2e, k2e-rt, k2l and k2l-rt)
+10) Copy the MCSDK313 iperf spread sheets from \\gtsnowball\System_Test\Automation\gtsystst_logs\MCSDK03.01.03\performance_data
+11) Rename the sheets to the release being tested.
+12) Use excel to edit the spreadsheet
+13) Unhide the 3 _raw sheets
+    (Right click on the last named tab at the bottom of the sheet, click Unhide and then double click on a _raw sheet, repeat for all the _raw sheets)
+14) Copy the appropriate data from the three spreadsheets created by perf_gen.bat to the 3 _raw spreadsheets
+    a) Go to the directory where the perf_gen.bat spreadsheets were created and double click on the three files to bring them up into Excel.
+    b) Go to each of the perf_gen.bat created spreadsheets and copy the contents to the appropriate _raw sheet
+       (ethernet_1G_10G to _raw_1G_10G, crypto_1G to _raw_IPSEC, and crypto_ts1_ts2 to _raw_IPSEC_ts1_ts2)
+15) Click on each tab (ETH_perf_data, IPSEC_perf_data, IPSEC_perf_data_ts1_ts2) and make sure the data looks correct.
+16) Go to each sheet, including the _raw sheets, and click on the A1 column to keep the look uniform 
+17) Re-hide the _raw spreadsheets
+    (Right click on each of the _raw tabs and then click hide)
+18) Click on the first tab "Testing_Information" so that when the file is brought up this is the first sheet seen.
+19) Save the file.
+20) Close all the open excel files
+21) Do step 12 through 20 for each platform/kernel combination.
+22) Copy the new spreadsheets to the appropriate results directory. (e.g. \\gtsnowball\System_Test\Automation\gtsystst_logs\MCSDK-03.01.04\performance_data)
+23) You are done.

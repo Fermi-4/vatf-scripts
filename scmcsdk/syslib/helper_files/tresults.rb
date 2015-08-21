@@ -118,6 +118,8 @@ class Results
     @results_buffer.clear
     @raw_buffer = Array.new
     @raw_buffer.clear
+    @processed_buffer = Array.new
+    @processed_buffer.clear
     @current_file_name = ""
     @previous_file_name = ""
     @write_trigger = false
@@ -325,10 +327,12 @@ class Results
     tput_tx_string_IDs = Array.new
     tput_rx_string_IDs = ["0\t1\t1.250", "0\t1\t2.500", "0\t1\t3.125", "0\t1\t5.000", "0\t1\t6.250", "0\t1\t7.500", "0\t1\t10.000", "0\t1\t12.500",
                           "0\t2\t1.250", "0\t2\t2.500", "0\t2\t3.125", "0\t2\t5.000", "0\t2\t6.250", "0\t2\t7.500", "0\t2\t10.000", "0\t2\t12.500",
-                          "0\t4\t1.250", "0\t4\t2.500", "0\t4\t3.125", "0\t4\t5.000", "0\t4\t6.250", "0\t4\t7.500", "0\t4\t10.000", "0\t4\t12.500"]
+                          "0\t4\t1.250", "0\t4\t2.500", "0\t4\t3.125", "0\t4\t5.000", "0\t4\t6.250", "0\t4\t7.500", "0\t4\t10.000", "0\t4\t12.500",
+                          "0\t8\t1.250", "0\t4\t8.500", "0\t8\t3.125", "0\t8\t5.000", "0\t8\t6.250", "0\t8\t7.500", "0\t8\t10.000", "0\t8\t12.500"]
     tput_tx_string_IDs = ["1\t1\t1.250", "1\t1\t2.500", "1\t1\t3.125", "1\t1\t5.000", "1\t1\t6.250", "1\t1\t7.500", "1\t1\t10.000", "1\t1\t12.500",
                           "1\t2\t1.250", "1\t2\t2.500", "1\t2\t3.125", "1\t2\t5.000", "1\t2\t6.250", "1\t2\t7.500", "1\t2\t10.000", "1\t2\t12.500",
-                          "1\t4\t1.250", "1\t4\t2.500", "1\t4\t3.125", "1\t4\t5.000", "1\t4\t6.250", "1\t4\t7.500", "1\t4\t10.000", "1\t4\t12.500"]
+                          "1\t4\t1.250", "1\t4\t2.500", "1\t4\t3.125", "1\t4\t5.000", "1\t4\t6.250", "1\t4\t7.500", "1\t4\t10.000", "1\t4\t12.500",
+                          "1\t8\t1.250", "1\t8\t2.500", "1\t8\t3.125", "1\t8\t5.000", "1\t8\t6.250", "1\t8\t7.500", "1\t8\t10.000", "1\t8\t12.500"]
     running1 = Progress.new
     @results_buffer.clear
     (0..total_combinations).each do |index|
@@ -546,7 +550,6 @@ class Results
     return return_value
   end
   def get_stat_from_string(string)
-    puts("\r\n string: #{string}\r\n")
     stat = ""
     string_items = string.split("_")
     trigger = false
@@ -558,12 +561,9 @@ class Results
       end
       trigger = true if item.downcase.include?("ipsec")
     end
-    puts("\r\n stat: #{stat}\r\n")
-    #exit
     return stat
   end
   def get_stat_type(stat_array, string_to_match)
-    puts("\r\n string_to_match: #{string_to_match}\r\n")
     stat_string = ""
     stat_array.each do |item|
       if string_to_match.downcase.include?(item.downcase)
@@ -571,7 +571,6 @@ class Results
         break
       end
     end
-    puts("\r\n #{stat_string}\r\n")
     return stat_string
   end
   def is_filter_match(string_to_check, filter)
@@ -684,7 +683,7 @@ class Results
       previous_line = rb_item
       line_to_check = "#{rb_item}, #{area}"
       if rb_item.downcase.include?("scmc-") && is_filter_match(line_to_check, execution_options.filter) && !is_filter_match(line_to_check, execution_options.negative_filter)
-        #puts(" rb_item: \"#{rb_item}\"\r\n")
+        puts(" rb_item: \"#{rb_item}\"\r\n")
         items = rb_item.split(",")
         #csv_split_fixer(items)
         items = csv_split_fixer(items)
@@ -836,7 +835,6 @@ class Results
   PKT_SIZE_FIELD = 4
   def get_modified_results_string(string)
     return_string = ""
-    puts("\r\n get_modified_results_string string: #{string}\r\n")
     items = string.split("_")
     if items.length >= 5
       pkt_size_fld = PKT_SIZE_FIELD
@@ -847,14 +845,14 @@ class Results
       end
       pkt_size = items[pkt_size_fld].gsub("Bytes","")
       #return_string = "#{pkt_size}, #{items[PROTOCOL_FIELD]}, #{direction}, #{items[ENCYRPTION_FIELD]}, #{items[AUTHENTICATION_FIELD]}, " 
-      return_string = "#{pkt_size}, #{direction}, #{items[PROTOCOL_FIELD]}, #{items[ENCYRPTION_FIELD]}, #{items[AUTHENTICATION_FIELD]}, " 
+      return_string = "#{pkt_size},#{direction},#{items[PROTOCOL_FIELD]},#{items[ENCYRPTION_FIELD]},#{items[AUTHENTICATION_FIELD]}," 
     end
     return return_string
   end
   def get_t2_ipsec_perf_results(file_name, execution_options, logs)
     t = Time.new
     stat_types = Array.new
-    stat_types = ["Inflow", "Sideband", "Software", "Pass-through", "Eth-only", "Ethernet", "Ethernet0", "Ethernet1", "Ethernet2", "Ethernet4"]
+    stat_types = ["Inflow", "Sideband", "Software", "Pass-through", "Eth-only", "Ethernet", "Ethernet0", "Ethernet1", "Ethernet2", "Ethernet4", "Ethernet8"]
     @results_buffer.clear
     packet_size = "512"
     header_perf_measures = "ingress-mbw Mbps / egress-mbw Mbps / cpu util %"
@@ -896,7 +894,8 @@ class Results
     build_id = ""
     eth_port = ""
     #Test Suite,Test Case,Build Name,Metric Name,Units,Count,MIN,MAX,MEAN,STDDEV
-    @raw_buffer.each  do |rb_item|
+    @processed_buffer.each do |rb_item|
+      eth_port = "" if rb_item.downcase.include?("ipsec_performance")
       if rb_item.downcase.include?("#test cases")
         area = previous_previous_line
         if area.downcase.include?("eth")
@@ -918,11 +917,7 @@ class Results
       previous_line = rb_item
       line_to_check = "#{rb_item}, #{area}"
       if rb_item.downcase.include?("scmc-") && is_filter_match(line_to_check, execution_options.filter) && !is_filter_match(line_to_check, execution_options.negative_filter)
-        puts(" rb_item: \"#{rb_item}\"\r\n")
-        puts("\r\n area: #{area}\r\n")
-        puts("\r\n eth_port: #{eth_port}\r\n")
         error_fixed_rb_item = rb_item.gsub("[ERROR: iperf measurement is incomplete]", "0")
-        puts(" error_fixed_rb_item: \"#{error_fixed_rb_item}\"\r\n")
         #exit
         #items = rb_item.split(",")
         items = error_fixed_rb_item.split(",")
@@ -936,17 +931,13 @@ class Results
         #main_id = (main_id.downcase.include?("software") ? stat3 : main_id)
         main_id = get_stat_type(stat_types, get_stat_from_string(items[TEST_SUITE_ID].gsub(" ", "")))
         main_id += eth_port
-        puts(" main_id: \"#{main_id}\"\r\n")
         #exit
         build_id = items[BUILD_ID].gsub(" ", "")
-        puts(" build_id: \"#{build_id}\"\r\n")
         #temp_data = "#{items[TEST_DATA].chomp}"
         temp_data = "#{items[TEST_DATA].chomp}"
         #puts(" temp_data: \"#{temp_data}\"\r\n")
         item_id = "#{get_test_data_value(temp_data, TEST_CASE)}".gsub("10000M", "1000M")
-        puts(" item_id: \"#{item_id}\"\r\n")
         if item_id.downcase.include?("ingress") and item_id.downcase.include?("egress")
-          puts("\r\n ingress and egress\r\n")
           item_id += "_#{get_test_data_value(temp_data, PKT_SIZE)}"
           #value = "#{get_test_data_value(temp_data, INGRESS_BW)} / #{get_test_data_value(temp_data, EGRESS_BW)} / #{'%.2f' % (100 - get_test_data_value(temp_data, CPU_IDLE).to_f)}"
           #value = "#{get_test_data_value(temp_data, INGRESS_BW)},#{get_test_data_value(temp_data, EGRESS_BW)},#{'%.2f' % (100 - get_test_data_value(temp_data, CPU_IDLE).to_f)}"
@@ -954,12 +945,10 @@ class Results
         else
           item_id += "_#{get_test_data_value(temp_data, PKT_SIZE - 1)}"
           if item_id.downcase.include?("ingress")
-            puts("\r\n ingress\r\n")
             #value = "#{get_test_data_value(temp_data, INGRESS_BW)} / #{get_test_data_value(temp_data, EGRESS_BW)} / #{'%.2f' % (100 - get_test_data_value(temp_data, CPU_IDLE - 1).to_f)}"
             #value = "#{get_test_data_value(temp_data, INGRESS_BW)},,#{'%.2f' % (100 - get_test_data_value(temp_data, CPU_IDLE - 1).to_f)}"
             value = "#{get_test_data_value(temp_data, INGRESS_BW)},,#{'%.2f' % get_test_data_value(temp_data, CPU_UTIL - 1).to_f}"
           else
-            puts("\r\n egress\r\n")
             #value = "#{get_test_data_value(temp_data, INGRESS_BW)} / #{get_test_data_value(temp_data, EGRESS_BW)} / #{'%.2f' % (100 - get_test_data_value(temp_data, CPU_IDLE - 1).to_f)}"
             #value = ",#{get_test_data_value(temp_data, INGRESS_BW)},#{'%.2f' % (100 - get_test_data_value(temp_data, CPU_IDLE - 1).to_f)}"
             value = ",#{get_test_data_value(temp_data, INGRESS_BW)},#{'%.2f' % get_test_data_value(temp_data, CPU_UTIL - 1).to_f}"
@@ -1000,7 +989,7 @@ class Results
     @results_buffer.push("\"Linux PC: Ubuntu 12.0.4 with StrongSwan 5.0.0\"\n")
     @results_buffer.push("\"EVM: StrongSwan 5.0.0\"\n")
     @results_buffer.push("\"Test Scenario: [Linux PC] --> [10 Gigabit/1 Gigabit Switch] --> [EVM]  (measurement is run for 60 seconds)\"\n")
-    @results_buffer.push("\"Iperf Server Side Command (UDP): iperf -s -u\"\n")
+    @results_buffer.push("\"Iperf Server Side Command (UDP): iperf -s -u --len {packet_size_in_bytes}\"\n")
     @results_buffer.push("\"Iperf Client Side Command (UDP): iperf -c {server_side_ip_address} -P 2 --format m -u -b {bandwidth/2}M --len {packet_size_in_bytes} -t 60\"\n")
     @results_buffer.push("\"Iperf Server Side Command (TCP): iperf -s\"\n")
     @results_buffer.push("\"Iperf Client Side Command (TCP): iperf -c {server_side_ip_address} -P 2 --format m -M {packet_size_in_bytes} -w 128K -t 60\"\n")
@@ -1038,64 +1027,74 @@ class Results
     counter = 1
     item_hash_ids.each do |item_hash_id|
       column_separator = ""
-      #result_string = "#{counter}, #{item_hash_id}, "
       result_string = get_modified_results_string(item_hash_id)
-      puts("\r\n result_string: \"#{result_string}\"\r\n")
-      #exit
-      #display_header_names.each do |main_hash_id|
+
       stat_types.each do |main_hash_id|
-        #if main_hash_id.downcase.include?(header_perf_stat.downcase)
         if get_stat_type(main_hash_ids, main_hash_id) != ""
-          puts("\r\n main_hash_id: \"#{main_hash_id}\"\r\n")
-          puts("\r\n item_hash_id: \"#{item_hash_id}\"\r\n")
           result_string += column_separator
           result_temp = hash_get("#{main_hash_id}", item_hash_id)
-          puts("\r\n result_temp: #{result_temp}\r\n")
           result_string += (result_temp == "" ? ",," : result_temp)
-          column_separator = ", "
+          column_separator = ","
           running1.indicate(" Lines Processed: ")
         end
       end
-      #result_string += "\n"
       result_string += ",#{build_id}\n"
+      result_string = result_string.gsub(',,',', ,')
+      result_string = result_string.gsub(',,',', ,')
       @results_buffer.push(result_string)
       counter += 1
-      #puts(" \r\n result_string: #{result_string}\r\n")
     end
-    #perf_ids.each do |perf_id|
-    #  column_separator = ""
-    #  result_string = ""
-    #  if !perf_id.downcase.include?("ipsec_")
-    #    title_items = perf_id.split("@@")
-    #    title_items.each do |t_item|
-    #      result_string += column_separator
-    #      result_string += t_item
-    #      column_separator = ", "
-    #    end
-    #    hash_value_names.each do |value_item|
-    #      result_string += column_separator
-    #      #puts(" perf_id: \"#{perf_id}\", value_item: \"#{value_item}\"\r\n")
-    #      result_string += hash_get(perf_id, value_item)
-    #      column_separator = ", "
-    #      running1.indicate(" Lines Processed: ")
-    #    end
-    #    result_string += "\n"
-    #    @results_buffer.push(result_string)
-    #    running1.indicate(" Lines Processed: ")
-    #  end
-    #end
     puts("File name: #{add_post_pend(file_name, execution_options.post_pend)}\n")
-    # Write the results to the output file
-    #file_write_check("", "", add_post_pend(file_name, execution_options.post_pend), execution_options)
-    #file_write_check("", "", file_name, execution_options)
+  end
+  def split_special(string, split_text, index)
+    return_line = (index == 0 ? string.split(split_text)[index] + split_text : split_text + string.split(split_text)[index])
+    return return_line
+  end
+  def does_include(string, match_string1, match_string2)
+    return_status = false
+    if string.include?(match_string1) && string.include?(match_string2)
+      return_status = true
+    end
+    return return_status
+  end
+  def process_and_push_to_processed_buffer(file_line, previous_previous_line)
+    test_passed_status = "Passed,"
+    test_passed_result = "\"Test passed."
+    test_failed_status = "Failed,"
+    test_failed_result = "\"Test failed."
+    processed_line = file_line
+    # Remove IRs and comments entered that would otherwise affect the proper collection of the performance results.
+    if file_line.include?(test_passed_status) || file_line.include?(test_passed_result) ||file_line.include?(test_failed_status) ||file_line.include?(test_failed_result)
+      if does_include(file_line, test_failed_status, test_passed_status) || does_include(file_line, test_failed_status, test_failed_result) || does_include(file_line, test_passed_status, test_passed_result)
+        @processed_buffer.push(processed_line)
+      else
+        # Remove the comment before the test result information for a test cased that originally failed but is manually marked as passed.
+        if file_line.include?(test_failed_result) && previous_previous_line.include?(test_passed_status)
+          processed_line = split_special(previous_previous_line, test_passed_status, 0) + split_special(file_line, test_failed_result, 1)
+          @processed_buffer.push(processed_line)
+        end
+        # Remove the comment before the test result information for a test cased that originally failed but is manually marked as passed.
+        if file_line.include?(test_failed_result) && previous_previous_line.include?(test_failed_status)
+          processed_line = split_special(previous_previous_line, test_failed_status, 0) + split_special(file_line, test_failed_result, 1)
+          @processed_buffer.push(processed_line)
+        end
+      end
+    else
+      @processed_buffer.push(processed_line)
+    end
   end
   def get_raw_buffer(file_name)
     in_file_line = ""
+    previous_line = ""
+    previous_previous_line = ""
     @raw_buffer.clear
+    @processed_buffer.clear
     File.open(file_name, "r") do |f|
       while (in_file_line = f.gets)
-        #puts("\r\n buffer_line: #{in_file_line}\r\n")
         @raw_buffer.push(in_file_line)
+        process_and_push_to_processed_buffer(in_file_line, previous_previous_line)
+        previous_previous_line = previous_line
+        previous_line = in_file_line
       end
       f.close
     end

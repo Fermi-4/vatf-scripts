@@ -1,8 +1,12 @@
 @if .%1 == . goto ERROR
-@echo Generating TS1/TS2 performance data
+@echo.
+@echo.
+@echo Generating TS1/TS2 performance data...
 @ruby tresults.rb -tlperf_ipsec %1 -filt "_ts1;_ts2" -postpend "crypto_ts1_ts2"
 
-@echo Generating Crypto 1G performance data
+@echo.
+@echo.
+@echo Generating Crypto 1G performance data...
 @ruby tresults.rb -tlperf_ipsec %1 -filt "crypto_performance" -nfilt "_ts1;_ts2" -postpend "crypto_1G"
 
 @REM @echo Generating All Crypto performance data
@@ -17,10 +21,12 @@
 @REM @echo Generating Ethernet 10G performance data
 @REM @ruby tresults.rb -tlperf_ipsec %1 -filt "_10G" -postpend "ethernet_10G"
 
-@echo Generating Ethernet 1G/10G performance data
-@ruby tresults.rb -tlperf_ipsec %1 -filt "eth0;eth1;eth2;eth4" -postpend "ethernet_1G_10G"
+@echo.
+@echo.
+@echo Generating Ethernet 1G/10G performance data...
+@ruby tresults.rb -tlperf_ipsec %1 -filt "eth0;eth1;eth2;eth4;eth8" -postpend "ethernet_1G_10G"
 
-goto ENDD
+@goto ENDD
 
 :ERROR
 @echo.
