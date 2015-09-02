@@ -300,8 +300,10 @@ module LspTestScript
           @equipment['dut1'].boot(translated_boot_params)
           break
         rescue Exception => e
-          puts "Boot attempt #{trial}/#{boot_attempts} failed, trying again....."
-          @equipment['dut1'].log_info("Boot attempt #{trial}/#{boot_attempts} failed, trying again.....")
+          fail_str = (trial == boot_attempts - 1) ? "Boot attempt #{trial + 1}/#{boot_attempts} failed" : \
+          "Boot attempt #{trial + 1}/#{boot_attempts} failed, trying again....."
+          puts fail_str
+          @equipment['dut1'].log_info(fail_str)
           raise e if trial == boot_attempts - 1
         end
       end 
