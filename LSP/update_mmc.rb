@@ -150,6 +150,7 @@ module UpdateMMC
 
   def find_mmc_mnt_point(part)
     mmc_basenode = find_mmc_basenode
+    raise "Failed to find mmc_basenode" if ! /mmcblk/.match(mmc_basenode)
 
     p = part == "boot" ? "p1" : part == "fs" ? "p2" : ""
     raise "#{part} is not supported! 'boot' or 'fs' are valid partition name" if p==""
@@ -161,8 +162,9 @@ module UpdateMMC
   end
 
   def find_mmc_basenode()
-    @equipment['dut1'].send_cmd("ls /dev/mmcblk* |grep -Ei \"mmcblk[0-9]$\" ")
+    @equipment['dut1'].send_cmd("ls /dev/mmcblk*", @equipment['dut1'].prompt, 10)
     m = @equipment['dut1'].response.scan(/\/dev\/mmcblk[0-9]/im)
+    raise "find_mmc_basenode:No match being found for mmcblk" if m.count == 0
     m.each do |basenode|
       @equipment['dut1'].send_cmd("ls #{basenode}* ")
       next if /#{basenode}boot/.match(@equipment['dut1'].response)
