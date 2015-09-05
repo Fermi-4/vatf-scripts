@@ -168,6 +168,9 @@ module EvmData
                               }
     machines['am437x-sk'] = {'3.14' => /Machine model: TI AM437x SK EVM/, }
     machines['am57xx-evm'] = {'0.0' => /Machine model: TI (AM572x EVM|AM5728 BeagleBoard-X15)/, }
+    machines['k2hk-evm'] = {'0.0' => /Machine model:.*Keystone 2 Kepler\/Hawking EVM/, }
+    machines['k2e-evm'] = {'0.0' => /Machine model:.*Keystone 2 Edison EVM/, }
+    machines['k2l-evm'] = {'0.0' => /Machine model:.*Keystone 2 Lamarr EVM/, }
                                           
     params.merge!({'dict' => machines})
     get_cmd(params)
