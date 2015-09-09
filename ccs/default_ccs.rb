@@ -41,9 +41,9 @@ module CcsTestScript
   out_file.puts("autotestEnv.gelFile = #{val};")
   val = @test_params.instance_variable_defined?(:@var_ccsPlatform) ? "\"#{@test_params.var_ccsPlatform}\"" : @equipment['dut1'].params.key?('ccsPlatform') ? "\"#{@equipment['dut1'].params['ccsPlatform']}\"" : "null"
   out_file.puts("autotestEnv.ccsPlatform  = #{val};")
-  val = @test_params.params_control.instance_variable_defined?(:@ccsCpu) ? "\"#{@test_params.params_control.ccsCpu[0]}\"" : @equipment['dut1'].params.key?('ccsCpu') ? "\"#{@equipment['dut1'].params['ccsCpu']}\"" : "null"
+  val = @test_params.params_control.instance_variable_defined?(:@ccsCpu) ? "\"#{@test_params.params_control.ccsCpu[0]}\"" : @equipment['dut1'].params.key?('ccsCpu') ? @equipment['dut1'].params['ccsCpu'].kind_of?(Array) ? "#{@equipment['dut1'].params['ccsCpu']}" : "\"#{@equipment['dut1'].params['ccsCpu']}\"" : "null"
   out_file.puts("autotestEnv.ccsCpu       = #{val};")
-  val = @test_params.instance_variable_defined?(:@outFile) ? "\"#{@test_params.outFile}\"" : "null"
+  val = @test_params.instance_variable_defined?(:@outFile) ? "\"#{@test_params.outFile}\"" : @equipment['dut1'].params.key?('outFile') ? @equipment['dut1'].params['outFile'].kind_of?(Array) ? "#{@equipment['dut1'].params['outFile']}" : "\"#{@equipment['dut1'].params['outFile']}\"" : "null"
   out_file.puts("autotestEnv.outFile = #{val};")
   param_names = @test_params.instance_variables
   param_names.each {|name|
@@ -56,7 +56,7 @@ module CcsTestScript
   param_names = @test_params.params_chan.instance_variables
   param_names.each {|name|
     val=@test_params.params_chan.instance_variable_get(name)[0]
-    out_file.puts("autotestEnv.#{name.to_s.gsub(/@/,'')} = \"#{val}\";")
+    out_file.puts("autotestEnv.#{name.to_s.gsub(/@/,'')} = #{val};")
   }
   param_names = @test_params.params_control.instance_variables
   param_names.each {|name|
