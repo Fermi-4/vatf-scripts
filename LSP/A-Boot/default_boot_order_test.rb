@@ -237,6 +237,7 @@ end
 def set_dut_ipaddr()
   # Force dut not to do tftp automatically. 
   @equipment['dut1'].send_cmd("setenv serverip #{@equipment['server1'].telnet_ip}", @equipment['dut1'].boot_prompt, 2)
+  @equipment['dut1'].send_cmd("setenv serverip #{@equipment['server1'].telnet_ip}", @equipment['dut1'].boot_prompt, 2)
   @equipment['dut1'].send_cmd("setenv autoload no", @equipment['dut1'].boot_prompt, 2)
   # Force dut not to do tftp automatically. 
   dhcp = CmdTranslator::get_uboot_cmd({'cmd'=>'dhcp', 'version'=>'0.0'})
@@ -352,7 +353,10 @@ def boot_to_bootloader()
 
   @translated_boot_params['dut'].boot_to_bootloader @translated_boot_params
   @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
-  @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 2)
+  5.times {
+    @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 2)
+    break if !@equipment['dut1'].timeout?
+  }
   raise 'Bootloader was not loaded properly. Failed to get to bootloader prompt' if @equipment['dut1'].timeout?
 end 
 

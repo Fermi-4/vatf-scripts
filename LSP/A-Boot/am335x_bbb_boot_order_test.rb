@@ -82,8 +82,10 @@ def usbrndis_boot()
     restore_mmc(1)
 
   rescue Exception => e
+    @equipment['dut1'].send_cmd("setenv ethact cpsw", @equipment['dut1'].boot_prompt, 5)
     restore_mmc(1)
     @usb_switch_handler.disconnect(@equipment['dut1'].params['usbclient_port'].keys[0])
+    @power_handler.switch_on(@equipment['dut1'].power_port)
     raise e
   end
  
@@ -92,7 +94,6 @@ def usbrndis_boot()
   flash_or_boot_kernel_fromto_media('boot', 'eth')
 
   @usb_switch_handler.disconnect(@equipment['dut1'].params['usbclient_port'].keys[0])
-  @power_handler.switch_on(@equipment['dut1'].power_port)
 
   report_msg "##### USB-ETH BOOT END #####" 
   return status 
@@ -125,7 +126,7 @@ def emmc_boot()
     @translated_boot_params['primary_bootloader_dev'] = 'uart'
     @equipment['dut1'].boot_loader = nil
     boot_to_bootloader()
-    raise "emmc_boot::DUT is not in uboot prompt after uart boot" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+    raise "emmc_boot::DUT still can not get to uboot prompt after trying uart boot" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
   else
     puts "DUT boots from existing emmc successfully."
   end

@@ -25,7 +25,6 @@ def nand_boot()
   if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
     reboot_dut()
   end
-  reboot_dut()
   raise "This test require the board is able to boot to uboot prompt initially! please check if mmc has valid bootloaders in it" if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
   
   # validate nandboot
