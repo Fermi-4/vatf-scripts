@@ -88,7 +88,7 @@ def run
   images_dir = File.join(@equipment['server1'].tftp_path, tmp_path)
 
   # download mlo
-  start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /usb_dnload/, /download.*ok/i) do
+  start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
     host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['primary_bootloader_mmc_image_name'])}", alt_name_mlo)
   end
   # send ctrl+c to back to uboot prompt
@@ -96,7 +96,7 @@ def run
 
   sleep 1
   # download u-boot.img
-  start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /usb_dnload/, /download.*ok/i) do
+  start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
     host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['secondary_bootloader_mmc_image_name'])}", alt_name_uboot)
   end
   # send ctrl+c to back to uboot prompt
