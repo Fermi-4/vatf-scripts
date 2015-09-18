@@ -78,8 +78,8 @@ module EvmData
                                                        'EVM_VDD_DDR' => '0.005', 'VDD_SHV8' => '0.01', 'VDD_SHV5' => '0.005', 
                                                        'VDDA_PHY' => '0.01', 'VDDA_USB3V3' => '0.01', 'VDDA_PLL' => '0.01'}}
     power_data['am57xx-evm'] = {'power_domains' => ['3V3', 'VDD_DSP','CORE_VDD', '5V0', 'VDD_MPU'],
-                                'domain_resistors' => {'3V3' => '0.002', 'VDD_DSP' => '0.002','CORE_VDD' => '0.002',
-                                                       '5V0' => '0.002', 'VDD_MPU' => '0.001'}}
+                                'domain_resistors' => {'3V3' => '0.01', 'VDD_DSP' => '0.01','CORE_VDD' => '0.02',
+                                                       '5V0' => '0.01', 'VDD_MPU' => '0.01'}}
 
     return power_data[key]
   end
