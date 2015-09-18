@@ -83,7 +83,7 @@ module UpdateMMC
     setup_nfs params
     # copy boot/zImage and dtb to tftpboot
     kernel_name = "zImage"
-    dtb_name = get_dtb_name(params['platform'])
+    dtb_name = get_dtb_name(params['dut'].name)
     nfs_base_dir = params['nfs_path'].sub("#{params['server'].telnet_ip}:","")
     kernel_path = nfs_base_dir + "/boot/" + kernel_name
     if !File.exist?(kernel_path)
