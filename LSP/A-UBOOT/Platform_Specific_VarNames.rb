@@ -51,6 +51,9 @@ module PlatformSpecificVarNames
       'dra7xx-evm'=>'0x84000000',
       'am57xx-evm'=>'0x84000000',
       'dra72x-evm'=>'0x84000000',
+      'k2hk-evm' => '0x84000000',
+      'k2l-evm' => '0x84000000',
+      'k2e-evm' => '0x84000000'
       },
     'nextramaddress' => {  
       'omap5-evm'=>'82000004',
