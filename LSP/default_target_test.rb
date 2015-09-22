@@ -67,6 +67,7 @@ module LspTargetTestScript
     @equipment['dut1'].send_cmd("export IPERFHOST=#{@equipment['server1'].telnet_ip}", @equipment['dut1'].prompt) if @equipment['server1'].respond_to?(:telnet_ip)
     @equipment['dut1'].send_cmd("export NFS_SERVER=#{@equipment['server1'].telnet_ip}", @equipment['dut1'].prompt) if @equipment['server1'].respond_to?(:telnet_ip)
     @equipment['dut1'].send_cmd("export NFS_ROOT_PATH=#{@equipment['dut1'].nfs_root_path}", @equipment['dut1'].prompt) if @equipment['dut1'].respond_to?(:nfs_root_path)
+    @equipment['dut1'].send_cmd("export AP_SSID=#{@equipment['dut1'].params['AP_SSID']}", @equipment['dut1'].prompt) if @equipment['dut1'].respond_to?(:params)
     @equipment['dut1'].send_cmd("mkdir -p -m 777 #{@linux_dst_dir}", @equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("cat > test.sh << EOF", />/)
