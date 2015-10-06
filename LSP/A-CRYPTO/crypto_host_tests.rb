@@ -33,7 +33,7 @@ def crypto_test
           end
         elsif (@test_params.params_control.type[0].match('openssl_sw'))
           @equipment['dut1'].send_cmd("ls /dev|grep crypto",@equipment['dut1'].prompt, 10)
-          @equipment['dut1'].send_cmd("modprobe -r cryptodev",@equipment['dut1'].prompt,10)
+          @equipment['dut1'].send_cmd("modprobe -rf cryptodev",@equipment['dut1'].prompt,10)
           @equipment['dut1'].send_cmd("lsmod|grep cryptodev",@equipment['dut1'].prompt,10)
           lsmod_response = @equipment['dut1'].response.lines.to_a[1..-1].join.strip
           if (lsmod_response.match(/cryptodev/) != nil)
@@ -112,11 +112,13 @@ def run_openssl_performance(log)
            algo_name = $1
            next
          end
-         m = /Doing.*for.*(\d+)s.*\s+(\d+).*size\s+blocks\s*:\s*(\d+).*/.match(line)
+         m = /Doing.*for.*(\d+)s.*\s+(\d+).*size\s+blocks\s*:\s*(\d+).*in.*(\d+\.\d+)s/.match(line)
          if (m != nil) 
-             time=$1
+             time_test=$1
              block_size=$2
-             throughput=$3.to_f/time.to_f
+             number_of_blocks=$3
+             time_taken=$4
+             throughput=number_of_blocks.to_f*block_size.to_f/((time_taken.to_f)*1000)
              perf_data << {'name' => "#{algo_name}_throughput_#{block_size}_bytes", 'value' => throughput, 'units' => "KBytes/s"}
              next
           end
