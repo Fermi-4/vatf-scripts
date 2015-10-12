@@ -7,7 +7,7 @@ module ParsePerfomance
   # perf_metrics is an array that describes the performance data to collect.
   # Each array element is a hash with following key,value pairs:
   #  name: Performance metric's name
-  #  regex: regular expression used to capture perf metric value
+  #  regex: regular expression or Array of regular expressions used to capture perf metric value
   #  units: Performance metric's units
   #  adj: Optional hash used to escale capture value to appropriate units. It has following key,value pairs:
   #        val_index: index of capture value in regex above
@@ -28,18 +28,10 @@ module ParsePerfomance
     end
     perf_metrics.each {|metric|
       begin
-        values = []
         if metric.has_key?('adj')
-          data.scan(/#{metric['regex']}/m) {|vals|
-            val = vals[metric['adj']['val_index']].to_f
-            adj_factor = (metric['adj']['val_adj'].select {|k,v| k.match(vals[metric['adj']['units_index']])}).values[0]
-            val = val * adj_factor
-            values << val
-          }
+          values = parse_data(metric['regex'], data, metric['adj'])
         else  
-          data.scan(/#{metric['regex']}/m) {|val|
-            values << val[0].to_f
-          }
+          values = parse_data(metric['regex'], data)
         end
         perfdata << {'name' => metric['name'], 'value' => values, 'units' => metric['units']}
       rescue Exception => e
@@ -49,4 +41,34 @@ module ParsePerfomance
     }
     perfdata 
   end
+
+  # Helper function to parse performance data, it allows using an array of
+  # regexs to parse the data by sequetially applying each regex to the
+  # data parsed in a previous regex scan.
+  # Takes:
+  #   regex : String or arrays of string defining the regexs to apply
+  #   data: The raw data to be parsed
+  #   adj: Adjustment hash as defined by the 'adj'=> <> key value pair of
+  #        the perf_metric parameter in the get_performance_data function
+  def parse_data(regex, data, adj=nil)
+    m_regex = Array(regex)
+    m_data = Array(data).flatten()
+    values = []
+    if m_regex.length > 0 
+      m_data.each {|d| values += parse_data(m_regex[1..-1],d.scan(/#{m_regex[0]}/m), adj)}
+    else
+      if adj
+        m_data.each_slice(2) { |vals|
+          val = vals[adj['val_index']].to_f
+          adj_factor = (adj['val_adj'].select {|k,v| k.match(vals[adj['units_index']])}).values[0]
+          val = val * adj_factor
+          values << val
+        }
+      else
+        m_data.each{ |d| values << d.to_f }
+      end
+    end
+    values
+  end
+
 end #end of module
