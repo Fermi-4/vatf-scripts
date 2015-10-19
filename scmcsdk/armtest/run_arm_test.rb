@@ -471,7 +471,7 @@ def prepare_for_test(test_folder_location, commands)
 
   ##Run other comamds
   if other_cmds[0]
-    cmd_result = run_command(other_cmds)
+    cmd_result = run_command(other_cmds,:look_for => @equipment['dut1'].prompt,:timeout => @timeout)
     if cmd_result[0] == false
       return [false, comment + cmd_result[1]]
     else
