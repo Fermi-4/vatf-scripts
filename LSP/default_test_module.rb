@@ -632,7 +632,7 @@ module LspTestScript
     @equipment['dut1'].send_cmd("cpus=$(ls /sys/devices/system/cpu | grep \"cpu[0-9].*\"); for cpu in $cpus; do echo -n #{type} > /sys/devices/system/cpu/$cpu/cpufreq/scaling_governor; done",
                               @equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
-    raise "#{type} governor is not available" if @equipment['dut1'].timeout?
+    @equipment['dut1'].log_info("#{type} governor is not available") if @equipment['dut1'].timeout?
     @equipment['dut1'].send_cmd("cpus=$(ls /sys/devices/system/cpu | grep \"cpu[0-9].*\"); for cpu in $cpus; do cat /sys/devices/system/cpu/$cpu/cpufreq/scaling_governor; done",
                               @equipment['dut1'].prompt)
  end
