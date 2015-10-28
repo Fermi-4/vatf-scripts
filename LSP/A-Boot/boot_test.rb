@@ -26,6 +26,7 @@ def run
     #  result = 0
     end
     counter += 1
+    @equipment['dut1'].disconnect('serial') if @equipment['dut1'].target.serial
   end
 
   if result == 0 
