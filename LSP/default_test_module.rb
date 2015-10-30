@@ -99,7 +99,18 @@ module LspTestScript
                              new_params['skern'] != '' ? 'eth' : 'none'   
     new_params['skern_image_name'] = new_params['skern_image_name'] ? new_params['skern_image_name'] : 
                              @test_params.instance_variable_defined?(:@var_skern_image_name) ? @test_params.var_skern_image_name : 
-                             new_params['skern'] != '' ? File.basename(new_params['skern']) : 'skern'                     
+                             new_params['skern'] != '' ? File.basename(new_params['skern']) : 'skern'
+    new_params['pmmc']     = new_params['pmmc'] ? new_params['pmmc'] :
+                             @test_params.instance_variable_defined?(:@pmmc) ? @test_params.pmmc :
+                             @test_params.instance_variable_defined?(:@pmmc_file) ? @test_params.pmmc_file :
+                             ''
+    new_params['pmmc_dev'] = new_params['pmmc_dev'] ? new_params['pmmc_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@pmmc_dev) ? @test_params.params_chan.pmmc_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_pmmc_dev) ? @test_params.var_pmmc_dev :
+                             new_params['pmmc'] != '' ? 'eth' : 'none'
+    new_params['pmmc_image_name'] = new_params['pmmc_image_name'] ? new_params['pmmc_image_name'] :
+                             @test_params.instance_variable_defined?(:@var_pmmc_image_name) ? @test_params.var_pmmc_image_name :
+                             new_params['pmmc'] != '' ? File.basename(new_params['pmmc']) : 'pmmc'
 
     new_params['dtb']        = new_params['dtb'] ? new_params['dtb'] : 
                              @test_params.instance_variable_defined?(:@dtb) ? @test_params.dtb : 
