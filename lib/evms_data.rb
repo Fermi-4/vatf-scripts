@@ -98,12 +98,15 @@ module EvmData
   def get_nand_loc(platform)
     # default nand location names for each partitions
     case platform
-    when "am335x-evm"
+    when /am335x-evm/
       # if there is difference from the default, add value here
-      return {'primary_bootloader' => 'NAND.SPL', 'secondary_bootloader' => 'NAND.u-boot', 'u-boot-env' => 'NAND.u-boot-env', 'kernel' => 'NAND.kernel', 'dtb' => 'NAND.u-boot-spl-os', 'fs' => 'NAND.rootfs'}
+      return {'primary_bootloader' => 'NAND.SPL', 'secondary_bootloader' => 'NAND.u-boot', 'u-boot-env' => 'NAND.u-boot-env', 'kernel' => 'NAND.kernel', 'dtb' => 'NAND.u-boot-spl-os', 'fs' => 'NAND.file-system'}
+    when /k2*-evm/
+      # there is no kernel and dtb partition for k2 device
+      return {'secondary_bootloader' => 'bootloader', 'u-boot-env' => 'params', 'fs' => 'ubifs'}
     else
       # default nand location names for each partitions
-      return {'primary_bootloader' => 'NAND.SPL', 'secondary_bootloader' => 'NAND.u-boot', 'u-boot-env' => 'NAND.u-boot-env', 'kernel' => 'NAND.kernel', 'dtb' => 'NAND.u-boot-spl-os', 'fs' => 'NAND.rootfs'}
+      return {'primary_bootloader' => 'NAND.SPL', 'secondary_bootloader' => 'NAND.u-boot', 'u-boot-env' => 'NAND.u-boot-env', 'kernel' => 'NAND.kernel', 'dtb' => 'NAND.u-boot-spl-os', 'fs' => 'NAND.file-system'}
     end
     return nand_loc
   end
