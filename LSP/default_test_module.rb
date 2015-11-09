@@ -150,6 +150,10 @@ module LspTestScript
     new_params['fs_image_name'] = new_params['fs_image_name'] ? new_params['fs_image_name'] : 
                              @test_params.instance_variable_defined?(:@var_fs_image_name) ? @test_params.var_fs_image_name : 
                              new_params['fs_type'] != 'nfs' ? File.basename(new_params['fs']) : ''  
+    new_params['ubi_root'] = new_params['ubi_root'] ? new_params['ubi_root'] :
+                             @test_params.instance_variable_defined?(:@var_ubi_root) ? @test_params.var_ubi_root :
+                             "ubi0:rootfs" 
+
     # Optional SW asset to copy binary to rootfs                            
     new_params['user_bins']  = new_params['user_bins'] ? new_params['user_bins'] : 
                              @test_params.instance_variable_defined?(:@user_bins) ? @test_params.user_bins : 
