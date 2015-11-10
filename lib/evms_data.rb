@@ -342,4 +342,15 @@ module EvmData
     end
   end
 
+  # Define nand boot method name
+  def get_nand_boot_method(platform)
+    case platform.downcase
+    when /^k2.{0,2}-evm/
+      return :LOAD_FROM_NAND_BY_BMC
+    else
+      return :LOAD_FROM_NAND
+    end
+  end
+
+  
 end
