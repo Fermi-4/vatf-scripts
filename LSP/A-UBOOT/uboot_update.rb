@@ -19,6 +19,7 @@ def run
                      @test_params.instance_variable_defined?(:@var_flash_bootloader) ? @test_params.var_flash_bootloader :  'no'
   flash_kernel = @test_params.params_chan.instance_variable_defined?(:@flash_kernel) ? @test_params.params_chan.flash_kernel[0].downcase : 'no'
   flash_fs = @test_params.params_chan.instance_variable_defined?(:@flash_fs) ? @test_params.params_chan.flash_fs[0].downcase : 'no'
+  verify_fs_ok = @test_params.instance_variable_defined?(:@var_verify_fs_ok) ? @test_params.var_verify_fs_ok.downcase : 'no'
 
   if flash_bootloader == 'yes'
     translated_boot_params['dut'].update_bootloader(translated_boot_params)
@@ -33,21 +34,26 @@ def run
   end 
   
   if flash_kernel == 'yes'
+    translated_boot_params['dut'].system_loader = nil
     translated_boot_params['dut'].update_kernel(translated_boot_params)
   end
 
   if flash_fs == 'yes'
+    translated_boot_params['dut'].system_loader = nil
     translated_boot_params['dut'].update_fs(translated_boot_params)
   end
   
-  # kernel_dev and fs_dev needs to be set to the right value
   # check if dut bootup ok using updated kernel or fs
-  if flash_kernel == 'yes' or flash_fs == 'yes'
-    translated_boot_params['dut'].boot(translated_boot_params)
+  if verify_fs_ok == 'yes'
+    if flash_kernel == 'yes' or flash_fs == 'yes'
+      translated_boot_params['fs_dev'] = ''  # to prevent fs got flashed again when calling 'boot'
+      translated_boot_params['dut'].system_loader = nil
+      translated_boot_params['dut'].boot(translated_boot_params)
 
-    # check if the kernel boot up ok.
-    translated_boot_params['dut'].send_cmd("uname -a", translated_boot_params['dut'].prompt, 10)
-    result += 1 if translated_boot_params['dut'].timeout?
+      # check if the kernel boot up ok.
+      translated_boot_params['dut'].send_cmd("uname -a", translated_boot_params['dut'].prompt, 10)
+      result += 1 if translated_boot_params['dut'].timeout?
+    end
   end
 
   if result == 0
