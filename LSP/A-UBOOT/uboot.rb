@@ -124,7 +124,7 @@ def execute_cmd(commands)
 end
 
 def stop_boot()
-	@equipment['dut1'].wait_for(/U-Boot/, 10) 
+	#@equipment['dut1'].wait_for(/U-Boot/, 10) 
 	@equipment['dut1'].stop_boot
 end
 
