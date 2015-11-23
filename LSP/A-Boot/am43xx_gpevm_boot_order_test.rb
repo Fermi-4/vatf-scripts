@@ -38,7 +38,10 @@ def nand_boot()
     invalidate_mmc(0)
     @usb_switch_handler.disconnect(@equipment['dut1'].params['usbclient_port'].keys[0])
  
-    boot_to_bootloader()
+    #boot_to_bootloader()
+    @translated_boot_params['primary_bootloader_dev'] = 'nand'
+    @translated_boot_params['dut'].boot_loader = nil
+    @translated_boot_params['dut'].boot_to_bootloader @translated_boot_params
     status =  uboot_sanity_test()
 
     # restore mmc 
@@ -81,7 +84,10 @@ def usbhost_boot()
     @usb_switch_handler.disconnect(@equipment['dut1'].params['usbclient_port'].keys[0])
 
     # validate usbhost boot
-    boot_to_bootloader()
+    #boot_to_bootloader()
+    @translated_boot_params['primary_bootloader_dev'] = 'usbmsc'
+    @translated_boot_params['dut'].boot_loader = nil
+    @translated_boot_params['dut'].boot_to_bootloader @translated_boot_params
     status =  uboot_sanity_test()
 
     # restore mmc 
@@ -126,7 +132,10 @@ def usbrndis_boot()
     # test usbrndis boot
     @usb_switch_handler.select_input(@equipment['dut1'].params['usbclient_port'])
 
-    boot_to_bootloader()
+    #boot_to_bootloader()
+    @translated_boot_params['primary_bootloader_dev'] = 'usbrndis'
+    @translated_boot_params['dut'].boot_loader = nil
+    @translated_boot_params['dut'].boot_to_bootloader @translated_boot_params
     status =  uboot_sanity_test()
 
     # restore to original settings
