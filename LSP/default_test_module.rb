@@ -319,6 +319,8 @@ module LspTestScript
           "Boot attempt #{trial + 1}/#{boot_attempts} failed, trying again....."
           puts fail_str
           @equipment['dut1'].log_info(fail_str)
+          @equipment['dut1'].disconnect('serial') if @equipment['dut1'].target.serial
+          @equipment['dut1'].disconnect('bmc') if @equipment['dut1'].target.bmc
           raise e if trial == boot_attempts - 1
         end
       end 
