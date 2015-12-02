@@ -338,7 +338,7 @@ module IpsecConnectionScript
 
     # Restart IPSEC with this template file.
     if (result |= ipsecVatf.result).to_i == 0
-      result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.is_ipv4, ipsecVatf.FQDN_TUNNEL, "#{ipsec_template}", is_clear_previous_result, is_pass_through)
+      result |= ipsecVatf.ipsec_restart_with_new_ipsec_conf_file(ipsecVatf.is_ipv4, ipsecVatf.FQDN_TUNNEL, "#{ipsec_template}", is_clear_previous_result, is_pass_through, crypto_mode)
     end
     
     # Offload security policies if crypto_mode is inflow

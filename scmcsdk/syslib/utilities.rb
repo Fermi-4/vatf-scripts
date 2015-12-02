@@ -8,6 +8,28 @@ def get_platform()
   end
 end
 
+def is_crypto_omap()
+  if dut_dir_exist?("/opt/ltp")
+    dut_orig_path = save_dut_orig_path()
+    export_ltppath()
+    @equipment['dut1'].send_cmd("get_modular_name.sh crypto",@equipment['dut1'])
+    response = @equipment['dut1'].response
+    restore_dut_path(dut_orig_path)
+    return response.include? "omap"
+  else
+    return false
+  end
+end
+
+def get_crypto_modules()
+  module_list = Array.new
+  if (is_crypto_omap)
+    module_list = ["omap_aes_driver", "omap_des", "omap_sham"]
+  else
+    module_list = ["ipsecmgr_mod"]
+  end
+end
+
 def get_directory_less(string, up_count)
   new_dir = ""
   temp_string = string 
@@ -67,12 +89,15 @@ class FileUtilities
     @directory_contents = Array.new
     @file_contents = Array.new
   end
+
   def clear_directory_contents()
     @directory_contents.clear
   end
+
   def clear_file_contents()
     @file_contents.clear
   end
+
   def is_contents_empty(array_to_check)
     is_empty = false
     #arr_to_check = array_to_check
@@ -83,14 +108,17 @@ class FileUtilities
     end
     return is_empty
   end
+
   def is_directory_contents_empty()
     is_empty = is_contents_empty(@directory_contents)
     return is_empty
   end
+
   def is_file_contents_empty()
     is_empty = is_contents_empty(@file_contents)
     return is_empty
   end
+
   def write_file_contents(file_to_write, file_contents)
     output_file = File.expand_path(file_to_write)
     # Write array contents to file
@@ -101,6 +129,7 @@ class FileUtilities
       f.close
     end
   end
+
   def get_file_contents(file_to_read)
     clear_file_contents()
     input_file = File.expand_path(file_to_read)
@@ -114,6 +143,7 @@ class FileUtilities
       end
     end
   end
+
   def get_directory_contents_by_recursive_scan(directory_to_scan, filter_text)
     running = Progress.new
     @directory_contents.clear
@@ -135,6 +165,7 @@ class FileUtilities
     end
     @directory_contents.flatten!
   end
+
   def get_directory_contents(directory_to_scan, filter_text)
     expanded_dir = File.expand_path(directory_to_scan)
     running = Progress.new
@@ -157,6 +188,7 @@ class FileUtilities
     end
     @directory_contents.flatten!
   end
+
   def get_directory_contents_only_directories(directory_to_scan, filter_text)
     expanded_dir = File.expand_path(directory_to_scan)
     running = Progress.new
@@ -179,6 +211,7 @@ class FileUtilities
     end
     @directory_contents.flatten!
   end
+
   def get_directory_contents_files_and_directories(directory_to_scan, filter_text)
     expanded_dir = File.expand_path(directory_to_scan)
     running = Progress.new
@@ -204,6 +237,7 @@ class FileUtilities
     end
     @directory_contents.flatten!
   end
+
   def create_directory_if_needed(directory_to_create)
     create_dir = directory_to_create.tr("\\","/")
     dir_items = create_dir.split('/')
@@ -215,11 +249,13 @@ class FileUtilities
       end
     end
   end
+
   # copy file to a directory
   def copy_file_file(from_file, to_file)
     temp = "copy \"#{from_file.tr("/","\\")}\" \"#{to_file.tr("/","\\")}\" /y"
     copy_status = %x[#{temp}]
   end
+
   def get_unique_signature(file_and_path)
     file_signature = ""
     #file_signature += "#{File.basename(file_and_path)}"
@@ -229,6 +265,7 @@ class FileUtilities
     file_signature.tr!(" ", "_")
     return file_signature
   end
+
   def get_directory_less(string, up_count)
     new_dir = ""
     temp_string = string 
@@ -246,19 +283,25 @@ class FileUtilities
     new_dir.tr!("/", "\\") if is_dir_backslash
     return new_dir
   end
+
   def set_variables_from_file(file_and_path)
   end
+
   def get_test_list
   end
+
   def clear_test_list()
     @tests_run_list.clear
   end
+
   def directory_contents()
     return @directory_contents
   end
+
   def file_contents()
     return @file_contents
   end
+
 end
 
 class VatfHelperUtilities
@@ -276,10 +319,12 @@ class VatfHelperUtilities
     @error_bit = 10
     @is_debug = true
   end
+
   def clear_result()
     @result = 0
     @result_text = ""
   end
+
   def set_error_bit_to_set(error_bit)
     this_error_bit = 0
     min_range = 0
@@ -289,34 +334,43 @@ class VatfHelperUtilities
     this_error_bit = ((this_error_bit >= max_range) ? max_range : this_error_bit)
     @error_bit = this_error_bit
   end
+
   def set_debug_on()
     @is_debug = true
   end
+
   def set_debug_off()
     @is_debug = false
   end
+
   def set_common(equipment, vatf_server_ref, vatf_dut_ref)
     @equipment = equipment if (equipment != "")
     @vatf_server_ref = vatf_server_ref if (vatf_server_ref != "")
     @vatf_dut_ref = vatf_dut_ref if (vatf_dut_ref != "")
   end
+
   def ALPHA_SIDE()
     return true
   end
+
   def BETA_SIDE()
     return false
   end
+
   def bit_to_set(bit)
     return 1 << bit
   end
+
   def DONT_SET_ERROR_BIT()
     return 9999
   end
+
   def server_prompt_wait_workaround(equipment_ref, wait_message)
     if equipment_ref.include?("server")
       @equipment[equipment_ref].send_cmd("echo $?",/^0/,5) if (wait_message == "")
     end
   end
+
   def wait_for(is_alpha_side, wait_string, time_out_secs, error_bit_set)
     equipment_ref = (is_alpha_side ? @vatf_server_ref : @vatf_dut_ref)
     if @is_debug
@@ -329,10 +383,12 @@ class VatfHelperUtilities
       @result |= bit_to_set(error_bit_set)
     end
   end
+
   def log_info(is_alpha_side, info_message)
     equipment_ref = (is_alpha_side ? @vatf_server_ref : @vatf_dut_ref)
     @equipment[equipment_ref].log_info(info_message)
   end
+
   def smart_send_cmd_wait(is_alpha_side, is_sudo, command_to_send, wait_message, error_bit_set, sleep_before_return, wait_secs, chk_cmd_echo=true)
     equipment_ref = (is_alpha_side ? @vatf_server_ref : @vatf_dut_ref)
     is_sudo_local = (is_alpha_side ? is_sudo : false)
@@ -358,9 +414,11 @@ class VatfHelperUtilities
     sleep(sleep_before_return) if (sleep_before_return > 0)
     return @equipment[equipment_ref].response
   end
+
   def smart_send_cmd(is_alpha_side, is_sudo, command_to_send, wait_message, error_bit_set, sleep_before_return, chk_cmd_echo=true)
     return smart_send_cmd_wait(is_alpha_side, is_sudo, command_to_send, wait_message, error_bit_set, sleep_before_return, 20, chk_cmd_echo)
   end
+
   def get_policy_id(is_alpha_side, direction_type)
     get_index_command = "echo `ip -s xfrm policy | grep \"dir #{direction_type}\" | grep -v grep | awk '{print $6}'`"
     policy_index = "not found"
@@ -377,6 +435,7 @@ class VatfHelperUtilities
     #log_info(is_alpha_side, " Policy Index (#{direction_type}): #{policy_index}, buffer: \"#{raw_buffer}\"\r\n [0]:#{items[0]}, [1]:#{items[1]}\r\n")
     return policy_index
   end
+
   def is_matched_count(raw_buffer, string, count)
     is_matched = false
     temp = raw_buffer.scan(convert_string_to_case_insensitive_reg_expression(string))
@@ -386,6 +445,7 @@ class VatfHelperUtilities
     log_info(BETA_SIDE(), "\r\n##### string: #{string}, temp.length: #{temp.length}, count: #{count}, is_matched: #{is_matched} #####\r\n")
     return is_matched
   end
+
   def offload_indices_common(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal, offload_command)
     log_info(is_alpha_side, " Policy Indices; In: #{policy_index_in}, Out: #{policy_index_out}\r\n")
     raw_buffer = smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{offload_command} --sp_id #{policy_index_in} #{offload_command_post_fix}", "sa_handle", DONT_SET_ERROR_BIT(), 2, 4)
@@ -404,12 +464,15 @@ class VatfHelperUtilities
     end
     sleep(5)
   end
+
   def offload_indices(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal)
     offload_indices_common(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal, "offload_sp")
   end
+
   def stop_offload_indices(is_alpha_side, policy_index_in, policy_index_out, offload_command_post_fix, is_fatal, offload_command_pre_fix)
     offload_indices_common(is_alpha_side, policy_index_out, policy_index_in, offload_command_post_fix, is_fatal, offload_command_pre_fix)
   end
+
   def get_file_location(is_alpha_side, filename, locations_to_scan="/")
     file_name_path = ""
     find_cmd = "find #{locations_to_scan} -iname"
@@ -424,18 +487,23 @@ class VatfHelperUtilities
     end
     return file_name_path
   end
+
   def result()
     return @result
   end
+
   def result_text()
     return @result_text
   end
+
   def vatf_dut_ref()
     return @vatf_dut_ref
   end
+
   def vatf_server_ref()
     return @vatf_server_ref
   end
+
   def equipment
     @equipment
   end
@@ -455,12 +523,15 @@ class LinuxHelperUtilities
     @error_bit = 9
     @result = 0
   end
+
   def clear_result()
     @result = 0
   end
+
   def result()
     return @result
   end
+
   def set_error_bit_to_set(error_bit)
     this_error_bit = 0
     min_range = 0
@@ -470,31 +541,39 @@ class LinuxHelperUtilities
     this_error_bit = ((this_error_bit >= max_range) ? max_range : this_error_bit)
     @error_bit = this_error_bit
   end
+
   def ALPHA_SIDE()
     return @vatf_helper.ALPHA_SIDE()
   end
+
   def BETA_SIDE()
     return @vatf_helper.BETA_SIDE()
   end
+
   def set_vatf_equipment(equipment)
     @vatf_helper.set_common(equipment, "", "")
     @equipment = equipment
   end
+
   def set_vatf_helper(vatf_helper)
     @vatf_helper = vatf_helper
   end
+
   def set_chmod_executeable(is_alpha_side, file_name_path)
     # Create common certification key
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "chmod #{@chmod_executeable} #{file_name_path}", "", @error_bit, 0)
   end
+
   def set_chmod_writeable(is_alpha_side, file_name_path)
     # Create common certification key
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "chmod #{@chmod_writeable} #{file_name_path}", "", @error_bit, 0)
   end
+
   def set_chmod_conf_normal(is_alpha_side, file_name_path)
     # Create common certification key
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "chmod #{@chmod_conf_normal} #{file_name_path}", "", @error_bit, 0)
   end
+
   def create_writeable_empty_file(is_alpha_side, file_name_path)
     # Create directory structure if needed
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "mkdir -p #{File.dirname(file_name_path)}", "", @error_bit, 0)
@@ -502,6 +581,7 @@ class LinuxHelperUtilities
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "touch #{file_name_path}", "", @error_bit, 0)
     set_chmod_writeable(is_alpha_side, file_name_path)
   end
+
   def create_executeable_empty_file(is_alpha_side, file_name_path)
     # Create directory structure if needed
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "mkdir -p #{File.dirname(file_name_path)}", "", @error_bit, 0)
@@ -509,12 +589,14 @@ class LinuxHelperUtilities
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "touch #{file_name_path}", "", @error_bit, 0)
     set_chmod_executeable(is_alpha_side, file_name_path)
   end
+
   def add_ip_address_to_interface(is_alpha_side, ip_address, interface)
     # Add ip address to interface
     # ip_address = ipv4 or ipv6 ip address
     # interface = eth0, eth1...
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ip addr add #{ip_address} dev #{interface}", "", @error_bit, 0)
   end
+
   def tftp_file(file, from_path, to_path, host, is_alpha_side)
     from_file = File.join(from_path, file)
     to_file = File.join(to_path, file)
@@ -522,17 +604,20 @@ class LinuxHelperUtilities
     #@vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "tftp -g -r #{from_file} -l #{to_file} #{host}", "", @error_bit, 0)
     @vatf_helper.smart_send_cmd_wait(is_alpha_side, @sudo_cmd, "tftp -g -r #{from_file} -l #{to_file} #{host}", "", @error_bit, 0, 60)
   end
+
   def tftp_put_file(file, from_path, to_path, host, is_alpha_side)
     from_file = File.join(from_path, file)
     to_file = File.join(to_path, file)
     #create_writeable_empty_file(is_alpha_side, to_file)
     @vatf_helper.smart_send_cmd_wait(is_alpha_side, @sudo_cmd, "tftp -p -l #{from_file} -r #{to_file} #{host}", "", @error_bit, 0, 60)
   end
+
   def tftp_files(array_of_files, from_path, to_path, host, is_alpha_side)
     array_of_files.each do |file|
       tftp_file(file, from_path, to_path, host, is_alpha_side)
     end
   end
+
   def tftp_executable(file, from_path, to_path, host, is_alpha_side)
     from_file = File.join(from_path, file)
     to_file = File.join(to_path, file)
@@ -540,36 +625,43 @@ class LinuxHelperUtilities
     #@vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "tftp -g -r #{from_file} -l #{to_file} #{host}", "", @error_bit, 0)
     @vatf_helper.smart_send_cmd_wait(is_alpha_side, @sudo_cmd, "tftp -g -r #{from_file} -l #{to_file} #{host}", "", @error_bit, 0, 60)
   end
+
   def tftp_executables(array_of_files, from_path, to_path, host, is_alpha_side)
     array_of_files.each do |file|
       tftp_executable(file, from_path, to_path, host, is_alpha_side)
     end
   end
+
   def copy_executable(file, from_path, to_path, is_alpha_side)
     from_file = File.join(from_path, file)
     to_file = File.join(to_path, file)
     create_executeable_empty_file(is_alpha_side, to_file)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "cp #{from_file} #{to_file}", "", @error_bit, 0)
   end
+
   def copy_executables(array_of_files, from_path, to_path, is_alpha_side)
     array_of_files.each do |file|
       copy_executable(file, from_path, to_path, is_alpha_side)
     end
   end
+
   def copy_file(file, from_path, to_path, is_alpha_side)
     from_file = File.join(from_path, file)
     to_file = File.join(to_path, file)
     create_writeable_empty_file(is_alpha_side, to_file)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "cp #{from_file} #{to_file}", "", @error_bit, 0)
   end
+
   def copy_files(array_of_files, from_path, to_path, is_alpha_side)
     array_of_files.each do |file|
       copy_file(file, from_path, to_path, is_alpha_side)
     end
   end
+
   def untar_file(gzip_file, directory_where_file_should_be_untarred, is_alpha_side)
     @vatf_helper.smart_send_cmd_wait(is_alpha_side, @sudo_cmd, "cd #{directory_where_file_should_be_untarred} ; tar -xzf #{gzip_file}", "", @error_bit, 0, 60)
   end
+
   def get_utc_time()
     # Get current PC time
     curr_time = Time.new
@@ -593,6 +685,7 @@ class LinuxHelperUtilities
     end
     return curr_time
   end
+
   def set_evm_date_time(is_alpha_side)
     if (!is_alpha_side)
       # Get current PC time adjusted for UTC
@@ -603,6 +696,7 @@ class LinuxHelperUtilities
       @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "date -s \"#{set_time}\"", "", @error_bit, 0)
     end
   end
+
   def files_exist?(is_alpha_side, directory, filespec)
     temp_state = true
     # Handle filespec for one or more files
@@ -618,12 +712,15 @@ class LinuxHelperUtilities
     @vatf_helper.log_info(is_alpha_side, "\r\n\r\n [#{(temp_state ? "Found" : "Did not find ")} trigger file#{(files.length == 1 ? "" : "s")}: \"#{filespec}\" in \"#{directory}\"]\r\n\r\n")
     return temp_state
   end
+
   def chmod_writeable()
     return @chmod_writeable
   end
+
   def chmod_conf_normal()
     return @chmod_conf_normal
   end
+
 end
 
 class NashPalTestBenchVatf
@@ -654,17 +751,20 @@ class NashPalTestBenchVatf
     @result_text = ""
     set_default_ti_dirs()
   end
+
   def set_default_ti_dirs()
     @dss_dir = "/home/gtscmcsdk-systest/ti/ccsv5/ccs_base/scripting/bin"
     @load_ti_dir = "#{File.dirname(__FILE__)}/dsploadrun/loadti"
     @ccxml_dir = "#{File.dirname(__FILE__)}/dsploadrun/ccxmls"
   end
+
   def clear_results()
     @lnx_helper.clear_result()
     @vatf_helper.clear_result()
     @result = 0
     @result_text = ""
   end
+
   def ms4x_file_set(is_for_transfer)
     if is_for_transfer
       add_to_miw_apps("ms5_core0.out")
@@ -682,6 +782,7 @@ class NashPalTestBenchVatf
       # All the files that are transferred are used. No other files are needed.
     end
   end
+
   def ms5_file_set(is_for_transfer)
     if is_for_transfer
       add_to_miw_apps("miw_utest_iubl")
@@ -698,21 +799,27 @@ class NashPalTestBenchVatf
       add_to_miw_apps("cmd_shell.out")
     end
   end
+
   def LINUX_PC()
     return "linux_pc"
   end
+
   def TFTP_SERVER()
     return "tftp_server"
   end
+
   def EVM_APPS()
     return "evm_apps"
   end
+
   def TRANSFER()
     return true
   end
+
   def USED()
     return false
   end
+
   def get_file_and_path(location_string, file_string_to_match)
     full_path = ""
     apps_file = ""
@@ -737,6 +844,7 @@ class NashPalTestBenchVatf
     end
     return full_path
   end
+
   def copy_miw_files_to_tftp_dir(server_tftp_base_dir)
     @miw_apps.each do |file_name|
       from_path = File.dirname(get_file_and_path(LINUX_PC(), file_name))
@@ -745,6 +853,7 @@ class NashPalTestBenchVatf
       @lnx_helper.copy_executable(file_name, from_path, to_path, @vatf_helper.ALPHA_SIDE())
     end
   end
+
   def move_files_to_evm(host)
     @miw_apps.each do |file_name|
       from_path = File.dirname(get_file_and_path(TFTP_SERVER(), file_name))
@@ -752,6 +861,7 @@ class NashPalTestBenchVatf
       @lnx_helper.tftp_executable(file_name, from_path, to_path, host, @vatf_helper.BETA_SIDE())
     end
   end
+
   def display_path_info()
     temp_txt = ""
     temp_txt += "Nash PAL tftp paths:\r\n"
@@ -774,6 +884,7 @@ class NashPalTestBenchVatf
     end
     puts("#{temp_txt}\r\n")
   end
+
   def set_miw_tftp_paths(tftp_server_from_path, evm_to_path, miw_linux_pc_arm_apps_path, miw_linux_pc_dsp_apps_path, miw_directory)
     @from_path = tftp_server_from_path if (tftp_server_from_path != "")
     @to_path = evm_to_path if (evm_to_path != "")
@@ -781,36 +892,45 @@ class NashPalTestBenchVatf
     @miw_linux_pc_dsp_apps_path = miw_linux_pc_dsp_apps_path if (miw_linux_pc_dsp_apps_path != "")
     @miw_directory = miw_directory if (miw_directory != "")
   end
+
   def set_femto_logger_paths(executable, log_file)
     @femto_logger_executable = executable if (executable != "")
     @femto_logger_log_file = log_file if (log_file != "")
   end
+
   def add_to_miw_apps(file_name)
     @miw_apps.push(file_name)
   end
+
   def copy_miw_apps_to_tftp_server()
     if @from_path != ""
     end
   end
+
   def RETURN_ON_FIRST_ERROR()
     return true
   end
+
   def CONTINUE_ON_ERROR()
     return false
   end
+
   def result()
     @result |= @vatf_helper.result()
     return @result
   end
+
   def result_text()
     return @result_text
   end
+
   def is_failed(is_alpha_side, function_name, error_message)
     location = (is_alpha_side ? "Alpha side" : "Beta side")
     @result_text += "(#{function_name}, #{location}): #{error_message}" if (result() != 0)
     # Merge all available results to @result and return true or false
     return ((result() != 0) ? true : false)
   end
+
   def set_error_bit_to_set(error_bit)
     this_error_bit = 0
     min_range = 0
@@ -820,34 +940,42 @@ class NashPalTestBenchVatf
     this_error_bit = ((this_error_bit >= max_range) ? max_range : this_error_bit)
     @error_bit = this_error_bit
   end
+
   def set_helpers(lnx_helper, vatf_helper)
     @lnx_helper = lnx_helper
     @vatf_helper = vatf_helper
   end
+
   def set_paths(from_tftp_path, to_path)
     @from_path = from_tftp_path
     @to_path = to_path
   end
+
   def get_file_from_array(array_of_files, string)
     array_of_files.each do |file|
       return file if file.include?(string)
     end
     return ""
   end
+
   def transfer_files_to_evm(array_of_files, from_path, to_path, host)
     @lnx_helper.tftp_executables(array_of_files, from_path, to_path, host, @vatf_helper.BETA_SIDE())
   end
+
   def run_executable(array_of_files, pre_params, string, post_params, path, cmd_wait_string, is_alpha_side, wait_secs)
     file_to_run = get_file_from_array(array_of_files, string)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "cd #{path}", "", @error_bit, 0)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "#{pre_params} ./#{file_to_run} #{post_params}", cmd_wait_string, @error_bit, wait_secs)
   end
+
   def run_executable_on_arm(array_of_files, pre_params, string, post_params, path, wait_string, wait_secs)
     run_executable(array_of_files, pre_params, string, post_params, path, wait_string, @vatf_helper.BETA_SIDE(), wait_secs)
   end
+
   def run_executable_on_linux_pc(array_of_files, pre_params, string, post_params, path, wait_string, wait_secs)
     run_executable(array_of_files, pre_params, string, post_params, path, wait_string, @vatf_helper.ALPHA_SIDE(), wait_secs)
   end
+
   def run_router_and_miw_arm_executeables(array_of_files, path, is_ms5_or_greater)
     miw_wait = 2
     run_executable_on_arm(array_of_files, "", "msgrouter", "-n 3 -a 0x0c016000 -v &", path, "", 2)
@@ -858,6 +986,7 @@ class NashPalTestBenchVatf
     end
     #exit
   end
+
   def run_DSP_executeables(test_secs)
     is_alpha_side = @vatf_helper.ALPHA_SIDE()
     last_file = ""
@@ -918,6 +1047,7 @@ class NashPalTestBenchVatf
     sleep(5)
     return dsp_thread
   end
+
   def run_femto_logger(evm_ip)
     is_alpha_side = @vatf_helper.ALPHA_SIDE()
     #logger_dir = "/home/gtscmcsdk-systest/tempdown/MS45/femtologger/logger"
@@ -934,6 +1064,7 @@ class NashPalTestBenchVatf
     }
     return femto_thread
   end
+
   def get_policy_id(equipment, direction_type)
     is_alpha_side = @vatf_helper.BETA_SIDE()
     get_index_command = "echo `ip -s xfrm policy | grep \"dir #{direction_type}\" | grep -v grep | awk '{print $6}'`"
@@ -942,12 +1073,14 @@ class NashPalTestBenchVatf
     puts(" Policy Index (#{direction_type}): #{policy_index}\r\n")
     return policy_index
   end
+
   def run_snooper(array_of_files, path)
     is_alpha_side = @vatf_helper.BETA_SIDE()
     run_executable_on_arm(array_of_files, "source", "setup_snooper", "", path, "", 2)
     run_executable_on_arm(array_of_files, "", "ipsecsnooper", "", path, "", 2)
     sleep(5)
   end
+
   def run_nefpproxy(path)
     is_alpha_side = @vatf_helper.BETA_SIDE()
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "cd #{path} ; ./netfpproxy.out -v -p /usr/lib/libnetfpproxy_plugin.so", "", @error_bit, 0)
@@ -955,6 +1088,7 @@ class NashPalTestBenchVatf
     #run_executable_on_arm(array_of_files, "", "ipsecsnooper", "", path, "", 2)
     sleep(5)
   end
+
   def run_echopkt(path, evm_ip, echopkt_log_file)
     is_alpha_side = @vatf_helper.ALPHA_SIDE()
     rx_port = "22238"
@@ -970,6 +1104,7 @@ class NashPalTestBenchVatf
     sleep(2)
     return echopkt_thread
   end
+
   def run_offloader(array_of_files, path, policy_index_in, policy_index_out, is_fatal)
     is_alpha_side = @vatf_helper.BETA_SIDE()
     error_text = ""
@@ -992,6 +1127,7 @@ class NashPalTestBenchVatf
     @is_cmd_shell = true
     sleep(5)
   end
+
   def run_offloader_new(array_of_files, path, policy_index_in, policy_index_out, is_fatal)
     is_alpha_side = @vatf_helper.BETA_SIDE()
     error_text = ""
@@ -1013,9 +1149,11 @@ class NashPalTestBenchVatf
     @is_cmd_shell = true
     sleep(5)
   end
+
   def kill_task(is_alpha_side, task_name)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "kill `ps -ef | grep #{task_name} | grep -v grep | awk '{print $2}'`", "", @error_bit, 0)
   end
+
   def is_same_or_one_different(count_1, count_2)
     is_good = false
     if (count_1 == count_2)
@@ -1027,6 +1165,7 @@ class NashPalTestBenchVatf
     end
     return is_good
   end
+
   def validate_results(file_to_check, is_ms5_or_greater)
     puts(" File to check: #{file_to_check}\r\n")
     fileUtils = FileUtilities.new
@@ -1155,6 +1294,7 @@ class NashPalTestBenchVatf
     @result_text += temp_result_text.gsub(":\r\n", ":")
     @result |= @vatf_helper.bit_to_set(@error_bit) if (!is_passed)
   end
+
   def kill_dss_sh(dsp_thread)
     dss_sh_base_process_id = "LOADTI_PATH"
     dss_sh_java_process_id = "DXPCOM.RUNTIME"
@@ -1165,6 +1305,7 @@ class NashPalTestBenchVatf
     kill_task(@vatf_helper.ALPHA_SIDE(), dss_sh_java_process_id)
     sleep(10)
   end
+
   def kill_femto_logger(femto_thread)
     femto_logger_process_id = "femto_logger"
     
@@ -1172,6 +1313,7 @@ class NashPalTestBenchVatf
     femto_thread.exit
     kill_task(@vatf_helper.ALPHA_SIDE(), femto_logger_process_id)
   end
+
   def kill_echopkt(echopkt_thread)
     echopkt_process_id = "echoPkt"
     
@@ -1179,16 +1321,19 @@ class NashPalTestBenchVatf
     echopkt_thread.exit
     kill_task(@vatf_helper.ALPHA_SIDE(), echopkt_process_id)
   end
+
   def info_header(planned_run_secs, actual_run_secs, is_pass_through)
     @result_text += "Planned Run Seconds: #{planned_run_secs}\r\n"
     @result_text += "Actual Run Seconds: #{actual_run_secs}\r\n"
     @result_text += "IPSEC Connection: #{(is_pass_through ? "Pass-through" : "IPSEC tunnel")}\r\n"
     @result_text += ".\r\n"
   end
+
   def set_static_arps()
     @vatf_helper.smart_send_cmd(@vatf_helper.ALPHA_SIDE(), @sudo_cmd, "arp -s 192.168.1.51 00:18:31:7E:3E:41", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0)
     @vatf_helper.smart_send_cmd(@vatf_helper.BETA_SIDE(), @normal_cmd, "arp -s 192.168.1.102 00:04:23:e0:44:56", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0)
   end
+
   def get_route_xfrm_info(is_alpha_side)
     @vatf_helper.smart_send_cmd_wait(is_alpha_side, @sudo_cmd, "netstat -rn", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0, 5)
     @vatf_helper.smart_send_cmd_wait(is_alpha_side, @sudo_cmd, "route -n", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0, 5)
@@ -1197,6 +1342,7 @@ class NashPalTestBenchVatf
       @vatf_helper.smart_send_cmd_wait(is_alpha_side, @sudo_cmd, "cat /proc/net/xfrm_stat", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0, 5)
     end
   end
+
   def exit_cmd_shell(is_alpha_side)
     if !is_alpha_side
       # On EVM get out of the cmd_shell
@@ -1206,6 +1352,7 @@ class NashPalTestBenchVatf
       end
     end
   end
+
   def get_net_stats(is_alpha_side)
     exit_cmd_shell(is_alpha_side)
     #@vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "netstat -rn", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0)
@@ -1222,6 +1369,7 @@ class NashPalTestBenchVatf
     @vatf_helper.smart_send_cmd_wait(is_alpha_side, @sudo_cmd, "ipsec status", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0, 5)
     @vatf_helper.smart_send_cmd_wait(is_alpha_side, @sudo_cmd, "ipsec statusall", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0, 5)
   end
+
   def run_nash_pal_test_bench(equipment, test_secs, is_pass_through, ipsecVatf)
     #array_of_arm_files = Array.new
     @vatf_helper.set_common(equipment, "", "")
@@ -1454,15 +1602,18 @@ class SmartCardUtilities
     @pin_prompt2 = /user PIN:/
     @token_initialized = "initialized."
   end
+
   def clear_result()
     @lnx_helper.clear_result()
     @vatf_helper.clear_result()
     @result = 0
     @result_text = ""
   end
+
   def set_pin_number(pin_number)
     @pin_number = pin_number if (pin_number != "")
   end
+
   def set_common(equipment, vatf_server_ref, vatf_dut_ref)
     @vatf_dut_ref = vatf_dut_ref if (vatf_dut_ref != "")
     @vatf_server_ref = vatf_server_ref if (vatf_server_ref != "")
@@ -1470,18 +1621,22 @@ class SmartCardUtilities
     @vatf_helper.set_common(@equipment, @vatf_server_ref, @vatf_dut_ref)
     @lnx_helper.set_vatf_equipment(@equipment)
   end
+
   def set_alpha_side_directories(working_directory, tftp_directory)
     @alpha_side_working_directory = working_directory if (working_directory != "")
     @alpha_side_tftp_server_directory = tftp_directory if (tftp_directory != "")
   end
+
   def set_beta_side_directories(working_directory, tftp_directory)
     @beta_side_working_directory = working_directory if (working_directory != "")
     @beta_side_tftp_server_directory = tftp_directory if (tftp_directory != "")
   end
+
   def show_secure_store(is_alpha_side)
     command = "softhsm-util --show-slots --module #{@libsecstore} #{@command_done_addition}"
     return @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", @command_done_trigger, @error_bit, 0, 45)
   end
+
   def is_error_result?(is_alpha_side, error_area="setting up secure store")
     is_error = (@vatf_helper.result != 0 ? true : false)
     if is_error
@@ -1491,6 +1646,7 @@ class SmartCardUtilities
     end
     return is_error
   end
+
   def fix_strongswan_conf_file_if_needed(is_alpha_side)
     equip = @equipment[(is_alpha_side ? @vatf_server_ref : @vatf_dut_ref)]
     if !check_cmd?("cat /etc/strongswan.conf | grep libsecstore.so.1", equip)
@@ -1498,6 +1654,7 @@ class SmartCardUtilities
       @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", "#{@pin_prompt1}", @error_bit, 0, 5)
     end
   end
+
   def initialize_secure_store(is_alpha_side)
     equip = @equipment[(is_alpha_side ? @vatf_server_ref : @vatf_dut_ref)]
     return @vatf_helper.result if is_error_result?(is_alpha_side)
@@ -1514,6 +1671,7 @@ class SmartCardUtilities
     show_secure_store(is_alpha_side)
     fix_strongswan_conf_file_if_needed(is_alpha_side)
   end
+
   def initialize_secure_store_if_needed(is_alpha_side)
     command_response = show_secure_store(is_alpha_side)
     secure_store_match = /Label:\s*#{@secure_store_label}/.match(command_response)
@@ -1521,20 +1679,25 @@ class SmartCardUtilities
       initialize_secure_store(is_alpha_side)
     end
   end
+
   def open_openssl_shell(is_alpha_side)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "openssl", @openssl_prompt, @error_bit, 0)
   end
+
   def load_pkcs11_engine(is_alpha_side)
     return @vatf_helper.result if is_error_result?(is_alpha_side)
     @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "engine -vvvv dynamic -pre SO_PATH:/usr/lib/engines/engine_pkcs11.so -pre ID:pkcs11 -pre LIST_ADD:1 -pre LOAD -pre MODULE_PATH:#{@libsecstore} -pre \"VERBOSE\" -pre \"PIN:#{@pin_number}\"", @openssl_prompt, @error_bit, 0)
   end
+
   def open_smartcard_session(is_alpha_side)
     open_openssl_shell(is_alpha_side)
     load_pkcs11_engine(is_alpha_side)
   end
+
   def close_smartcard_session(is_alpha_side)
     @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "quit", "", @error_bit, 0)
   end
+
   def send_smartcard_command(is_alpha_side, command)
     return @vatf_helper.result if is_error_result?(is_alpha_side)
     working_directory = (is_alpha_side ? @alpha_side_working_directory : @beta_side_working_directory)
@@ -1547,47 +1710,59 @@ class SmartCardUtilities
     # Close openssl command prompt
     close_smartcard_session(is_alpha_side)
   end
+
   def store_certificate(is_alpha_side, slot_num, id_num, label_name, cert_file_name)
     send_smartcard_command(is_alpha_side, "engine pkcs11 -pre \"STORE_CERT:slot_#{slot_num}:id_#{id_num}:label_#{label_name}:cert_#{cert_file_name}\"")
   end
+
   def generate_rsa_key_pair(is_alpha_side, slot_num, id_num, label_name)
     send_smartcard_command(is_alpha_side, "engine pkcs11 -pre \"GEN_KEY:slot_#{slot_num}:size_2048:id_#{id_num}:label_#{label_name}\"")
   end
+
   def retrieve_public_key(is_alpha_side, slot_num, id_num, label_name, key_file_name)
     send_smartcard_command(is_alpha_side, "engine pkcs11 -pre \"GET_PUBKEY:slot_#{slot_num}:id_#{id_num}:label_#{label_name}:key_#{key_file_name}\"")
   end
+
   def list_objects_in_key_store(is_alpha_side, slot_num)
     send_smartcard_command(is_alpha_side, "engine pkcs11 -pre \"LIST_OBJS:#{slot_num}\"")
   end
+
   def remove_certificate(is_alpha_side, slot_num, id_num, label_name)
     send_smartcard_command(is_alpha_side, "engine pkcs11 -pre \"DEL_OBJ:slot_#{slot_num}:type_cert:id_#{id_num}:label_#{label_name}:cert\"")
   end
+
   def remove_certificate_based_on_file(is_alpha_side, slot_num, id_num, file_name_and_path)
     label_name = File.basename(file_name_and_path).split(".")[0]
     remove_certificate(is_alpha_side, slot_num, id_num, label_name)
   end
+
   def remove_key_set(is_alpha_side, slot_num, id_num, label_name)
     send_smartcard_command(is_alpha_side, "engine pkcs11 -pre \"DEL_OBJ:slot_#{slot_num}:type_pubkey:id_#{id_num}:label_#{label_name}:key\"")
     send_smartcard_command(is_alpha_side, "engine pkcs11 -pre \"DEL_OBJ:slot_#{slot_num}:type_privkey:id_#{id_num}:label_#{label_name}:key\"")
   end
+
   def remove_key_set_based_on_file(is_alpha_side, slot_num, id_num, file_name_and_path)
     label_name = File.basename(file_name_and_path).split(".")[0]
     remove_key_set(is_alpha_side, slot_num, id_num, label_name)
   end
+
   def start_smartcard(is_alpha_side)
     return if is_error_result?(is_alpha_side)
     @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "/etc/init.d/softhsm-daemon.sh start", "", @error_bit, 0)
   end
+
   def stop_smartcard(is_alpha_side)
     return if is_error_result?(is_alpha_side)
     @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "/etc/init.d/softhsm-daemon.sh stop", "", @error_bit, 0)
   end
+
   def get_pubic_key_via_tftp(is_alpha_side, host_ip, slot_num, id_num, label_name, key_file_name)
     from_path = (is_alpha_side ? @alpha_side_working_directory : @beta_side_working_directory)
     to_path = (is_alpha_side ? @alpha_side_tftp_server_directory : @beta_side_tftp_server_directory)
     retrieve_public_key(is_alpha_side, slot_num, id_num, label_name, key_file_name)
     @lnx_helper.tftp_put_file(key_file_name, from_path, to_path, host_ip, is_alpha_side)
   end
+
   def put_cert_file_via_tftp(is_alpha_side, host_ip, slot_num, id_num, label_name, cert_file_name)
     # The directories used here are from the point of view of the EVM tftping from the Linux PC or the EVM tftping to the Linux PC
     from_path = (is_alpha_side ? @alpha_side_tftp_server_directory : @beta_side_tftp_server_directory)
@@ -1595,12 +1770,15 @@ class SmartCardUtilities
     @lnx_helper.tftp_file(cert_file_name, from_path, to_path, host_ip, @vatf_helper.BETA_SIDE())
     store_certificate(is_alpha_side, slot_num, id_num, label_name, cert_file_name)
   end
+
   def secrets_store(key_id)
     return ": PIN %smartcard0@secstore:#{key_id} #{@pin_number}"
   end
+
   def result
     @result
   end
+
   def result_text
     @result_text
   end
@@ -1639,6 +1817,7 @@ class CascadeSetupUtilities
     @result = 0
     @result_text = ""
   end
+
   def set_common(equipment, vatf_server_ref, vatf_dut_ref, evm_login)
     @vatf_dut_ref = vatf_dut_ref if (vatf_dut_ref != "")
     @vatf_server_ref = vatf_server_ref if (vatf_server_ref != "")
@@ -1647,11 +1826,13 @@ class CascadeSetupUtilities
     @vatf_helper.set_common(@equipment, @vatf_server_ref, @vatf_dut_ref)
     @lnx_helper.set_vatf_equipment(@equipment)
   end
+
   def set_bridge_info(bridge_ipv4_ip_address, bridge_ipv6_ip_address, bridge_default_gw_ip_address)
     @bridge_ipv4_ip_address = bridge_ipv4_ip_address if (bridge_ipv4_ip_address != "")
     @bridge_ipv6_ip_address = bridge_ipv6_ip_address if (bridge_ipv6_ip_address != "")
     @bridge_default_gw_ip_address = bridge_default_gw_ip_address if (bridge_default_gw_ip_address != "")
   end
+
   def set_tftp_info(dtb_tftp_path, dtb_multi_if_filename, dtb_local_path, dtb_single_if_filename, tftp_server_tftp_path, tftp_server_from_path)
     @dtb_tftp_path = dtb_tftp_path if (dtb_tftp_path != "")
     @dtb_multi_if_filename = dtb_multi_if_filename if (dtb_multi_if_filename != "")
@@ -1660,11 +1841,13 @@ class CascadeSetupUtilities
     @tftp_server_tftp_path = tftp_server_tftp_path if (tftp_server_tftp_path != "")
     @tftp_server_from_path = tftp_server_from_path if (tftp_server_from_path != "")
   end
+
   def copy_dtb_files_to_tftp_server_tftp_directory()
     is_alpha_side = true
     @lnx_helper.copy_file(@dtb_multi_if_filename, @tftp_server_from_path, @tftp_server_tftp_path, is_alpha_side)
     @lnx_helper.copy_file(@dtb_single_if_filename, @tftp_server_from_path, @tftp_server_tftp_path, is_alpha_side)
   end
+
   def mount_boot_dir_and_go_there()
     is_alpha_side = false
     
@@ -1685,12 +1868,14 @@ class CascadeSetupUtilities
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "#{@mount_command} #{@mnt_directory}", "", @error_bit, 0)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "cd #{@mnt_directory}", "", @error_bit, 0)
   end
+
   def reboot_evm_and_login()
     is_alpha_side = false
     # Reboot unit and then log back in
     @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "reboot", @reboot_wait_prompt, @error_bit, 2, 45)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "#{@evm_login}", "", @error_bit, 1)
   end
+
   #def copy_dtb_file_to_evm_file_system_and_reboot_evm()
   def copy_multiIf_dtb_file_to_evm_boot_directory_and_reboot_evm_to_use_this_file()
     is_alpha_side = false
@@ -1703,6 +1888,7 @@ class CascadeSetupUtilities
     # Reboot unit and then log back in
     reboot_evm_and_login()
   end
+
   def copy_singleIf_dtb_file_to_evm_boot_directory_and_reboot_evm_to_use_this_file()
     is_alpha_side = false
     local_path_and_filename = File.join(@dtb_local_path, @dtb_single_if_filename)
@@ -1714,11 +1900,13 @@ class CascadeSetupUtilities
     # Reboot unit and then log back in
     reboot_evm_and_login()
   end
+
   def transfer_dtb_files_to_evm(tftp_host)
     is_alpha_side = false
     @lnx_helper.tftp_file(@dtb_multi_if_filename, @dtb_tftp_path, @dtb_local_path, tftp_host, is_alpha_side)
     @lnx_helper.tftp_file(@dtb_single_if_filename, @dtb_tftp_path, @dtb_local_path, tftp_host, is_alpha_side)
   end
+
   def set_bridge_interfaces()
     is_alpha_side = false
     @vatf_helper.smart_send_cmd(is_alpha_side, @normal, "ifconfig eth0 0.0.0.0 up", "", @error_bit, 0)
@@ -1739,13 +1927,16 @@ class CascadeSetupUtilities
     end
     @vatf_helper.smart_send_cmd(is_alpha_side, @normal, "route -n", "", @error_bit, 0)
   end
+
   def result()
     @result |= @vatf_helper.result
     return @result
   end
+
   def result_text()
     @result_text
   end
+
 end
 
 class TputBinarySearch
@@ -1757,9 +1948,11 @@ class TputBinarySearch
     @search_increment= 25
     @binary_search_complete = false
   end
+
   def binary_search_complete
     @binary_search_complete
   end
+
   def init_search_values(max_mbps, step)
     @max_mbps = max_mbps
     @previous_tested_mbps = @max_mbps
@@ -1768,12 +1961,14 @@ class TputBinarySearch
     @binary_search_complete = false
     return 0
   end
+
   def incremented_value(value)
     new_value = (value / @search_increment) * @search_increment
     new_value += @search_increment if (value - ((@search_increment / 2) + 1)) > new_value
     new_value = @search_increment if new_value < @search_increment
     return new_value
   end
+
   def binary_search(tested_mbps, measured_mbps, vatf_helper, perf_client_side)
     new_test_mbps = measured_mbps
     action = "go_higher" if (tested_mbps - measured_mbps) == 0
@@ -1806,6 +2001,7 @@ class TputBinarySearch
     vatf_helper.log_info(perf_client_side, " after: ac:#{action}, t:#{tested_mbps}, m:#{measured_mbps}, b:#{@best_mbps}, p:#{@previous_tested_mbps}\r\n")
     return incremented_value(new_test_mbps)
   end
+
 end
 
 class PerfUtilities
@@ -1863,30 +2059,39 @@ class PerfUtilities
     @sideband_stat_command = "cat /sys/devices/soc.0/20c0000.crypto/stats/tx_drop_pkts"
     @wait_for_text = "command_done"
   end
+
   def IPERF_APP()
     return "iperf"
   end
+
   def NETPERF_APP()
     return "netperf"
   end
+
   def INGRESS()
     return "ingress"
   end
+
   def EGRESS()
     return "egress"
   end
+
   def BOTH()
     return "both"
   end
+
   def IPV4()
     return true
   end
+
   def IPV6()
     return false
   end
+
   def set_auto_bandwidth_detect(state)
     @auto_bandwidth_detect = state
   end
+
   def set_perf_app(string)
     case string.downcase
       when IPERF_APP()
@@ -1895,21 +2100,26 @@ class PerfUtilities
         @perf_app = NETPERF_APP()
     end
   end
+
   def clear_stat_arrays()
     @first_xfrm_stat.clear
     @next_xfrm_stat.clear
     @first_sideband_stat.clear
     @next_sideband_stat.clear
   end
+
   def ALPHA_SIDE()
     return true
   end
+
   def BETA_SIDE()
     return false
   end
+
   def equipment_set(equipment)
     @equipment = equipment if (equipment != "")
   end
+
   def set_helper_common(equipment, vatf_server_ref, vatf_dut_ref)
     @vatf_dut_ref = vatf_dut_ref if (vatf_dut_ref != "")
     @vatf_server_ref = vatf_server_ref if (vatf_server_ref != "")
@@ -1917,6 +2127,7 @@ class PerfUtilities
     @vatf_helper.set_common(@equipment, @vatf_server_ref, @vatf_dut_ref)
     @lnx_helper.set_vatf_equipment(@equipment)
   end
+
   def clear_results()
     @lnx_helper.clear_result()
     @vatf_helper.clear_result()
@@ -1925,17 +2136,21 @@ class PerfUtilities
     @session_result_text = ""
     @error_result_text = ""
   end
+
   def clear_result_text()
     @result_text = ""
     @session_result_text = ""
   end
+
   def result()
     @result |= @vatf_helper.result
     return @result
   end
+
   def result_text
     @result_text
   end
+
   def is_task_running(is_alpha_side, task_name, check_string)
     monitor_secs = 1
     task_started = false
@@ -1947,6 +2162,7 @@ class PerfUtilities
     @vatf_helper.log_info(is_alpha_side, "\r\n is_task_running response_string: \"#{response_string}\")\r\n")
     task_started = true if response_string.downcase.include?(check_string.downcase)
   end
+
   def kill_task(is_alpha_side, task_name)
     @vatf_helper.log_info(is_alpha_side, "\r\n kill_task... (#{task_name}\r\n")
     if is_task_running(is_alpha_side, task_name, task_name)
@@ -1961,6 +2177,7 @@ class PerfUtilities
       end
     end
   end
+
   def iperf_server_start(is_alpha_side, protocol, monitor_secs, packet_size, file_pipe="")
     command = ""
     command += @iperf_cmd
@@ -1982,6 +2199,7 @@ class PerfUtilities
     @vatf_helper.log_info(is_alpha_side, "\r\n Iperf server thread is running.\r\n")
     return server_thread
   end
+
   def netperf_server_start(is_alpha_side, protocol, monitor_secs, file_pipe="")
     command = ""
     command += "netserver"
@@ -2000,6 +2218,7 @@ class PerfUtilities
     @vatf_helper.log_info(is_alpha_side, "\r\n Netperf server thread is running.\r\n")
     return server_thread
   end
+
   def server_start(is_alpha_side, protocol, monitor_secs, packet_size, file_pipe="")
     case @perf_app
       when IPERF_APP()
@@ -2008,11 +2227,13 @@ class PerfUtilities
         return netperf_server_start(is_alpha_side, protocol, monitor_secs, file_pipe)
     end
   end
+
   def get_crypto_support(is_alpha_side)
     temp = ""
     command = "cat /proc/crypto"
     temp = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
   end
+
   def server_kill(is_alpha_side)
     task_name = ""
     case @perf_app
@@ -2023,6 +2244,7 @@ class PerfUtilities
     end
     kill_task(is_alpha_side, task_name) if task_name != ""
   end
+
   def client_kill(is_alpha_side)
     task_name = ""
     case @perf_app
@@ -2033,6 +2255,7 @@ class PerfUtilities
     end
     kill_task(is_alpha_side, task_name) if task_name != ""
   end
+
   def run_top(is_alpha_side, test_seconds)
     do_top = true
     case @perf_app
@@ -2050,9 +2273,11 @@ class PerfUtilities
       temp = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
     end
   end
+
   def display_memfree_info()
     return "[#{@free_mem_start} / #{@free_mem_end}]"
   end
+
   def is_stat_string?(string)
     temp = string.scan(/[0-9]+/)
     # Return true if number found in string
@@ -2062,6 +2287,7 @@ class PerfUtilities
     #puts("   NOT A STAT STRING!\r\n")
     return false
   end
+
   def push_to_array(command, string, is_still_the_first_push)
     is_first_push = false
     case "#{command}"
@@ -2082,6 +2308,7 @@ class PerfUtilities
     end
     return is_first_push
   end
+
   def stat_count_diff(command, curr_array, prev_array, index)
     diff_count = 0
     stat_count = ""
@@ -2113,6 +2340,7 @@ class PerfUtilities
     end
     return stat_count 
   end
+
   def set_error_result_base_on_count_difference_verses_first_stat(command, set_error_bit)
     # Set current array and previous array to check for differences
     case command
@@ -2138,6 +2366,7 @@ class PerfUtilities
       end
     end
   end
+
   def set_error_result_for_non_zero_stat(command, raw_buffer, set_error_bit)
     is_first_push = false
     temp = raw_buffer.split("\n")
@@ -2148,6 +2377,7 @@ class PerfUtilities
       set_error_result_base_on_count_difference_verses_first_stat(command, set_error_bit)
     end
   end
+
   def get_proc_info(is_alpha_side, crypto_mode)
     command = "cat /proc/meminfo"
     mem_stat = ""
@@ -2166,10 +2396,16 @@ class PerfUtilities
     stat_commands = Array.new
     stat_commands.push("cat /proc/net/snmp")
     stat_commands.push("ip -s xfrm state")
-    stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/rx_pkts")
-    stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/tx_pkts")
-    stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/sc_tear_drop_pkts")
-    stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/tx_drop_pkts")
+    if (is_crypto_omap)
+      stat_commands.push("cat /proc/interrupts |grep edma")
+      stat_commands.push("cat /proc/interrupts |grep sham")
+    else
+      stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/rx_pkts")
+      stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/tx_pkts")
+      stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/sc_tear_drop_pkts")
+      stat_commands.push("cat /sys/devices/soc.0/20c0000.crypto/stats/tx_drop_pkts")
+    end
+
     #command = "ip -s xfrm state"
     #raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
     stat_commands.each do |stat_command|
@@ -2184,6 +2420,7 @@ class PerfUtilities
       set_error_result_for_non_zero_stat(command, raw_buffer, false)
     end
   end
+
   def get_top_idle_stat(is_alpha_side)
     lowest = "100"
     samples = 0
@@ -2212,6 +2449,7 @@ class PerfUtilities
     #return lowest
     return "%3.1f" % [average]
   end
+
   def get_base_index_by_string(is_alpha_side, search_array, string)
     current_index = 0
     search_array.each do |stat|
@@ -2229,6 +2467,7 @@ class PerfUtilities
 
     return current_index
   end
+
   def get_tput_and_cpu_utilization_for_netperf(is_alpha_side, raw_buffer, protocol, tput_error_string, cpu_util_error_string)
     throughput = tput_error_string
     cpu_util_stat = cpu_util_error_string
@@ -2247,6 +2486,7 @@ class PerfUtilities
     end
     return throughput, cpu_util_stat
   end
+
   def get_iperf_tput_number_from_buffer(is_alpha_side, raw_buffer, protocol, tput_error_string)
     throughput = tput_error_string
     if protocol.downcase == "tcp"
@@ -2269,6 +2509,7 @@ class PerfUtilities
     end
     return throughput
   end
+
   def get_tput_and_cpu_utilization_for_iperf(is_alpha_side, raw_buffer, protocol, tput_error_string, cpu_util_error_string, auto_detect)
     throughput = tput_error_string
     cpu_util_stat = cpu_util_error_string
@@ -2278,6 +2519,7 @@ class PerfUtilities
     @vatf_helper.log_info(is_alpha_side, "\r\n get_tput_and_cpu_utilization_for_iperf: (throughput: #{format_tput(throughput)}, cpu_util_stat: #{cpu_util_stat})\r\n")
     return throughput, cpu_util_stat
   end
+
   def validate_throughput(ingress_tput, egress_tput)
     if ingress_tput != "" && @min_ingress_mbps != ""
       if @min_ingress_mbps.to_f > ingress_tput.to_f
@@ -2293,15 +2535,18 @@ class PerfUtilities
     end
     @vatf_helper.log_info(ALPHA_SIDE(), "\r\n perf @result_text: \"#{@error_result_text}\"\r\n")
   end
+
   def is_numeric?(input)
     is_numeric = false
     is_numeric = true if input.to_i.to_s == input.to_s
     is_numeric = true if input.to_f.to_s == input.to_s
     return is_numeric
   end
+
   def format_tput(throughput_string)
     return (is_numeric?(throughput_string) ? '%.1f' % throughput_string.to_f : throughput_string)
   end
+
   def get_tput_result_string(test_headline, ingress_tput, egress_tput, packet_size, cpu_util_stat)
     tput_result_display = ""
     validate_throughput(ingress_tput, egress_tput)
@@ -2313,6 +2558,7 @@ class PerfUtilities
     end
     return tput_result_display
   end
+
   def get_netperf_stat(is_alpha_side, test_headline, raw_buffer, protocol, packet_size, auto_detect=false)
     tput_ingress = ""
     tput_egress = ""
@@ -2330,6 +2576,7 @@ class PerfUtilities
     @result = @error_bit if result_string.downcase.include?("error:")
     return result_string
   end
+
   def get_iperf_stat(is_alpha_side, test_headline, raw_buffer, protocol, packet_size, auto_detect=false)
     tput_ingress = ""
     tput_egress = ""
@@ -2354,6 +2601,7 @@ class PerfUtilities
     end
     return result_string
   end
+
   def get_perf_stat(is_alpha_side, test_headline, raw_buffer, protocol, packet_size, auto_detect=false)
     case @perf_app
       when IPERF_APP()
@@ -2362,6 +2610,7 @@ class PerfUtilities
         return get_netperf_stat(is_alpha_side, test_headline, raw_buffer, protocol, packet_size, auto_detect)
     end
   end
+
   def get_iperf_stat_simultaneous(is_alpha_side, test_headline, raw_buffer_ingress, raw_buffer_egress, protocol, packet_size)
     throughput_ingress = "[ERROR: iperf measurement is incomplete]"
     throughput_egress = throughput_ingress
@@ -2375,6 +2624,7 @@ class PerfUtilities
     @result = @error_bit if result_string.downcase.include?("error:")
     return result_string
   end
+
   def netperf_client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
     #wait_for_text = "/sec"
     #wait_for_text = " ms    "
@@ -2397,6 +2647,7 @@ class PerfUtilities
     @vatf_helper.log_info(is_alpha_side, "\r\n Starting netperf client... (command: #{command})\r\n")
     return @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", wait_for_text, @error_bit, 0, wait_secs)
   end
+
   def iperf_client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
     threaded_bandwidth = "#{(udp_bandwidth.to_f / @iperf_threads)}M"
     wait_for_text = "forcing timeout to occur"
@@ -2415,6 +2666,7 @@ class PerfUtilities
     @vatf_helper.log_info(is_alpha_side, "\r\n Starting iperf client... (command: #{command})\r\n")
     return @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", wait_for_text, @error_bit, 0, wait_secs)
   end
+
   def client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
     case @perf_app
       when IPERF_APP()
@@ -2423,6 +2675,7 @@ class PerfUtilities
         return netperf_client_run(is_alpha_side, protocol, test_time, udp_bandwidth, packet_size)
     end
   end
+
   def get_ip_address_for_eth_port_from_static_base(eth_port)
     static_ip_address = get_equipment_param_value('dut1', "static_ip_base_address")
     return "" if !static_ip_address
@@ -2438,6 +2691,7 @@ class PerfUtilities
     end
     return eth_port_static_ip_address
   end
+
   def isolate_dut_ethernet_test_port(iface_type)
     is_alpha_side = false
     this_eth_port = iface_type.split("eth")[1].to_i
@@ -2466,6 +2720,7 @@ class PerfUtilities
     @result |= @vatf_helper.result
     @result_text += "Ping check for eth#{this_eth_port} did not pass.\r\n" if @result != 0
   end
+
   def find_eth_interface_by_ipaddress(ip_address, is_alpha_side)
     eth_iface = ""
     raw_ifconfig = @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ifconfig", "force timeout" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 2)
@@ -2477,6 +2732,7 @@ class PerfUtilities
     end
     return eth_iface
   end
+
   def set_mtu_size(mtu_set_size, evm_eth_port)
     eth_iface_evm = (evm_eth_port == "" ? "eth0" : "eth#{evm_eth_port}")
     eth_iface_pc = find_eth_interface_by_ipaddress(@alpha_ip, ALPHA_SIDE())
@@ -2485,6 +2741,7 @@ class PerfUtilities
     @vatf_helper.smart_send_cmd_wait(ALPHA_SIDE(), @sudo_cmd, "ifconfig #{eth_iface_pc}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
     @vatf_helper.smart_send_cmd_wait(BETA_SIDE(), @normal_cmd, "ifconfig #{eth_iface_evm}", "" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 1)
   end
+
   def perf_typical_config(equipment, dev='dut1', iface_type='eth', is_ipv4=IPV4())
     # Use the default vatf linux pc ('server1') and evm ('dut1') reference, but set the equipment variable so we can communicate with them
     set_helper_common(equipment, "", "")
@@ -2499,17 +2756,20 @@ class PerfUtilities
     @is_ipv4 = is_ipv4
     return @result
   end
+
   def start_log_thread(is_alpha_side, time_secs)
     evm_log_thread = Thread.new {
       evm_status = @equipment[(is_alpha_side ? @vatf_helper.vatf_server_ref : @vatf_helper.vatf_dut_ref)].read_for(time_secs)
     }
     return evm_log_thread
   end
+
   def wait_on_thread_complete(this_thread)
     while this_thread.alive?
       sleep(1)
     end
   end
+
   def wait_on_log_thread_complete(is_alpha_side, evm_log_thread)
     # Assume error and Control-C to command prompt
     @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "\cC", "", @error_bit, 0, 1)
@@ -2522,9 +2782,11 @@ class PerfUtilities
     #@vatf_helper.log_info(is_alpha_side, "\r\n\r\nread_for_info: #{@equipment[(is_alpha_side ? @vatf_helper.vatf_server_ref : @vatf_helper.vatf_dut_ref)].response}\r\n\r\n")
     sleep(2)
   end
+
   def clear_dmesg(is_alpha_side)
     @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "dmesg -c", "", @error_bit, 0, 1)
   end
+
   def dmesg_on_error(is_alpha_side, raw_buffer)
     if raw_buffer.downcase.include?(" WARNING:")
       # Assume error and Control-C to command prompt
@@ -2537,6 +2799,7 @@ class PerfUtilities
       @vatf_helper.log_info(is_alpha_side, "\r\n\#################### dmesg end ####################\r\n\r\n")
     end
   end
+
   def test_common(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode, auto_detect=false)
     clear_stat_arrays()
     # Manual test to set perf server used
@@ -2584,6 +2847,7 @@ class PerfUtilities
     end
     return measured_mbps
   end
+
   def test_simultaneous_common(protocol, test_time_secs, udp_bandwidth_ingress, udp_bandwidth_egress, packet_size, test_headline, perf_server_side, perf_client_side, crypto_mode)
     clear_stat_arrays()
     result = ""
@@ -2621,6 +2885,7 @@ class PerfUtilities
     server_kill(perf_client_side)
     get_proc_info(evm_side, crypto_mode)
   end
+
   def test_common_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, perf_server_side, perf_client_side)
     auto_detect = true
     max_attempts = 15
@@ -2645,6 +2910,7 @@ class PerfUtilities
     end
     return "#{current_auto_mbps}M"
   end
+
   def test_linux_to_evm_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode)
     @test_direction = INGRESS()
     @min_ingress_mbps = 0
@@ -2658,6 +2924,7 @@ class PerfUtilities
     current_auto_mbps = test_common_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, perf_server_side, perf_client_side)
     return current_auto_mbps
   end
+
   def test_evm_to_linux_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode)
     @test_direction = EGRESS()
     @min_ingress_mbps = 0
@@ -2671,6 +2938,7 @@ class PerfUtilities
     current_auto_mbps = test_common_mbps_detect(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, perf_server_side, perf_client_side)
     return current_auto_mbps
   end
+
   def continue_auto_bandwidth_detection?(udp_bandwidth, result)
     response = nil
     current_thread_bandwidth = udp_bandwidth.gsub("M", "").to_i / @iperf_threads
@@ -2680,6 +2948,7 @@ class PerfUtilities
     end
     return response
   end
+
   def test_linux_to_evm(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, min_ingress_mbps, min_egress_mbps)
     @test_direction = INGRESS()
     @min_ingress_mbps = min_ingress_mbps
@@ -2703,6 +2972,7 @@ class PerfUtilities
     @vatf_helper.log_info(ALPHA_SIDE(), "\r\n last perf @result_text: \"#{@result_text}\"\r\n")
     return @result
   end
+
   def test_evm_to_linux(protocol, test_time_secs, udp_bandwidth, packet_size, test_headline, crypto_mode, min_ingress_mbps, min_egress_mbps)
     @test_direction = EGRESS()
     @min_ingress_mbps = min_ingress_mbps
@@ -2725,6 +2995,7 @@ class PerfUtilities
     @result_text = @session_result_text
     return @result
   end
+
   def test_linux_to_evm_and_evm_to_linux(protocol, test_time_secs, udp_bandwidth_ingress, udp_bandwidth_egress, packet_size, test_headline, crypto_mode, min_ingress_mbps, min_egress_mbps)
     @test_direction = BOTH()
     @min_ingress_mbps = min_ingress_mbps
@@ -2828,6 +3099,7 @@ class IpsecUtilitiesVatf
     @inflow_active_name = "INFLOW_MODE_ACTIVE"
     @do_friendly = false
   end
+
   def get_ipsec_cmd_additions_using_bench_file()
     cmd_platform_addition = get_platform()
     @equipment['dut1'].log_info("\r\n cmd_platform_addition: #{cmd_platform_addition}\r\n")
@@ -2836,22 +3108,28 @@ class IpsecUtilitiesVatf
       @cmd_shell_cmd = (!@cmd_shell_cmd.include?(cmd_platform_addition) ? @cmd_shell_cmd.gsub(".out", "_#{cmd_platform_addition}.out") : @cmd_shell_cmd)
     end
   end
+
   def default_margintime()
     return @default_margintime
   end
+
   def default_rekey_ike_lifetime()
     return @default_rekey_ike_lifetime
   end
+
   def default_rekey_lifetime()
     return @default_rekey_lifetime
   end
+
   def result()
     @result |= @vatf_helper.result
     return @result
   end
+
   def result_text
     @result_text
   end
+
   def clear_results()
     @lnx_helper.clear_result()
     @vatf_helper.clear_result()
@@ -2859,57 +3137,74 @@ class IpsecUtilitiesVatf
     @result = 0
     @result_text = ""
   end
+
   def alpha_side_gen_all_on()
     @is_gen_on_alpha_only = true
   end
+
   def alpha_side_gen_all_off()
     @is_gen_on_alpha_only = false
   end
+
   def ALPHA_SIDE()
     return true
   end
+
   def BETA_SIDE()
     return false
   end
+
   def IPV4()
     return true
   end
+
   def IPV6()
     return false
   end
+
   def FQDN_TUNNEL()
     return true
   end
+
   def IP_TUNNEL()
     return false
   end
+
   def PASS_THROUGH()
     return true
   end
+
   def IPSEC_CONN()
     return false
   end
+
   def NON_SECURE_DATA()
     return false
   end
+
   def SECURE_DATA()
     return true
   end
+
   def REMOTE_SIDE()
     return true
   end
+
   def LOCAL_SIDE()
     return false
   end
+
   def is_ipv4
     @is_ipv4
   end
+
   def is_failed(is_alpha_side, function_name, error_message)
     location = (is_alpha_side ? "Alpha side" : "Beta side")
     @result_text += "(#{function_name}, #{location}): #{error_message}" if (result() != 0)
     # Merge all available results to @result and return true or false
     return ((result() != 0) ? true : false)
   end
+
   def set_error_bit_to_set(error_bit)
     this_error_bit = 0
     min_range = 0
@@ -2919,6 +3214,7 @@ class IpsecUtilitiesVatf
     this_error_bit = ((this_error_bit >= max_range) ? max_range : this_error_bit)
     @error_bit = this_error_bit
   end
+
   def display_settings()
     puts("IpsecUtilitiesVatf variable settings:\r\n")
     puts("  Dynamic:\r\n")
@@ -2972,17 +3268,20 @@ class IpsecUtilitiesVatf
     puts("    @result                       : #{@result}\r\n")
     puts("    @is_gen_on_alpha_only         : #{@is_gen_on_alpha_only ? "All certificates & keys are generated on alpha side" : "Certificates & keys are generated on each side"}\r\n")
   end
+
   def set_ipsec_ip_operation(ipsec_outer, ipsec_inner, is_ipv4)
     @ipsec_outer = ipsec_outer if (ipsec_outer != "")
     @ipsec_inner = ipsec_inner if (ipsec_inner != "")
     @is_ipv4 = is_ipv4 if (is_ipv4 != "")
   end
+
   def set_protocol_encryption_integrity_name(protocol, esp_encryption, esp_integrity, connection_name)
     @protocol = protocol if (protocol != "")
     @esp_encryption = esp_encryption if (esp_encryption != "")
     @esp_integrity = esp_integrity if (esp_integrity != "")
     @connection_name = connection_name if (connection_name != "")
   end
+
   def set_alpha_cert(as_ip, as_is_fqdn, as_ss_major_ver, as_ref, as_ca_key_file, as_key_file, as_ca_cert_file, as_cert_file, as_ip_cert_file, as_net_name, as_ipv6, as_ipsec_conf, as_is_secure_data)
     @alpha_side_ip = as_ip if (as_ip != "")
     @is_alpha_side_fqdn = as_is_fqdn if (as_is_fqdn != "")
@@ -2998,6 +3297,7 @@ class IpsecUtilitiesVatf
     @alpha_side_ipsec_conf_file = as_ipsec_conf if (as_ipsec_conf != "")
     @alpha_side_secure_data = as_is_secure_data if (as_is_secure_data != "")
   end
+
   def get_file_tftp_server_file_name_path(is_alpha_side, file_name_path)
     # Add alpha or beta path to tftp server ipsec path base
     tftp_file_name_path = File.join(@server_ipsec_tftp_path, (is_alpha_side ? "a" : "b"))
@@ -3005,6 +3305,7 @@ class IpsecUtilitiesVatf
     tftp_file_name_path = File.join(tftp_file_name_path, File.basename(file_name_path))
     return tftp_file_name_path
   end
+
   def set_beta_cert(bs_ip, bs_is_fqdn, bs_ss_major_ver, bs_ref, bs_ca_key_file, bs_key_file, bs_ca_cert_file, bs_cert_file, bs_ip_cert_file, bs_net_name, bs_ipv6, bs_ipsec_conf, bs_is_secure_data)
     @beta_side_ip = bs_ip if (bs_ip != "")
     @is_beta_side_fqdn = bs_is_fqdn if (bs_is_fqdn != "")
@@ -3020,19 +3321,23 @@ class IpsecUtilitiesVatf
     @beta_side_ipsec_conf_file = bs_ipsec_conf if (bs_ipsec_conf != "")
     @beta_side_secure_data = bs_is_secure_data if (bs_is_secure_data != "")
   end
+
   def set_alpha_temp_locations(as_temp_ca_key_file, as_temp_key_file, as_temp_file)
     @alpha_side_temp_ca_key_file = as_temp_ca_key_file if (as_temp_ca_key_file != "")
     @alpha_side_temp_key_file = as_temp_key_file if (as_temp_key_file != "")
     @alpha_side_temp_file = as_temp_file if (as_temp_file != "")
   end
+
   def set_beta_temp_locations(bs_temp_ca_key_file, bs_temp_key_file, bs_temp_file)
     @beta_side_temp_ca_key_file = bs_temp_ca_key_file if (bs_temp_ca_key_file != "")
     @beta_side_temp_key_file = bs_temp_key_file if (bs_temp_key_file != "")
     @beta_side_temp_file = bs_temp_file if (bs_temp_file != "")
   end
+
   def equipment_set(equipment)
     @equipment = equipment if (equipment != "")
   end
+
   def set_helper_common(equipment, vatf_server_ref, vatf_dut_ref)
     @vatf_dut_ref = vatf_dut_ref if (vatf_dut_ref != "")
     @vatf_server_ref = vatf_server_ref if (vatf_server_ref != "")
@@ -3041,6 +3346,7 @@ class IpsecUtilitiesVatf
     @lnx_helper.set_vatf_equipment(@equipment)
     @smart_card.set_common(@equipment, @vatf_server_ref, @vatf_dut_ref)
   end
+
   def set_common(ipsec_conf_template_file_name, default_margintime, default_rekey_ike_lifetime, default_rekey_lifetime, ipsec_conf_save_name)
     @ipsec_conf_template_file_name = ipsec_conf_template_file_name if (ipsec_conf_template_file_name != "")
     @default_margintime = default_margintime if (default_margintime != "")
@@ -3048,23 +3354,28 @@ class IpsecUtilitiesVatf
     @default_rekey_lifetime = default_rekey_lifetime if (default_rekey_lifetime != "")
     @ipsec_conf_save_name = ipsec_conf_save_name if (ipsec_conf_save_name != "")
   end
+
   def set_rekey_parameters(default_margintime, default_rekey_ike_lifetime, default_rekey_lifetime)
     set_common("", default_margintime, default_rekey_ike_lifetime, default_rekey_lifetime, "")
   end
+
   def set_stop_offload_commands(pre_cmd, post_cmd)
     @default_stop_offload_pre_cmd = pre_cmd if (pre_cmd != "")
     @default_stop_offload_post_cmd = post_cmd if (post_cmd != "")
   end
+
   def set_alpha_nat(is_nat_traversal, nat_public_ip, nat_gateway_ip)
     @alpha_side_natt = is_nat_traversal if (is_nat_traversal != "")
     @alpha_side_nat_public_ip = nat_public_ip if (nat_public_ip != "")
     @alpha_side_nat_gateway_ip = nat_gateway_ip if (nat_gateway_ip != "")
   end
+
   def set_beta_nat(is_nat_traversal, nat_public_ip, nat_gateway_ip)
     @beta_side_natt = is_nat_traversal if (is_nat_traversal != "")
     @beta_side_nat_public_ip = nat_public_ip if (nat_public_ip != "")
     @beta_side_nat_gateway_ip = nat_gateway_ip if (nat_gateway_ip != "")
   end
+
   def set_ipsecmgr_variables(executable_directory, hplib_file_name, daemon_cmd, cmd_shell_cmd, app_sock_name_env_cmd, daemon_sock_name_env_cmd, log_file_env_cmd)
     @executable_directory = executable_directory if (executable_directory != "")
     @hplib_file_name = hplib_file_name if (hplib_file_name != "")
@@ -3074,11 +3385,13 @@ class IpsecUtilitiesVatf
     @daemon_sock_name_env_cmd = daemon_sock_name_env_cmd if (daemon_sock_name_env_cmd != "")
     @log_file_env_cmd = log_file_env_cmd if (log_file_env_cmd != "")
   end
+
   def server_prompt_wait_workaround(equipment_ref, wait_message)
     if equipment_ref.include?("server")
       @equipment[equipment_ref].send_cmd("echo $?",/^0/,5) if (wait_message == "")
     end
   end
+
   def clean_all_key_and_certificate_file(is_alpha_side)
     send_sudo = true
     is_alpha_side_local = (@is_gen_on_alpha_only ? ALPHA_SIDE() : is_alpha_side)
@@ -3143,29 +3456,38 @@ class IpsecUtilitiesVatf
       @vatf_helper.smart_send_cmd(is_alpha_side_local, @sudo_cmd, "rm #{get_file_tftp_server_file_name_path(is_alpha_side, @beta_side_temp_key_file)}", "", @error_bit, 0)
     end
   end
+
   def ipsec_stop(is_alpha_side)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec stop", "", @vatf_helper.DONT_SET_ERROR_BIT(), 5)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec statusall", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0)
   end
-  def start_ipsecmgr_module_if_needed(is_alpha_side)
+
+  def load_crypto_module_as_needed(is_alpha_side,mode="hardware")
     side_ref = is_alpha_side ? @vatf_helper.vatf_server_ref : @vatf_helper.vatf_dut_ref
     if side_ref.downcase.include?("dut")
-      module_name = @ipsec_mgr.split(".")[0]
-      if !module_running?(module_name, @equipment[side_ref])
-        @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "insmod #{@vatf_helper.get_file_location(is_alpha_side, @ipsec_mgr)}", "", @error_bit, 2)
-        if !module_running?(module_name, @equipment[side_ref])
-          @result_text += "Error: Unable to start module: #{@ipsec_mgr}"
-          @result += @error_bit
+      module_list = Array.new
+      module_list = get_crypto_modules
+      puts "module_list is #{module_list}\n"
+      module_list.each do |module_name|
+        if (mode == "software" || mode == "sideband")
+          @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "modprobe -r #{module_name}", "", @error_bit, 2)
+        else
+          @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "modprobe #{module_name}", "", @error_bit, 2)
+          if !module_running?(module_name, @equipment[side_ref])
+            @result_text += "Error: Unable to start module: #{module_name}"
+            @result += @error_bit
+          end
         end
       end
     end
   end
-  def ipsec_start(is_alpha_side)
+
+  def ipsec_start(is_alpha_side, crypto_mode)
     function_name = "ipsec_start"
     # Return immediately if errors have already occurred.
     return if (result() != 0)
-    # Load ipsecmgr module before starting IPSEC
-    start_ipsecmgr_module_if_needed(is_alpha_side)
+    # Load crypto modules before starting IPSEC
+    load_crypto_module_as_needed(is_alpha_side, crypto_mode)
     return if (result() != 0)
     # Display ipsec.conf and ipsec.secrets file contests and the ipsec.conf template file name
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "cat /etc/ipsec.conf", "", @vatf_helper.DONT_SET_ERROR_BIT(), 2)
@@ -3186,6 +3508,7 @@ class IpsecUtilitiesVatf
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec listcacerts", "authkey:", @error_bit, 0)
     return if (is_failed(is_alpha_side, function_name, " IPSEC: listcacerts response not correct.\r\n"))
   end
+
   def bring_ipsec_tunnel_up(is_alpha_side, is_ipv4, is_pass_through)
     function_name = "bring_ipsec_tunnel_up"
     # Return immediately if errors have already occurred.
@@ -3202,6 +3525,7 @@ class IpsecUtilitiesVatf
     # Collect information from the ipsec statusall command
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec statusall", "", @error_bit, 0)
   end
+
   def xfer_file(is_alpha_side, from_path_file_name, to_path_file_name)
     # Tranfer file from tftp server to beta side correct directory
     file_name = File.basename(to_path_file_name)
@@ -3209,6 +3533,7 @@ class IpsecUtilitiesVatf
     to_dir = File.dirname(to_path_file_name)
     transfer_file(is_alpha_side, file_name, from_dir, to_dir)
   end
+
   def generate_key_pair(is_alpha_side, private_key_file_and_path, public_key_file_and_path)
     is_alpha_side_here = (@is_gen_on_alpha_only ? ALPHA_SIDE() : is_alpha_side)
     is_secure_data = (is_alpha_side ? @alpha_side_secure_data : @beta_side_secure_data)
@@ -3228,6 +3553,7 @@ class IpsecUtilitiesVatf
       #exit
     end
   end
+
   def put_file_in_key_store(is_alpha_side, cert_file_name_and_path)
     host_ip = @equipment[@vatf_helper.vatf_server_ref].telnet_ip
     slot_num = @slot_num
@@ -3238,6 +3564,7 @@ class IpsecUtilitiesVatf
     @result |= @smart_card.result
     @result_text += @smart_card.result_text
   end
+
   def create_side_specific_ipsec_certificates(is_alpha_side, ca_key_file, ca_cert_file)
     function_name = "create_side_specific_ipsec_certificates"
     # Return immediately if errors have already occurred.
@@ -3281,6 +3608,7 @@ class IpsecUtilitiesVatf
       put_file_in_key_store(is_alpha_side, ip_cert_file)
     end
   end
+
   def create_ipsec_certificates(is_alpha_side)
     function_name = "create_ipsec_certificates"
     # Return immediately if errors have already occurred.
@@ -3337,6 +3665,7 @@ class IpsecUtilitiesVatf
       #exit
     end
   end
+
   def get_network_ip_from_ip(ip_address)
     ip_items = ip_address.split(".")
     ip_network = "#{ip_items[0]}.#{ip_items[1]}.#{ip_items[2]}.0"
@@ -3344,6 +3673,7 @@ class IpsecUtilitiesVatf
     #Return the class C network based on the ip address specified
     return ip_network
   end
+
   def transfer_file(is_alpha_side, file, from_path, to_path)
     # Return immediately if errors have already occurred.
     return if (result() != 0)
@@ -3356,6 +3686,7 @@ class IpsecUtilitiesVatf
       @lnx_helper.tftp_file(file, from_dir, to_path, @equipment[@vatf_helper.vatf_server_ref].telnet_ip, is_alpha_side)
     end
   end
+
   def transfer_files(is_alpha_side, array_of_files, from_path, to_path)
     # Return immediately if errors have already occurred.
     return if (result() != 0)
@@ -3368,6 +3699,7 @@ class IpsecUtilitiesVatf
       @lnx_helper.tftp_files(array_of_files, from_dir, to_path, @equipment[@vatf_helper.vatf_server_ref].telnet_ip, is_alpha_side)
     end
   end
+
   def create_ipsec_secrets_file(is_alpha_side)
     function_name = "create_ipsec_secrets_file"
     # Return immediately if errors have already occurred.
@@ -3411,6 +3743,7 @@ class IpsecUtilitiesVatf
     # copy or tftp created file to proper directory on alpha or beta side
     xfer_file(is_alpha_side, secrets_tftp_path_file_name, secrets_path_file_name_real)
   end
+
   def get_tunnel_end_point_address(is_alpha_side)
     ip_address = ""
     is_nat_traversal = (is_alpha_side ? @alpha_side_natt : @beta_side_natt)
@@ -3430,6 +3763,7 @@ class IpsecUtilitiesVatf
     end
     return ip_address
   end
+
   def get_tunnel_subnet(is_alpha_side, is_remote)
     this_alpha_side_ip = get_tunnel_end_point_address(ALPHA_SIDE())
     this_beta_side_ip = get_tunnel_end_point_address(BETA_SIDE())
@@ -3440,6 +3774,7 @@ class IpsecUtilitiesVatf
     end
     return ip_subnet
   end
+
   def create_ipsec_conf_file(is_alpha_side)
     function_name = "create_ipsec_conf_file"
     # Return immediately if errors have already occurred.
@@ -3563,41 +3898,47 @@ class IpsecUtilitiesVatf
     # Transfer file
     xfer_file(is_alpha_side, ipsec_conf_file_tftp, ipsec_conf_file)
   end
+
   def create_ipsec_conf_and_certificate_files(is_alpha_side)
     # Create the ipsec.conf file
     create_ipsec_conf_file(is_alpha_side)
     # Create the key and certificate that goes with the ipsec.conf file. All keys and certificates are generated on the alpha side and copied to the beta side.
     create_ipsec_certificates(is_alpha_side) if is_alpha_side
   end
+
   def start_tunnels(is_ipv4, is_pass_through)
     # Bring up the IPSEC tunnel on both sides
     bring_ipsec_tunnel_up(BETA_SIDE(), is_ipv4, is_pass_through)    
     bring_ipsec_tunnel_up(ALPHA_SIDE(), is_ipv4, is_pass_through)
   end
-  def ipsec_start_all(is_ipv4, is_pass_through)
+
+  def ipsec_start_all(is_ipv4, is_pass_through, crypto_mode)
     function_name = "ipsec_start_all"
     # Start the alpha side ipsec
-    ipsec_start(ALPHA_SIDE())
+    ipsec_start(ALPHA_SIDE(), crypto_mode)
     # Start the beta side ipsec. Beta side connection status happens in the ipsec_start
-    ipsec_start(BETA_SIDE())
+    ipsec_start(BETA_SIDE(), crypto_mode)
     sleep(3)
     # Bring up the IPSEC tunnel on both sides
     # start_tunnels(is_ipv4, is_pass_through)
     # Bring up the IPSEC tunnel on the EVM
     bring_ipsec_tunnel_up(BETA_SIDE(), is_ipv4, is_pass_through)    
   end
-  def ipsec_restart_all(is_ipv4, is_pass_through)
+
+  def ipsec_restart_all(is_ipv4, is_pass_through, crypto_mode)
     ipsec_stop(ALPHA_SIDE())
     ipsec_stop(BETA_SIDE())
-    ipsec_start_all(is_ipv4, is_pass_through)
+    ipsec_start_all(is_ipv4, is_pass_through, crypto_mode)
   end
+
   def load_friendlies(is_alpha_side)
     if @do_friendly
       get_ipsec_cmd_additions_using_bench_file()
       @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "cd #{@executable_directory}; chmod 777 #{@daemon_cmd}; tftp -g -r #{@daemon_cmd} -l #{@daemon_cmd} 192.168.1.84", "", @error_bit, 2)
     end
   end
-  def ipsec_restart_with_new_ipsec_conf_file(is_ipv4, tunnel_type, ipsec_conf_input_file, is_clear_previous_result, is_pass_through)
+
+  def ipsec_restart_with_new_ipsec_conf_file(is_ipv4, tunnel_type, ipsec_conf_input_file, is_clear_previous_result, is_pass_through, crypto_mode)
     puts("\r\nRestarting ipsec with file: #{ipsec_conf_input_file}, tunnel type: #{(tunnel_type ? "FQDN" : "IP")}\r\n")
     clear_results() if is_clear_previous_result
     # Set ipsec.conf input template file
@@ -3616,9 +3957,10 @@ class IpsecUtilitiesVatf
     create_ipsec_conf_file(ALPHA_SIDE())
     create_ipsec_conf_file(BETA_SIDE())
     # Start ipsec on both sides. Start the ipsec connection on the beta side.
-    ipsec_start_all(is_ipv4, is_pass_through)
+    ipsec_start_all(is_ipv4, is_pass_through, crypto_mode)
     return result()
   end
+
   def ipsec_generate_keys_and_certs_only(is_ipv4, is_pass_through)
     # Set the time on the evm to match the PC. This is a must to have the certificates work properly.
     @lnx_helper.set_evm_date_time(BETA_SIDE())
@@ -3637,7 +3979,8 @@ class IpsecUtilitiesVatf
     create_ipsec_secrets_file(ALPHA_SIDE())
     create_ipsec_secrets_file(BETA_SIDE())
   end
-  def ipsec_generate_keys_and_certs_and_start_all(is_ipv4, is_pass_through)
+
+  def ipsec_generate_keys_and_certs_and_start_all(is_ipv4, is_pass_through, crypto_mode)
     # Set the time on the evm to match the PC. This is a must to have the certificates work properly.
     @lnx_helper.set_evm_date_time(BETA_SIDE())
     # Show ipsecVatf setting
@@ -3655,8 +3998,9 @@ class IpsecUtilitiesVatf
     create_ipsec_secrets_file(ALPHA_SIDE())
     create_ipsec_secrets_file(BETA_SIDE())
     # Start ipsec on both sides. Start the ipsec connection on the beta side.
-    ipsec_start_all(is_ipv4, is_pass_through)
+    ipsec_start_all(is_ipv4, is_pass_through, crypto_mode)
   end
+
   def set_swan_major_version(is_alpha_side, swan_major_version)
     maj_ver = (swan_major_version >= 5 ? "5" : "4")
     if is_alpha_side
@@ -3667,6 +4011,7 @@ class IpsecUtilitiesVatf
       set_beta_cert("", "", "#{maj_ver}", "", "", "", "", "", "", "", "", "", "")
     end
   end
+
   def get_ipv6_global_ip(dev, ipv4_address, is_save_ipv6_network_mask)
     eth_iface = get_eth_interface_by_ipaddress(dev, ipv4_address)
     ipv6_addr = set_ipv6_global_addr_if_not_exist(dev, eth_iface, @ipv6_addr_prefix, @ipv6_addr_netmask)
@@ -3676,6 +4021,7 @@ class IpsecUtilitiesVatf
     end
     ipv6_addr ? ipv6_addr : nil
   end
+
   def ipsec_typical_config(equipment, tunnel_type, ipsec_conf_input_file)
     function_name = "ipsec_typical_config"
     # Use the default vatf linux pc ('server1') and evm ('dut1') reference, but set the equipment variable so we can communicate with them
@@ -3704,11 +4050,13 @@ class IpsecUtilitiesVatf
     # Set ipsec.conf input template file to use.
     set_common(ipsec_conf_input_file, "", "", "" ,"")
   end
+
   def secure_store_initialize(is_alpha_side)
     @smart_card.initialize_secure_store_if_needed(is_alpha_side ? ALPHA_SIDE() : BETA_SIDE())
     @result |= @smart_card.result
     @result_text += @smart_card.result_text
   end
+
   def set_secure_data(is_alpha_side)
     # Get server tftp directory
     server_tftp_directory = File.dirname(get_file_tftp_server_file_name_path(is_alpha_side, @alpha_side_cert_file))
@@ -3729,16 +4077,20 @@ class IpsecUtilitiesVatf
     @result |= @smart_card.result
     @result_text += @smart_card.result_text
   end
+
   def set_new_default_route(is_alpha_side, current_gateway, new_gateway)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "route add default gw #{new_gateway}", "", @error_bit, 0)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "route del default gw #{current_gateway}", "", @error_bit, 0)
   end
+
   def add_nat_host_route(is_alpha_side, host_ip, gateway_ip)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "route add -host #{host_ip} gw #{gateway_ip}", "", @error_bit, 0)
   end
+
   def del_nat_host_route(is_alpha_side, host_ip, gateway_ip)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "route del -host #{host_ip} gw #{gateway_ip}", "", @error_bit, 0)
   end
+
   def set_nat_traversal(is_alpha_side, is_nat_traversal, nat_public_ip, local_nat_gateway_ip, remote_host_ip)
     if is_alpha_side
       # Set the alpha side to use nat traversal Leave everything else at default.
@@ -3766,27 +4118,32 @@ class IpsecUtilitiesVatf
       end
     end
   end
+
   def set_ipsec_template_file(ipsec_conf_input_file)
     # Set ipsec.conf input template file
     set_common(ipsec_conf_input_file, "", "", "", "")
   end
-  def ipsec_typical_start(is_ipv4, is_pass_through)
+
+  def ipsec_typical_start(is_ipv4, is_pass_through, crypto_mode)
     function_name = "ipsec_typical_start"
     # Set ipsecVatf.result to zero
     clear_results()
     # Create all the certificates needed and start ipsec on both the Linux PC and the EVM. Start the ipsec tunnel on the EVM.
-    ipsec_generate_keys_and_certs_and_start_all(is_ipv4, is_pass_through)
+    ipsec_generate_keys_and_certs_and_start_all(is_ipv4, is_pass_through, crypto_mode)
     # Bring up the IPV6 IPSEC tunnel on both sides
     #start_tunnels(IPV6())
   end
+
   def verify_ls_dir(is_alpha_side, directory, filename, state)
     temp_state = (state ? @lnx_helper.files_exist?(is_alpha_side, directory, filename) : state)
     return temp_state
   end
+
   def trigger_key_and_cert_rebuild(is_alpha_side)
     # Create empty file to flag that keys and certs need to be remade
     @lnx_helper.create_writeable_empty_file(is_alpha_side, @trigger_key_and_cert_rebuild_file_name)
   end
+
   def is_genned_already()
     state = true
     # Check the alpha side keys and certificate existance
@@ -3801,6 +4158,7 @@ class IpsecUtilitiesVatf
     state = verify_ls_dir(BETA_SIDE(), "/etc/ipsec.d/private/", "betaKey.der;caKey.der", state)
     return state
   end
+
   def ipsec_gen_only_start(is_ipv4, is_pass_through)
     function_name = "ipsec_gen_only_start"
     # Set ipsecVatf.result to zero
@@ -3813,6 +4171,7 @@ class IpsecUtilitiesVatf
       @lnx_helper.set_evm_date_time(BETA_SIDE())
     end
   end
+
   def ipsec_mgr_start(is_alpha_side)
     string = "IPSECMGR_"
     count = 4
@@ -3843,6 +4202,7 @@ class IpsecUtilitiesVatf
     @result_text += @vatf_helper.result_text
     return @result
   end
+
   def inflow_offload(is_alpha_side)
     get_ipsec_cmd_additions_using_bench_file()
     inflow_stop_offload(is_alpha_side)
@@ -3857,6 +4217,7 @@ class IpsecUtilitiesVatf
     @result_text += @vatf_helper.result_text
     return @result
   end
+
   def inflow_stop_offload(is_alpha_side)
     get_ipsec_cmd_additions_using_bench_file()
     string = @inflow_active_name
@@ -3876,4 +4237,5 @@ class IpsecUtilitiesVatf
     @result_text += @vatf_helper.result_text
     return @result
   end
+
 end
