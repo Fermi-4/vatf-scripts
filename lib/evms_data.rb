@@ -170,7 +170,10 @@ module EvmData
                                '3.14' => /Machine model: TI AM437x GP EVM/,
                               }
     machines['am437x-sk'] = {'3.14' => /Machine model: TI AM437x SK EVM/, }
+    machines['am437x-idk'] = {'3.14' => /Machine model: TI AM437x Industrial Development Kit/, }
     machines['am57xx-evm'] = {'0.0' => /Machine model: TI (AM572x EVM|AM5728 BeagleBoard-X15)/, }
+    machines['am572x-idk'] = {'0.0' => /Machine model: TI AM572x IDK/, }
+    machines['am571x-idk'] = {'0.0' => /Machine model: TI AM571x IDK/, }
     machines['k2hk-evm'] = {'0.0' => /Machine model:.*Keystone 2 Kepler\/Hawking EVM/, }
     machines['k2e-evm'] = {'0.0' => /Machine model:.*Keystone 2 Edison EVM/, }
     machines['k2l-evm'] = {'0.0' => /Machine model:.*Keystone 2 Lamarr EVM/, }
