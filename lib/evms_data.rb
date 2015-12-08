@@ -108,7 +108,15 @@ module EvmData
       # default nand location names for each partitions
       return {'primary_bootloader' => 'NAND.SPL', 'secondary_bootloader' => 'NAND.u-boot', 'u-boot-env' => 'NAND.u-boot-env', 'kernel' => 'NAND.kernel', 'dtb' => 'NAND.u-boot-spl-os', 'fs' => 'NAND.file-system'}
     end
-    return nand_loc
+  end
+
+  def get_spi_loc(platform)
+    case platform
+    when /k2*-evm/
+      return {'secondary_bootloader' => '0'}
+    else
+      raise "get_spi_loc: No location is being specified for SPI partitions for #{platform}"
+    end
   end
 
   def get_rawmmc_loc(platform)
