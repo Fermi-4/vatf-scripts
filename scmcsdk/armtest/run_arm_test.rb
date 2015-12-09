@@ -27,7 +27,9 @@
 require 'fileutils'
 require File.dirname(__FILE__)+'/../../LSP/default_test_module'
 require File.dirname(__FILE__)+'/common_utils.rb'
+require File.dirname(__FILE__)+'/../../lib/parse_perf_data'
 include LspTestScript
+include ParsePerfomance
 
 @show_debug_messages = false
 
@@ -35,7 +37,17 @@ def setup
   self.as(LspTestScript).setup
 end
 
+def get_perf_metrics
+  if @test_params.params_control.instance_variable_defined?(:@perf_metrics_file)
+    require File.dirname(__FILE__)+"/../../#{@test_params.params_control.perf_metrics_file[0].sub(/\.rb$/,'')}"
+    get_metrics
+  else
+    return nil
+  end
+end
+
 def run
+  perfdata = []
   ##initial assumptions
   test_done_result = FrameworkConstants::Result[:fail]
   comment = "*Pretest Setup failed.*\n"
@@ -100,6 +112,10 @@ def run
     puts "'#{ test_cmd }' run. Now to test."
     if criteria != nil
       criteria_result = analyze_criteria(count, test_cmd, std_response, criteria)
+      if @test_params.params_control.instance_variable_defined?(:@perf_metrics_file)
+        test_log = (@equipment['dut1'].update_response).gsub("\u0000", '')
+        perfdata = analyze_perf_data(test_log)
+      end
     else
       if @equipment['dut1'].timeout?
         criteria_result = [false, "DUT timeout executing #{test_cmd}"]
@@ -119,7 +135,19 @@ def run
   puts "*TEST PASSED*\n**************************"
   comment += "\n '#{ test_cmd }'\n*TEST PASSED*"
   test_done_result = FrameworkConstants::Result[:pass]
+  if perfdata != nil
+  set_result(test_done_result, comment, perfdata)
+  else
   set_result(test_done_result, comment)
+  end
+end
+
+# Return array of performance data that comply w/ set_result method defined by atf_session_runner
+# logs can be either a log file path or the actual string with the execution data.
+# perf_metrics is an array, Each array element is a hash
+def analyze_perf_data(test_log)
+  perf_data = get_performance_data(test_log, get_perf_metrics)
+  perf_data
 end
 
 # Public: Loop through criteria and searches for criteria in std_response.
@@ -563,7 +591,6 @@ def run_command(cmds,opts={:look_for => @equipment['dut1'].prompt, :timeout => 3
     end
 
     std_response = @equipment['dut1'].response.to_s
-    @equipment['dut1'].log_info("\r\nstd_response(run_command): #\"#{std_response}\"#\r\n")
     if std_response[/Segmentation fault/]
       comment += "\nSeg fault error."
       return [false, comment]
