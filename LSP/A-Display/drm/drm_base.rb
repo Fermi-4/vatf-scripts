@@ -4,7 +4,14 @@ require File.dirname(__FILE__)+'/drm_utils'
 
 include LspTestScript
 
+def setup
+  super
+  @equipment['dut1'].send_cmd('/etc/init.d/weston stop; sleep 3',@equipment['dut1'].prompt,10)
+end
+
 def run
+  passed = 0
+  failed = 0
   @equipment['dut1'].send_cmd('',@equipment['dut1'].prompt) #making sure that the board is ok
   test_result = true
   perf_data = []
@@ -34,6 +41,11 @@ def run
            @test_params.params_control.test_type[0].strip().downcase() != 'properties'
       plane_info_str = "Scale: #{s_mode[0]['plane']['scale']}, pix_fmt: #{s_mode[0]['plane']['format']}" if s_mode[0]['plane']
       res, res_string = run_mode_test(s_mode, perf_data)
+      if res == true
+        passed += 1
+      else
+        failed += 1
+      end
       test_result &= res
       @results_html_file.add_rows_to_table(res_table,[["#{s_mode[0]['type']} (#{s_mode[0]['connectors_ids'][0]})", 
                                            s_mode[0]['encoder'],
@@ -47,6 +59,11 @@ def run
       {'CRTC' => crtc, 'Connector' => connector}.each do |type, drm_obj|
         res, res_string = run_properties_test(type, drm_obj)
         test_result &= res
+        if res == true
+          passed += 1
+        else
+          failed += 1
+        end
       end
     end
   end
@@ -59,6 +76,11 @@ def run
     multi_disp_modes.each do |md_mode|
       res, res_string = run_mode_test(md_mode, [])
       test_result &= res
+      if res == true
+        passed += 1
+      else
+        failed += 1
+      end
       @results_html_file.add_rows_to_table(res_table,[[md_mode.to_s, 
                                            res ? ["Passed",{:bgcolor => "green"}] : 
                                            ["Failed",{:bgcolor => "red"}],
@@ -67,9 +89,9 @@ def run
   end
   
   if test_result
-    set_result(FrameworkConstants::Result[:pass], "DRM Test Passed", perf_data)
+    set_result(FrameworkConstants::Result[:pass], "DRM Test Passed: #{passed}, Failed: #{failed}\n", perf_data)
   else
-    set_result(FrameworkConstants::Result[:fail], "DRM Test failed", perf_data)
+    set_result(FrameworkConstants::Result[:fail], "DRM Test Passed: #{passed}, Failed: #{failed}\n", perf_data)
   end
 end
 
