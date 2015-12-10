@@ -3,6 +3,7 @@ require File.dirname(__FILE__)+'/../../default_target_test'
 require File.dirname(__FILE__)+'/../../../lib/result_forms'
 require File.dirname(__FILE__)+'/../../../lib/utils'
 require File.dirname(__FILE__)+'/../play_utils'
+require File.dirname(__FILE__)+'/../dev_utils'
 
 include LspTargetTestScript
 
@@ -17,7 +18,7 @@ def run
   test_result = true
   test_string = ''
   ip_type = @test_params.params_chan.capture_ip_type[0]
-  cap_devs = get_capture_devices(ip_type)
+  cap_devs = get_type_devices(ip_type)
   raise "No capture device of type #{ip_type} found" if !cap_devs
   cap_devs.each do |dev|
     capture_device = '/dev/' + dev
@@ -78,17 +79,6 @@ def run
   else
     set_result(FrameworkConstants::Result[:fail], "Capture Test failed" + test_string)
   end
-end
-
-def get_capture_devices(ip_type)
-  @equipment['dut1'].send_cmd("ls /sys/class/video4linux/")
-  video_devs = @equipment['dut1'].response.scan(/video\d+\s+/im)
-  result = []
-  video_devs.each do |dev|
-    @equipment['dut1'].send_cmd("cat /sys/class/video4linux/#{dev.strip()}/name")
-    result << dev.strip if @equipment['dut1'].response.downcase.include?(ip_type.downcase)
-  end
-  return result.empty? ? nil : result
 end
 
 def set_capture_app()

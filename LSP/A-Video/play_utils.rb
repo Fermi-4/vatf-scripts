@@ -57,6 +57,8 @@ def play_video(params)
                 "RGB565X" => 'rgb565be',
                 "RGB32" => 'rgba',
                 "RGB24" => 'rgb24',
+                "XR24" => 'bgra',
+                "AR24" => 'bgra',
                 "YUYV2X8" => 'yuyv422',
                 "YUYV" => 'yuyv422',
                 "UYVY2X8" => 'uyvy422',
@@ -112,3 +114,33 @@ def play_video(params)
   end
 end
 
+def yuvxx_to_nvxx(in_file, out_file, width, height, multiplier, chroma_uv=true)
+  frame_size = width.to_i * height.to_i
+  out_f = File.open(out_file, 'wb') do |ofd|
+    in_f = File.open(in_file, 'rb') do |ifd|
+      while(!ifd.eof?)
+        luma = ifd.read(frame_size)
+        chroma1 = ifd.read(frame_size*multiplier)
+        chroma2 = ifd.read(frame_size*multiplier)
+        ofd.write(luma)
+        chroma1.length().times() do |i|
+          if chroma_uv #UV
+            ofd.write(chroma1[i])
+            ofd.write(chroma2[i])
+          else #VU
+            ofd.write(chroma2[i])
+            ofd.write(chroma1[i])
+          end
+        end
+      end
+    end
+  end
+end
+
+def yuv444_to_nv24(in_file, out_file, width, height)
+  yuvxx_to_nvxx(in_file, out_file, width, height, 1)
+end
+
+def yuv422_to_nv16(in_file, out_file, width, height)
+  yuvxx_to_nvxx(in_file, out_file, width, height, 0.5)
+end

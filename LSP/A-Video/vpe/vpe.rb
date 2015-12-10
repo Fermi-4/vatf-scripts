@@ -3,11 +3,13 @@ require File.dirname(__FILE__)+'/../../default_target_test'
 require File.dirname(__FILE__)+'/../../../lib/utils'
 require File.dirname(__FILE__)+'/../../../lib/result_forms'
 require File.dirname(__FILE__)+'/../play_utils'
+require File.dirname(__FILE__)+'/../f2f_utils'
 
 include LspTargetTestScript
 
 def run
   @equipment['dut1'].send_cmd("mkdir #{@linux_dst_dir}", @equipment['dut1'].prompt) #Make sure test folder exists
+  @equipment['dut1'].send_cmd("rm  #{@linux_dst_dir}/*", @equipment['dut1'].prompt) #Make sure we have enough disk space for the f2f operations
   @equipment['dut1'].send_cmd('modprobe ti-vpe',@equipment['dut1'].prompt,10)
   if @equipment['dut1'].response.index(/fatal/i)
     set_result(FrameworkConstants::Result[:fail], "Unable to load vpe modules")
@@ -76,27 +78,6 @@ def run
     end
 end
 
-#Function to fetch the test file in the dut and host
-def get_file_from_url(url, ref_file_url=nil)
-  r_file_url = ref_file_url ? ref_file_url : url
-  file_name = File.basename(url)
-  r_file_name = File.basename(r_file_url)
-  host_path = File.join(@linux_temp_folder, r_file_name)
-  dut_path = File.join(@linux_dst_dir, file_name)
-  @equipment['server1'].send_cmd("wget --no-proxy --tries=1 -T10 #{r_file_url} -O #{host_path}", @equipment['server1'].prompt, 300)
-  @equipment['server1'].send_cmd("wget #{r_file_url} -O #{host_path}", @equipment['server1'].prompt, 300) if @equipment['server1'].response.match(/failed/im)
-  raise "Host is unable to fetch file from #{r_file_url}" if @equipment['server1'].response.match(/error/im)
-  @equipment['dut1'].send_cmd("wget #{url} -O #{dut_path}\n", @equipment['dut1'].prompt, 300)
-  raise "Dut is unable to fetch file from #{url}" if @equipment['dut1'].response.match(/error/im)
- 	[host_path, dut_path]
-end
 
-def get_scaled_resolution(width, height, scaling)
-  res_width = (width.to_i * scaling).to_i
-  res_width += res_width % 16 > 0 ? 16 - res_width % 16 : 0  
-  res_height = (height.to_i * scaling).to_i
-  res_height += res_height % 16 > 0 ? 16 - res_height % 16 : 0
-  [res_width, res_height]
-end
 
 
