@@ -59,7 +59,7 @@ module UpdateMMC
     params['dut'].send_cmd("rm -rf #{params['mmc_fs_mnt_point']}/*", params['dut'].prompt, 120)
     # populate the fs tarball into mnt_fs_mnt_point
     tar_options = get_tar_options(params['fs'], params)
-    params['dut'].send_cmd("tar -C #{params['mmc_fs_mnt_point']} #{tar_options} #{fs_tarball_src}", params['dut'].prompt, 600)
+    params['dut'].send_cmd("tar -C #{params['mmc_fs_mnt_point']} #{tar_options} #{fs_tarball_src}", params['dut'].prompt, 1200)
     params['dut'].send_cmd("echo $?", /^0[\0\n\r]+/m, 2)
     raise "There is error when untar rootfs tarball #{fs_tarball_src} to #{params['mmc_fs_mnt_point']}; Updating MMC rootfs failed; The content of MMC P2 was being deleted and you will not be able to boot rootfs from MMC. Sorry! Please check why untar failed and re-try again " if params['dut'].timeout?
 
@@ -155,7 +155,8 @@ module UpdateMMC
     p = part == "boot" ? "p1" : part == "fs" ? "p2" : ""
     raise "#{part} is not supported! 'boot' or 'fs' are valid partition name" if p==""
 
-    @equipment['dut1'].send_cmd("mount |grep #{mmc_basenode}#{p} ")
+    @equipment['dut1'].send_cmd("mount", @equipment['dut1'].prompt, 20)
+    @equipment['dut1'].send_cmd("mount |grep #{mmc_basenode}#{p} ", @equipment['dut1'].prompt, 10)
     mnt_point_match = /#{mmc_basenode}#{p}\s+on\s+([\w\/]+)\s+/im.match(@equipment['dut1'].response)
     raise "Failed to find mmc mount point for #{part}" if mnt_point_match == nil
     return mnt_point_match.captures[0] 
@@ -166,7 +167,7 @@ module UpdateMMC
     m = @equipment['dut1'].response.scan(/\/dev\/mmcblk[0-9]/im)
     raise "find_mmc_basenode:No match being found for mmcblk" if m.count == 0
     m.each do |basenode|
-      @equipment['dut1'].send_cmd("ls #{basenode}* ")
+      @equipment['dut1'].send_cmd("ls #{basenode}* ", @equipment['dut1'].prompt, 10)
       next if /#{basenode}boot/.match(@equipment['dut1'].response)
       return basenode
     end 
