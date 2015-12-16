@@ -14,6 +14,10 @@ def get_metrics
     'regex' => ['\|TRACE\sLOG\|\s*CAPT_FREQS\s*\|\s*(.*?)\|','([\d\.]+)'],
     'units' => 'fps',
    },
+   {'name' => 'IVA-freq',
+    'regex' => ['\|TRACE\sLOG\|\s*IVA\s*Frequency\s*\|\s*(.*?)\|','([\d\.]+)'],
+    'units' => 'MHz',
+   },
   ]
 end
 
