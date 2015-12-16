@@ -711,7 +711,8 @@ module LspTestScript
       this_equipment.response.match(/\d+\s+\d+\.\d+\s+\d+\.\d+/) ? true : false
     else
       this_equipment.send_cmd("ps | grep '#{process}' | grep -v grep", this_equipment.prompt, 10)
-      this_equipment.response.match(/\d+\s+.+\s+\d+/) ? true : false
+      this_equipment.response.match(/\w+\s+\d+\s+.+/) ? true : this_equipment.send_cmd("ps -ef | grep '#{process}' | grep -v grep", this_equipment.prompt, 10)
+      this_equipment.response.match(/\w+\s+\d+\s+.+/) ? true : false
     end
   end
    
