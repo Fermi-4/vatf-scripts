@@ -13,7 +13,9 @@ def setup
   translated_boot_params['dut'].set_bootloader(translated_boot_params) if !@equipment['dut1'].boot_loader
   translated_boot_params['dut'].set_systemloader(translated_boot_params) if !@equipment['dut1'].system_loader
 
-  #translated_boot_params['dut'].boot_to_bootloader translated_boot_params
+  if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+    translated_boot_params['dut'].boot_to_bootloader translated_boot_params
+  end
   
   @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
   @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 5)
@@ -25,7 +27,6 @@ def run
 	#self.as(LspTestScript).run
   result = 0
   result_msg = ''
-  nand_env_part_addr_start = get_nand_env_part_addr()
   nand_pagesize = get_nand_pagesize()
   ramaddress = PlatformSpecificVarNames.translate_var_name(@test_params.platform,'ramaddress')
   nand_test_addr = PlatformSpecificVarNames.translate_var_name(@test_params.platform,'nand_test_addr')
