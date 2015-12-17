@@ -15,7 +15,11 @@ def get_metrics
     'units' => 'fps',
    },
    {'name' => 'IVA-freq',
-    'regex' => ['\|TRACE\sLOG\|\s*IVA\s*Frequency\s*\|\s*(.*?)\|','([\d\.]+)'],
+    'regex' => ['\|TRACE\sLOG\|\s*IVA\s*Frequency\s*\|(.*?)\|','(\s+[\d\.]+)'],
+    'units' => 'MHz',
+   },
+   {'name' => 'IPU-freq',
+    'regex' => ['\|TRACE\sLOG\|\s*Cortex.*?\s*Frequency\s*\|(.*?)\|','(\s+[\d\.]+)'],
     'units' => 'MHz',
    },
   ]
