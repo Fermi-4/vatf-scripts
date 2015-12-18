@@ -101,7 +101,7 @@ module EvmData
     when /am335x-evm/
       # if there is difference from the default, add value here
       return {'primary_bootloader' => 'NAND.SPL', 'secondary_bootloader' => 'NAND.u-boot', 'u-boot-env' => 'NAND.u-boot-env', 'kernel' => 'NAND.kernel', 'dtb' => 'NAND.u-boot-spl-os', 'fs' => 'NAND.file-system'}
-    when /k2*-evm/
+    when /^k2.{0,2}-evm/
       # there is no kernel and dtb partition for k2 device
       return {'secondary_bootloader' => 'bootloader', 'u-boot-env' => 'params', 'fs' => 'ubifs'}
     else
@@ -112,7 +112,7 @@ module EvmData
 
   def get_spi_loc(platform)
     case platform
-    when /k2*-evm/
+    when /^k2.{0,2}-evm/
       return {'secondary_bootloader' => '0'}
     else
       raise "get_spi_loc: No location is being specified for SPI partitions for #{platform}"
