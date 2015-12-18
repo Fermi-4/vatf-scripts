@@ -315,7 +315,13 @@ module EvmData
         end
       }
     when "dra72x-evm"
-      return data.map{|domain,opps| { domain => opps.select{|name,address| name == "OPP_NOM"} } }
+      return data.map{|domain,opps|
+        if domain == 'VDD_MPU'
+          { domain => opps.select{|name,address| name == "OPP_NOM" or name == "OPP_HIGH" or name == "OPP_OD"} }
+        else
+          { domain => opps.select{|name,address| name == "OPP_NOM"} }
+        end
+      }
 
     else
       raise "AVS class0 Linux requirements are not defined for #{platform}" 
