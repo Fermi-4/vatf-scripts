@@ -100,6 +100,17 @@ module LspTestScript
     new_params['skern_image_name'] = new_params['skern_image_name'] ? new_params['skern_image_name'] : 
                              @test_params.instance_variable_defined?(:@var_skern_image_name) ? @test_params.var_skern_image_name : 
                              new_params['skern'] != '' ? File.basename(new_params['skern']) : 'skern'
+    new_params['initramfs'] = new_params['initramfs'] ? new_params['initramfs'] :
+                             @test_params.instance_variable_defined?(:@initramfs) ? @test_params.initramfs :
+                             @test_params.instance_variable_defined?(:@initramfs_file) ? @test_params.initramfs_file :
+                             ''
+    new_params['initramfs_dev'] = new_params['initramfs_dev'] ? new_params['initramfs_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@initramfs_dev) ? @test_params.params_chan.initramfs_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_initramfs_dev) ? @test_params.var_initramfs_dev :
+                             new_params['initramfs'] != '' ? 'eth' : 'none'
+    new_params['initramfs_image_name'] = new_params['initramfs_image_name'] ? new_params['initramfs_image_name'] :
+                             @test_params.instance_variable_defined?(:@var_initramfs_image_name) ? @test_params.var_initramfs_image_name :
+                             new_params['initramfs'] != '' ? File.basename(new_params['initramfs']) : 'initramfs'
     new_params['pmmc']     = new_params['pmmc'] ? new_params['pmmc'] :
                              @test_params.instance_variable_defined?(:@pmmc) ? @test_params.pmmc :
                              @test_params.instance_variable_defined?(:@pmmc_file) ? @test_params.pmmc_file :
