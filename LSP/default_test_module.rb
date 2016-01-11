@@ -330,6 +330,13 @@ module LspTestScript
           "Boot attempt #{trial + 1}/#{boot_attempts} failed, trying again....."
           puts fail_str
           @equipment['dut1'].log_info(fail_str)
+          if trial == boot_attempts -1
+            # when board failed to boot, trigger sysrq to provide kernel trace
+            @equipment['dut1'].log_info("Collecting kernel traces via sysrq...")
+            @equipment['dut1'].send_sysrq('t')
+            @equipment['dut1'].send_sysrq('l')
+            @equipment['dut1'].send_sysrq('w')
+          end
           @equipment['dut1'].disconnect('serial') if @equipment['dut1'].target.serial
           @equipment['dut1'].disconnect('bmc') if @equipment['dut1'].target.bmc
           raise e if trial == boot_attempts - 1
