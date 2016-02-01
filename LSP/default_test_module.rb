@@ -10,6 +10,7 @@ require File.dirname(__FILE__)+'/../lib/plot'
 require File.dirname(__FILE__)+'/../lib/evms_data'
 require File.dirname(__FILE__)+'/lsp_helpers'
 require File.dirname(__FILE__)+'/update_mmc'
+require File.dirname(__FILE__)+'/known_linux_problems'
 
 include Metrics
 include TestPlots
@@ -17,6 +18,7 @@ include EvmData
 include NetworkUtils
 include LspHelpers
 include UpdateMMC
+include KnownLinuxProblems
 
 # Default Server-Side Test script implementation for LSP releases
 module LspTestScript 
@@ -335,15 +337,19 @@ module LspTestScript
           puts fail_str
           @equipment['dut1'].log_info(fail_str)
           if trial == boot_attempts -1
+            #check for known Linux problems
+            new_e = Exception.new(e.inspect+"\n"+check_for_known_problem(@equipment['dut1']))
+            new_e.set_backtrace(e.backtrace)
             # when board failed to boot, trigger sysrq to provide kernel trace
             @equipment['dut1'].log_info("Collecting kernel traces via sysrq...")
             @equipment['dut1'].send_sysrq('t')
             @equipment['dut1'].send_sysrq('l')
             @equipment['dut1'].send_sysrq('w')
+            raise new_e
           end
+        ensure
           @equipment['dut1'].disconnect('serial') if @equipment['dut1'].target.serial
           @equipment['dut1'].disconnect('bmc') if @equipment['dut1'].target.bmc
-          raise e if trial == boot_attempts - 1
         end
       end 
     end
