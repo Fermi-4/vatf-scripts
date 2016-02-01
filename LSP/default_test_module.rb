@@ -164,6 +164,10 @@ module LspTestScript
     new_params['ubi_root'] = new_params['ubi_root'] ? new_params['ubi_root'] :
                              @test_params.instance_variable_defined?(:@var_ubi_root) ? @test_params.var_ubi_root :
                              "ubi0:rootfs" 
+    new_params['skip_touchcal'] = new_params['skip_touchcal'] ? new_params['skip_touchcal'] :
+                             @test_params.params_chan.instance_variable_defined?(:@skip_touchcal) ? @test_params.params_chan.skip_touchcal[0] :
+                             @test_params.instance_variable_defined?(:@var_skip_touchcal) ? @test_params.var_skip_touchcal :
+                             "0"
 
     # Optional SW asset to copy binary to rootfs                            
     new_params['user_bins']  = new_params['user_bins'] ? new_params['user_bins'] : 
