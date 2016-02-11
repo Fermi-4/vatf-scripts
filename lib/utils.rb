@@ -89,3 +89,29 @@ def get_sections(string, sep_regex)
   end
   result
 end
+
+# Function to acquire and release semaphore locks. 
+# Acquire staf semaphore lock if staf is running.
+# Yield to calling function code.
+# Release staf senaphore lock if staf is running.
+# Input
+#  name, the unique string for a given type of resource
+#        example: iperf for any test application requiring iperf running on host pc
+#                 usbdevice for any test application mounting usb device on host pc.
+#  timeout_in_ms, as name indicates timeout for lock to be acquired (in milliseconds)
+# 
+def staf_mutex(name, timeout_in_ms=60000)
+  begin
+     staf_handle = STAFHandle.new("#{name}_#{DateTime.now().to_s}")
+  rescue Exception => e
+     raise e if(system("staf local service help"))
+     yield
+     return
+  end
+  staf_req = staf_handle.submit("local", "SEM", "REQUEST MUTEX #{name} TIMEOUT #{timeout_in_ms}")
+  raise "Semaphore mutex request for #{name} timed out" if (staf_req.rc != 0)
+  puts "ACQUIRED MUTEX for #{name}"
+  yield 
+  staf_handle.submit("local", "SEM", "RELEASE MUTEX #{name}")
+  puts "RELEASED MUTEX for #{name}"
+end
