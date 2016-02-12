@@ -314,10 +314,9 @@ module LspTestScript
       end
     end
   end
-  
-  def setup
-    translated_boot_params = setup_host_side()
-    
+
+  def boot_dut(translated_boot_params)
+        
     @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
     @new_keys = (@test_params.params_control.instance_variable_defined?(:@booargs_append))? (@new_keys + @test_params.params_control.bootargs_append[0]) : @new_keys
     if boot_required?(@old_keys, @new_keys) #&& translated_boot_params['kernel'] != ''
@@ -354,7 +353,14 @@ module LspTestScript
         end
       end 
     end
-    
+    translated_boot_params
+  end
+  
+  def setup
+    translated_boot_params = setup_host_side()
+
+    boot_dut(translated_boot_params)
+
     connect_to_equipment('dut1')
     check_dut_booted()
 
