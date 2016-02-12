@@ -1,0 +1,39 @@
+dut = EquipmentInfo.new("k2hk-evm","k2h")
+dut.driver_class_name = "EquipmentDriver"
+dut.prompt = /root@k2hk-evm:.*?#/m
+dut.boot_prompt = /(K2HK|TCI6638)\sEVM/
+dut.power_port = {'apc' => 7 }
+dut.login = 'root'
+dut.telnet_login = 'root'
+dut.login_prompt = /login:/
+#dut.serial_server_ip = '192.168.1.115' <-- This is no longer needed since we are not using PortMaster
+#dut.serial_server_port = 6006          <-- This is no longer needed since we are not using PortMaster
+dut.nfs_root_path = '/opt/min-root-c6638-le'
+dut.serial_port = '/dev/vatf@1_k2h-p1'
+dut.serial_params = {"baud" => 115200, "data_bits" => 8, "stop_bits" => 1, "parity" => SerialPort::NONE}
+dut.params = {'ccs_install_dir' => '/home/systest-u5/ti/ccsv6',
+'ccsConfig' => "/home/systest-u5/Desktop/k2hk.ccxml",
+'xdctools' => "/home/systest-u5/ti/xdctools_3_31_01_33_core",
+'bios' => "/home/systest-u5/ti/bios_6_41_04_54/packages"
+}
+
+# Linux HOST PC (TEE PC)
+linux_server = EquipmentInfo.new("linux_server","ccs")
+linux_server.tftp_path = '/tftpboot'
+linux_server.driver_class_name = 'LinuxLocalHostDriver'
+linux_server.telnet_ip = '10.218.100.203'
+linux_server.telnet_port = 23
+linux_server.telnet_login = 'systest-u5'
+linux_server.telnet_passwd = 'gguser'
+linux_server.prompt = /@\w+/
+linux_server.tftp_path = '/tftpboot'
+
+# AC Power Controller (APC)
+te = EquipmentInfo.new("power_controller", "apc")
+te.telnet_ip = '192.168.1.25'
+te.telnet_port = 23
+te.driver_class_name = "StafApcPowerController"
+te.telnet_login  = 'apc'
+te.telnet_passwd = 'apc'
+te.params = {'staf_ip' => '10.218.100.224'}
+#te.params = {'staf_ip' => 'local'}
