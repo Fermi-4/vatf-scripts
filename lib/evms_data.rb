@@ -368,6 +368,16 @@ module EvmData
       return :LOAD_FROM_NAND
     end
   end
+  # Define no boot method name
+  def get_no_boot_method(platform)
+    case platform.downcase
+    when /^k2.{0,2}-evm/
+      return :LOAD_FROM_NO_BOOT_DSP_BY_BMC
+    else
+      raise "dont know how boot"
+    end
+  end
+
 
   
 end

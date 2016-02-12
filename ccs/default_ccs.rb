@@ -1,17 +1,18 @@
 require 'timeout'
 
 module CcsTestScript
+
   def setup
-  @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)
-  @jsAutoArgsFile    = File.join(@linux_temp_folder, 'getAutoArgs.js')
-  connect()
-  create_autotest_env()
-  @equipment['dut1'].target.ccs.jsEnvArgsFile = @jsAutoArgsFile
-  @equipment['dut1'].target.ccs.tempdir = @linux_temp_folder
+    @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)
+    @jsAutoArgsFile    = File.join(@linux_temp_folder, 'getAutoArgs.js')
+    connect()
+    create_autotest_env()
+    @equipment['dut1'].target.ccs.jsEnvArgsFile = @jsAutoArgsFile
+    @equipment['dut1'].target.ccs.tempdir = @linux_temp_folder
   end
 
   def run
-  set_result(FrameworkConstants::Result[:nry], "You need to implement run() method")
+    set_result(FrameworkConstants::Result[:nry], "You need to implement run() method")
   end
 
   def clean

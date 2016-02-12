@@ -1,18 +1,19 @@
 # Multicore Loader - takes cores and binaries and loads and runs them
-require File.dirname(__FILE__)+'/default_ccs'
+require File.dirname(__FILE__)+'/../LSP/default_test_module'
+require File.dirname(__FILE__)+'/default_ccs.rb'
 require File.dirname(__FILE__)+'/../LSP/lsp_helpers.rb'
 require File.dirname(__FILE__)+'/../ipc/multicore_data.rb'
+
 include CcsTestScript
 include LspHelpers
+include LspTestScript
 include MulticoreData
-
-@base_dir = ""
-@rtos_bins_dir = ""
-@test_name = ""
 
 def setup
   #set the addresses for the coredump tar.gz and the ipc binaries
   coredump_tar = SiteInfo::COREDUMP_UTIL
+  boot_dut()
+
   rtos_bins = @test_params.instance_variable_defined?(:@rtos_bins) ? @test_params.rtos_bins : nil
   if (rtos_bins == nil)
     raise "Please specify ipc bins tarball"
@@ -56,7 +57,7 @@ def setup
   @equipment['dut1'].params['outFile'] = bins
   @equipment['dut1'].params['ccsCpu'] = cores
   @equipment['dut1'].params['ccsPlatform'] = "*"
-  super
+  self.as(CcsTestScript).setup
 end
 
 def run
@@ -107,6 +108,8 @@ def clean
 
   #remove the remainder of the rtos binaries
   @equipment['server1'].send_cmd("rm -r #{@rtos_bins_dir}",Regexp.new('.*'),0)
+  #Force a reboot for subsequent test execution
+  @new_keys += "force_reboot"
 end
 
 def untar(tar,dir)
@@ -150,3 +153,4 @@ def check_ROV(criteria_regex, rov_paths)
   end
   return status
 end
+
