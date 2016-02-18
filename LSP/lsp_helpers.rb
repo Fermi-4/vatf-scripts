@@ -94,6 +94,8 @@ module LspHelpers
       tar_options = "-xvjf"
     when /tar archive/i
       tar_options = "-xvf"
+    when /XZ compressed data/i
+      tar_options = "-xvf"
     else
       tar_options = "not tar"
     end
