@@ -12,7 +12,7 @@ include MulticoreData
 def setup
   #set the addresses for the coredump tar.gz and the ipc binaries
   coredump_tar = SiteInfo::COREDUMP_UTIL
-  boot_dut()
+  boot_dut(setup_host_side())
 
   rtos_bins = @test_params.instance_variable_defined?(:@rtos_bins) ? @test_params.rtos_bins : nil
   if (rtos_bins == nil)
