@@ -94,7 +94,7 @@ class TestImporter
       begin
         scenario_file = file.match(/.+ltp-ddt\/runtest\/(.+)$/).captures[0]
         tag_data = tag[0].match(/^(\w+?)_(\w+?)_([a-zA-Z]+)/).captures
-        raise "Invalid tag. Scope is not S, M or L" if !(tag_data[1].match(/[SML]/))
+        raise "Invalid tag. Scope is not XS, S, M, L, XL or XXL" if !(tag_data[1].match(/(XS|S|M|L|XL|XXL)/))
         testcase = {
           'name' => tag[0],
           'desc' => tag[0] + '<br/>' + common['name'] + '<br/>' + common['desc'],
