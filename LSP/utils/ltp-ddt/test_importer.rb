@@ -1,6 +1,7 @@
 require "find"
 require "rexml/document"
 require File.dirname(__FILE__)+'/SKIP_TESTCASES'
+require File.dirname(__FILE__)+'/CUSTOMIZE_TESTCASES'
 
 include REXML
 
@@ -143,12 +144,16 @@ class TestImporter
         CData.new( t['desc'], true, summary )
         cfs = tc.add_element "custom_fields"
         add_custom_field(cfs, "tee", "vatf")
-        add_custom_field(cfs, "scripts", "LSP/TARGET/dev_test2.rb")
+        if t['name'].match(/_PERF_/)
+          add_custom_field(cfs, "scripts", $PERF_SCRIPT)
+        else
+          add_custom_field(cfs, "scripts", "LSP/TARGET/dev_test2.rb")
+        end
         dut_caps = t.has_key?('hw_caps') ? "linux_#{t['hw_caps']}" : 'linux'
         add_custom_field(cfs, "hw_assets_config", "dut1=[\"<platform>\",#{dut_caps}];server1=[\"linux_server\"]")
-        if k == 'SPI'
-          bootargs_append = 'spi'
-          add_custom_field(cfs, "params_control", "script=cd /opt/ltp;./runltp -P \#{@equipment['dut1'].name} -f #{t['file']} -s \"#{t['name']} \",timeout=#{get_timeout(t['scope'], t['type'])},bootargs_append=#{bootargs_append}")
+        extra_params = get_extra_params(t['name'])
+        if extra_params
+          add_custom_field(cfs, "params_control", "script=cd /opt/ltp;./runltp -P \#{@equipment['dut1'].name} -f #{t['file']} -s \"#{t['name']} \",timeout=#{get_timeout(t['scope'], t['type'])},#{extra_params}")
         else
           add_custom_field(cfs, "params_control", "script=cd /opt/ltp;./runltp -P \#{@equipment['dut1'].name} -f #{t['file']} -s \"#{t['name']} \",timeout=#{get_timeout(t['scope'], t['type'])}")
         end
