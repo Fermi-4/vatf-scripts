@@ -93,6 +93,7 @@ def run
       #sleep (suspend_time - elapsed_time) if elapsed_time < suspend_time and wakeup_domain == 'rtc'
       resume(wakeup_domain, max_resume_time)
       sleep 5
+      @equipment['dut1'].at_prompt?({'prompt' => @equipment['dut1'].prompt, 'wait' => 5})  # Wait for system prompt
       @equipment['dut1'].send_cmd(" cat #{cpufreq_0}/stats/time_in_state", @equipment['dut1'].prompt, 1)
     end
     
