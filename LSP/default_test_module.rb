@@ -228,6 +228,7 @@ module LspTestScript
   end 
 
   def copy_sw_assets_to_tftproot(params)
+    return if params['host_side_mmc_update']
     tmp_path = @test_params.staf_service_name.to_s.strip.gsub('@','_')
     assets = params.select{|k,v| k.match(/_dev/i) && v.match(/eth/i) }.keys.map{|k| k.match(/(.+?)(?:_src_dev|_dev)/).captures[0] }
     assets.each do |asset|
@@ -355,17 +356,28 @@ module LspTestScript
     end
     translated_boot_params
   end
+
   
   def setup
-    translated_boot_params = setup_host_side()
+    update_mmc = @test_params.instance_variable_defined?(:@var_update_mmc)? @test_params.var_update_mmc : "0"
+    host_side_mmc_update = (update_mmc != '0' and @equipment['dut1'].params.has_key?("microsd_switch"))
+    translated_boot_params = setup_host_side({'host_side_mmc_update' => host_side_mmc_update})
+
+    if host_side_mmc_update
+        begin
+            translated_boot_params = flash_sd_card_from_host(translated_boot_params)
+        rescue Exception => e
+            report_msg "Failed to update SD card from host"
+            raise e
+        end
+    end
 
     boot_dut(translated_boot_params)
 
     connect_to_equipment('dut1')
     check_dut_booted()
 
-    update_mmc = @test_params.instance_variable_defined?(:@var_update_mmc)? @test_params.var_update_mmc : "0"
-    if update_mmc != '0' 
+    if update_mmc != '0' and !host_side_mmc_update
       call_setup = false
 
       report_msg "Check if bootloader in MMC needs to be updated ..."
