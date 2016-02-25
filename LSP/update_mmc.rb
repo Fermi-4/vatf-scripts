@@ -70,6 +70,117 @@ module UpdateMMC
     save_signature(fs_signature, params['mmc_boot_mnt_point']+"/#{FS_MD5_FILE}")
   end
 
+  def setup_ti_test_gadget(params)
+    sd_switch_info = params['dut'].params['microsd_switch'].keys[0]
+    if !@equipment.has_key? 'ti_test_gadget'
+      report_msg "Setting up ti_test_gadget ..."
+      add_equipment('ti_test_gadget') do |log_path|
+        Object.const_get(sd_switch_info.driver_class_name).new(sd_switch_info,log_path)
+      end
+      @equipment['ti_test_gadget'].connect({'type'=>'serial'})
+    end
+  end
+
+
+
+  def flash_sd_card_from_host(params)
+    begin
+      report_msg "Going to flash SD card from host if required ..."
+      boot_mnt_point = File.join(@linux_temp_folder, 'mnt', 'boot')
+      rootfs_mnt_point = File.join(@linux_temp_folder, 'mnt', 'rootfs')
+      params['dut'].connect({'type'=>'serial'}) if !params['dut'].target.serial
+      params['dut'].poweroff(params) if params['dut'].at_prompt?({'prompt'=>params['dut'].prompt})
+      params['dut'].disconnect('serial')
+      setup_ti_test_gadget(params)
+      @equipment['ti_test_gadget'].set_interfaces(params['dut'].params)
+      @equipment['ti_test_gadget'].switch_microsd_to_dut(params['dut'])
+      sleep 10
+      a=`ls /dev/sd* | grep '/dev/sd[b-z][[:digit:]]'`.split("\n")
+      @equipment['ti_test_gadget'].switch_microsd_to_host(params['dut'])
+      sleep 10
+      b=`ls /dev/sd* | grep '/dev/sd[b-z][[:digit:]]'`.split("\n")
+      c=b-a
+      if c.size < 2
+        report_msg "Can't flash SD card.\n Partitions before:\n #{a} \n Partitions after:\n #{b}"
+        raise "SD card does not have at least two valid partitions, it can't be flashed"
+      end
+      params = flash_sd_boot_partition_from_host(c[0], boot_mnt_point, params)
+      params = flash_sd_rootfs_partition_from_host(c[1], rootfs_mnt_point, params)
+      params['var_use_default_env'] = 2   # boot using new images flashed to SD cards
+      return params
+
+    rescue Exception => e
+      raise e
+
+    ensure
+      unmount_partition(boot_mnt_point, params)
+      unmount_partition(rootfs_mnt_point, params)
+      @equipment['ti_test_gadget'].switch_microsd_to_dut(params['dut'])
+    end
+
+  end
+
+  def mount_partition(partition, mnt_point, type, params)
+    params['server'].send_cmd("mkdir -p #{mnt_point}", params['server'].prompt, 10)
+    params['server'].send_sudo_cmd("mount -t #{type} #{partition} #{mnt_point}", params['server'].prompt, 30)
+    raise "Could not mount #{partition} on host PC" if ! system "mount | grep #{partition}"
+  end
+
+  def unmount_partition(partition, params)
+    params['server'].send_sudo_cmd("umount #{partition}", params['server'].prompt, 30)
+    raise "Could not umount #{partition} on host PC" if system "mount | grep #{partition}"
+  end
+
+  def need_update_mmcbootloader_from_host?(boot_partition, mnt_point, params)
+    mount_partition(boot_partition, mnt_point, 'vfat', params)
+    signature_file = "#{mnt_point}/#{PRIMARY_BOOLOADER_MD5_FILE}"
+    return true if ! system "ls #{signature_file}"
+    old_signature = read_signature(signature_file, params['server'])
+    new_signature = @test_params.instance_variable_defined?(:@var_primary_bootloader_md5) ? @test_params.var_primary_bootloader_md5 : calculate_signature(params['primary_bootloader'])
+    params['mlo_signature'] = new_signature
+    (old_signature != new_signature)
+  end
+
+  def need_update_rootfs_from_host?(rootfs_partition, mnt_point, params)
+    mount_partition(rootfs_partition, mnt_point, 'ext4', params)
+    signature_file = "#{mnt_point}/#{FS_MD5_FILE}"
+    return true if ! system "ls #{signature_file}"
+    old_signature = read_signature(signature_file, params['server'])
+    new_signature = @test_params.instance_variable_defined?(:@var_fs_md5) ? @test_params.var_fs_md5 : calculate_signature(params['fs'])
+    params['fs_signature'] = new_signature
+    (old_signature != new_signature)
+  end
+
+  def flash_sd_boot_partition_from_host(boot_partition, mnt_point, params)
+    if params.has_key?('primary_bootloader') && params.has_key?('secondary_bootloader') &&
+     need_update_mmcbootloader_from_host?(boot_partition, mnt_point, params)
+      report_msg "Updating bootloader in MMC from host ..."
+      mlo_signature = params.has_key?('mlo_signature') ? params['mlo_signature'] : calculate_signature(params['primary_bootloader'])
+      params['server'].send_sudo_cmd("cp -f #{params['primary_bootloader']} #{mnt_point}/MLO", params['server'].prompt, 30)
+      raise "Could not copy primary_bootloader to SD card" if !cmd_exit_zero?(params['server'])
+      params['server'].send_sudo_cmd("cp -f #{params['secondary_bootloader']} #{mnt_point}/u-boot.img", params['server'].prompt, 30)
+      raise "Could not copy secondary_bootloader to SD card" if !cmd_exit_zero?(params['server'])
+      save_signature(mlo_signature, mnt_point+"/#{PRIMARY_BOOLOADER_MD5_FILE}", true, params['server'])
+      params['server'].send_cmd("sync", params['server'].prompt, 30)
+    end
+    return params
+  end
+
+  def flash_sd_rootfs_partition_from_host(root_partition, mnt_point, params)
+    if params.has_key?('fs') && need_update_rootfs_from_host?(root_partition, mnt_point, params)
+      report_msg "Updating rootfs in MMC from host ..."
+      fs_signature = params.has_key?('fs_signature') ? params['fs_signature'] : calculate_signature(params['fs'])
+      params['server'].send_sudo_cmd("rm -rf #{mnt_point}/*", params['server'].prompt, 120)
+      raise "Could not remove old filesystem from SD card" if !cmd_exit_zero?(params['server'])
+      tar_options = get_tar_options(params['fs'], params)
+      params['server'].send_sudo_cmd("tar -C #{mnt_point}/ #{tar_options} #{params['fs']}", params['server'].prompt, 2400)
+      raise "Could not untar rootfs to SD card" if !cmd_exit_zero?(params['server'])
+      save_signature(fs_signature, mnt_point+"/#{FS_MD5_FILE}", true, params['server'])
+      params['server'].send_cmd("sync", params['server'].prompt, 30)
+    end
+    return params
+  end
+
   def check_mmc_update_inputs(params, key)
     if !params.has_key?(key) ||  params[key] == ""
       raise "#{key} is needed for updating mmc card; please provide it!"
@@ -121,16 +232,20 @@ module UpdateMMC
   end
 
   # save signature to dst file
-  def save_signature(signature, dst, device=@equipment['dut1'])
-    device.send_cmd("echo #{signature} > #{dst}", device.prompt, 5) 
-    device.send_cmd("cat #{dst} |grep #{signature}", device.prompt, 5)
-    device.send_cmd("echo $?", /^0[\0\n\r]+/m, 2)
-    raise "Failed to save sigature to #{dst}" if device.timeout?
+  def save_signature(signature, dst, sudo=false, device=@equipment['dut1'])
+    report_msg("Writing signature to #{dst}")
+    if sudo
+      device.send_sudo_cmd("sh -c 'echo #{signature} > #{dst}'", device.prompt, 5)
+      device.send_sudo_cmd("cat #{dst} |grep #{signature}", device.prompt, 5)
+    else
+      device.send_cmd("echo #{signature} > #{dst}", device.prompt, 5)
+      device.send_cmd("cat #{dst} |grep #{signature}", device.prompt, 5)
+    end
+    raise "Failed to save signature to #{dst}" if !cmd_exit_zero?(device)
   end
 
   def read_signature(file, device=@equipment['dut1'])
     device.send_cmd("cat #{file}", device.prompt, 5)
-
     m = /^(\h{32,})/.match(device.response)
     if m == nil
       raise "Failed to read signature from #{file}; Maybe the signature is not 32char md5? The output of cat is as below: \n#{device.response}"
