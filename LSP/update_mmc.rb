@@ -106,7 +106,6 @@ module UpdateMMC
       end
       params = flash_sd_boot_partition_from_host(c[0], boot_mnt_point, params)
       params = flash_sd_rootfs_partition_from_host(c[1], rootfs_mnt_point, params)
-      params['var_use_default_env'] = 2   # boot using new images flashed to SD cards
       return params
 
     rescue Exception => e
@@ -167,16 +166,20 @@ module UpdateMMC
   end
 
   def flash_sd_rootfs_partition_from_host(root_partition, mnt_point, params)
-    if params.has_key?('fs') && need_update_rootfs_from_host?(root_partition, mnt_point, params)
-      report_msg "Updating rootfs in MMC from host ..."
-      fs_signature = params.has_key?('fs_signature') ? params['fs_signature'] : calculate_signature(params['fs'])
-      params['server'].send_sudo_cmd("rm -rf #{mnt_point}/*", params['server'].prompt, 120)
-      raise "Could not remove old filesystem from SD card" if !cmd_exit_zero?(params['server'])
-      tar_options = get_tar_options(params['fs'], params)
-      params['server'].send_sudo_cmd("tar -C #{mnt_point}/ #{tar_options} #{params['fs']}", params['server'].prompt, 2400)
-      raise "Could not untar rootfs to SD card" if !cmd_exit_zero?(params['server'])
-      save_signature(fs_signature, mnt_point+"/#{FS_MD5_FILE}", true, params['server'])
-      params['server'].send_cmd("sync", params['server'].prompt, 30)
+    if params.has_key?('fs')
+      # Following command required to boot using new images flashed to SD card
+      params['var_use_default_env'] = 1   if !params.has_key?('var_use_default_env')
+      if need_update_rootfs_from_host?(root_partition, mnt_point, params)
+        report_msg "Updating rootfs in MMC from host ..."
+        fs_signature = params.has_key?('fs_signature') ? params['fs_signature'] : calculate_signature(params['fs'])
+        params['server'].send_sudo_cmd("rm -rf #{mnt_point}/*", params['server'].prompt, 120)
+        raise "Could not remove old filesystem from SD card" if !cmd_exit_zero?(params['server'])
+        tar_options = get_tar_options(params['fs'], params)
+        params['server'].send_sudo_cmd("tar -C #{mnt_point}/ #{tar_options} #{params['fs']}", params['server'].prompt, 2400)
+        raise "Could not untar rootfs to SD card" if !cmd_exit_zero?(params['server'])
+        save_signature(fs_signature, mnt_point+"/#{FS_MD5_FILE}", true, params['server'])
+        params['server'].send_cmd("sync", params['server'].prompt, 30)
+      end
     end
     return params
   end
