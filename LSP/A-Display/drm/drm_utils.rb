@@ -434,12 +434,15 @@ end
 #Function that returns the display modes supported by a device, takes a
 #  drm_info, hash whose entries comply with the hash returned by get_entries
 #  formats, hash with entries <connector id> => <array of fmts supported by connector>
+#  conn, (Optional) string with connector type, i.e hdmi. If specified
+#            the returned modes will only contain modes where the conn type is
+#            used 
 #Returns two arrays whose elements are arrays containing hashes that define a mode
 #expected by the function set_mode and run_per_sync_flip_test. The first array
 #contains modes for individual displays, the second array contains modes for
 #multiple displays. If the device does not support multi-display then the
 #arrays returned by this functions are the same
-def get_test_modes(drm_info, formats)
+def get_test_modes(drm_info, formats, conn=nil)
   single_disp_modes = []
   multi_disp_modes = nil         
   drm_info['Connectors:'].each do |connector|
@@ -455,7 +458,8 @@ def get_test_modes(drm_info, formats)
         connector['modes:'].each_index do |i| 
           mode = connector['modes:'][i]
           formats[connector['id']].each do |format|
-            mode_params = {'connectors_ids' => [connector['id']], 
+            mode_params = {'connectors_ids' => [connector['id']],
+                           'connectors_names' => [connector['name'].downcase().strip()], 
                            'crtc_id' => crtc['id'], 
                            'mode' => mode['name'],
                            'framerate' => mode['refresh (Hz)'],
@@ -474,7 +478,7 @@ def get_test_modes(drm_info, formats)
             end
             mode_params['plane'] = plane_params
             c_modes << [mode_params]
-            single_disp_modes << [mode_params]
+            single_disp_modes << [mode_params] if !conn || connector['name'].match(/#{conn}/i)
           end
         end
       end
@@ -483,7 +487,14 @@ def get_test_modes(drm_info, formats)
       m_modes = multi_disp_modes
       multi_disp_modes = []
       m_modes.each do |m|
-        c_modes.each {|cm| multi_disp_modes << m + cm}
+        c_modes.each do |cm|
+          chk_conn = !conn
+          if conn
+            cm.each { |a_cm| chk_conn |= a_cm['connectors_names'].join(',').match(/#{conn}/i) }
+            m.each { |a_m| chk_conn |= a_m['connectors_names'].join(',').match(/#{conn}/i) }
+          end
+          multi_disp_modes << m + cm if chk_conn
+        end
       end
     else
       multi_disp_modes = c_modes.dup
