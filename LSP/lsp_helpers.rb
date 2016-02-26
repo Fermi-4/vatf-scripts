@@ -26,7 +26,7 @@ module LspHelpers
       if !File.directory?("#{nfs_root_path_temp}/usr")
         tar_options = get_tar_options(fs,params)
         params['server'].send_sudo_cmd("mkdir -p  #{nfs_root_path_temp}", params['server'].prompt, 10)
-        params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} #{tar_options} #{fs}", params['server'].prompt, 1200)
+        params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} #{tar_options} #{fs}", params['server'].prompt, 2400)
       end
       # Add workaround for disabling weston
       weston_start_dst = "#{nfs_root_path_temp}/etc/init.d/weston.bak"
