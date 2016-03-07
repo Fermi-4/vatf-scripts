@@ -33,12 +33,28 @@ def crypto_test
           end
         elsif (@test_params.params_control.type[0].match('openssl_sw'))
           @equipment['dut1'].send_cmd("ls /dev|grep crypto",@equipment['dut1'].prompt, 10)
-          @equipment['dut1'].send_cmd("modprobe -rf cryptodev",@equipment['dut1'].prompt,10)
-          @equipment['dut1'].send_cmd("lsmod|grep cryptodev",@equipment['dut1'].prompt,10)
+          @equipment['dut1'].send_cmd("modprobe -rf omap_aes_driver",@equipment['dut1'].prompt,10)
+          @equipment['dut1'].send_cmd("lsmod|grep omap_aes_driver",@equipment['dut1'].prompt,10)
           lsmod_response = @equipment['dut1'].response.lines.to_a[1..-1].join.strip
-          if (lsmod_response.match(/cryptodev/) != nil)
-            puts "CRYPTODEV module could not be removed and hence not software mode\n"
-            set_result(FrameworkConstants::Result[:fail], "Test Failed since cryptodev module could not be removed to test software-only mode. Verify why the cryptodev module could not be removed by the modprobe -r command.")
+          if (lsmod_response.match(/omap_aes_driver/) != nil)
+            puts "OMAP_AES_DRIVER module could not be removed and hence not software mode\n"
+            set_result(FrameworkConstants::Result[:fail], "Test Failed since omap_aes_driver module could not be removed to test software-only mode. Verify why the module could not be removed by the modprobe -r command.")
+            return
+          end
+          @equipment['dut1'].send_cmd("modprobe -rf omap_sham",@equipment['dut1'].prompt,10)
+          @equipment['dut1'].send_cmd("lsmod|grep omap_sham",@equipment['dut1'].prompt,10)
+          lsmod_response = @equipment['dut1'].response.lines.to_a[1..-1].join.strip
+          if (lsmod_response.match(/omap_sham/) != nil)
+            puts "OMAP_SHAM module could not be removed and hence not software mode\n"
+            set_result(FrameworkConstants::Result[:fail], "Test Failed since omap_sham module could not be removed to test software-only mode. Verify why the module could not be removed by the modprobe -r command.")
+            return
+          end
+          @equipment['dut1'].send_cmd("modprobe -rf omap_des",@equipment['dut1'].prompt,10)
+          @equipment['dut1'].send_cmd("lsmod|grep omap_des",@equipment['dut1'].prompt,10)
+          lsmod_response = @equipment['dut1'].response.lines.to_a[1..-1].join.strip
+          if (lsmod_response.match(/omap_des/) != nil)
+            puts "OMAP_DES module could not be removed and hence not software mode\n"
+            set_result(FrameworkConstants::Result[:fail], "Test Failed since omap_des module could not be removed to test software-only mode. Verify why the module could not be removed by the modprobe -r command.")
             return
           end
         end
