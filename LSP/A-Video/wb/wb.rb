@@ -69,6 +69,7 @@ def run
           passed += 1
         else
           test_string += "#{dev}@#{video_width}x#{video_height}+#{src_format}->#{test_format}: #{t_string}, "
+          test_result = false
           failed += 1
         end
         @results_html_file.add_rows_to_table(res_table,[[device, 
@@ -82,7 +83,7 @@ def run
       end
     end
 	end
-  set_result((test_result && !wb_devices.empty?), "Passed: #{passed}, Failed: #{failed}\n" + test_string)
+  set_result(test_result && !wb_devices.empty? ? FrameworkConstants::Result[:pass] : FrameworkConstants::Result[:fail], "Passed: #{passed}, Failed: #{failed}\n" + test_string)
 end
 
 
