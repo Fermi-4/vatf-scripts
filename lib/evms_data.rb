@@ -174,6 +174,12 @@ module EvmData
     machines['dra72x-evm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/,
                               '3.14' => /Machine model: TI DRA722/,
                               }
+    machines['dra7xx-hsevm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/,
+                              '3.14' => /Machine model: TI DRA742/,
+                              }
+    machines['dra72x-hsevm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/,
+                              '3.14' => /Machine model: TI DRA722/,
+                              }
     machines['omap5-evm']   = {'0.0' => /Machine: Generic OMAP5 \(Flattened Device Tree\), model: TI OMAP5 uEVM board/,
                               '3.14' => /Machine model: TI OMAP5 uEVM board/,
                               }
@@ -181,6 +187,9 @@ module EvmData
                               '3.14' => /Machine model: TI AM43x EPOS EVM/,
                               }
     machines['am43xx-gpevm'] = {'0.0' => /Machine: Generic AM43 \(Flattened Device Tree\), model: TI AM437x gp EVM/i,
+                               '3.14' => /Machine model: TI AM437x GP EVM/,
+                              }
+    machines['am43xx-hsevm'] = {'0.0' => /Machine: Generic AM43 \(Flattened Device Tree\), model: TI AM437x gp EVM/i,
                                '3.14' => /Machine model: TI AM437x GP EVM/,
                               }
     machines['am437x-sk'] = {'3.14' => /Machine model: TI AM437x SK EVM/, }
@@ -204,9 +213,12 @@ module EvmData
     machines['beaglebone-black'] = {'0.0' => '1000000'}
     machines['dra7xx-evm']  = {'0.0' => '1500000'}
     machines['dra72x-evm']  = {'0.0' => '1500000'}
+    machines['dra7xx-hsevm']  = {'0.0' => '1500000'}
+    machines['dra72x-hsevm']  = {'0.0' => '1500000'}
     machines['omap5-evm']   = {'0.0' => '1500000'}
     machines['am43xx-epos'] = {'0.0' => '1000000'}
     machines['am43xx-gpevm'] = {'0.0' => '1000000'}
+    machines['am43xx-hsevm'] = {'0.0' => '1000000'}
     machines['am437x-sk'] = {'0.0' => '1000000'}
     machines['am57xx-evm']  = {'0.0' => '1500000'}
     params.merge!({'dict' => machines})
