@@ -646,6 +646,7 @@ module LspTestScript
       this_equipment.send_cmd("cat /proc/vmstat", this_equipment.prompt)
       this_equipment.send_cmd("cat /proc/zoneinfo", this_equipment.prompt)
       this_equipment.send_cmd("cat /proc/net/snmp", this_equipment.prompt)
+      this_equipment.send_cmd("lspci", this_equipment.prompt)
     end
   end
 
