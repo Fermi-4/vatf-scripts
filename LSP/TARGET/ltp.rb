@@ -19,8 +19,9 @@ def run_determine_test_outcome(return_non_zero)
             get_performance_data(File.join(@linux_temp_folder,'test.log'), get_perf_metrics)]
   else
     if get_test_output.match(/^\|WARNING\|.+SKIPPING TEST:/)
-      return [FrameworkConstants::Result[:ns],
-            get_detailed_info(),
+      skipped_tests = get_test_output.match(/(^\|WARNING\|.+SKIPPING TEST:.*)/).captures[0]
+      return [FrameworkConstants::Result[:pass],
+            skipped_tests+"\n"+get_detailed_info(),
             get_performance_data(File.join(@linux_temp_folder,'test.log'), get_perf_metrics)]
     else
       return [FrameworkConstants::Result[:pass],
