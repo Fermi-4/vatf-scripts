@@ -43,7 +43,7 @@ module PowerFunctions
         @equipment[e].wait_for(/PM:\s+resume\s+of\s+devices\s+complete\s+after\s+[0-9\.]+\s+[umsec]+|#{@equipment[e].prompt}/i, max_resume_time)
         is_dut_awake = !@equipment[e].timeout?
       }
-      sleep 1 
+      sleep 2
       @power_handler.reset(@equipment[e].params['gpio_wakeup_port']) if wakeup_domain == 'gpio'
       begin 
         Timeout::timeout(max_resume_time) {
