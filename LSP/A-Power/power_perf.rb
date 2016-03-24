@@ -181,7 +181,7 @@ def start_target_tests(cmd, timeout, e='dut1')
       begin
         actual_cmd = eval('"'+c.gsub("\\","\\\\\\\\").gsub('"','\\"')+'"')
         @equipment[e].target.telnet.send_cmd(actual_cmd, @equipment[e].prompt, cmd_timeout)
-      rescue Timeout::Error => e
+      rescue Timeout::Error => er
         @equipment[e].log_info("Telnet TIMEOUT ERROR. Data START:\n #{@equipment[e].target.telnet.response}\nTelnet Data END")
         result = [FrameworkConstants::Result[:fail], "DUT is either not responding or took more that #{cmd_timeout} seconds to run the test"]
         failure = true
@@ -189,7 +189,7 @@ def start_target_tests(cmd, timeout, e='dut1')
       @equipment[e].log_info("Telnet Data START:\n #{@equipment[e].target.telnet.response}\nTelnet Data END")
       begin
         @equipment[e].target.telnet.send_cmd("echo $?",/^0[\0\n\r]+/m, 10) if !failure
-      rescue Timeout::Error => e
+      rescue Timeout::Error => er
         @equipment[e].log_info("Telnet TIMEOUT ERROR. Data START:\n #{@equipment[e].target.telnet.response}\nTelnet Data END")
         result = [FrameworkConstants::Result[:fail], "Test returned non-zero value"]
         failure = true
