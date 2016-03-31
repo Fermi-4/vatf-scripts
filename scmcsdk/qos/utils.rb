@@ -27,8 +27,8 @@ end
 def get_shapers_per_interface(interface)
   case interface
   when "eth0"
-    @equipment['dut1'].send_cmd("find /sys/devices/ -name \"qos-inputs-1\"",@equipment['dut1'].prompt,10)
-    return @equipment['dut1'].response.match(/.*\/qos-inputs-1/)
+    @equipment['dut1'].send_cmd("find /sys/devices/ -name \"qos-inputs-0\"",@equipment['dut1'].prompt,10)
+    return @equipment['dut1'].response.match(/.*\/qos-inputs-0/)
   when "eth1"
     @equipment['dut1'].send_cmd("find /sys/devices/ -name \"qos-inputs-2\"",@equipment['dut1'].prompt,10)
     return @equipment['dut1'].response.match(/.*\/qos-inputs-2/)
@@ -99,7 +99,7 @@ end
 def get_interface_shaper_name(interface)
   case interface
   when "eth0"
-    return "qos-inputs-1"
+    return "qos-inputs-0"
   when "eth1"
     return "qos-inputs-2"
   end
