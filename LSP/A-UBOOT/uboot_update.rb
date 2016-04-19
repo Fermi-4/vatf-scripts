@@ -29,6 +29,8 @@ def run
     sleep 10
     # powercycle or reset the board to check
     translated_boot_params['dut'].boot_to_bootloader(translated_boot_params)
+    translated_boot_params['dut'].send_cmd("env default -a -f", translated_boot_params['dut'].boot_prompt, 10)
+    translated_boot_params['dut'].send_cmd("saveenv", translated_boot_params['dut'].boot_prompt, 10)
     translated_boot_params['dut'].send_cmd("version", translated_boot_params['dut'].boot_prompt, 10)
     result += 1 if translated_boot_params['dut'].timeout? 
   end 
