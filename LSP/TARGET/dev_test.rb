@@ -12,9 +12,9 @@ end
 def run_generate_script
   puts "\n LinuxTestScript::run_generate_script"
   FileUtils.mkdir_p @linux_temp_folder
-  ftp_file_version = @test_params.params_control.script[0]
-  isScriptACommand = !ftp_file_version.match(/ftp:\/\//i)
-  if (!isScriptACommand)  # Need to retrieve script using ftp bee
+  http_file_version = @test_params.params_control.script[0]
+  isScriptACommand = !http_file_version.match(/http:\/\//i)
+  if (!isScriptACommand)  # Need to retrieve script using http bee
     # Resolve Dispatcher name
     my_staf_handle = STAFHandle.new("my_staf")
     staf_req = my_staf_handle.submit("local","VAR","GET SHARED VAR STAF/TMC/Machine")
@@ -33,31 +33,31 @@ def run_generate_script
     end
 
     begin
-      # Request FTP BEE to RESMGR
-      staf_req = my_staf_handle.submit(tmc_machine,"RESMGR","REQUEST TYPE ftp TIMEOUT 1w") 
+      # Request BEE to RESMGR
+      staf_req = my_staf_handle.submit(tmc_machine,"RESMGR","REQUEST TYPE http TIMEOUT 1w") 
       staf_reqid = staf_req.result
       loop do
-        staf_req = my_staf_handle.submit(tmc_machine,"RESMGR","free request #{staf_reqid} type ftp")
+        staf_req = my_staf_handle.submit(tmc_machine,"RESMGR","free request #{staf_reqid} type http")
         break if staf_req.rc != 45
         sleep 5
       end
       if(staf_req.rc != 0)
-       raise "Could not find a FTP BEE available. This test scripts requires a FTP Bee to run"
+       raise "Could not find a BEE available. This test scripts requires a Bee to run"
       end
       staf_result_map = STAF::STAFResult.unmarshall_response(staf_req.result)
       bee_machine = staf_result_map['name'] 
       bee_id      = staf_result_map['id']
-      ftp_file_version.gsub!(/ftp:\/\//i,'')
-      # Request GET BUILDID  to FTP BEE
-      staf_req = my_staf_handle.submit(bee_machine,"ftp@"+bee_id,"GET BUILDID ASSET script VERSION #{ftp_file_version}") 
+      http_file_version.gsub!(/http:\/\//i,'')
+      # Request GET BUILDID  to BEE
+      staf_req = my_staf_handle.submit(bee_machine,"http@"+bee_id,"GET BUILDID ASSET script VERSION #{http_file_version}") 
       if(staf_req.rc != 0)
-        raise "The #{bee_machine} FTP BEE could not get the ID for asset with version: #{ftp_file_version}"
+        raise "The #{bee_machine} FTP BEE could not get the ID for asset with version: #{http_file_version}"
       end
       
       # Request BUILD  to FTP BEE
-      staf_req = my_staf_handle.submit(bee_machine,"ftp@"+bee_id,"BUILD ASSET script VERSION #{ftp_file_version}") 
+      staf_req = my_staf_handle.submit(bee_machine,"http@"+bee_id,"BUILD ASSET script VERSION #{http_file_version}") 
       if(staf_req.rc != 0)
-        raise "The #{bee_machine} FTP BEE could not retrieve the asset at #{ftp_file_version}"
+        raise "The #{bee_machine} FTP BEE could not retrieve the asset at #{http_file_version}"
       end
       staf_result_map = STAF::STAFResult.unmarshall_response(staf_req.result)
       bee_file_path = staf_result_map['path']
@@ -71,7 +71,7 @@ def run_generate_script
       staf_data_dir = staf_req.result
   	
       # Copy file from BEE to local TEE directory
-      dst_dir = "#{staf_data_dir}/user/sw_assets/ftp/script/#{bee_file_id}"
+      dst_dir = "#{staf_data_dir}/user/sw_assets/http/script/#{bee_file_id}"
       dst_file = "#{dst_dir}/#{File.basename(bee_file_path.gsub(/\\/,'/'))}"
       if (!File.exists?(dst_file))
         FileUtils.mkdir_p dst_dir
@@ -83,7 +83,7 @@ def run_generate_script
     rescue Exception => e
       puts e.to_s+"\n"+e.backtrace.to_s
     ensure
-      staf_req = my_staf_handle.submit(tmc_machine,"RESMGR","RELEASE TYPE ftp NAME #{bee_machine} ID #{bee_id}") 
+      staf_req = my_staf_handle.submit(tmc_machine,"RESMGR","RELEASE TYPE http NAME #{bee_machine} ID #{bee_id}") 
     end
   end
   
