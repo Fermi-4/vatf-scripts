@@ -1,5 +1,6 @@
 require File.dirname(__FILE__)+'/../TARGET/dev_test2'
 require File.dirname(__FILE__)+'/usb_dev_msc_cdc'
+require File.dirname(__FILE__)+'/../../lib/utils'
 
 def setup
   @equipment['dut1'].set_api('psp')
@@ -16,17 +17,24 @@ def setup
 end
 
 def run
+  
   modprobe_remove_all
   test_type = @test_params.params_control.instance_variable_defined?(:@test_type) ? @test_params.params_control.test_type[0] : 'insert_remove'
   iterations = @test_params.params_control.instance_variable_defined?(:@iterations) ? @test_params.params_control.iterations[0].to_i : 5 
-  case 
-  when test_type.match(/insert_remove/)
-    run_stress_insert_remove(iterations)
-  when test_type.match(/performance/)
-    run_performance
-  else
-    set_result(FrameworkConstants::Result[:fail], "Unsupported Test Type")
-    return
+
+  mutex_timeout = iterations*60000
+  staf_mutex("usbdevice", mutex_timeout) do
+
+     case 
+     when test_type.match(/insert_remove/)
+       run_stress_insert_remove(iterations)
+     when test_type.match(/performance/)
+       run_performance
+     else
+       set_result(FrameworkConstants::Result[:fail], "Unsupported Test Type")
+       return
+     end
+
   end
 end
 
@@ -151,7 +159,7 @@ def modprobe_on_device(module_name,gadget_types,action)
    cmd = 'modprobe'
    extra_params = ''
    dir_path = Hash.new
-   dir_path = {'msc_mmc'=>'mmcblk0p1','msc_usb'=>'sda1','msc_slave'=>'loop0'}
+   dir_path = {'msc_mmc'=>'mmcblk1p1','msc_usb'=>'sda1','msc_slave'=>'loop0'}
    if gadget_types.include? 'mass_storage'
      mount_type = @test_params.params_control.instance_variable_defined?(:@dev_type) ? @test_params.params_control.dev_type[0] : 'msc_mmc'
    # special cases like g_mass_storage to be handled here and action is not remove

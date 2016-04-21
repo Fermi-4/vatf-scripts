@@ -1,4 +1,6 @@
 require File.dirname(__FILE__)+'/../default_test_module'
+require File.dirname(__FILE__)+'/usb_dev_msc_cdc'
+require File.dirname(__FILE__)+'/../../lib/utils'
 
 include LspTestScript
 
@@ -19,67 +21,65 @@ def connect_to_extra_equipment
 end
 
 def run
-  i=0
-  successful_enums=0
-  session_data_pointer=0
-  # Start from disconnect state
-  @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_otg_port'].keys[0])
-  # Make sure module is installed
-  @equipment['dut1'].send_cmd("zcat /proc/config.gz | grep USB | grep FILE", @equipment['dut1'].prompt, 3)
-  case @equipment['dut1'].response
-  when /CONFIG_USB_FILE_STORAGE\s+is\s+not\s+set/
-    raise "Can't run test because kernel does NOT support CONFIG_USB_FILE_STORAGE"
-  when /CONFIG_USB_FILE_STORAGE=m/
-     @equipment['dut1'].send_cmd("modprobe g_mass_storage file=#{@test_params.params_control.fbs_node[0]} stall=0", @equipment['dut1'].prompt, 5)
+# estimate of 60 sec per iteration
+  mutex_timeout = 60000*@test_params.params_control.iterations[0].to_i
+  staf_mutex("usbdevice", mutex_timeout) do
+     i=0
+     successful_enums=0
+     session_data_pointer=0
+     # Start from disconnect state
+     @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_otg_port'].keys[0])
+     # Make sure module is installed
+     device = get_sd_partition.strip+'p1'
+     sd_dev = '/dev/'+device
+
+     @equipment['dut1'].send_cmd("modprobe g_mass_storage file=#{sd_dev} stall=0", @equipment['dut1'].prompt, 5)
      @equipment['dut1'].send_cmd("lsmod", /g_mass_storage\s+\d+/, 3)
-     raise "Failed to modprobe g_mass_storage" if @equipment['dut1'].timeout?
-  else
-    # Do Nothing. Driver is already included in the kernel
-  end
     
-  # Loop for Connect/Disconnect
-  @test_params.params_control.iterations[0].to_i.times do
-    sleep @test_params.params_control.wait_after_disconnect[0].to_i
-    num_usb_dev_before=`lsusb | wc -l`
-    session_data_pointer = @equipment['dut1'].update_response.length
+     # Loop for Connect/Disconnect
+     @test_params.params_control.iterations[0].to_i.times do
+        sleep @test_params.params_control.wait_after_disconnect[0].to_i
+        num_usb_dev_before=`lsusb | wc -l`
+        session_data_pointer = @equipment['dut1'].update_response.length
+       # Connect
+        @usb_switch_handler.select_input(@equipment['dut1'].params['usb_otg_port'])
+        sleep @test_params.params_control.wait_after_connect[0].to_i
+        num_usb_dev_after=`lsusb | wc -l`
+        usb_dev_after=`lsusb`
 
-    # Connect
-    @usb_switch_handler.select_input(@equipment['dut1'].params['usb_otg_port'])
-    sleep @test_params.params_control.wait_after_connect[0].to_i
-    num_usb_dev_after=`lsusb | wc -l`
-    usb_dev_after=`lsusb`
+       # Check device is enumerated
+        ses_data = @equipment['dut1'].update_response
+        enum_data = ses_data[session_data_pointer==0 ? 0: session_data_pointer-1, ses_data.length]
+        @equipment['dut1'].log_info("Iteration #{i}: \n #{enum_data}")
+        successful_enums = successful_enums + 1 if (verify_dut_detection_msg(enum_data) == 1 && verify_host_detection_msg(num_usb_dev_before, num_usb_dev_after, usb_dev_after) == 1)
 
-    # Check device is enumerated
-    ses_data = @equipment['dut1'].update_response
-    enum_data = ses_data[session_data_pointer==0 ? 0: session_data_pointer-1, ses_data.length]
-    @equipment['dut1'].log_info("Iteration #{i}: \n #{enum_data}")
-    successful_enums = successful_enums + 1 if (verify_dut_detection_msg(enum_data) == 1 && verify_host_detection_msg(num_usb_dev_before, num_usb_dev_after, usb_dev_after) == 1)
+       # Disconnect
+        @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_otg_port'].keys[0])
+        i = i+1
+     end
 
-    # Disconnect
-    @usb_switch_handler.disconnect(@equipment['dut1'].params['usb_otg_port'].keys[0])
-    i = i+1
-  end
+     @usb_switch_handler.select_input(@equipment['dut1'].params['usb_otg_port'])
+     success_rate = (successful_enums.to_f / @test_params.params_control.iterations[0].to_f)*100.0
 
-  success_rate = (successful_enums.to_f / @test_params.params_control.iterations[0].to_f)*100.0
-
-  if (success_rate >= @test_params.params_control.pass_rate[0].to_f)
-    set_result(FrameworkConstants::Result[:pass], "Success Enumeration rate=#{success_rate}")
-  else
-    set_result(FrameworkConstants::Result[:fail], "Success Enumeration rate=#{success_rate}")
+     if (success_rate >= @test_params.params_control.pass_rate[0].to_f)
+        set_result(FrameworkConstants::Result[:pass], "Success Enumeration rate=#{success_rate}")
+     else
+        set_result(FrameworkConstants::Result[:fail], "Success Enumeration rate=#{success_rate}")
+     end
   end
 end
 
 private
 
 def verify_dut_detection_msg(data)
-  return 1 if data.match(/Linux\s*File-Backed\s*Storage/i)
-  @equipment['dut1'].log_info("'Linux File-Backed Storage' message was NOT detected")
+  return 1 if data.match(/\s*Linux\s*\S* Storage\s*/i)
+  @equipment['dut1'].log_info("'Storage Gadget' message was NOT detected")
   return 0
 end
 
 def verify_host_detection_msg(num_before, num_after, data)
-  return 1 if num_after.to_i > num_before.to_i && data.match(/Linux-USB\s*File\s*Storage\s*Gadget/i) 
-  @equipment['server1'].log_info("'Linux-USB File Storage Gadget' message was NOT detected")
+  return 1 if num_after.to_i > num_before.to_i && data.match(/\s*Linux.*Gadget/i) 
+  @equipment['server1'].log_info("'Storage Gadget' message was NOT detected")
   return 0
 end
 

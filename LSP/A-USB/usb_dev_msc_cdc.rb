@@ -1,107 +1,109 @@
 # -*- coding: ISO-8859-1 -*-
 require File.dirname(__FILE__)+'/../default_test_module'
 require 'net/telnet'
-# Default Server-Side Test script implementation for LSP releases
-
-
-#################################################################################################################################################
-
+require File.dirname(__FILE__)+'/../../lib/utils'
 
 include LspTestScript
+
 def setup
-
-#  super
   self.as(LspTestScript).setup
-
 end
 
 
 def run
   simultaneous_host_device_test=false
-  test_cmd = Hash.new
-  test_cmd = {'msc'=>"./runltp -P #{@equipment['dut1'].name} -f ddt/usbhost_perf_vfat -s USBHOST_S_PERF_VFAT_0001 ",
+  packet_count=100
+  test_duration=60
+ if (@test_params.params_control.instance_variable_defined?(:@test_duration))
+  test_duration=@test_params.params_control.test_duration[0].to_f
+ end
+ if (@test_params.params_control.instance_variable_defined?(:@packet_count))
+  packet_count=@test_params.params_control.packet_count[0].to_f
+ end
+
+  mutex_timeout = test_duration>packet_count ? test_duration*5 : packet_count*5
+  staf_mutex("usbdevice", mutex_timeout*1000) do
+
+     test_cmd = Hash.new
+     test_cmd = {'msc'=>"./runltp -P #{@equipment['dut1'].name} -f ddt/usbhost_perf_vfat -s USBHOST_S_PERF_VFAT_0001 ",
               'audio' =>"./runltp -P #{@equipment['dut1'].name} -f  ddt/usbhost_audio -s USBHOST_S_FUNC_AUDIO_LOOPBACK_ACCESSTYPE_NONINTER_01 ",
               'video' => "./runltp -P #{@equipment['dut1'].name} -f  ddt/usbhost_video -s USBHOST_M_FUNC_VIDEO_640_480 ",
-              'mscxhci'=>"./runltp -P #{@equipment['dut1'].name} -f ddt/usbhost_perf_vfat -s USBXHCIHOST_S_PERF_VFAT_0001 ",
-              'audioxhci' =>"./runltp -P #{@equipment['dut1'].name} -f  ddt/usbhost_audio -s USBXHCIHOST_S_FUNC_AUDIO_LOOPBACK_ACCESSTYPE_NONINTER_01 ",
-              'videoxhci' => "./runltp -P #{@equipment['dut1'].name} -f  ddt/usbhost_video -s USBXHCIHOST_M_FUNC_VIDEO_640_480 ",
               }
-  test_command = ''
+     test_command = ''
 
-  # Preserve current governor
-  prev_gov = create_save_cpufreq_governors
-  #Change to performance governor
-  enable_cpufreq_governor
   
-$result = 0
-  $result_message = ""
-  command = "modprobe -r g_ether"
-  #@equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
-  #command = "modprobe -r g_file_storage"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
-  command = "modprobe -r g_mass_storage"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
-
-  cmds = @test_params.params_chan.instance_variable_get("@#{'cmd'}").to_s
-  $cmd = cmds
+     # Preserve current governor
+     prev_gov = create_save_cpufreq_governors
+     #Change to performance governor
+     enable_cpufreq_governor
   
-  if (@test_params.params_control.instance_variable_defined?(:@simultaneous_host))
-    puts "This test uses device and host in parallel and params is #{@test_params.params_control.simultaneous_host[0]}\n"
-    simultaneous_host_device_test = true
-    puts "This test uses device and host in parallel and params is #{@test_params.params_control.simultaneous_host[0]}\n"
-    host_type=@test_params.params_control.simultaneous_host[0]
-    case host_type
-      when 'msc', 'video', 'audio', 'mscxhci', 'audioxhci', 'videoxhci'
-      test_command = test_cmd[host_type]
-      else
-         puts "Unsupported Host Device type in test parameter - #{host_type}\n"
-         $result = 1
-         $result_message = "Testcase has an unsupported device type as parameter"
-         set_result(FrameworkConstants::Result[:fail], "Testcase has an unsupported device type as parameter.")
-         return
-    end
-    start_usbhost_test(test_command)
-    @stop_test = false
-  end
+     $result = 0
+     $result_message = ""
+     command = "modprobe -r g_ether"
+     @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+     command = "modprobe -r g_mass_storage"
+     @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
 
- @stop_test=false
- while (!@stop_test)
-  case  
-    when cmds.match(/usb_dev_msc/) 
-      usb_dev_msc()
-      @stop_test=true
-    when cmds.match(/usb_dev_cdc/) 
-      usb_dev_cdc()
-      @stop_test=true
-    else
-      $result = 1
-      $result_message = "#{cmds} does not match any case"
-      puts "#{cmds} does not match any case\n"
-     if (!simultaneous_host_device_test)
-       @stop_test=true
+     cmds = @test_params.params_chan.instance_variable_get("@#{'cmd'}").to_s
+     $cmd = cmds
+  
+     if (@test_params.params_control.instance_variable_defined?(:@simultaneous_host))
+        puts "This test uses device and host in parallel and params is #{@test_params.params_control.simultaneous_host[0]}\n"
+        simultaneous_host_device_test = true
+        puts "This test uses device and host in parallel and params is #{@test_params.params_control.simultaneous_host[0]}\n"
+        host_type=@test_params.params_control.simultaneous_host[0]
+        case host_type
+        when 'msc', 'video', 'audio', 'mscxhci', 'audioxhci', 'videoxhci'
+            test_command = test_cmd[host_type]
+        else
+            puts "Unsupported Host Device type in test parameter - #{host_type}\n"
+            $result = 1
+            $result_message = "Testcase has an unsupported device type as parameter"
+            set_result(FrameworkConstants::Result[:fail], "Testcase has an unsupported device type as parameter.")
+            return
+        end
+        start_usbhost_test(test_command)
+        @stop_test = false
      end
-  end
- end
-  if $result == 0
-    set_result(FrameworkConstants::Result[:pass], "Testcase Result is PASS.")  
-    else
-    set_result(FrameworkConstants::Result[:fail], $result_message)
-    command = "modprobe -r g_ether"
-    @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
-    command = "modprobe -r g_mass_storage"
-    @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
-     if (!simultaneous_host_device_test)
-     @stop_test=true
-    end
 
-  end  
+     @stop_test=false
+     while (!@stop_test)
+        case  
+        when cmds.match(/usb_dev_msc/) 
+            usb_dev_msc()
+            @stop_test=true
+        when cmds.match(/usb_dev_cdc/) 
+            usb_dev_cdc(packet_count, test_duration)
+            @stop_test=true
+        else
+            $result = 1
+            $result_message = "#{cmds} does not match any case"
+            puts "#{cmds} does not match any case\n"
+            if (!simultaneous_host_device_test)
+               @stop_test=true
+            end
+        end
+     end
+     if $result == 0
+       set_result(FrameworkConstants::Result[:pass], "Testcase Result is PASS.")  
+     else
+       set_result(FrameworkConstants::Result[:fail], $result_message)
+       command = "modprobe -r g_ether"
+       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+       command = "modprobe -r g_mass_storage"
+       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+       if (!simultaneous_host_device_test)
+          @stop_test=true
+       end
 
- stop_usbhost_test
+     end  
+
+     stop_usbhost_test
  # Restore previous governor
- restore_cpufreq_governors(prev_gov)
+     restore_cpufreq_governors(prev_gov)
 
+  end
 end
-
 
 def clean
   self.as(LspTestScript).clean
@@ -283,7 +285,7 @@ end
 
 
 #CDC test
-def usb_dev_cdc()
+def usb_dev_cdc(packet_count, test_duration)
 
   command = "depmod -a"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,20)
@@ -324,7 +326,7 @@ def usb_dev_cdc()
     end
     return     
   end
-
+  sleep 10
   command = "dmesg"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,4)
   @equipment['server2'].send_cmd(command, @equipment['server2'].prompt,4)
@@ -341,7 +343,7 @@ def usb_dev_cdc()
   return
 
   end
-  if (response_server.include?('cdc_ether') || response.server.include?('cdc_eem'))
+  if (response_server.include?('cdc_ether') || response_server.include?('cdc_eem'))
     puts "g_ether registered on host succesfully"
     if (response_server.include?('cdc_ether'))
       usb_num=/usb(\d+)\s?:\s?register.*cdc_ether.*/.match(response_server).captures
@@ -391,17 +393,17 @@ def usb_dev_cdc()
     when $cmd.match(/_cdc_ping/)
 
       #Ping test
-      pingtest_cdc(server_usb_interface)
+      pingtest_cdc(server_usb_interface, packet_count)
 
     when $cmd.match(/_cdc_floodping/)
 
       #Flood ping test
-      floodpingtest_cdc(server_usb_interface)
+      floodpingtest_cdc(server_usb_interface, packet_count)
 
     when $cmd.match(/_cdc_iperf/)
 
       #iperf test
-      iperftest_cdc(server_usb_interface)
+      iperftest_cdc(server_usb_interface, test_duration)
 
     else
       $result = 1
@@ -433,14 +435,15 @@ end
 
 
 #ping test
-def pingtest_cdc(server_usb_interface)
-  packetsize = [64,4096,65500]
+def pingtest_cdc(server_usb_interface, packet_count)
+  packetsize = [64,512,4096,8192,65500]
+  test_timeout = packet_count + 15
   assign_server_ip(server_usb_interface) 
   packetsize.each { |psize| 
   #Ping from DUT to host
 
-  command ="ping -c 10 #{@equipment['server2'].usb_ip} -s #{psize}"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,15)
+  command ="ping -c #{packet_count} #{@equipment['server2'].usb_ip} -s #{psize}"
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,test_timeout)
   response = @equipment['dut1'].response
   if response.include?(' 0% packet loss')
     puts "Ping from DUT to host is successful "
@@ -452,8 +455,8 @@ def pingtest_cdc(server_usb_interface)
 
   #Ping from host to DUT
 
-  command="ping -c 10 #{@equipment['dut1'].usb_ip} -s #{psize}"
-  @equipment['server2'].send_cmd(command, @equipment['server2'].prompt,15)
+  command="ping -c #{packet_count} #{@equipment['dut1'].usb_ip} -s #{psize}"
+  @equipment['server2'].send_cmd(command, @equipment['server2'].prompt,test_timeout)
   response = @equipment['server2'].response
   if response.include?(' 0% packet loss')
     puts "Ping from host to DUT is successful "
@@ -468,15 +471,16 @@ end
 
 
 # Flood ping test
-def floodpingtest_cdc(server_usb_interface)
+def floodpingtest_cdc(server_usb_interface, packet_count)
+  test_timeout = packet_count + 15
   packetsize = [64,4096,65500]
   assign_server_ip(server_usb_interface)
   packetsize.each { |psize|
 
   #Flood ping from host to DUT
 
-  command="ping -f -c 100 #{@equipment['dut1'].usb_ip} -s #{psize}"
-  @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt,15)
+  command="ping -f -c #{packet_count} #{@equipment['dut1'].usb_ip} -s #{psize}"
+  @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt,test_timeout)
   response = @equipment['server2'].response
   if response.include?(' 0% packet loss')
     puts "Flood ping from host to DUT is successful "
@@ -491,9 +495,10 @@ end
 
 
 #iperf test
-def iperftest_cdc(server_usb_interface)
+def iperftest_cdc(server_usb_interface, test_duration)
 
 #  iperf test from host to DUT
+  test_timeout = test_duration+15
   windowsize = [8,16,32,64,128]
   windowsize.each { |wsize|
 
@@ -515,8 +520,8 @@ def iperftest_cdc(server_usb_interface)
     return 
   end
 
-  command="iperf -c #{@equipment['dut1'].usb_ip} -w #{wsize}K -d -t 60"
-  @equipment['server2'].send_cmd(command, @equipment['server2'].prompt,65)
+  command="iperf -c #{@equipment['dut1'].usb_ip} -w #{wsize}K -d -t #{test_duration}"
+  @equipment['server2'].send_cmd(command, @equipment['server2'].prompt,test_timeout)
   response = @equipment['server2'].response
   if response.include?('Connection refused')
     $result = 1
@@ -552,8 +557,8 @@ def iperftest_cdc(server_usb_interface)
     return 
   end
 
-  command="iperf -c #{@equipment['server2'].usb_ip} -w #{wsize}K -d -t 60"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,65)
+  command="iperf -c #{@equipment['server2'].usb_ip} -w #{wsize}K -d -t #{test_duration}"
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt, test_timeout)
   response = @equipment['dut1'].response
   if response.include?('Connection refused')
     $result = 1
