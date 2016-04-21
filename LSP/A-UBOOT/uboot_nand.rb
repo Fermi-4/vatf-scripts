@@ -13,9 +13,7 @@ def setup
   translated_boot_params['dut'].set_bootloader(translated_boot_params) if !@equipment['dut1'].boot_loader
   translated_boot_params['dut'].set_systemloader(translated_boot_params) if !@equipment['dut1'].system_loader
 
-  if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
-    translated_boot_params['dut'].boot_to_bootloader translated_boot_params
-  end
+  translated_boot_params['dut'].boot_to_bootloader translated_boot_params
   
   @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
   @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 5)
