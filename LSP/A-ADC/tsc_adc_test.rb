@@ -107,6 +107,7 @@ end
 # Return Parameter: average  
 
 def get_average(array_values)
+    return 0 if array_values.length == 0
     total = 0 
     array_values.each do |x|
       total += x[0].to_i
