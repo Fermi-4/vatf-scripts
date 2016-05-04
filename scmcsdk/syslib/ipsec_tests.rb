@@ -4,6 +4,7 @@ require 'fileutils'
 require File.dirname(__FILE__)+'/../../LSP/default_test_module'
 require File.dirname(__FILE__)+'/ipsec_connect_module'
 require File.dirname(__FILE__)+'/utilities.rb'
+require File.dirname(__FILE__)+'/../../lib/utils'
 
 # Default Server-Side Test script implementation for LSP releases
 include LspTestScript
@@ -29,12 +30,14 @@ ETH_ONLY_PERF_MBPS = "1000M"
 FULL_RATE_PERF_MBPS = "1000M"
 
 def setup
-  # Stop ipsec running on Linux PC (Server)
-  self.as(IpsecConnectionScript).stop_ipsec(@equipment)
 
   self.as(LspTestScript).setup
-  # Create keys, certificates and then establish the IPSEC connection between EVM and Linux PC
-  result |= self.as(IpsecConnectionScript).establish_ipsec_connection(@equipment, @test_params)
+  staf_mutex("ipsec", 30000) do
+     # Stop ipsec running on Linux PC (Server)
+     self.as(IpsecConnectionScript).stop_ipsec(@equipment)
+     # Create keys, certificates and then establish the IPSEC connection between EVM and Linux PC
+     result |= self.as(IpsecConnectionScript).establish_ipsec_connection(@equipment, @test_params)
+  end
 end
 
 def throughput_mbps_select(conn_type, crypto_mode, current_rate)
@@ -86,6 +89,7 @@ def get_bw_info(protocol, specified_bandwidth, auto_bandwidth_detect)
 end
 
 def run
+
   # instantiate perf utility set
   perfUtils = PerfUtilities.new
   # Set perf utilities global equipment variable
@@ -119,6 +123,9 @@ def run
 
   # Create test headline for PERF test
   test_headline = "#{IpsecConnectionScript.protocol}_#{IpsecConnectionScript.esp_encryption}_#{IpsecConnectionScript.esp_integrity}"
+  
+  staf_mutex("ipsec", (test_secs*2)*1000) do
+     staf_mutex("iperf", (test_secs*2)*1000) do
 
   # Run perf test only if IPSEC connection was successful
   if result != 0
@@ -242,6 +249,8 @@ def run
   end
   self.as(IpsecConnectionScript).stop_ipsec(@equipment)
   self.as(IpsecConnectionScript).stop_ipsec_evm(@equipment)
+ end #mutex
+end #mutex
 end
 
 def clean
