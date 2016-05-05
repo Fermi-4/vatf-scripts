@@ -42,7 +42,7 @@ def run_generate_script
         sleep 5
       end
       if(staf_req.rc != 0)
-       raise "Could not find a BEE available. This test scripts requires a Bee to run"
+       raise "Could not find a BEE available. This test scripts requires a Bee to run.\n#{staf_req.result}"
       end
       staf_result_map = STAF::STAFResult.unmarshall_response(staf_req.result)
       bee_machine = staf_result_map['name'] 
@@ -51,13 +51,13 @@ def run_generate_script
       # Request GET BUILDID  to BEE
       staf_req = my_staf_handle.submit(bee_machine,"http@"+bee_id,"GET BUILDID ASSET script VERSION #{http_file_version}") 
       if(staf_req.rc != 0)
-        raise "The #{bee_machine} FTP BEE could not get the ID for asset with version: #{http_file_version}"
+        raise "The #{bee_machine} FTP BEE could not get the ID for asset with version: #{http_file_version}.\n#{staf_req.result}"
       end
       
       # Request BUILD  to FTP BEE
       staf_req = my_staf_handle.submit(bee_machine,"http@"+bee_id,"BUILD ASSET script VERSION #{http_file_version}") 
       if(staf_req.rc != 0)
-        raise "The #{bee_machine} FTP BEE could not retrieve the asset at #{http_file_version}"
+        raise "The #{bee_machine} FTP BEE could not retrieve the asset at #{http_file_version}.\n#{staf_req.result}"
       end
       staf_result_map = STAF::STAFResult.unmarshall_response(staf_req.result)
       bee_file_path = staf_result_map['path']
@@ -66,7 +66,7 @@ def run_generate_script
       # Resolve STAF Datadir
       staf_req = my_staf_handle.submit("local","VAR","GET SYSTEM VAR STAF/DataDir") 
       if(staf_req.rc != 0)
-        raise "Could not resolve VAR STAF/DataDir. Make sure that STAF is running at the TEE machine"
+        raise "Could not resolve VAR STAF/DataDir. Make sure that STAF is running at the TEE machine.\n#{staf_req.result}"
       end
       staf_data_dir = staf_req.result
   	
@@ -77,7 +77,8 @@ def run_generate_script
         FileUtils.mkdir_p dst_dir
       staf_req = my_staf_handle.submit(bee_machine,"fs","COPY FILE #{bee_file_path} TOMACHINE #{local_machine} TOFILE #{dst_file}")
         if(staf_req.rc != 0)
-          raise "Could not copy file from FTP Bee to TEE machine"
+          puts "'#{bee_machine} fs COPY FILE #{bee_file_path} TOMACHINE #{local_machine} TOFILE #{dst_file}' command failed "
+          raise "Could not copy file from HTTP Bee to TEE machine.\n#{staf_req.result}"
         end
       end
     rescue Exception => e
