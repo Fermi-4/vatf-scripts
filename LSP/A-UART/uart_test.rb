@@ -71,7 +71,7 @@ end
 def run 
   status = 0
   serial_port = @equipment['dut1'].serial_port
-  dut_serial_port =  '/dev/' + @equipment['dut1'].boot_args.match(/(tty.*),/).captures[0]
+  dut_serial_port =  '/dev/' + @equipment['dut1'].boot_args.match(/(tty\w[0-9]),/).captures[0]
   serial_default_config = get_serial_default_config(dut_serial_port)
   setting = @test_params.params_chan.cmd[0].gsub('stty','').to_s
   cmd = "stty -F #{dut_serial_port} #{setting}"
