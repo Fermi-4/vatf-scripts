@@ -6,14 +6,19 @@ MODETEST_PIX_FMTS = ['UYVY', 'VYUY', 'YUYV', 'YVYU', 'NV12', 'NV21', 'NV16', 'NV
 #  command, string containing the modetest command to run
 #  timeout, time in sec to wait for the command to finish
 # Returns the output of the command
-def modetest(command, dut, timeout=5, interactive=false)
+def modetest(command, dut, timeout=5)
   response = ''
+  dut.send_cmd("", dut.prompt)
   t1 = Thread.new do
     dut.send_cmd("modetest #{command}", /trying\s*to\s*open\s*device.*?#{dut.prompt}/im, timeout)
     response = dut.response
   end
-  yield if interactive
-  dut.send_cmd("")
+  if block_given?
+    yield
+  else
+    t1.join(2)
+  end
+  dut.send_cmd("\nkillall -9 modetest &> /dev/null")
   t1.join()
   response
 end
@@ -84,7 +89,7 @@ def set_plane(params, dut=@equipment['dut1'], timeout=600)
   params.each do |plane_inf|
     p_string += get_mode_string(plane_inf)
   end
-  modetest(p_string, dut, timeout, true) do
+  modetest(p_string, dut, timeout) do
     yield
   end
 end
@@ -175,7 +180,7 @@ def set_mode(params, dut=@equipment['dut1'], timeout=600)
     disp_inf['plane']['crtc_id'] = disp_inf['crtc_id']  if disp_inf['plane']
     m_str += get_mode_string(disp_inf, disp_inf['plane'])
   end
-  modetest(m_str, dut, timeout, true) do
+  modetest(m_str, dut, timeout) do
     yield
   end
 end
@@ -262,7 +267,7 @@ def run_sync_flip_test(params, dut=@equipment['dut1'], timeout=600)
              yield
            end
   
-  result[0]
+  [result[0], result[2]]
 end
 
 #Function to run a vsynced page flipping test, takes the same parameters as function
@@ -272,14 +277,14 @@ end
 #           an array [] containing the fps captured]
 def run_perf_sync_flip_test(params, dut=@equipment['dut1'], timeout=600)
   #-v test vsynced page flipping
-  s_f_test_str = '-v '
+  s_f_test_str = '-t -v '
   f_rates = []
   params.each do |disp_inf|
     disp_inf['plane']['crtc_id'] = disp_inf['crtc_id'] if disp_inf['plane']
     s_f_test_str += get_mode_string(disp_inf, disp_inf['plane'])
     f_rates << disp_inf['framerate'].to_f
   end
-  output = modetest(s_f_test_str, dut, timeout, true) do
+  output = modetest(s_f_test_str + ' &', dut, timeout) do
     yield
   end
   fps_arr = output.scan(/^freq:\s*([\d.]+)Hz/).drop(2).flatten
@@ -315,7 +320,8 @@ def get_properties(dut=@equipment['dut1'])
   mode_string = modetest('', dut, 10).gsub(/#{dut.prompt}[^\n]+/,'')
   result = {}
   get_sections(mode_string, /^\w.*:/).each do |drm_mode_obj_type, info|
-    result[drm_mode_obj_type] = get_entries(info)
+    entries = get_entries(info)
+    result[drm_mode_obj_type] = entries if entries
   end
   result
 end
@@ -325,7 +331,9 @@ end
 #Returns an array of hashes where each hash in the array contains 
 #  <entry field name> => <field value> 
 def get_entries(string)
-  table_header = string.match(/(^id.*)/).captures[0].strip()
+  raw_header = string.match(/(^id.*)/)
+  return raw_header if !raw_header
+  table_header = raw_header.captures[0].strip()
   table_content = string.sub(table_header,'')
   column_names = table_header.split(/\t+/)
   entry_regex = /^[\w,\- \(\)]+(?:\t+[\w\-, \(\)]+){#{column_names.length() - 1}}/
@@ -455,8 +463,13 @@ def get_test_modes(drm_info, formats, conn=nil)
         if !drm_info['Planes:'].empty? && connector['modes:'].length == 1
           connector['modes:'] << connector['modes:'][0]
         end
+        adj_idx = 0
         connector['modes:'].each_index do |i| 
           mode = connector['modes:'][i]
+          if (@equipment['dut1'].name.match(/beagle|am335x/) && mode['name'].match(/(\d+)x(\d+)/).captures[0].to_i > 1280 && mode['name'].match(/(\d+)x(\d+)/).captures[1].to_i > 720) 
+            adj_idx += 1
+            next
+          end
           formats[connector['id']].each do |format|
             mode_params = {'connectors_ids' => [connector['id']],
                            'connectors_names' => [connector['name'].downcase().strip()], 
@@ -472,8 +485,8 @@ def get_test_modes(drm_info, formats, conn=nil)
               width, height = mode['name'].match(/(\d+)x(\d+)/).captures
               plane_params = {'width' => width, 
                               'height' => height,
-                              'xyoffset' => [i,i],
-                              'scale' => [0.125, 1.to_f/(1+i).to_f].max,
+                              'xyoffset' => [i-adj_idx+1,i-adj_idx+1],
+                              'scale' => [0.125, 1.to_f/(2+i-adj_idx).to_f].max,
                               'format' => plane['formats:'][rand(plane['formats:'].length)]}
             end
             mode_params['plane'] = plane_params
