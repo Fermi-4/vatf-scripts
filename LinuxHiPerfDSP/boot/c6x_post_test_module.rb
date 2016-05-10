@@ -30,6 +30,7 @@
       sleep(10)
      # connect_to_equipment('dut1')
       @power_handler.switch_on(power_port)
+      sleep(1)
       response = connect_to_equipment('dut1',wait_for_string,timeout)
       if (response != nil)
         result = parse_response(response,wait_for_string)
@@ -50,13 +51,13 @@
       }
       if success_times == boot_times
         test_done_result = FrameworkConstants::Result[:pass]
-        comment = "Test pass. POST test completed successfully #{boot_times} out of #{boot_times} times "
+        comment = "Test pass. Test completed successfully #{boot_times} out of #{boot_times} times "
 	  else
 		test_done_result = FrameworkConstants::Result[:fail]
-        comment = "Test fail. POST test failed #{fail_times} out of #{boot_times} times. Boot log - #{boot_arr.to_s} "    
+        comment = "Test fail. Test failed #{fail_times} out of #{boot_times} times. Boot log - #{boot_arr.to_s} "    
       end
       if (boot_failures > 0) 
-        comment += "Did not find POST #{wait_for_string} string #{boot_failures} out of #{boot_times} times"
+        comment += "Did not find #{wait_for_string} string #{boot_failures} out of #{boot_times} times"
       end
       set_result(test_done_result,comment)
     end
@@ -75,7 +76,7 @@
         raise "You need Serial port connectivity to #{equipment}. Please check your bench file" 
       end
       begin
-        this_equipment.wait_for(wait_for_string, timeout)
+        this_equipment.send_cmd("\n",wait_for_string, timeout)
         if (this_equipment.timeout?)
           return nil
         else
