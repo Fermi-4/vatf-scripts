@@ -119,6 +119,17 @@ module EvmData
     end
   end
 
+  def get_qspi_loc(platform)
+    case platform
+    when /^k2.{0,2}-evm/
+      return {'secondary_bootloader' => '0'}
+    when /dra7xx-evm|dra72x-evm|dra7xx-hsevm|dra72x-hsevm/
+      return {'primary_bootloader' => '0', 'secondary_bootloader' => '0x40000'}
+    else
+      raise "get_qspi_loc: No location is being specified for QSPI partitions for #{platform}"
+    end
+  end
+
   def get_rawmmc_loc(platform)
     case platform
     when "am335x-evm"
@@ -387,6 +398,27 @@ module EvmData
       return :LOAD_FROM_NAND
     end
   end
+
+  # Define qspi boot method name
+  def get_qspi_boot_method(platform)
+    case platform.downcase
+    when /^k2.{0,2}-evm/
+      return :LOAD_FROM_QSPI_BY_BMC
+    else
+      return :LOAD_FROM_QSPI
+    end
+  end
+
+  # Define spi boot method name
+  def get_spi_boot_method(platform)
+    case platform.downcase
+    when /^k2.{0,2}-evm/
+      return :LOAD_FROM_SPI_BY_BMC
+    else
+      return :LOAD_FROM_SPI
+    end
+  end
+
   # Define no boot method name
   def get_no_boot_method(platform)
     case platform.downcase

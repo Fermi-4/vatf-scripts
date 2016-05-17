@@ -200,7 +200,10 @@ module LspTestScript
     when 'spi'
       spi_loc = get_spi_loc(@equipment['dut1'].name)
       new_params["spi_#{part}_loc"] = spi_loc["#{part}"]
-    when 'rawmmc'
+    when 'qspi'
+      spi_loc = get_qspi_loc(@equipment['dut1'].name)
+      new_params["spi_#{part}_loc"] = spi_loc["#{part}"]
+    when /rawmmc/
       rawmmc_loc = get_rawmmc_loc(@equipment['dut1'].name)
       new_params["rawmmc_#{part}_loc"] = rawmmc_loc["#{part}"]
     else
