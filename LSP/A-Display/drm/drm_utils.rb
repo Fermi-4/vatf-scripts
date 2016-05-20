@@ -466,7 +466,7 @@ def get_test_modes(drm_info, formats, conn=nil)
         adj_idx = 0
         connector['modes:'].each_index do |i| 
           mode = connector['modes:'][i]
-          if (@equipment['dut1'].name.match(/beagle|am335x/) && mode['name'].match(/(\d+)x(\d+)/).captures[0].to_i > 1280 && mode['name'].match(/(\d+)x(\d+)/).captures[1].to_i > 720) 
+          if (@equipment['dut1'].name.match(/beagle|am335x|am43xx/) && (mode['name'].match(/(\d+)x(\d+)/).captures[0].to_i > 1280 || mode['name'].match(/(\d+)x(\d+)/).captures[1].to_i > 720)) 
             adj_idx += 1
             next
           end

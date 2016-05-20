@@ -16,7 +16,7 @@ require File.dirname(__FILE__)+'/drm_base'
 def run_mode_test(mode_params, perf_data=[])
   test_result = true
   result_string = ''
-  metric_name = "#{mode_params[0]['type']}-#{mode_params[0]['mode']}@#{mode_params[0]['framerate']}-" \
+  metric_name = "#{mode_params[0]['connectors_names'].join('-')}-#{mode_params[0]['mode']}@#{mode_params[0]['framerate']}-" \
                 "#{mode_params[0]['format']}"
   fps_res, fps_data = run_perf_sync_flip_test(mode_params) do
     sleep 60

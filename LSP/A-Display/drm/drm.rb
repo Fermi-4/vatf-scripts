@@ -9,6 +9,7 @@ require File.dirname(__FILE__)+'/drm_base'
 #string regarding the result of the test 
 def get_drm_test_result(test_string)
   sleep(5) #Run for at least 5 secs
+  return [FrameworkConstants::Result[:pass], ''] if @test_params.params_chan.instance_variable_defined?(:@auto)
   res_win = ResultWindow.new(test_string)
   res_win.show()
   return res_win.get_result()
@@ -26,26 +27,40 @@ def run_mode_test(mode_params, perf_data=[])
   mode_result = FrameworkConstants::Result[:nry]
   title_string = "#{mode_params.to_s}"
   while(mode_result == FrameworkConstants::Result[:nry])
-    set_mode(mode_params) do
+    output = set_mode(mode_params) do
       mode_result, mode_string = get_drm_test_result("#{title_string} mode test")
       test_result &= mode_result == FrameworkConstants::Result[:pass]
       result_string += mode_string
     end
   end
+  
+  if output.match(/error|cut\s*here/im)
+    result_string += output
+    test_result &= false
+  else
+    result_string += 'negative test' if output.match(/Invalid\s*argument/im)
+    test_result &= true
+  end
+
   sf_result = test_result ? FrameworkConstants::Result[:nry] : FrameworkConstants::Result[:fail]
+
   while(sf_result == FrameworkConstants::Result[:nry])
-    sf_string = ''
-    fps_res = run_sync_flip_test(mode_params) do
+    fps_res, output = run_sync_flip_test(mode_params) do
       sf_result, sf_string = get_drm_test_result("#{title_string} sync flip test")
       test_result &= sf_result == FrameworkConstants::Result[:pass]
-      result_string += ', ' + sf_string
-    end
-    fps_res = true if sf_string.match(/negative\s*test/im) 
+      result_string += ', ' + sf_string if sf_string != ''
+    end 
+  end
+  if output.match(/error|cut\s*here/im)
+    result_string += ", #{output}"
+    test_result &= false
+  else
+    result_string += ', negative test' if output.match(/Invalid\s*argument/im)
+    test_result &= true
+    fps_res = true
   end
   if !fps_res
     result_string += ", fps Failed in sync flip test "
-  else
-    result_string += ", fps Passed in sync flip test " 
   end
   test_result &= fps_res
   [test_result, result_string]

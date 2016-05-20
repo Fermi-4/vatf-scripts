@@ -69,12 +69,15 @@ module CaptureUtils
     a_psnr=/\s*A=([-\d\.]+)dB,/
     a_ssim=/\s*A=([-\d\.]+)%,/
     if num_comp != 4
-      a_psnr=//
-      a_ssim=//
-    end
-    sys.response.scan(/^Frame\s*#\d+:\s+PSNR:#{a_psnr}\s*R=([-\d\.]+)dB,\s*G=([-\d\.]+)dB,\s*B=([-\d\.]+)dB\s*\|\|\s*SSIM:#{a_ssim}\s*R=([-\d\.]+)%,\s*G=([-\d\.]+)%,\s*B=([-\d\.]+)%/i) do |v1, v2, v3, v4, v5, v6, v7, v8| 
-      result << {'psnr' => {'a' => v1.to_f, 'r' => v2.to_f, 'g' => v3.to_f, 'b' => v4.to_f},
-                 'ssim' => {'a' => v5.to_f, 'r' => v6.to_f, 'g' => v7.to_f, 'b' => v8.to_f}}
+      sys.response.scan(/^Frame\s*#\d+:\s+PSNR:\s*R=([-\d\.]+)dB,\s*G=([-\d\.]+)dB,\s*B=([-\d\.]+)dB\s*\|\|\s*SSIM:\s*R=([-\d\.]+)%,\s*G=([-\d\.]+)%,\s*B=([-\d\.]+)%/i) do |v1, v2, v3, v4, v5, v6| 
+        result << {'psnr' => {'r' => v1.to_f, 'g' => v2.to_f, 'b' => v3.to_f},
+                   'ssim' => {'r' => v4.to_f, 'g' => v5.to_f, 'b' => v6.to_f}}
+      end
+    else
+      sys.response.scan(/^Frame\s*#\d+:\s+PSNR:\s*A=([-\d\.]+)dB,\s*R=([-\d\.]+)dB,\s*G=([-\d\.]+)dB,\s*B=([-\d\.]+)dB\s*\|\|\s*SSIM:\s*A=([-\d\.]+)%,\s*R=([-\d\.]+)%,\s*G=([-\d\.]+)%,\s*B=([-\d\.]+)%/i) do |v1, v2, v3, v4, v5, v6, v7, v8| 
+        result << {'psnr' => {'a' => v1.to_f, 'r' => v2.to_f, 'g' => v3.to_f, 'b' => v4.to_f},
+                   'ssim' => {'a' => v5.to_f, 'r' => v6.to_f, 'g' => v7.to_f, 'b' => v8.to_f}}
+      end
     end
     result
   end
