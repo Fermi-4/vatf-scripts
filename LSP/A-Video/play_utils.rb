@@ -77,6 +77,7 @@ def play_video(params)
                 "NV24" => 'yuv444p',
                 "NV16" => 'yuv422p',
                 }
+  pixel_fmts.default = params['pix_fmt'].downcase()
 
   if ["SBGGR8", "SGBRG8", "SGRBG8", "SRGGB8"].include?(params['pix_fmt'])
     converted_file = params['file_path'].gsub(/[^\.]+$/, 'pnm')

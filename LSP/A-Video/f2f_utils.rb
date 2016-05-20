@@ -22,3 +22,21 @@ def get_scaled_resolution(width, height, scaling)
   res_height += res_height % 16 > 0 ? 16 - res_height % 16 : 0
   [res_width, res_height]
 end
+
+def get_ref
+  @equipment['server1'].send_cmd("mkdir #{@linux_temp_folder}", @equipment['server1'].prompt) if !File.exists?(@linux_temp_folder)
+  @equipment['server1'].send_cmd("rm #{@linux_temp_folder}/ref_*", @equipment['server1'].prompt)
+  remote_url = yield "http://gtopentest-server.gt.design.ti.com/anonymous/common/Multimedia/"
+  f_base_name = File.basename(remote_url)
+  local_file = File.join(@linux_temp_folder, f_base_name)
+  
+  @equipment['server1'].send_cmd("wget --no-proxy #{remote_url} -O #{local_file} || " \
+                  "wget #{remote_url} -O #{local_file} || rm #{local_file}",
+                  @equipment['server1'].prompt,
+                  600)
+
+  @equipment['server1'].send_cmd("tar -C #{@linux_temp_folder} -Jxvf #{local_file} || rm #{local_file}",
+                  @equipment['server1'].prompt,
+                  600)
+  return File.join(@linux_temp_folder, @equipment['server1'].response.strip()) if !@equipment['server1'].response.match(/Error/i)
+end

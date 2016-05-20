@@ -36,21 +36,37 @@ def run
   @equipment['dut1'].send_cmd("rm -rf #{dut_test_file}", @equipment['dut1'].prompt)
   @equipment['server1'].send_cmd("rm -rf #{local_test_file}",@equipment['server1'].prompt)
   @equipment['dut1'].send_cmd("testvpem2m #{dut_src_file} #{src_video_width} #{src_video_height} #{src_format} #{dut_test_file} #{video_width} #{video_height} #{test_format} #{interlace} #{translen}", @equipment['dut1'].prompt, 300)
+  num_frames = @equipment['dut1'].response.match(/frames\s*left\s*(\d+)/im)[1].to_i + 1
   dut_ip = get_ip_addr()
   scp_pull_file(dut_ip, dut_test_file, local_test_file)
   if @test_params.params_chan.instance_variable_defined?(:@auto)
-    jnd_max = @test_params.params_chan.jnd_criteria[0].to_f
-    test_results = @equipment['video_tester'].file_to_file_test({'ref_file' => ref_path, 'test_file' => local_test_file, 'data_format' => test_format, 'tst_data_format' => test_format, 'format' => [video_width,video_height,30],'video_height' => video_height , 'video_width' => video_width, 'num_frames' => 1000, 'metric_window' => [0,0,video_width,video_height]})
-    luma = @equipment['video_tester'].get_jnd_scores({'component' => 'y'})
-    chroma = @equipment['video_tester'].get_jnd_scores({'component' => 'chroma'})
-    @results_html_file.add_paragraph("")
-    res_table = @results_html_file.add_table([["JND luma",{:bgcolor => "4863A0"}], 
-                                              ["JND chroma", {:bgcolor => "4863A0"}]])
-    @results_html_file.add_rows_to_table(res_table,[["min #{luma.min} max #{luma.max}", "min #{chroma.min} max #{chroma.max}"]])
-    if luma.max >= jnd_max || chroma.max >= jnd_max
-      set_result(FrameworkConstants::Result[:fail], "Test Failed, converted file failed jnd test")
+    format_length = case(test_format.downcase())
+      when 'argb32','abgr32'
+        4
+      when 'rgb24','bgr24'
+        3
+      when 'yuyv','uyvy'
+        2
+      when 'nv12'
+        1.5
+    end
+    ref_path = get_reference(@test_params.params_chan.video_url[0],
+                              video_width,
+                              video_height,
+                              test_format,
+                              interlace)
+    trunc_local_ref = ref_path
+    if File.size(ref_path) != File.size(local_test_file)
+      trunc_local_ref = ref_path+'.trunc'
+      frame_size = (format_length * video_height * video_width).to_i
+      @equipment['server1'].send_cmd("dd if=#{ref_path} of=#{trunc_local_ref} bs=#{frame_size} count=#{num_frames}", @equipment['server1'].prompt,600)
+    end
+    @equipment['server1'].send_cmd("md5sum #{trunc_local_ref} #{local_test_file} | grep -o '^[^ ]*'",@equipment['server1'].prompt, 600)
+    qual_res = @equipment['server1'].response.split()
+    if qual_res[0].strip() != qual_res[1].strip()
+      set_result(FrameworkConstants::Result[:fail], "Test Failed, converted file failed test (#{num_frames} frames), #{qual_res[0]} != #{qual_res[1]}")
     else
-      set_result(FrameworkConstants::Result[:pass], "Test passed")
+      set_result(FrameworkConstants::Result[:pass], "Test passed (#{num_frames} frames)")
 	  end
 	else
 	  test_result = FrameworkConstants::Result[:nry]
@@ -79,5 +95,17 @@ def run
 end
 
 
-
+def get_reference(video_url, width, height, format, interlace)
+  ref_file = ['ref',
+              File.basename(video_url), 
+              'to',
+              "#{width}x#{height}",
+              format,
+              interlace == 0 ? 'nodeinter' : 'deinter'].join('_') 
+  ref_file += '.' + format + '.tar.xz'
+  
+  get_ref do |base_uri|
+    base_uri + '/host-utils/vpe/ref-media/' + ref_file 
+  end
+end
 

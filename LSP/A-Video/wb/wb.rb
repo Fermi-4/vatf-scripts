@@ -34,35 +34,69 @@ def run
     device = '/dev/'+dev
     @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --list-formats", @equipment['dut1'].prompt, 10)
     pix_fmts = @equipment['dut1'].response.scan(/(?<=Pixel\sFormat:\s')\w+/im)
+    prand = Random.new(src_video_height*src_video_width*pix_fmts.join('').bytes.inject(:+))
     test_formats = @test_params.params_chan.instance_variable_defined?(:@test_formats) ? @test_params.params_chan.test_formats : pix_fmts
+    num_frames = 70
     pix_fmts.each do |src_format|
       @equipment['dut1'].send_cmd("rm  #{@linux_dst_dir}/*", @equipment['dut1'].prompt) #Make sure we have enough disk space for the f2f operations
       ref_url = File.join(base_url, get_file_url_suffix(src_video_width, src_video_height, src_format))
       ref_path, dut_src_file = get_file_from_url(ref_url, ref_url)
       test_formats.each do |test_format|
-        scaling = @test_params.params_chan.instance_variable_defined?(:@scaling) ? @test_params.params_chan.scaling[0].to_f : get_scaling(src_video_width, src_video_height)
+        scaling = @test_params.params_chan.instance_variable_defined?(:@scaling) ? @test_params.params_chan.scaling[0].to_f : get_scaling(src_video_width, src_video_height, prand)
         video_width, video_height = get_scaled_resolution(src_video_width, src_video_height, scaling)
         @equipment['dut1'].send_cmd("rm #{dut_test_file}", @equipment['dut1'].prompt) #Remove previous test file if any
-        @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --set-fmt-video-out=width=#{src_video_width},height=#{src_video_height},pixelformat=#{src_format.upcase()} --stream-from=#{dut_src_file} --set-fmt-video=width=#{video_width},height=#{video_height},pixelformat=#{test_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=6 --stream-out-mmap=6 --stream-count=70 --stream-poll", @equipment['dut1'].prompt, 300)
+        @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --set-fmt-video-out=width=#{src_video_width},height=#{src_video_height},pixelformat=#{src_format.upcase()} --stream-from=#{dut_src_file} --set-fmt-video=width=#{video_width},height=#{video_height},pixelformat=#{test_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=6 --stream-out-mmap=6 --stream-count=#{num_frames} --stream-poll", @equipment['dut1'].prompt, 300)
         #@equipment['dut1'].send_cmd("/home/root/tests/wbtest -d #{device} -i #{dut_src_file} -j #{src_video_width}x#{src_video_height} -k #{src_format.upcase()} -o #{dut_test_file} -p #{video_width}x#{video_height} -q #{test_format.upcase()} -n 70", @equipment['dut1'].prompt, 300)
         scp_pull_file(dut_ip, dut_test_file, local_test_file)
-        t_result = FrameworkConstants::Result[:nry]
-        while(t_result == FrameworkConstants::Result[:nry])
-          res_win = ResultWindow.new("WriteBack #{video_width}x#{video_height} Test. Formats: #{src_format}->#{test_format}")
-          video_info = {'pix_fmt' => src_format.upcase(), 'width' => src_video_width,
-                        'height' => src_video_height, 'file_path' => ref_path,
-                        'sys'=> @equipment['server1']}
-          res_win.add_buttons({'name' => 'Play Ref file', 
-                               'action' => :play_video, 
-                               'action_params' => video_info})
-          res_win.add_buttons({'name' => 'Play Test file', 
-                               'action' => :play_video, 
-                               'action_params' => video_info.merge({'file_path'=>local_test_file,
-                                                                    'pix_fmt' => test_format.upcase(),
-                                                                    'width' => video_width,
-                                                                    'height' => video_height})})
-          res_win.show()
-          t_result, t_string = res_win.get_result()
+        if @test_params.params_chan.instance_variable_defined?(:@auto)
+          format_length = case(test_format.downcase())
+            when 'xr24','ar24'
+              4
+            when 'bg24','rg24'
+              3
+            when 'yuyv','uyvy'
+              2
+            when 'nv12'
+              1.5
+          end
+          ref_path = get_reference(ref_url,
+                                   video_width,
+                                   video_height,
+                                   test_format)
+          trunc_local_ref = ref_path
+          if File.size(ref_path) != File.size(local_test_file)
+            trunc_local_ref = ref_path+'.trunc'
+            frame_size = (format_length * video_height * video_width).to_i
+            @equipment['server1'].send_cmd("dd if=#{ref_path} of=#{trunc_local_ref} bs=#{frame_size} count=#{num_frames}", @equipment['server1'].prompt,600)
+          end
+          @equipment['server1'].send_cmd("md5sum #{trunc_local_ref} #{local_test_file} | grep -o '^[^ ]*'",@equipment['server1'].prompt, 600)
+          qual_res = @equipment['server1'].response.split()
+          if qual_res[0].strip() != qual_res[1].strip()
+            t_result = FrameworkConstants::Result[:fail]
+            t_string = "failed, converted file failed test (#{num_frames} frames), #{qual_res[0]} != #{qual_res[1]}"
+          else
+            t_result = FrameworkConstants::Result[:pass]
+            t_string = "passed (#{num_frames} frames)"
+          end
+        else
+          t_result = FrameworkConstants::Result[:nry]
+          while(t_result == FrameworkConstants::Result[:nry])
+            res_win = ResultWindow.new("WriteBack #{video_width}x#{video_height} Test. Formats: #{src_format}->#{test_format}")
+            video_info = {'pix_fmt' => src_format.upcase(), 'width' => src_video_width,
+                          'height' => src_video_height, 'file_path' => ref_path,
+                          'sys'=> @equipment['server1']}
+            res_win.add_buttons({'name' => 'Play Ref file', 
+                                 'action' => :play_video, 
+                                 'action_params' => video_info})
+            res_win.add_buttons({'name' => 'Play Test file', 
+                                 'action' => :play_video, 
+                                 'action_params' => video_info.merge({'file_path'=>local_test_file,
+                                                                      'pix_fmt' => test_format.upcase(),
+                                                                      'width' => video_width,
+                                                                      'height' => video_height})})
+            res_win.show()
+            t_result, t_string = res_win.get_result()
+          end
         end
         if t_result == FrameworkConstants::Result[:pass]
           test_result = test_result && true
@@ -109,10 +143,23 @@ def get_video_ext(format)
   result[fmt]
 end
 
-def get_scaling(width, height)
+def get_scaling(width, height, prand)
   if (width.to_i * height.to_i) > 101376
-    rand()/2 + 0.5
+    prand.rand()/2 + 0.5
   else
-    rand() + 1
+    prand.rand() + 1
+  end
+end
+
+def get_reference(video_url, width, height, format)
+  ref_file = ['ref',
+              File.basename(video_url), 
+              'to',
+              "#{width}x#{height}",
+              format].join('_') 
+  ref_file += '.' + format + '.tar.xz'
+  
+  get_ref do |base_uri|
+    base_uri + '/host-utils/wb/ref-media/' + ref_file 
   end
 end
