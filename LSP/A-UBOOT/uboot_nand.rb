@@ -39,25 +39,25 @@ def run
 
   @equipment['dut1'].send_cmd("nand write #{ramaddress} #{nand_test_addr} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
 
-  if ! @equipment['dut1'].response.include?("bad block 0x#{nand_test_addr}") 
+  if ! @equipment['dut1'].response.include?("bad block 0x#{nand_test_addr}") || @equipment['dut1'].response.match(/(error|failed)/i) 
     result += 1
-    result_msg = result_msg + "nand write did not skip bad block #{nand_test_addr}; "
+    result_msg = result_msg + "nand write did not skip bad block #{nand_test_addr} or there is error; "
   end
   puts "===========nand write result: #{result}===and result_msg: #{result_msg}========="
 
   @equipment['dut1'].send_cmd("nand read #{ramaddress} #{nand_test_addr} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
 
-  if ! @equipment['dut1'].response.include?("bad block 0x#{nand_test_addr}") 
+  if ! @equipment['dut1'].response.include?("bad block 0x#{nand_test_addr}") || @equipment['dut1'].response.match(/(error|failed)/i) 
     result += 1
-    result_msg = result_msg + "nand read did not skip bad block #{nand_test_addr}; "
+    result_msg = result_msg + "nand read did not skip bad block #{nand_test_addr} or there is error; "
   end
   puts "===========nand read result: #{result}===and result_msg: #{result_msg}========="
  
   @equipment['dut1'].send_cmd("nand erase #{nand_test_addr} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
 
-  if ! @equipment['dut1'].response.match(/bad\s+block\s+at\s+0x#{nand_test_addr}/)
+  if ! @equipment['dut1'].response.match(/bad\s+block\s+at\s+0x#{nand_test_addr}/) || @equipment['dut1'].response.match(/(error|failed)/i)
     result += 1
-    result_msg = result_msg + "nand erase did not skip bad block #{nand_test_addr}; "
+    result_msg = result_msg + "nand erase did not skip bad block #{nand_test_addr} or there is error; "
   end
   puts "===========nand erase result: #{result}===and result_msg: #{result_msg}========="
 

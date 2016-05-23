@@ -27,6 +27,7 @@ module PlatformSpecificVarNames
       'beagle'=>'0x80200000',
       'da850-omapl138-evm'=>'0xc0700000',
       'tci6614-evm' => '0x80000100',
+      'k2g-evm' => '0x81000000',
       'k2hk-evm' => '80000000',
       'k2l-evm' => '80000000',
       'k2e-evm' => '80000000'
@@ -39,6 +40,7 @@ module PlatformSpecificVarNames
       'am57xx-evm'=>'0x81200000',
       'dra72x-evm'=>'0x81200000',
       'omap5-evm' => '0x83000000',
+      'k2g-evm'=>'0x82000000',
       'k2hk-evm' => 'f0000000',
       'k2l-evm' => 'f0000000',
       'k2e-evm' => 'f0000000'
@@ -51,6 +53,7 @@ module PlatformSpecificVarNames
       'dra7xx-evm'=>'0x84000000',
       'am57xx-evm'=>'0x84000000',
       'dra72x-evm'=>'0x84000000',
+      'k2g-evm'=>'0x84000000',
       'k2hk-evm' => '0x84000000',
       'k2l-evm' => '0x84000000',
       'k2e-evm' => '0x84000000'
