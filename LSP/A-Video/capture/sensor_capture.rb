@@ -35,7 +35,7 @@ def run
                                               ["Comment", {:bgcolor => "4863A0"}],
                                               ["Test Params", {:bgcolor => "4863A0"}]])
       fmt_opts['pixel-format'].each_index do |pix_idx|
-        resolution = fmt_opts['frame-size'][res_idx]
+        resolution = @test_params.params_chan.instance_variable_defined?(:@scaling) ? fmt_opts['frame-size'][0] : fmt_opts['frame-size'][res_idx]
         pix_fmt = fmt_opts['pixel-format'][pix_idx]
         width,  height = resolution.split(/x/i)
         width,  height = get_scaled_resolution(width, height, rand()) if @test_params.params_chan.instance_variable_defined?(:@scaling)

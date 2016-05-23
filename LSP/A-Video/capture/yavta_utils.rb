@@ -36,7 +36,7 @@ def get_fmt_options(capture_device, dut=@equipment['dut1'])
   formats.each do |fmt_str|
     result['pixel-format'] << fmt_str.match(/Format\s*\d+:\s*(\w+)\s*\(\w+\)/i).captures[0]
   end
-  result['frame-size'] = Set.new(result['frame-size']).to_a
+  result['frame-size'] = Set.new(result['frame-size']).to_a.sort() {|v1, v2| v2.split('x').map(&:to_i).inject(:*) <=> v1.split('x').map(&:to_i).inject(:*)} 
   result
 end
 
