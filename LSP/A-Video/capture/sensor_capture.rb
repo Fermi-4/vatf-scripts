@@ -42,6 +42,8 @@ def run
         test_params = get_test_opts(capture_opts, "#{width}x#{height}", pix_fmt, capture_path)
         puts "Test params: " + test_params.to_s
         trial_result = FrameworkConstants::Result[:nry]
+        play_width = ''
+        play_height = ''
         while(trial_result == FrameworkConstants::Result[:nry])
           @equipment['dut1'].send_cmd("rm -rf #{capture_path}", @equipment['dut1'].prompt, 100)
           @equipment['server1'].send_cmd("rm -rf #{local_test_file}",@equipment['server1'].prompt)
@@ -67,7 +69,7 @@ def run
         end
         test_result = test_result && (trial_result == FrameworkConstants::Result[:pass])
         @results_html_file.add_rows_to_table(res_table,[[capture_device,
-                                                         resolution, 
+                                                         "#{play_width}x#{play_height}", 
                                                          pix_fmt,
                                                          trial_result == FrameworkConstants::Result[:pass] ? ["Passed",{:bgcolor => "green"}] :
                                                          ["Failed",{:bgcolor => "red"}],
