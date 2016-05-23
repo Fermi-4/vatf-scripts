@@ -4,6 +4,7 @@ require File.dirname(__FILE__)+'/../../../lib/result_forms'
 require File.dirname(__FILE__)+'/../../../lib/utils'
 require File.dirname(__FILE__)+'/../play_utils'
 require File.dirname(__FILE__)+'/../dev_utils'
+require File.dirname(__FILE__)+'/../f2f_utils'
 
 include LspTargetTestScript
 
@@ -37,22 +38,25 @@ def run
         resolution = fmt_opts['frame-size'][res_idx]
         pix_fmt = fmt_opts['pixel-format'][pix_idx]
         width,  height = resolution.split(/x/i)
-        test_params = get_test_opts(capture_opts, resolution, pix_fmt, capture_path)
+        width,  height = get_scaled_resolution(width, height, rand()) if @test_params.params_chan.instance_variable_defined?(:@scaling)
+        test_params = get_test_opts(capture_opts, "#{width}x#{height}", pix_fmt, capture_path)
         puts "Test params: " + test_params.to_s
         trial_result = FrameworkConstants::Result[:nry]
         while(trial_result == FrameworkConstants::Result[:nry])
           @equipment['dut1'].send_cmd("rm -rf #{capture_path}", @equipment['dut1'].prompt, 100)
           @equipment['server1'].send_cmd("rm -rf #{local_test_file}",@equipment['server1'].prompt)
-          sensor_capture(test_params, [width.to_f * height.to_f / 2000, 30].max)
+          cap_width, cap_height = sensor_capture(test_params, [width.to_f * height.to_f / 2000, 30].max)
           if @equipment['dut1'].response.downcase.include?('unsupported video format')
             trial_result = FrameworkConstants::Result[:pass]
             res_string = "Negative test"
             break 
           end
           scp_pull_file(dut_ip, capture_path, local_test_file)
-          res_win = ResultWindow.new("Capture #{resolution} Test. Pix fmt: #{pix_fmt}#{test_params.has_key?("-k") ? ', Cropped ' + test_params['-k'] : ''}")
-          video_info = {'pix_fmt' => pix_fmt, 'width' => width,
-                        'height' => height, 'file_path' => local_test_file,
+          play_width = cap_width && cap_height ? cap_width : width
+          play_height = cap_width && cap_height ? cap_height : height
+          res_win = ResultWindow.new("Capture #{play_width}x#{play_height} Test. Pix fmt: #{pix_fmt}#{test_params.has_key?("-k") ? ', Cropped ' + test_params['-k'] : ''}")
+          video_info = {'pix_fmt' => pix_fmt, 'width' => play_width,
+                        'height' => play_height, 'file_path' => local_test_file,
                         'sys'=> @equipment['server1']}
           res_win.add_buttons({'name' => 'Play Test file', 
                                'action' => :play_video, 

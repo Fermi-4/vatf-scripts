@@ -95,6 +95,10 @@ def sensor_capture(params, timeout, dut=@equipment['dut1'])
   cmd = 'yavta'
   params.each{|key,val| cmd += ' ' + key + val.to_s}
   dut.send_cmd(cmd, dut.prompt, timeout)
+  #Video format: NV12 (3231564e) 336x244 (stride 336) field none buffer size 122976
+  res_match = dut.response.match(/Video\s*format:\s*#{params['-f']}\s.*?\)\s*(\d+)x(\d+).*?/) 
+  return res_match.captures if res_match
+  [nil, nil]
 end
 
 #Fuction to obtain the test parameter for the sensorCapture app, takes:
