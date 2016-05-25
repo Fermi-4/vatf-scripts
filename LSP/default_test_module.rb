@@ -333,6 +333,8 @@ module LspTestScript
       boot_attempts.times do |trial|
         begin
           @equipment['dut1'].boot(translated_boot_params)
+          @equipment['dut1'].log_info("Sleeping 15 secs to allow systemd to finish starting processes...")
+          sleep 15
           break
         rescue Exception => e
           fail_str = (trial == boot_attempts - 1) ? "Boot attempt #{trial + 1}/#{boot_attempts} failed" : \
