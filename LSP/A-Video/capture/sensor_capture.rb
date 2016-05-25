@@ -10,7 +10,7 @@ include LspTargetTestScript
 
 def run
   set_capture_app()
-  @equipment['dut1'].send_cmd("modprobe ti-vip", /for\s*capture/)
+  @equipment['dut1'].send_cmd("lsmod | grep ti_vip || modprobe ti-vip", @equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt)
   capture_path = File.join(@linux_dst_dir, 'video_capture_test.raw')
   local_test_file = File.join(@linux_temp_folder, 'video_tst_file.raw')
