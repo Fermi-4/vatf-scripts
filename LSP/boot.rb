@@ -20,7 +20,10 @@ module Boot
   def is_uut_up?
     # in order to distinquish from uboot prompt, use 'uname' to check if dut alive.
     # But, it only works for Linux. For other OS???
-    @equipment['dut1'].send_cmd("uname -a", /Linux.+?#{@equipment['dut1'].prompt}/m, 5, false)
+    3.times do |trial|
+      @equipment['dut1'].send_cmd("uname -a", /Linux.+?#{@equipment['dut1'].prompt}/m, 10, false)
+      break if !@equipment['dut1'].timeout?
+    end
     !@equipment['dut1'].timeout?
   end
 
