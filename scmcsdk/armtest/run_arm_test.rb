@@ -189,7 +189,7 @@ def analyze_criteria(count, test_cmd, std_response, criteria)
         return [false, comment]
       end
     #else, scan buffer to see if send_cmd result matches criterion
-      elsif std_response[/#{criterion}/imo]
+    elsif std_response[/#{criterion}/im]
       puts "Output has criterion #{criterion}"
       comment += "Iteration #{count+1}: \
         Output has criterion \"#{criterion}\".\n"
