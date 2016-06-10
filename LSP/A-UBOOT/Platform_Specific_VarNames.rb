@@ -95,6 +95,7 @@ module PlatformSpecificVarNames
       'beagle' =>'80200004',
       'da850-omapl138-evm'=>'C0700004',
       'tci6614-evm' => '0x80000200',
+      'k2g-evm' => '0x80000200',
       'k2hk-evm' => '0x80000200',
       'k2l-evm' => '0x80000200',
       'k2e-evm' => '0x80000200'
