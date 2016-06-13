@@ -31,7 +31,7 @@ def run
   regex_spl = /U-Boot\s+SPL|SPL:/
   regex_uboot = /U-Boot\s+[\d.]+/
   regex_startkernel = /Starting\s+kernel/
-  regex_startfs = /INIT:\s+version/
+  regex_startfs = /Welcome|INIT:\s+version/
   regex_doneboot = /sh[\d+.-]+\s*#|login:/
 
   delay = $stage1_bootdelay.include?(@test_params.platform) ? $stage1_bootdelay[@test_params.platform] : 0
