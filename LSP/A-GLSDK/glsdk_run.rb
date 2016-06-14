@@ -14,10 +14,3 @@ end
 def run
   setup_and_run_glsdk_framework()
 end
-
-def clean
-  super
-  # Clear @old_keys to ensure that the EVM reboots.
-  @old_keys = ''
-  setup
-end

@@ -314,38 +314,6 @@ module GlsdkUtils
     return error_text
   end
   
-  def disable_gui_applications(equip, gui_app_files_to_disable, rename_suffix)
-    apps_renamed = false
-    command_wait_message = equip.prompt
-    wait_secs = 10
-    chk_cmd_echo = true
-    gui_app_files_to_disable.each do |g_app|
-      if item_exists?(equip, g_app)
-        apps_renamed = true
-        file_name = File.basename(g_app)
-        equip.send_cmd("cd #{File.dirname(g_app)}; mv #{file_name} #{file_name}#{rename_suffix}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-      end
-    end
-    # Reboot the EVM if GUI applications files were renamed
-    if apps_renamed
-      # Clear @old_keys to ensure that the EVM reboots.
-      @old_keys = ''
-      setup 
-    end
-  end
-  
-  def restore_gui_application_names(equip, gui_app_files_to_disable, rename_suffix)
-    command_wait_message = equip.prompt
-    wait_secs = 10
-    chk_cmd_echo = true
-    gui_app_files_to_disable.each do |g_app|
-      if item_exists?(equip, "#{g_app}#{rename_suffix}")
-        file_name = File.basename(g_app)
-        equip.send_cmd("cd #{File.dirname(g_app)}; mv #{file_name}#{rename_suffix} #{file_name}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-      end
-    end
-  end
-  
   def run_glsdk(equip, equip_srv, glsdk_dir, test_mins, evm_ip_address)
     error_text = ""
     command_wait_message = equip.prompt
@@ -488,11 +456,6 @@ module GlsdkUtils
     # Set Host and EVM equipment references
     equip_srv = @equipment['server1']
     equip_evm = @equipment['dut1']
-
-    # Set the list of files to be disabled to allow the GLSDK product framework to run properly
-    gui_app_files_to_disable = Array.new
-    gui_app_files_to_disable.push("/etc/init.d/weston")
-    gui_app_files_to_disable.push("/etc/rc5.d/S97matrix-gui-2.0")
   
     # Set default test values
     error_text = ""
@@ -577,15 +540,13 @@ module GlsdkUtils
       # Suffix to use when renaming the GUI applications on the EVM to disable them.
       rename_suffix = "_aglsdk.bak"
       # Disable the GUI applications before running the GLSDK framework
-      disable_gui_applications(equip_evm, gui_app_files_to_disable, rename_suffix)
+      equip_evm.send_cmd('ps -ef | grep -i weston | grep -v grep && /etc/init.d/weston stop && sleep 3',equip_evm.prompt,10)
       # Configure GLSDK framework files
       configure_glsdk(equip_evm, glsdk_dir, test_mins, loop, run_once, modules)
       # Run GLSDK framework
       error_text += run_glsdk(equip_evm, equip_srv, glsdk_dir, test_mins, evm_ip_address)
       # Generate GLSDK test report
       generate_glsdk_report(equip_evm, glsdk_dir)
-      # Restore the proper names of the GUI applications if necessary.
-      restore_gui_application_names(equip_evm, gui_app_files_to_disable, rename_suffix)
     end
     # Upload results files/logs and set the TestLink test result
     set_glsdk_test_result(equip_evm, equip_srv, tee_instance_id, glsdk_dir, glsdk_test_report_tar_name, error_text)
