@@ -137,6 +137,7 @@ module PowerFunctions
       "cat /sys/kernel/debug/pm_debug/count",
       "cat /sys/kernel/debug/pm_debug/time",
       "cat /sys/kernel/debug/suspend_stats",
+      "find /sys/kernel/debug/pm_qos/* -exec echo '{}' \; -exec cat '{}' \;",
       "for s in `ls /sys/devices/system/cpu/cpu#{cpu}/cpuidle/`; do cat /sys/devices/system/cpu/cpu#{cpu}/cpuidle/${s}/time; done",
       "cat /sys/devices/system/cpu/cpu#{cpu}/cpuidle/state*/usage"
       ].each {|st| 

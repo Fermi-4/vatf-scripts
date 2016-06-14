@@ -37,6 +37,8 @@ def run
   @equipment['dut1'].send_cmd("mkdir /debug", @equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd("mount -t debugfs debugfs /debug", @equipment['dut1'].prompt)
 
+  report_power_stats
+
   # Configure multimeter 
   @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name).merge({'dut_type'=>@equipment['dut1'].name}))
   
@@ -109,15 +111,7 @@ def run
     perf = save_results(power_readings, volt_readings)
   end
   
-  puts "\n\n======= Power Domain states info =======\n"
-  @equipment['dut1'].send_cmd(" cat #{cpufreq_0}/stats/time_in_state", @equipment['dut1'].prompt, 1)
-  @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
-  puts "\n\n======= Current CPU Frequency =======\n"
-  @equipment['dut1'].send_cmd(" cat #{cpufreq_0}/scaling_cur_freq", @equipment['dut1'].prompt, 1)
-  @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
-  puts "\n\n======= Power Domain transition stats =======\n"
-  @equipment['dut1'].send_cmd(" cat /debug/pm_debug/count", @equipment['dut1'].prompt, 1) 
-  @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
+  report_power_stats
 ensure
   if perf.size > 0
     set_result(FrameworkConstants::Result[:pass], "Power Performance data collected",perf)
