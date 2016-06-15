@@ -139,6 +139,11 @@ def dhcp_spl_config
   dhcp_spl_config  = """
 #OpenTest: Boot Images Block Start
 
+subnet 192.168.2.0 netmask 255.255.255.0 {
+  max-lease-time 300;
+  range dynamic-bootp 192.168.2.51 192.168.2.254;
+}
+
 ## Match the ROM and U-Boot SPL strings for am335x and am43xx
 if substring (option vendor-class-identifier, 0, 10) = \"DM814x ROM\" {
   filename \"usbspl/u-boot-spl.bin\"; #DM814x
