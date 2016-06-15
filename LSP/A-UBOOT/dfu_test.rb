@@ -7,49 +7,50 @@ require File.dirname(__FILE__)+'/../default_test_module'
    
 include LspTestScript   
 
-def connect_to_extra_equipment
-  usb_switch1 = @usb_switch_handler.usb_switch_controller[@equipment['dut1'].params['usbclient_port'].keys[0]]
-  if usb_switch1.respond_to?(:serial_port) && usb_switch1.serial_port != nil
-    usb_switch1.connect({'type'=>'serial'})
-  else
-    raise "Something wrong with usb switch connection for usbclient. Please check your setup"
-  end
-end
-
 def setup
 	@equipment['dut1'].set_api('psp')
   @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
-  connect_to_extra_equipment()
   install_dfu_util()
 end
 
 def run
   result = 0
   params = {}
-  params['primary_bootloader_mmc'] = @test_params.instance_variable_defined?(:@primary_bootloader_mmc) ? @test_params.primary_bootloader_mmc : ''
-  params['primary_bootloader_mmc_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_mmc_src_dev) ? @test_params.params_chan.primary_bootloader_mmc_src_dev[0] : 'eth'
-  params['secondary_bootloader_mmc'] = @test_params.instance_variable_defined?(:@secondary_bootloader_mmc) ? @test_params.secondary_bootloader_mmc : ''
-  params['secondary_bootloader_mmc_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_mmc_src_dev) ? @test_params.params_chan.secondary_bootloader_mmc_src_dev[0] : 'eth'
-
+  params['primary_bootloader'] = @test_params.instance_variable_defined?(:@primary_bootloader) ? @test_params.primary_bootloader : ''
+  params['primary_bootloader_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_src_dev) ? @test_params.params_chan.primary_bootloader_src_dev[0] : 'eth'
+  params['secondary_bootloader'] = @test_params.instance_variable_defined?(:@secondary_bootloader) ? @test_params.secondary_bootloader : ''
+  params['secondary_bootloader_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_src_dev) ? @test_params.params_chan.secondary_bootloader_src_dev[0] : 'eth'
   translated_boot_params = setup_host_side(params)
   translated_boot_params.each{|k,v| puts "#{k}:#{v}"}
   
-  alt_name_mlo_fat = "MLO"
-  alt_name_uboot_fat = "u-boot.img"
-  alt_name_mlo_raw = "MLO.raw"
-  alt_name_uboot_raw = "uboot.img.raw"
-  dfu_alt_info_fat_mmc = "\"#{alt_name_mlo_fat} fat 0 1;#{alt_name_uboot_fat} fat 0 1\""
-  case @test_params.platform 
-    when /am43xx/
-      dfu_alt_info_raw_mmc = "\"#{alt_name_mlo_raw} raw 0x0 0x100;#{alt_name_uboot_raw} raw 0x300 0x400\" "
-    else
-      dfu_alt_info_raw_mmc = "\"#{alt_name_mlo_raw} raw 0x100 0x100;#{alt_name_uboot_raw} raw 0x300 0x400\" "
-  end
-
   usb_controller = get_usb_gadget_number(@test_params.platform)
 
-  # media options: fat-mmc, raw-mmc, fat-emmc, raw-emmc, nand etc
+  # media options: fat-mmc, raw-mmc, fat-emmc, raw-emmc, nand, qspi etc
   media = @test_params.params_chan.instance_variable_defined?(:@media) ? @test_params.params_chan.media[0].downcase : 'fat-mmc'
+  
+  case media
+  when /mmc/
+    alt_name_mlo_fat = "MLO"
+    alt_name_uboot_fat = "u-boot.img"
+    alt_name_mlo_raw = "MLO.raw"
+    alt_name_uboot_raw = "uboot.img.raw"
+    dfu_alt_info_fat_mmc = "\"#{alt_name_mlo_fat} fat 0 1;#{alt_name_uboot_fat} fat 0 1\""
+    case @test_params.platform 
+      when /am43xx/
+        dfu_alt_info_raw_mmc = "\"#{alt_name_mlo_raw} raw 0x0 0x100;#{alt_name_uboot_raw} raw 0x300 0x400\" "
+      else
+        dfu_alt_info_raw_mmc = "\"#{alt_name_mlo_raw} raw 0x100 0x100;#{alt_name_uboot_raw} raw 0x300 0x400\" "
+    end
+  when /spi/
+    alt_name_mlo_raw = "MLO"
+    alt_name_uboot_raw = "uboot.img"
+    case @test_params.platform 
+      when /dra7/
+        dfu_alt_info_raw_spi = "\"#{alt_name_mlo_raw} raw 0x0 0x20000;#{alt_name_uboot_raw} raw 0x40000 0x100000\" "
+    end
+
+  end
+
   case media
   when /-mmc/
     interface = 'mmc'
@@ -57,6 +58,8 @@ def run
   when /-emmc/
     interface = 'mmc'
     dev = 1
+  when /qspi/
+    interface = 'sf 0:0'
   else
     interface = media
     dev = 0
@@ -69,22 +72,20 @@ def run
     dfu_alt_info = dfu_alt_info_fat_mmc
     alt_name_mlo = alt_name_mlo_fat
     alt_name_uboot = alt_name_uboot_fat
+  elsif media == "qspi"
+    dfu_alt_info = dfu_alt_info_raw_spi
+    alt_name_mlo = alt_name_mlo_raw
+    alt_name_uboot = alt_name_uboot_raw
   else
     raise "Not supported media #{media}. The supported media are fat-mmc, raw-mmc, fat-emmc, raw-emmc."
   end
 
   # boot to uboot prompt if it is not in uboot prompt
   if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
-    if @test_params.platform.downcase == "beaglebone-black"
-      puts "Disconnect usb cable; otherwise, BBB won't reboot"
-      @usb_switch_handler.disconnect(@equipment['dut1'].params['usbclient_port'].keys[0])
-    end
     @equipment['dut1'].boot_to_bootloader(translated_boot_params)
   end
-  # connect usb port to pc  
-  @usb_switch_handler.select_input(@equipment['dut1'].params['usbclient_port'])
 
-  # check if dfu env is exist
+  # set dfu env 
   @equipment['dut1'].send_cmd("version", @equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("setenv dfu_alt_info #{dfu_alt_info}", @equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("print dfu_alt_info", @equipment['dut1'].boot_prompt, 5)
@@ -94,7 +95,7 @@ def run
 
   # download mlo
   start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
-    host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['primary_bootloader_mmc_image_name'])}", alt_name_mlo)
+    host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['primary_bootloader_image_name'])}", alt_name_mlo)
   end
   # send ctrl+c to back to uboot prompt
   @equipment['dut1'].send_cmd("\x3", @equipment['dut1'].boot_prompt, 5)
@@ -102,13 +103,22 @@ def run
   sleep 1
   # download u-boot.img
   start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
-    host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['secondary_bootloader_mmc_image_name'])}", alt_name_uboot)
+    host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['secondary_bootloader_image_name'])}", alt_name_uboot)
   end
   # send ctrl+c to back to uboot prompt
   @equipment['dut1'].send_cmd("\x3", @equipment['dut1'].boot_prompt, 5)
 
   # check if new bootloaders work
   begin
+    @equipment['dut1'].boot_loader = nil
+    case media
+    when 'qspi'
+      translated_boot_params['primary_bootloader_dev'] = 'qspi'
+    when 'mmc'
+      translated_boot_params['primary_bootloader_dev'] = 'mmc'
+    when 'emmc'
+      translated_boot_params['primary_bootloader_dev'] = 'emmc'
+    end
     @equipment['dut1'].boot_to_bootloader(translated_boot_params)
   rescue
     set_result(FrameworkConstants::Result[:fail], "Test Failed: The board could not boot using the updated MLO/uboot")
