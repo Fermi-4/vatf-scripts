@@ -1,9 +1,14 @@
 def setup
+
+  boot_params = {'power_handler' => @power_handler}
+  @equipment['dut1'].power_cycle(boot_params)
+
   if !(@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil)
     raise "You need serial port connectivity to the board to test. Please check your bench file"
   end
   @equipment['dut1'].connect({'type'=>'serial'})
   @equipment['dut1'].log_info("serial setup")
+  @equipment['dut1'].wait_for('Motor ready to run') # if reqd., increase default timeout
 end
 
 def run
