@@ -223,25 +223,27 @@ def run
   end
 
   # Set overall test result and comments text
-  if result == 0
-    test_done_result = FrameworkConstants::Result[:pass]
-    comments += "Test passed. #{perfUtils.display_memfree_info()}\r\n"
-  else
-    test_done_result = FrameworkConstants::Result[:fail]
-    comments += "Test failed. #{perfUtils.display_memfree_info()}\r\n"
-    comments += connection_comments
-  end
-  comments += "\r\n"
   comments += perfUtils.result_text
   comments += ".\r\n"
   comments += IpsecConnectionScript.comment_text
   comments += ".\r\n"
+  throughput=comments.match /Tput:\s*\w*\D*\w*/
+  throughput=throughput[0].sub('Tput:','').strip
+  perf_data = []
+  perf_data << {'name' => "Throughput", 'value' => throughput, 'units' => "Mbits/s"}
 
+  if result == 0
+    comments += "Test passed. #{perfUtils.display_memfree_info()}\r\n"
   # Fix dash display for webpage. The dashes are half the size when displayed on the web page so double them to keep the display line size correct.
-  comments = comments.gsub("----", "--------")
-
-  # Set test result and result comments
-  set_result(test_done_result, comments)
+    comments = comments.gsub("----", "--------")
+    set_result(FrameworkConstants::Result[:pass], comments, perf_data)
+  else
+    comments += "Test failed. #{perfUtils.display_memfree_info()}\r\n"
+    comments += connection_comments
+  # Fix dash display for webpage. The dashes are half the size when displayed on the web page so double them to keep the display line size correct.
+    comments = comments.gsub("----", "--------")
+    set_result(FrameworkConstants::Result[:fail], comments)
+  end
 
   # Stop ipsec on both sides to be friendly to other tests
   if conn_type != CONNECTION_NO_IPSEC
