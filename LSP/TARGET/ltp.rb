@@ -40,6 +40,21 @@ def get_detailed_info
   return all_lines
 end
 
+def run_call_script
+  @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
+  @equipment['dut1'].send_cmd("chmod +x test.sh",@equipment['dut1'].prompt)
+  cmd_timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_i : 600
+  @equipment['dut1'].send_cmd("./test.sh 2>&1 3> result.log",/Done executing testcases.+#{@equipment['dut1'].prompt}/m, cmd_timeout)
+  #write to test.log
+  test_output = @equipment['dut1'].response
+  out_file = File.new(File.join(@linux_temp_folder,'test.log'),'w')
+  out_file.write(test_output)
+  out_file.close
+
+  @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
+  @equipment['dut1'].timeout?
+end
+
 def run
   self.as(LspTargetTestScript).run
 end
