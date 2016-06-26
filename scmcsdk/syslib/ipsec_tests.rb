@@ -227,16 +227,34 @@ def run
   comments += ".\r\n"
   comments += IpsecConnectionScript.comment_text
   comments += ".\r\n"
-  throughput=comments.match /Tput:\s*\w*\D*\w*/
-  throughput=throughput[0].sub('Tput:','').strip
-  perf_data = []
-  perf_data << {'name' => "Throughput", 'value' => throughput, 'units' => "Mbits/s"}
+  # Parse throughput/pps data if test is successful and is a udp case
+  if (result==0 and IpsecConnectionScript.protocol.downcase == "udp")
+
+     throughput=comments.match /Tput:\s*\w*\D*\w*/
+     throughput=throughput[0].sub('Tput:','').strip
+     cpu_util=comments.match /CPU_Util%:\s*\S*\s*\w*\W*\w*/
+     cpu_util=cpu_util[0].sub('CPU_Util%:','').strip
+     pkt_size=comments.match /Pkt_size:\W*\d*/
+     pkt_size=pkt_size[0].sub('Pkt_size:','').strip
+     # Convert throughput to kpps (kilo packets per second)
+     pps=(throughput.to_i*1000/8)/(pkt_size.to_i)
+     perf_data = []
+     perf_data << {'name' => "Packet Size", 'value' => pkt_size, 'units' => "bytes"}
+     perf_data << {'name' => "Throughput", 'value' => throughput, 'units' => "Mbits/s"}
+     perf_data << {'name' => "Packets Per Second", 'value' => pps, 'units' => "kpps"}
+     perf_data << {'name' => "CPU Utilization", 'value' => cpu_util, 'units' => "%"}
+
+  end
 
   if result == 0
     comments += "Test passed. #{perfUtils.display_memfree_info()}\r\n"
   # Fix dash display for webpage. The dashes are half the size when displayed on the web page so double them to keep the display line size correct.
     comments = comments.gsub("----", "--------")
-    set_result(FrameworkConstants::Result[:pass], comments, perf_data)
+    if (IpsecConnectionScript.protocol.downcase == "udp")
+       set_result(FrameworkConstants::Result[:pass], comments, perf_data)
+    else
+       set_result(FrameworkConstants::Result[:pass], comments)
+    end
   else
     comments += "Test failed. #{perfUtils.display_memfree_info()}\r\n"
     comments += connection_comments
