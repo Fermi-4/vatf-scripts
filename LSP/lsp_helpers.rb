@@ -25,6 +25,7 @@ module LspHelpers
       # Untar nfs filesystem if it doesn't exist
       if !File.directory?("#{nfs_root_path_temp}/usr")
         tar_options = get_tar_options(fs,params)
+        raise "Filesystem image is not a recognizable tar archive" if tar_options == "not tar"
         params['server'].send_sudo_cmd("mkdir -p  #{nfs_root_path_temp}", params['server'].prompt, 10)
         params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} #{tar_options} #{fs}", params['server'].prompt, 2400)
       end
