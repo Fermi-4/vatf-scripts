@@ -185,6 +185,8 @@ module LspTestScript
     new_params = add_dev_loc_to_params(new_params, 'dtb')
     new_params = add_dev_loc_to_params(new_params, 'fs')
 
+    new_params['dut'].prompt =  /#{@test_params.var_fs_prompt}/ if @test_params.instance_variable_defined?(:@var_fs_prompt)
+
     new_params
   end
 

@@ -23,3 +23,6 @@ If == 2 then power cycle DUT and let it boot without modifying boot Parameters
 var_autologin=1:
 Do not expect filesystem to provide login: prompt and instead wait for system prompt
 after boot command.
+
+var_fs_prompt:
+Use this string or regular expression as system prompt
