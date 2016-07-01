@@ -159,7 +159,9 @@ def modprobe_on_device(module_name,gadget_types,action)
    cmd = 'modprobe'
    extra_params = ''
    dir_path = Hash.new
-   dir_path = {'msc_mmc'=>'mmcblk1p1','msc_usb'=>'sda1','msc_slave'=>'loop0'}
+   sd_dev = get_sd_partition.strip+'p1'
+
+   dir_path = {'msc_mmc'=>sd_dev,'msc_usb'=>'sda1','msc_slave'=>'loop0'}
    if gadget_types.include? 'mass_storage'
      mount_type = @test_params.params_control.instance_variable_defined?(:@dev_type) ? @test_params.params_control.dev_type[0] : 'msc_mmc'
    # special cases like g_mass_storage to be handled here and action is not remove
@@ -192,12 +194,11 @@ def check_enum_on_target(module_name)
   # Verify that string matches with gadget type
   dut_response = @equipment['dut1'].response
   module_found = false
-  puts "DUT_RESPONSe is #{dut_response}\n"
   if dut_response.match(dut_module_string[module_name])
-   puts "FOUND #{dut_module_string[module_name]} in check_enum_target\n"
+   @equipment['dut1'].log_info("FOUND #{dut_module_string[module_name]} in check_enum_target")
    module_found = true
   else
-   puts "NOT FOUND #{dut_module_string[module_name]} in check_enum_target\n"
+   @equipment['dut1'].log_info("NOT FOUND #{dut_module_string[module_name]} in check_enum_target")
    module_found = false
   end
   return module_found
@@ -206,19 +207,18 @@ end
 def check_enum_on_host(gadget_types)
   # Hash for each gadget and expected logs - for instance mass_storage would lead to "Mass Storage Function"
   host_gadget_string = Hash.new
-  host_gadget_string = {'mass_storage'=>'usb-storage:\s+device scan complete','ether'=>'CDC Ethernet Device',
-                       'serial'=>'ttyACM\d+:\s+USB\s+ACM\s+device'}
-  sleep 10
+  host_gadget_string = {'mass_storage'=>'usb-storage','ether'=>'cdc_ether',
+                       'serial'=>'cdc_acm'}
   @equipment['server2'].send_cmd("dmesg",@equipment['server2'].prompt)  
   host_response = @equipment['server2'].response
   # Verify that string matches with gadget type
   gadget_found = false
   gadget_types.each do |gadget|
        if host_response.match(host_gadget_string[gadget])
-            puts "FOUND in host #{host_gadget_string[gadget]}"
+            @equipment['server2'].log_info("FOUND in host #{host_gadget_string[gadget]}")
             gadget_found = true
        else
-            puts "NOT FOUND in host #{host_gadget_string[gadget]}"
+            @equipment['server2'].log_info("NOT FOUND in host #{host_gadget_string[gadget]}")
             gadget_found = false
        end                    
   end
@@ -231,7 +231,7 @@ def check_mount_interface_on_host(gadget_types)
   @equipment['server2'].send_sudo_cmd('bash -c "df | grep /dev > dev_string1.txt"', @equipment['server2'].prompt , 30)
   @equipment['server2'].send_sudo_cmd('bash -c "df | grep /media > media_string1.txt"', @equipment['server2'].prompt , 30)
   modprobe_on_device(module_name, gadget_types, 'insert')
-  system("sleep 20")
+  #system("sleep 20")
   @equipment['server2'].send_cmd("dmesg",@equipment['server2'].prompt)  
   host_response =  @equipment['server2'].response
   @equipment['server2'].send_sudo_cmd('bash -c "df | grep /dev > dev_string2.txt"', @equipment['server2'].prompt , 30)
