@@ -37,7 +37,8 @@ def run
   end
   puts "===========result: #{result}===and result_msg: #{result_msg}========="
 
-  @equipment['dut1'].send_cmd("nand write #{ramaddress} #{nand_test_addr} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("nand erase.spread #{nand_test_addr} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 30)
+  @equipment['dut1'].send_cmd("nand write #{ramaddress} #{nand_test_addr} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 30)
 
   if ! @equipment['dut1'].response.include?("bad block 0x#{nand_test_addr}") || @equipment['dut1'].response.match(/(error|failed)/i) 
     result += 1
