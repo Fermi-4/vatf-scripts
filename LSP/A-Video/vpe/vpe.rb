@@ -35,7 +35,7 @@ def run
   local_test_file = File.join(@linux_temp_folder, 'video_tst_file.yuv')
   @equipment['dut1'].send_cmd("rm -rf #{dut_test_file}", @equipment['dut1'].prompt)
   @equipment['server1'].send_cmd("rm -rf #{local_test_file}",@equipment['server1'].prompt)
-  @equipment['dut1'].send_cmd("testvpem2m #{dut_src_file} #{src_video_width} #{src_video_height} #{src_format} #{dut_test_file} #{video_width} #{video_height} #{test_format} #{interlace} #{translen}", @equipment['dut1'].prompt, 300)
+  @equipment['dut1'].send_cmd("testvpe #{dut_src_file} #{src_video_width} #{src_video_height} #{src_format} #{dut_test_file} #{video_width} #{video_height} #{test_format} #{interlace} #{translen}", @equipment['dut1'].prompt, 300)
   num_frames = @equipment['dut1'].response.match(/frames\s*left\s*(\d+)/im)[1].to_i + 1
   dut_ip = get_ip_addr()
   scp_pull_file(dut_ip, dut_test_file, local_test_file)
