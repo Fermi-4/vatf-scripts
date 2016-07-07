@@ -1,7 +1,6 @@
 # -*- coding: ISO-8859-1 -*-
 require File.dirname(__FILE__)+'/../../default_target_test'  
 require File.dirname(__FILE__)+'/../../../lib/utils'
-require File.dirname(__FILE__)+'/../../../lib/result_forms'
 require File.dirname(__FILE__)+'/../play_utils'
 require File.dirname(__FILE__)+'/../f2f_utils'
 require File.dirname(__FILE__)+'/../dev_utils'
@@ -9,6 +8,7 @@ require File.dirname(__FILE__)+'/../dev_utils'
 include LspTargetTestScript
 
 def run
+  require File.dirname(__FILE__)+'/../../../lib/result_forms' if !@test_params.params_chan.instance_variable_defined?(:@auto)
   @equipment['dut1'].send_cmd("mkdir #{@linux_dst_dir}", @equipment['dut1'].prompt) #Make sure test folder exists
   base_url = @test_params.params_chan.instance_variable_defined?(:@base_url) ? @test_params.params_chan.base_url[0] : 'http://anonymous:anonymous@gtopentest-server.gt.design.ti.com/anonymous/common/Multimedia/Video/'
   src_video_height = @test_params.params_chan.video_height[0].to_i
