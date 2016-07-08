@@ -1,7 +1,6 @@
 # -*- coding: ISO-8859-1 -*-
 require File.dirname(__FILE__)+'/../../default_target_test'  
 require File.dirname(__FILE__)+'/../../../lib/utils'
-require File.dirname(__FILE__)+'/../../../lib/result_forms'
 require File.dirname(__FILE__)+'/../play_utils'
 require File.dirname(__FILE__)+'/../f2f_utils'
 
@@ -69,6 +68,7 @@ def run
       set_result(FrameworkConstants::Result[:pass], "Test passed (#{num_frames} frames)")
 	  end
 	else
+    require File.dirname(__FILE__)+'/../../../lib/result_forms'
 	  test_result = FrameworkConstants::Result[:nry]
 	  test_string = ''
 	  while(test_result == FrameworkConstants::Result[:nry])
