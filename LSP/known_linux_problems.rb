@@ -16,11 +16,15 @@ module  KnownLinuxProblems
 
   # Return string that should be appended to test result's notes
   def check_for_known_problem(e)
-    e_problems = PROBLEMS.select{|k| k.match(e.name)}.map{|k,v| v}
-    e_problems = Hash[*e_problems.flatten]
-    e_problems.each {|regex, msg|
-      return MSG_PREFIX+msg+MSG_SUFFIX if e.response.match(regex)
-    }
+    begin
+      e_problems = PROBLEMS.select{|k| k.match(e.name)}.map{|k,v| v}
+      e_problems = Hash[*e_problems.flatten]
+      e_problems.each {|regex, msg|
+        return MSG_PREFIX+msg+MSG_SUFFIX if e.response.match(regex)
+      }
+    rescue Exception => e
+      puts e.to_s
+    end
     return ''
   end
 
