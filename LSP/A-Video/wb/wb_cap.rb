@@ -102,7 +102,7 @@ def run
           end
           
           trunc_local_ref = ref_path
-          if File.size(ref_path) != File.size(local_test_file)
+          if File.exists?(ref_path) && File.size(ref_path) != File.size(local_test_file)
             trunc_local_ref = ref_path+'.trunc'
             frame_size = (format_length * video_height * video_width).to_i
             @equipment['server1'].send_cmd("dd if=#{ref_path} of=#{trunc_local_ref} bs=#{frame_size} count=#{num_frames}", @equipment['server1'].prompt,600)
@@ -136,6 +136,7 @@ end
 
 def add_result_row(res_table, dev, fmt, s_mode, res, res_string, plane_info_str)
   @results_html_file.add_rows_to_table(res_table,[[dev,
+                                           fmt,
                                            "#{s_mode[0]['connectors_names'][0]} (#{s_mode[0]['connectors_ids'][0]})", 
                                            s_mode[0]['encoder'],
                                            s_mode[0]['crtc_id'],
