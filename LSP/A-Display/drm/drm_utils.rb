@@ -180,7 +180,7 @@ def set_mode(params, dut=@equipment['dut1'], timeout=600)
     disp_inf['plane']['crtc_id'] = disp_inf['crtc_id']  if disp_inf['plane']
     m_str += get_mode_string(disp_inf, disp_inf['plane'])
   end
-  modetest(m_str, dut, timeout) do
+  modetest(m_str + ' &', dut, timeout) do
     yield
   end
 end
@@ -445,12 +445,13 @@ end
 #  conn, (Optional) string with connector type, i.e hdmi. If specified
 #            the returned modes will only contain modes where the conn type is
 #            used 
+#  p_formats, (Optional) array of string containing formats to use for the planes
 #Returns two arrays whose elements are arrays containing hashes that define a mode
 #expected by the function set_mode and run_per_sync_flip_test. The first array
 #contains modes for individual displays, the second array contains modes for
 #multiple displays. If the device does not support multi-display then the
 #arrays returned by this functions are the same
-def get_test_modes(drm_info, formats, conn=nil)
+def get_test_modes(drm_info, formats, conn=nil, p_formats=nil)
   single_disp_modes = []
   multi_disp_modes = nil         
   drm_info['Connectors:'].each do |connector|
@@ -487,7 +488,7 @@ def get_test_modes(drm_info, formats, conn=nil)
                               'height' => height,
                               'xyoffset' => [i-adj_idx+1,i-adj_idx+1],
                               'scale' => [0.125, 1.to_f/(2+i-adj_idx).to_f].max,
-                              'format' => plane['formats:'][rand(plane['formats:'].length)]}
+                              'format' => p_formats ? p_formats[rand(p_formats.length)] : plane['formats:'][rand(plane['formats:'].length)]}
             end
             mode_params['plane'] = plane_params
             c_modes << [mode_params]
