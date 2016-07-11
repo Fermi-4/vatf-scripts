@@ -47,6 +47,7 @@ def run
         @equipment['dut1'].send_cmd("rm #{dut_test_file}", @equipment['dut1'].prompt) #Remove previous test file if any
         @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --set-fmt-video-out=width=#{src_video_width},height=#{src_video_height},pixelformat=#{src_format.upcase()} --stream-from=#{dut_src_file} --set-fmt-video=width=#{video_width},height=#{video_height},pixelformat=#{test_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=6 --stream-out-mmap=6 --stream-count=#{num_frames} --stream-poll", @equipment['dut1'].prompt, 300)
         #@equipment['dut1'].send_cmd("/home/root/tests/wbtest -d #{device} -i #{dut_src_file} -j #{src_video_width}x#{src_video_height} -k #{src_format.upcase()} -o #{dut_test_file} -p #{video_width}x#{video_height} -q #{test_format.upcase()} -n 70", @equipment['dut1'].prompt, 300)
+        next if @test_params.params_chan.instance_variable_defined?(:@negative_test)
         scp_pull_file(dut_ip, dut_test_file, local_test_file)
         if @test_params.params_chan.instance_variable_defined?(:@auto)
           format_length = case(test_format.downcase())
@@ -117,7 +118,14 @@ def run
       end
     end
 	end
-  set_result(test_result && !wb_devices.empty? ? FrameworkConstants::Result[:pass] : FrameworkConstants::Result[:fail], "Passed: #{passed}, Failed: #{failed}\n" + test_string)
+  if @test_params.params_chan.instance_variable_defined?(:@negative_test)
+    @equipment['dut1'].send_cmd("ls && echo 'Negative test passed!!!'", @equipment['dut1'].prompt)
+    set_result(@equipment['dut1'].response.match(/^Negative test passed!!!/m) ? \
+               FrameworkConstants::Result[:pass] :
+               FrameworkConstants::Result[:fail], @equipment['dut1'].response)
+  else
+    set_result(test_result && !wb_devices.empty? ? FrameworkConstants::Result[:pass] : FrameworkConstants::Result[:fail], "Passed: #{passed}, Failed: #{failed}\n" + test_string)
+  end
 end
 
 
