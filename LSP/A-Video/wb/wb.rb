@@ -37,6 +37,7 @@ def run
     prand = Random.new(src_video_height*src_video_width*pix_fmts.join('').bytes.inject(:+))
     test_formats = @test_params.params_chan.instance_variable_defined?(:@test_formats) ? @test_params.params_chan.test_formats : pix_fmts
     num_frames = 70
+    mmap_buffs = 6
     pix_fmts.each do |src_format|
       @equipment['dut1'].send_cmd("rm  #{@linux_dst_dir}/*", @equipment['dut1'].prompt) #Make sure we have enough disk space for the f2f operations
       ref_url = File.join(base_url, get_file_url_suffix(src_video_width, src_video_height, src_format))
@@ -45,7 +46,7 @@ def run
         scaling = @test_params.params_chan.instance_variable_defined?(:@scaling) ? @test_params.params_chan.scaling[0].to_f : get_scaling(src_video_width, src_video_height, prand)
         video_width, video_height = get_scaled_resolution(src_video_width, src_video_height, scaling)
         @equipment['dut1'].send_cmd("rm #{dut_test_file}", @equipment['dut1'].prompt) #Remove previous test file if any
-        @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --set-fmt-video-out=width=#{src_video_width},height=#{src_video_height},pixelformat=#{src_format.upcase()} --stream-from=#{dut_src_file} --set-fmt-video=width=#{video_width},height=#{video_height},pixelformat=#{test_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=6 --stream-out-mmap=6 --stream-count=#{num_frames} --stream-poll", @equipment['dut1'].prompt, 300)
+        @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --set-fmt-video-out=width=#{src_video_width},height=#{src_video_height},pixelformat=#{src_format.upcase()} --stream-from=#{dut_src_file} --set-fmt-video=width=#{video_width},height=#{video_height},pixelformat=#{test_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=#{mmap_buffs} --stream-out-mmap=#{mmap_buffs} --stream-count=#{num_frames-mmap_buffs} --stream-poll", @equipment['dut1'].prompt, 300)
         #@equipment['dut1'].send_cmd("/home/root/tests/wbtest -d #{device} -i #{dut_src_file} -j #{src_video_width}x#{src_video_height} -k #{src_format.upcase()} -o #{dut_test_file} -p #{video_width}x#{video_height} -q #{test_format.upcase()} -n 70", @equipment['dut1'].prompt, 300)
         next if @test_params.params_chan.instance_variable_defined?(:@negative_test)
         scp_pull_file(dut_ip, dut_test_file, local_test_file)
