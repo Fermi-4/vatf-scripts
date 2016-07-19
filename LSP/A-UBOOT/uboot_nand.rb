@@ -63,7 +63,7 @@ def run
   puts "===========nand erase result: #{result}===and result_msg: #{result_msg}========="
 
   # test clean bad blocks
-  @equipment['dut1'].send_cmd("nand scrub -y #{nand_test_addr} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("nand scrub.chip",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("nand bad",@equipment['dut1'].boot_prompt, 5)
   if @equipment['dut1'].response.match("#{nand_test_addr}")
     result += 1
