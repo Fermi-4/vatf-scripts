@@ -382,6 +382,7 @@ module LspTestScript
 
     connect_to_equipment('dut1')
     check_dut_booted()
+    query_start_stats
 
     if update_mmc != '0' and !host_side_mmc_update
       call_setup = false
@@ -629,6 +630,14 @@ module LspTestScript
     this_equipment.connect({'type'=>'telnet'})
     this_equipment.target.platform_info.telnet_ip = old_telnet_ip
     this_equipment.target.platform_info.telnet_port = old_telnet_port
+  end
+
+  def query_start_stats(e='dut1')
+    return if !@equipment.key?(e)
+    this_equipment = @equipment[e]
+    this_equipment.send_cmd("cat /proc/diskstats", this_equipment.prompt)
+    this_equipment.send_cmd("cat /proc/interrupts", this_equipment.prompt)
+    this_equipment.send_cmd("cat /proc/softirqs", this_equipment.prompt)
   end
 
   def query_debug_data(e='dut1')
