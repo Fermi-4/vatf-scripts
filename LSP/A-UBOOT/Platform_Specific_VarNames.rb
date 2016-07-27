@@ -125,13 +125,15 @@ module PlatformSpecificVarNames
     @platform_specific_var_name['qspi_test_addr'].merge!(
       {
       'dra7xx-evm'=>'0x1e0000',
+      'k2g-evm'=>'0x9c0000',
       },
     )
 
-    @platform_specific_var_name['qspi_test_size'] = Hash.new('0x800000')
-    @platform_specific_var_name['qspi_test_size'].merge!(
+
+    @platform_specific_var_name['spi_test_addr'] = Hash.new('0x100000')
+    @platform_specific_var_name['spi_test_addr'].merge!(
       {
-      'dra7xx-evm'=>'0x800000',
+      'k2g-evm'=>'0x100000',
       },
     )
 
