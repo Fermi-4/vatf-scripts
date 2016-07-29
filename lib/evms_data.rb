@@ -67,16 +67,16 @@ module EvmData
 
     power_data['dra7xx-evm'] = {'power_domains' => ['VDD_DSPEVE', 'VDD_MPU', 'DDR_CPU', 'VDDA_1V8_PLL', 'VDD_GPU', 'VUSB_3V3', 
                                                     'VDDS18V', 'VDD_SHV', 'CORE_VDD', 'VDD_IVA', 'DDR_MEM', 'VDDA_1V8_PHY'], 
-                                'domain_resistors' => {'VDD_DSPEVE' => '0.001', 'VDD_MPU' => '0.001', 'DDR_CPU' => '0.005', 
-                                                       'VDDA_1V8_PLL' => '0.01', 'VDD_GPU' => '0.002', 'VUSB_3V3' => '0.01',
-                                                       'VDDS18V' => '0.01', 'VDD_SHV' => '0.001', 'CORE_VDD' => '0.002', 
-                                                       'VDD_IVA' => '0.002', 'DDR_MEM' => '0.005', 'VDDA_1V8_PHY' => '0.01'}}
+                                'domain_resistors' => {'VDD_DSPEVE' => '0.01', 'VDD_MPU' => '0.01', 'DDR_CPU' => '0.01',
+                                                       'VDDA_1V8_PLL' => '0.01', 'VDD_GPU' => '0.01', 'VUSB_3V3' => '0.01',
+                                                       'VDDS18V' => '0.01', 'VDD_SHV' => '0.01', 'CORE_VDD' => '0.01',
+                                                       'VDD_IVA' => '0.01', 'DDR_MEM' => '0.01', 'VDDA_1V8_PHY' => '0.01'}}
     power_data['dra72x-evm'] = {'power_domains' => ['VDD_MPU', 'VDD_GPU_IVA_DSPEVE', 'VDD_CORE', 'J6_VDD_1V8', 'EVM_VDD_1V8', 'J6_VDD_DDR',
-                                                    'EVM_VDD_DDR', 'VDD_SHV8', 'VDD_SHV5', 'VDDA_PHY', 'VDDA_USB3V3', 'VDDA_PLL'], 
-                                'domain_resistors' => {'VDD_MPU' => '0.001', 'VDD_GPU_IVA_DSPEVE' => '0.001', 'VDD_CORE' => '0.002', 
-                                                       'J6_VDD_1V8' => '0.005', 'EVM_VDD_1V8' => '0.01', 'J6_VDD_DDR' => '0.005',
-                                                       'EVM_VDD_DDR' => '0.005', 'VDD_SHV8' => '0.01', 'VDD_SHV5' => '0.005', 
-                                                       'VDDA_PHY' => '0.01', 'VDDA_USB3V3' => '0.01', 'VDDA_PLL' => '0.01'}}
+                                                    'EVM_VDD_DDR', 'VDD_SHV8', 'VDD_SHV5', 'VDDA_PHY', 'VDDA_USB3V3', 'VDDA_PLL', 'VDDA_1V8_PHY2'],
+                                'domain_resistors' => {'VDD_MPU' => '0.01', 'VDD_GPU_IVA_DSPEVE' => '0.01', 'VDD_CORE' => '0.01',
+                                                       'J6_VDD_1V8' => '0.01', 'EVM_VDD_1V8' => '0.01', 'J6_VDD_DDR' => '0.01',
+                                                       'EVM_VDD_DDR' => '0.01', 'VDD_SHV8' => '0.01', 'VDD_SHV5' => '0.01',
+                                                       'VDDA_PHY' => '0.01', 'VDDA_USB3V3' => '0.01', 'VDDA_PLL' => '0.01', 'VDDA_1V8_PHY2' => '0.01'}}
     power_data['am57xx-evm'] = {'power_domains' => ['3V3', 'VDD_DSP','CORE_VDD', '5V0', 'VDD_MPU'],
                                 'domain_resistors' => {'3V3' => '0.01', 'VDD_DSP' => '0.01','CORE_VDD' => '0.02',
                                                        '5V0' => '0.01', 'VDD_MPU' => '0.01'}}
