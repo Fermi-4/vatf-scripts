@@ -10,6 +10,7 @@ end
 # This function used the script specified in the test params, replace any ruby code and/or
 # test parameter references and creates test.sh  
 def run_generate_script
+  DISPATCHER_SERVICE='TMCDISPATCHER'
   puts "\n LinuxTestScript::run_generate_script"
   FileUtils.mkdir_p @linux_temp_folder
   http_file_version = @test_params.params_control.script[0]
@@ -33,11 +34,11 @@ def run_generate_script
     end
 
     begin
-      # Request BEE to RESMGR
-      staf_req = my_staf_handle.submit(tmc_machine,"RESMGR","REQUEST TYPE http TIMEOUT 1w") 
+      # Request BEE to TMC
+      staf_req = my_staf_handle.submit(tmc_machine, DISPATCHER_SERVICE, "REQUEST TYPE http TIMEOUT 1w")
       staf_reqid = staf_req.result
       loop do
-        staf_req = my_staf_handle.submit(tmc_machine,"RESMGR","free request #{staf_reqid} type http")
+        staf_req = my_staf_handle.submit(tmc_machine, DISPATCHER_SERVICE, "free request #{staf_reqid} type http")
         break if staf_req.rc != 45
         sleep 5
       end
@@ -84,7 +85,7 @@ def run_generate_script
     rescue Exception => e
       puts e.to_s+"\n"+e.backtrace.to_s
     ensure
-      staf_req = my_staf_handle.submit(tmc_machine,"RESMGR","RELEASE TYPE http NAME #{bee_machine} ID #{bee_id}") 
+      staf_req = my_staf_handle.submit(tmc_machine, DISPATCHER_SERVICE, "RELEASE TYPE http NAME #{bee_machine} ID #{bee_id}")
     end
   end
   
