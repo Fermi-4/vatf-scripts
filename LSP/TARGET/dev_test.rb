@@ -84,6 +84,7 @@ def run_generate_script
       end
     rescue Exception => e
       puts e.to_s+"\n"+e.backtrace.to_s
+      raise e
     ensure
       staf_req = my_staf_handle.submit(tmc_machine, dispatcher_service, "RELEASE TYPE http NAME #{bee_machine} ID #{bee_id}")
     end
