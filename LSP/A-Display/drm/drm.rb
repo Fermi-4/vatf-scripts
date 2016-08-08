@@ -1,5 +1,4 @@
 # -*- coding: ISO-8859-1 -*-
-require File.dirname(__FILE__)+'/../../../lib/result_forms'
 require File.dirname(__FILE__)+'/drm_base'   
 
 #Function to ask the user is a given mode test worked, takes
@@ -22,6 +21,7 @@ end
 #the test passed (true) or failed (false); and the res_string is an informational
 #string regarding the result of the test  
 def run_mode_test(mode_params, perf_data=[])
+  require File.dirname(__FILE__)+'/../../../lib/result_forms' if !@test_params.params_chan.instance_variable_defined?(:@auto)
   test_result = true
   result_string = ''
   mode_result = FrameworkConstants::Result[:nry]
