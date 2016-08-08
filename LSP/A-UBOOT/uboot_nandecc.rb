@@ -82,7 +82,7 @@ def run
 
   # show corrected data
   @equipment['dut1'].send_cmd("nand read #{ramaddress_3} #{nand_test_addr} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 10)
-  @equipment['dut1'].send_cmd("md.b #{ramaddress_3} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("md.b #{ramaddress_3} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 10)
 
   # compare orig with the corrected data below
   cnt = nand_pagesize.to_i(16) / chunk_size.to_i 
