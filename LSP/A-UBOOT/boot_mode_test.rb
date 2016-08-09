@@ -18,7 +18,9 @@ def run
   set_bootloader_devs(this_params, boot_media)
   bparams = setup_host_side(this_params)
   bparams.each{|k,v| puts "#{k}:#{v}"}
-
+  if bparams['secondary_bootloader'].strip == '' 
+    raise "Bootloaders are not provided"
+  end
   if blk_boot_media.include?(boot_media)
     puts "Updating bootloader..."
     bparams['dut'].update_bootloader(bparams)
