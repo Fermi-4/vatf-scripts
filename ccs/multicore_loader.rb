@@ -135,16 +135,18 @@ def check_ROV(criteria_regex, rov_paths)
   rov_paths.each { |word| word.tr!('"','') }
 
   #allow for specialized ROV fields, default to LoggerBuf
-  rov_field = get_data(@equipment['dut1'].name,@test_name,"field")
-  if (!rov_field)
-    rov_field = "xdc.runtime.LoggerBuf Records"
+  rov_field = get_data(@equipment['dut1'].name,@test_name,"loggerbuf_field")
+  if (rov_field.none?)
+    (0..bins.length - 1).each do |i|
+      rov_field[i] = "xdc.runtime.LoggerBuf Records"
+    end
   end
 
   #move the rov.xs to the appropriate dir then run the coredump on each core
   passed = true
   (0..bins.length - 1).each do |i|
     @equipment['server1'].send_cmd("cp #{rov_paths[i]} `dirname #{bins[i]}`")
-    @equipment['server1'].send_cmd("export XDCTOOLS_JAVA_HOME=#{jre};export XDCPATH=#{rovtools}\\;#{bios}\\;#{dss}\\;$XDCPATH;echo \"m #{rov_field}\\nq\"| #{xdc}/xs xdc.rov.coredump -e #{bins[i]} -d #{bins[i]}.raw 2>&1 | tee #{bins[i]}.txt")
+    @equipment['server1'].send_cmd("export XDCTOOLS_JAVA_HOME=#{jre};export XDCPATH=#{rovtools}\\;#{bios}\\;#{dss}\\;$XDCPATH;echo \"m #{rov_field[i]}\\nq\"| #{xdc}/xs xdc.rov.coredump -e #{bins[i]} -d #{bins[i]}.raw 2>&1 | tee #{bins[i]}.txt")
 
     #if any core fails, the whole test fails
     if !(File.open("#{bins[i]}.txt").read() =~ criteria_regex)
