@@ -65,6 +65,11 @@ def check_opp(opp, max_deviation)
     measured_voltage = multimeter_readings['domain_'+measurement_domain+'_volt_readings'][0]  # AVG of 10 samples
     measured_voltage = measured_voltage.to_f * 1000 # Convert to mv, which is unit used in efuse registers
     expected_voltage = read_address(efuse_addr) & 0xfff # Only use bits 0-11
+    ganged_rails = get_ganged_rails(@equipment['dut1'].name, domain, opp)
+    ganged_rails.each {|ganged_rail_addr|
+      expected_ganged_voltage = read_address(ganged_rail_addr) & 0xfff # Only use bits 0-11
+      expected_voltage = expected_ganged_voltage if expected_ganged_voltage > expected_voltage
+    }
     deviation = (measured_voltage - expected_voltage.to_f).abs
     if deviation > max_deviation
       result_str += "#{domain}@#{opp} failed. Expected:#{expected_voltage}, Measured:#{measured_voltage}. " 
