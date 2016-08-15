@@ -91,6 +91,11 @@ module EvmData
       when "VDD_DSPEVE", "VDD_GPU", "VDD_IVA"
         return 'VDD_DSP'
       end
+    when "dra72x-evm"
+      case domain
+      when "VDD_DSPEVE", "VDD_GPU", "VDD_IVA"
+        return 'VDD_GPU_IVA_DSPEVE'
+      end
     end
     return domain
   end
@@ -294,18 +299,41 @@ module EvmData
   def get_avs_class0_data(platform)
     machines = {}
     machines['dra7xx-evm']  = {'VDD_IVA' => {'OPP_NOM'=>'0x4A0025CC','OPP_OD'=>'0x4A0025D0','OPP_HIGH'=>'0x4A0025D4'},
-                               'VDD_DSPEVE' => {'OPP_NOM'=>'0x4A0025E0','OPP_OD'=>'0x4A0025E4'}, 
+                               'VDD_DSPEVE' => {'OPP_NOM'=>'0x4A0025E0','OPP_OD'=>'0x4A0025E4','OPP_HIGH'=>'0x4A0025E8'},
                                'CORE_VDD' => {'OPP_NOM'=>'0x4A0025F4'}, 
                                'VDD_GPU' => {'OPP_NOM'=>'0x4A003B08','OPP_OD'=>'0x4A003B0C','OPP_HIGH'=>'0x4A003B10'}, 
                                'VDD_MPU' => {'OPP_NOM'=>'0x4A003B20','OPP_OD'=>'0x4A003B24','OPP_HIGH'=>'0x4A003B28'}, 
                               }
     machines['dra72x-evm']  = {'VDD_CORE' => {'OPP_NOM'=>'0x4A0025F4'}, 
-                               'VDD_GPU_IVA_DSPEVE' => {'OPP_NOM'=>'0x4A003B08','OPP_OD'=>'0x4A003B0C','OPP_HIGH'=>'0x4A003B10'}, 
+                               'VDD_GPU' => {'OPP_NOM'=>'0x4A003B08','OPP_OD'=>'0x4A003B0C','OPP_HIGH'=>'0x4A003B10'},
+                               'VDD_IVA' => {'OPP_NOM'=>'0x4A0025CC','OPP_OD'=>'0x4A0025D0','OPP_HIGH'=>'0x4A0025D4'},
+                               'VDD_DSPEVE' => {'OPP_NOM'=>'0x4A0025E0','OPP_OD'=>'0x4A0025E4','OPP_HIGH'=>'0x4A0025E8'},
                                'VDD_MPU' => {'OPP_NOM'=>'0x4A003B20','OPP_OD'=>'0x4A003B24','OPP_HIGH'=>'0x4A003B28'}, 
                               }
     machines['am57xx-evm']   = machines['dra7xx-evm']
     raise "AVS class0 data not defined for #{platform}" if !machines.key?(platform)
     machines[platform]
+  end
+
+  #Define ganged rails in the EVM
+  def get_ganged_rails(platform, domain, opp)
+    data = get_avs_class0_data(platform)
+    case platform.downcase
+    when "dra72x-evm"
+      case domain
+      when "VDD_GPU"
+        return [data['VDD_IVA'][opp], data['VDD_DSPEVE'][opp]]
+      when "VDD_IVA"
+        return [data['VDD_GPU'][opp], data['VDD_DSPEVE'][opp]]
+      when "VDD_DSPEVE"
+        return [data['VDD_IVA'][opp], data['VDD_GPU'][opp]]
+      else
+        return []
+      end
+
+    else
+      return []
+    end
   end
 
   # Define usb controller instance for usb gadget
@@ -324,7 +352,13 @@ module EvmData
     case platform
     
     when "dra7xx-evm", "dra72x-evm", "am57xx-evm"
-      return data.map{|domain,opps| { domain => opps.select{|name,address| name == "OPP_NOM"} } }
+      return data.map{|domain,opps|
+        if domain == 'VDD_IVA' or domain == 'VDD_DSPEVE' or domain == 'VDD_GPU'
+          { domain => opps.select{|name,address| name == "OPP_HIGH"} }
+        else
+          { domain => opps.select{|name,address| name == "OPP_NOM"} }
+        end
+      }
     
     else
       raise "AVS class0 uboot requirements are not defined for #{platform}" 
@@ -336,18 +370,12 @@ module EvmData
     data = get_avs_class0_data(platform)
     case platform
     
-    when "dra7xx-evm", "am57xx-evm"
+    when "dra7xx-evm", "am57xx-evm", "dra72x-evm"
       return data.map{|domain,opps| 
-        if domain == 'VDD_MPU' or domain == 'VDD_GPU' or domain == 'VDD_IVA'
-          { domain => opps.select{|name,address| name == "OPP_NOM" or name == "OPP_HIGH" or name == "OPP_OD"} }
-        else
-          { domain => opps.select{|name,address| name == "OPP_NOM"} }
-        end
-      }
-    when "dra72x-evm"
-      return data.map{|domain,opps|
         if domain == 'VDD_MPU'
           { domain => opps.select{|name,address| name == "OPP_NOM" or name == "OPP_HIGH" or name == "OPP_OD"} }
+        elsif domain == 'VDD_IVA' or domain == 'VDD_DSPEVE' or domain == 'VDD_GPU'
+          { domain => opps.select{|name,address| name == "OPP_HIGH"} }
         else
           { domain => opps.select{|name,address| name == "OPP_NOM"} }
         end
