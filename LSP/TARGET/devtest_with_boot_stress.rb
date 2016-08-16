@@ -25,7 +25,7 @@ def run
     @equipment['dut1'].log_info("Inside the loop counter = #{i}");
     begin
       self.as(LspTestScript).setup
-    rescue
+    rescue Exception => e
       puts "Failed to boot on loop #{i.to_s}: " + e.to_s + ": " + e.backtrace.to_s
       @equipment['dut1'].log_info("Failed to boot on loop #{i.to_s}")
       i += 1
