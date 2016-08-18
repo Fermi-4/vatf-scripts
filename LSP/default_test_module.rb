@@ -419,7 +419,8 @@ module LspTestScript
         commands = ensure_commands = ""
         commands = parse_cmd('cmd') if @test_params.params_chan.instance_variable_defined?(:@cmd)
         ensure_commands = parse_cmd('ensure') if @test_params.params_chan.instance_variable_defined?(:@ensure) 
-        result, cmd = execute_cmd(commands)
+        cmd_timeout = @test_params.params_chan.instance_variable_defined?(:@timeout) ? @test_params.params_chan.timeout[0].to_i : 10
+        result, cmd = execute_cmd(commands, cmd_timeout)
         if result == 0 
             set_result(FrameworkConstants::Result[:pass], "Test Pass.")
         elsif result == 1
@@ -513,10 +514,9 @@ module LspTestScript
         target_commands
     end
     
-    def execute_cmd(commands)
+    def execute_cmd(commands, dut_timeout=10)
         last_cmd = nil
         result = 0 	#0=pass, 1=timeout, 2=fail message detected 
-        dut_timeout = 10
         vars = Array.new
         commands.each {|cmd|
             last_cmd = cmd
