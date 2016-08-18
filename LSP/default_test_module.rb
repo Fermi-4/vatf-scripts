@@ -124,6 +124,17 @@ module LspTestScript
     new_params['pmmc_image_name'] = new_params['pmmc_image_name'] ? new_params['pmmc_image_name'] :
                              @test_params.instance_variable_defined?(:@var_pmmc_image_name) ? @test_params.var_pmmc_image_name :
                              new_params['pmmc'] != '' ? File.basename(new_params['pmmc']) : 'pmmc'
+    new_params['fit']     = new_params['fit'] ? new_params['fit'] :
+                             @test_params.instance_variable_defined?(:@fit) ? @test_params.fit :
+                             @test_params.instance_variable_defined?(:@fit_file) ? @test_params.fit_file :
+                             ''
+    new_params['fit_dev'] = new_params['fit_dev'] ? new_params['fit_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@fit_dev) ? @test_params.params_chan.fit_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_fit_dev) ? @test_params.var_fit_dev :
+                             new_params['fit'] != '' ? 'eth' : 'none'
+    new_params['fit_image_name'] = new_params['fit_image_name'] ? new_params['fit_image_name'] :
+                             @test_params.instance_variable_defined?(:@var_fit_image_name) ? @test_params.var_fit_image_name :
+                             new_params['fit'] != '' ? File.basename(new_params['fit']) : 'fit'
 
     new_params['dtb']        = new_params['dtb'] ? new_params['dtb'] : 
                              @test_params.instance_variable_defined?(:@dtb) ? @test_params.dtb : 
