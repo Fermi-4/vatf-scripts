@@ -87,10 +87,9 @@ def parse_cmd(var_name)
 end
 
 
-def execute_cmd(commands)
+def execute_cmd(commands, dut_timeout=10)
 	last_cmd = nil
 	result = 0 	#0=pass, 1=timeout, 2=fail message detected 
-	dut_timeout = 10
 	bootcmd_timeout = @test_params.instance_variable_defined?(:@var_boot_timeout) ? @test_params.var_boot_timeout.to_i : 30
 	vars = Array.new
 	commands.each {|cmd|
