@@ -46,7 +46,7 @@ def run
         scaling = @test_params.params_chan.instance_variable_defined?(:@scaling) ? @test_params.params_chan.scaling[0].to_f : get_scaling(src_video_width, src_video_height, prand)
         video_width, video_height = get_scaled_resolution(src_video_width, src_video_height, scaling)
         @equipment['dut1'].send_cmd("rm #{dut_test_file}", @equipment['dut1'].prompt) #Remove previous test file if any
-        @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --set-fmt-video-out=width=#{src_video_width},height=#{src_video_height},pixelformat=#{src_format.upcase()} --stream-from=#{dut_src_file} --set-fmt-video=width=#{video_width},height=#{video_height},pixelformat=#{test_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=#{mmap_buffs} --stream-out-mmap=#{mmap_buffs} --stream-count=#{num_frames-mmap_buffs} --stream-poll", @equipment['dut1'].prompt, 300)
+        @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --set-fmt-video-out=width=#{src_video_width},height=#{src_video_height},pixelformat=#{src_format.upcase()} --stream-from=#{dut_src_file} --set-fmt-video=width=#{video_width},height=#{video_height},pixelformat=#{test_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=#{mmap_buffs} --stream-out-mmap=#{mmap_buffs} --stream-count=#{num_frames} --stream-poll", @equipment['dut1'].prompt, 300)
         #@equipment['dut1'].send_cmd("/home/root/tests/wbtest -d #{device} -i #{dut_src_file} -j #{src_video_width}x#{src_video_height} -k #{src_format.upcase()} -o #{dut_test_file} -p #{video_width}x#{video_height} -q #{test_format.upcase()} -n 70", @equipment['dut1'].prompt, 300)
         next if @test_params.params_chan.instance_variable_defined?(:@negative_test)
         scp_pull_file(dut_ip, dut_test_file, local_test_file)
@@ -66,19 +66,28 @@ def run
                                    video_height,
                                    test_format)
           trunc_local_ref = ref_path
-          if File.size(ref_path) != File.size(local_test_file)
+          trunc_local_tst = local_test_file
+          count = num_frames
+          frame_size = (format_length * video_height * video_width).to_i
+          @equipment['server1'].log_info("Ref file size = #{File.size(ref_path)}, frame size = #{frame_size}, frames = #{File.size(ref_path)/frame_size}")
+          @equipment['server1'].log_info("Test file size = #{File.size(local_test_file)}, frame size = #{frame_size}, frames = #{File.size(local_test_file)/frame_size}")
+          if File.size(ref_path) > File.size(local_test_file)
             trunc_local_ref = ref_path+'.trunc'
-            frame_size = (format_length * video_height * video_width).to_i
-            @equipment['server1'].send_cmd("dd if=#{ref_path} of=#{trunc_local_ref} bs=#{frame_size} count=#{num_frames}", @equipment['server1'].prompt,600)
+            count = File.size(local_test_file)/frame_size
+            @equipment['server1'].send_cmd("dd if=#{ref_path} of=#{trunc_local_ref} bs=#{frame_size} count=#{count}", @equipment['server1'].prompt,600)
+          elsif File.size(local_test_file) > File.size(ref_path)
+            trunc_local_tst = local_test_file+'.trunc'
+            count = File.size(ref_path)/frame_size
+            @equipment['server1'].send_cmd("dd if=#{local_test_file} of=#{trunc_local_tst} bs=#{frame_size} count=#{count}", @equipment['server1'].prompt,600)
           end
-          @equipment['server1'].send_cmd("md5sum #{trunc_local_ref} #{local_test_file} | grep -o '^[^ ]*'",@equipment['server1'].prompt, 600)
+          @equipment['server1'].send_cmd("md5sum #{trunc_local_ref} #{trunc_local_tst} | grep -o '^[^ ]*'",@equipment['server1'].prompt, 600)
           qual_res = @equipment['server1'].response.split()
-          if qual_res[0].strip() != qual_res[1].strip()
+          if qual_res[0].strip() != qual_res[1].strip() || count < num_frames
             t_result = FrameworkConstants::Result[:fail]
-            t_string = "failed, converted file failed test (#{num_frames} frames), #{qual_res[0]} != #{qual_res[1]}"
+            t_string = "failed, #{count} frames processed" + (count < num_frames ? "" : ", #{qual_res[0]} != #{qual_res[1]}")
           else
             t_result = FrameworkConstants::Result[:pass]
-            t_string = "passed (#{num_frames} frames)"
+            t_string = "passed #{count} frames processed"
           end
         else
           t_result = FrameworkConstants::Result[:nry]
@@ -104,7 +113,7 @@ def run
           test_result = test_result && true
           passed += 1
         else
-          test_string += "#{dev}@#{video_width}x#{video_height}+#{src_format}->#{test_format}: #{t_string}, "
+          test_string += "#{dev}@#{video_width}x#{video_height}+#{src_format}->#{test_format}: #{t_string}; "
           test_result = false
           failed += 1
         end
