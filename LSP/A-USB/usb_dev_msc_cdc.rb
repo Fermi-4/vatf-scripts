@@ -14,6 +14,10 @@ def run
   simultaneous_host_device_test=false
   packet_count=100
   test_duration=60
+  module_name="ether"
+ if (@test_params.params_control.instance_variable_defined?(:@module_name))
+  module_name=@test_params.params_control.module_name[0] 
+ end
  if (@test_params.params_control.instance_variable_defined?(:@test_duration))
   test_duration=@test_params.params_control.test_duration[0].to_f
  end
@@ -40,6 +44,8 @@ def run
      $result = 0
      $result_message = ""
      command = "modprobe -r g_ether"
+     @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+     command = "modprobe -r g_ncm"
      @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
      command = "modprobe -r g_mass_storage"
      @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
@@ -73,7 +79,7 @@ def run
             usb_dev_msc()
             @stop_test=true
         when cmds.match(/usb_dev_cdc/) 
-            usb_dev_cdc(packet_count, test_duration)
+            usb_dev_cdc(packet_count, test_duration, module_name)
             @stop_test=true
         else
             $result = 1
@@ -89,6 +95,8 @@ def run
      else
        set_result(FrameworkConstants::Result[:fail], $result_message)
        command = "modprobe -r g_ether"
+       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+       command = "modprobe -r g_ncm"
        @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
        command = "modprobe -r g_mass_storage"
        @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
@@ -285,8 +293,8 @@ end
 
 
 #CDC test
-def usb_dev_cdc(packet_count, test_duration)
-
+def usb_dev_cdc(packet_count, test_duration, module_name)
+  gadget_name = "g_#{module_name}"
   command = "depmod -a"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,20)
 
@@ -296,11 +304,11 @@ def usb_dev_cdc(packet_count, test_duration)
   command = "find /lib/modules -name *.ko"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,20)
   response = @equipment['dut1'].response
-  if response.include?('g_ether.ko')
-    puts "g_ether USB Module is available"
+  if response.include?("#{gadget_name}.ko")
+    puts "#{gadget_name} USB Module is available"
   else
     $result = 1
-    $result_message = "g_ether.ko module is not available"
+    $result_message = "#{gadget_name}.ko module is not available"
     #if (simultaneous_host_device_test)
     if (@test_params.params_control.instance_variable_defined?(:@simultaneous_host))
      @stop_test=true
@@ -314,7 +322,7 @@ def usb_dev_cdc(packet_count, test_duration)
 
   system ("sleep 2")
 
-  command = "modprobe g_ether"
+  command = "modprobe #{gadget_name}"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   response = @equipment['dut1'].response
   if response.include?('not found')
@@ -333,20 +341,22 @@ def usb_dev_cdc(packet_count, test_duration)
   response = @equipment['dut1'].response
   response_server = @equipment['server2'].response
   if response.include?('usb0')
-    puts "g_ether module inserted succesfully"
+    puts "#{gadget_name} module inserted succesfully"
   else
     $result = 1
-    $result_message = "g_ether module insertion failed"
+    $result_message = "#{gadget_name} module insertion failed"
     if (@test_params.params_control.instance_variable_defined?(:@simultaneous_host))
      @stop_test=true
   end
   return
 
   end
-  if (response_server.include?('cdc_ether') || response_server.include?('cdc_eem'))
-    puts "g_ether registered on host succesfully"
+  if (response_server.include?('cdc_ether') || response_server.include?('cdc_eem') || response_server.include?('cdc_ncm'))
+    puts "#{gadget_name} registered on host succesfully"
     if (response_server.include?('cdc_ether'))
       usb_num=/usb(\d+)\s?:\s?register.*cdc_ether.*/.match(response_server).captures
+    elsif (response_server.include?('cdc_ncm'))
+      usb_num=/usb(\d+)\s?:\s?register.*cdc_ncm.*/.match(response_server).captures
     else
       usb_num=/usb(\d+)\s?:\s?register.*cdc_eem.*/.match(response_server).captures
     end
@@ -413,6 +423,8 @@ def usb_dev_cdc(packet_count, test_duration)
 #  Remove the ethernet gadget module
   system ("sleep 5")
   command = "modprobe -r g_ether"
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+  command = "modprobe -r g_ncm"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
 
 

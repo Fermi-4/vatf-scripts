@@ -190,7 +190,7 @@ def check_enum_on_target(module_name)
   dut_module_string = Hash.new
   dut_module_string = {'mass_storage'=>'gadget:\s+g_mass_storage\s+ready','ether'=>'gadget:\s+g_ether\s+ready',
                        'serial'=>'gadget:\s+g_serial\s+ready', 'cdc' => 'gadget:\s+g_cdc\s+ready',
-                       'multi' => 'gadget:\s+g_multi\s+ready'}
+                       'multi' => 'gadget:\s+g_multi\s+ready', 'ncm' => 'gadget:\s+g_ncm\s+ready'}
   # Verify that string matches with gadget type
   dut_response = @equipment['dut1'].response
   module_found = false
@@ -208,7 +208,7 @@ def check_enum_on_host(gadget_types)
   # Hash for each gadget and expected logs - for instance mass_storage would lead to "Mass Storage Function"
   host_gadget_string = Hash.new
   host_gadget_string = {'mass_storage'=>'usb-storage','ether'=>'cdc_ether',
-                       'serial'=>'cdc_acm'}
+                       'serial'=>'cdc_acm', 'ncm' => 'cdc_ncm'}
   @equipment['server2'].send_cmd("dmesg",@equipment['server2'].prompt)  
   host_response = @equipment['server2'].response
   # Verify that string matches with gadget type
@@ -249,7 +249,7 @@ def check_mount_interface_on_host(gadget_types)
     set_result(FrameworkConstants::Result[:fail], "No new USB mount is reported on host.")
     return
   end
-  interface_name = host_response.match(/usb\d: register 'cdc_ether'/)[0]
+  interface_name = host_response.match(/usb\d: register 'cdc_'/)[0]
   puts "HOST_RESPONSE is #{host_response}\n"
   puts "INTERFACE_NAME is #{interface_name}\n"
   if interface_name == ''
