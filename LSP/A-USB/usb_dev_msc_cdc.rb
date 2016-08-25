@@ -15,6 +15,7 @@ def run
   packet_count=100
   test_duration=60
   module_name="ether"
+  zlp_test=0
  if (@test_params.params_control.instance_variable_defined?(:@module_name))
   module_name=@test_params.params_control.module_name[0] 
  end
@@ -23,6 +24,9 @@ def run
  end
  if (@test_params.params_control.instance_variable_defined?(:@packet_count))
   packet_count=@test_params.params_control.packet_count[0].to_f
+ end
+ if (@test_params.params_control.instance_variable_defined?(:@zlp_test))
+  zlp_test=@test_params.params_control.zlp_test[0].to_f
  end
 
   mutex_timeout = test_duration>packet_count ? test_duration*5 : packet_count*5
@@ -79,7 +83,7 @@ def run
             usb_dev_msc()
             @stop_test=true
         when cmds.match(/usb_dev_cdc/) 
-            usb_dev_cdc(packet_count, test_duration, module_name)
+            usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
             @stop_test=true
         else
             $result = 1
@@ -293,7 +297,7 @@ end
 
 
 #CDC test
-def usb_dev_cdc(packet_count, test_duration, module_name)
+def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
   gadget_name = "g_#{module_name}"
   command = "depmod -a"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,20)
@@ -403,7 +407,7 @@ def usb_dev_cdc(packet_count, test_duration, module_name)
     when $cmd.match(/_cdc_ping/)
 
       #Ping test
-      pingtest_cdc(server_usb_interface, packet_count)
+      pingtest_cdc(server_usb_interface, packet_count, zlp_test)
 
     when $cmd.match(/_cdc_floodping/)
 
@@ -447,8 +451,17 @@ end
 
 
 #ping test
-def pingtest_cdc(server_usb_interface, packet_count)
-  packetsize = [64,512,4096,8192,65500]
+def pingtest_cdc(server_usb_interface, packet_count, zlp_test=0)
+  packetsize=Array.new
+  if (zlp_test=1)
+     packet_count=3
+     (470..500).each do |n|
+       packetsize.push n
+     end
+  else
+     packetsize = [64,512,4096,8192,65500]
+  end
+
   test_timeout = packet_count + 15
   assign_server_ip(server_usb_interface) 
   packetsize.each { |psize| 
