@@ -36,6 +36,7 @@ def run
     rtn_non_zero = super
     if rtn_non_zero
       result = result +1
+      @equipment['dut1'].log_info("Test failed on iteration #{i}");
     end
 
     i = i+1
