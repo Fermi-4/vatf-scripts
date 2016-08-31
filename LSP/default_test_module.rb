@@ -578,6 +578,7 @@ module LspTestScript
 	
     def add_log_to_html(log_file_name)
       # add log in result page
+      return if File.size?(log_file_name) > 25000 # Don't write to main result pages too much data to avoid high download time
       all_lines = ''
       File.open(log_file_name, 'r').each {|line|
         all_lines += line 
