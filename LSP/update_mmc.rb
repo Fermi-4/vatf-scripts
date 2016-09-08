@@ -7,8 +7,10 @@ module UpdateMMC
   include LspHelpers    
   PRIMARY_BOOLOADER_MD5_FILE = "primary_bootloader.md5"
   FS_MD5_FILE = "fs.md5"
+  SLEEP_TIME = 4
 
   # Check mlo's signature and if mlo signature is different, we update both mlo and uboot
+
   def need_update_mmcbootloader?(params)
     params['mmc_boot_mnt_point'] = find_mmc_mnt_point('boot')
     signature_file = "#{params['mmc_boot_mnt_point']}/#{PRIMARY_BOOLOADER_MD5_FILE}"
@@ -18,6 +20,7 @@ module UpdateMMC
     params['mlo_signature'] = new_signature
     (old_signature != new_signature)
   end
+  
 
   def update_mmcbootloader(params)
     mlo_signature = params.has_key?('mlo_signature') ? params['mlo_signature'] : calculate_signature(params['primary_bootloader'])
@@ -80,7 +83,68 @@ module UpdateMMC
       @equipment['ti_test_gadget'].connect({'type'=>'serial'})
     end
   end
+  
+  def check_partition(boot_partition,params,boot_mnt_point,host_node,num_partitions)
+    mount_partition(boot_partition, boot_mnt_point, 'vfat', params)
+    partition_file = "#{boot_mnt_point}/partition_info.txt"
+    if(@test_params.instance_variable_defined?(:@var_partition_info))
+      a = @test_params.var_partition_info
+    else
+      #write default values if var_partition_info isnt defined
+      a = "10#boot#vfat#y,40#rootfs#ext4#n,50#data#ext4#n"
+    end
+    # No partition_info file 
+    if !File.file?(partition_file)
+      unmount_partition(boot_partition,params)
+      create_partition(host_node)    
+      mount_partition(boot_partition,boot_mnt_point,'vfat',params)
+      params['server'].send_sudo_cmd("sh -c 'echo #{a} > #{boot_mnt_point}/partition_info.txt'", params['server'].prompt, 60)
+    # Partition_info file exists
+    else    
+      line = File.open("#{boot_mnt_point}/partition_info.txt") {|f| f.readline}
+      if(line.strip().downcase() != a.strip().downcase() || a.split(',').length != num_partitions)
+        unmount_partition(boot_partition,params)
+        create_partition(host_node)  
+        mount_partition(boot_partition,boot_mnt_point,'vfat',params)
+        params['server'].send_sudo_cmd("sh -c 'echo #{a} > #{boot_mnt_point}/partition_info.txt'", params['server'].prompt, 60)
+      end
+    end
+  end
 
+  def create_partition(host_node)
+    if(@test_params.instance_variable_defined?(:@var_partition_info))
+      a = @test_params.var_partition_info
+      tot_part = a.count(",") + 1
+      part_arr = a.split(",")
+      i=0
+      size_arr = Array.new(4)
+      part_str = "SYMNAME #{host_node}" 
+      while i < tot_part
+        if(part_arr[i].count("#") != 3)
+          raise "Invalid var_partition_info input"
+        end
+        temp = part_arr[i].split("#") 
+        part_str << " size #{temp[0]} name #{temp[1]} type #{temp[2]} bootflg #{temp[3]}"
+        size_arr[i] = temp[0]
+        i += 1
+      end
+    else
+      part_str = "SYMNAME #{host_node} size 10 size 40 size 50 name boot name rootfs name data type vfat type ext4 type ext4 bootflg y bootflg n bootflg n"
+      size_arr = [10,40,50]
+    end
+    tot_size = size_arr.map(&:to_i).reduce(:+)
+    if tot_size.to_i > 100
+      raise "Partition size cannot be greater than 100%!"
+    end
+    my_staf_handle = STAFHandle.new("my_staf")
+    staf_req = my_staf_handle.submit("local","PARTITION",part_str)
+    if(staf_req.rc == 0)
+      tmc_machine = staf_req.result
+    else
+      tmc_machine = nil
+      raise "Could not resolve PARTITION. Make sure that STAF is running and the TEE is reqistered with TMC Dispatcher"
+    end
+  end
 
 
   def flash_sd_card_from_host(params)
@@ -93,27 +157,35 @@ module UpdateMMC
       params['dut'].disconnect('serial')
       setup_ti_test_gadget(params)
       @equipment['ti_test_gadget'].set_interfaces(params['dut'].params)
+      host_node = params['dut'].params['microsd_host_node']
+      params['server'].send_sudo_cmd("eject #{params['dut'].params['microsd_host_node']}",params['server'].prompt, 60)
       @equipment['ti_test_gadget'].switch_microsd_to_dut(params['dut'])
-      sleep 10
-      a=`ls /dev/sd* | grep '/dev/sd[b-z][[:digit:]]'`.split("\n")
+      sleep SLEEP_TIME
       @equipment['ti_test_gadget'].switch_microsd_to_host(params['dut'])
-      sleep 10
-      b=`ls /dev/sd* | grep '/dev/sd[b-z][[:digit:]]'`.split("\n")
-      c=b-a
-      if c.size < 2
-        report_msg "Can't flash SD card.\n Partitions before:\n #{a} \n Partitions after:\n #{b}"
-        raise "SD card does not have at least two valid partitions, it can't be flashed"
+      sleep SLEEP_TIME
+      params['server'].send_sudo_cmd("partprobe", params['server'].prompt, 30)
+      #Resolve symlink and get nodes
+      node = "/dev/#{File.readlink(host_node)}"
+      params['server'].send_cmd("ls #{node}[[:digit:]]*", params['server'].prompt, 10)
+      nodes = params['server'].response.split("\n")
+      check_partition(nodes[0],params,boot_mnt_point,host_node,nodes.length)
+      params['server'].send_cmd("ls #{node}[[:digit:]]*", params['server'].prompt, 10)
+      nodes = params['server'].response.split("\n")
+      if nodes.size < 2
+        raise "SD card needs at least two partitions!"
       end
-      params = flash_sd_boot_partition_from_host(c[0], boot_mnt_point, params)
-      params = flash_sd_rootfs_partition_from_host(c[1], rootfs_mnt_point, params)
+      params = flash_sd_boot_partition_from_host(nodes[0], boot_mnt_point, params)
+      params = flash_sd_rootfs_partition_from_host(nodes[1], rootfs_mnt_point, params)
       return params
 
     rescue Exception => e
       raise e
 
     ensure
-      unmount_partition(boot_mnt_point, params)
-      unmount_partition(rootfs_mnt_point, params)
+      unmount_partition(nodes[0], params)
+      unmount_partition(nodes[1], params)
+      params['server'].send_sudo_cmd("eject #{params['dut'].params['microsd_host_node']}",params['server'].prompt, 60)
+      sleep SLEEP_TIME
       @equipment['ti_test_gadget'].switch_microsd_to_dut(params['dut'])
     end
 
@@ -121,17 +193,17 @@ module UpdateMMC
 
   def mount_partition(partition, mnt_point, type, params)
     params['server'].send_cmd("mkdir -p #{mnt_point}", params['server'].prompt, 10)
-    params['server'].send_sudo_cmd("mount -t #{type} #{partition} #{mnt_point}", params['server'].prompt, 30)
+    params['server'].send_sudo_cmd("mount -t #{type} #{partition} #{mnt_point}", params['server'].prompt, 90)
     raise "Could not mount #{partition} on host PC" if ! system "mount | grep #{partition}"
   end
 
   def unmount_partition(partition, params)
-    params['server'].send_sudo_cmd("umount #{partition}", params['server'].prompt, 30)
+    params['server'].send_sudo_cmd("umount -l #{partition}", params['server'].prompt, 300)
+    sleep SLEEP_TIME
     raise "Could not umount #{partition} on host PC" if system "mount | grep #{partition}"
   end
 
   def need_update_mmcbootloader_from_host?(boot_partition, mnt_point, params)
-    mount_partition(boot_partition, mnt_point, 'vfat', params)
     signature_file = "#{mnt_point}/#{PRIMARY_BOOLOADER_MD5_FILE}"
     return true if ! system "ls #{signature_file}"
     old_signature = read_signature(signature_file, params['server'])
@@ -160,7 +232,6 @@ module UpdateMMC
       params['server'].send_sudo_cmd("cp -f #{params['secondary_bootloader']} #{mnt_point}/u-boot.img", params['server'].prompt, 30)
       raise "Could not copy secondary_bootloader to SD card" if !cmd_exit_zero?(params['server'])
       save_signature(mlo_signature, mnt_point+"/#{PRIMARY_BOOLOADER_MD5_FILE}", true, params['server'])
-      params['server'].send_cmd("sync", params['server'].prompt, 30)
     end
     return params
   end
@@ -178,7 +249,6 @@ module UpdateMMC
         params['server'].send_sudo_cmd("tar -C #{mnt_point}/ #{tar_options} #{params['fs']}", params['server'].prompt, 2400)
         raise "Could not untar rootfs to SD card" if !cmd_exit_zero?(params['server'])
         save_signature(fs_signature, mnt_point+"/#{FS_MD5_FILE}", true, params['server'])
-        params['server'].send_cmd("sync", params['server'].prompt, 30)
       end
     end
     return params
@@ -262,7 +332,7 @@ module UpdateMMC
   end
 
   def flush_to_mmc(mnt_point)
-    @equipment['dut1'].send_cmd("sync", @equipment['dut1'].prompt, 120)
+    @equipment['dut1'].send_cmd("sync", @equipment['dut1'].prompt, 300)
     @equipment['dut1'].send_cmd("echo 3 > /proc/sys/vm/drop_caches", @equipment['dut1'].prompt, 60)
   end
 
