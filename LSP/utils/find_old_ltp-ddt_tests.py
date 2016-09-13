@@ -13,7 +13,7 @@ test_suite = re.compile('.*\s+-f\s+(.+?)\s+')
 test_case = re.compile('.*\s+-s[\s"]+(.+?)["\s,]+')
 errors = []
 warnings = []
-TOBEDELETED_TS = '3427121'  # Node ID of TOBEDELETED test suite in Testlink
+TOBEDELETED_TS = '3769061'  # Node ID of TOBEDELETED test suite in Testlink
 
 def extract_test_suite(text):
     m = test_suite.match(text)
