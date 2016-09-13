@@ -84,7 +84,7 @@ def run
   # Get voltage values for all channels in a hash
   volt_readings = @equipment['multimeter1'].get_multimeter_output(@test_params.params_control.loop_count[0].to_i, @test_params.params_equip.timeout[0].to_i) 
   # Calculate power consumption
-  power_readings = calculate_power_consumption(volt_readings, @equipment['multimeter1'])
+  power_readings = calculate_power_consumption(volt_readings, @equipment['dut1'], @equipment['multimeter1'])
   
   # Generate the plot of the power consumption for the given application
   perf = save_results(power_readings, volt_readings)

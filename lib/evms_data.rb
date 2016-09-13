@@ -84,6 +84,13 @@ module EvmData
     return power_data[key]
   end
 
+  def exclude_power_domain_from_total?(key, domain)
+    exclusion_list = Hash.new
+    exclusion_list['am43xx-gpevm']=['VDDS_DDR_MEM']
+
+    (exclusion_list.has_key? key and exclusion_list[key].include?(domain))
+  end
+
   def map_domain_to_measurement_rail(platform, domain)
     case platform
     when "am57xx-evm"

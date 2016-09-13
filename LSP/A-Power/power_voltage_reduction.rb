@@ -51,7 +51,7 @@ def run
 
     #Measure voltage
     volt_readings = @equipment['multimeter1'].get_multimeter_output(3, @test_params.params_equip.timeout[0].to_i)
-    power_readings = calculate_power_consumption(volt_readings, @equipment['multimeter1'])
+    power_readings = calculate_power_consumption(volt_readings, @equipment['dut1'], @equipment['multimeter1'])
     save_results(power_readings, volt_readings)
     #Compare measured against expected
     expected_volt_reductions.each {|domain,volt|

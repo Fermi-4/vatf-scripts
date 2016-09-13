@@ -1,8 +1,10 @@
+require File.dirname(__FILE__)+'/evms_data'
+
 module MultimeterModule
 # Function caclulates power consumption for all domains.
 # Input parameters: Hash table for voltage and current readings for all domaings.
 # Return Parameter: Hash table Power consumptions for all domains   
-def calculate_power_consumption(volt_reading, multimeter=@equipment['multimeter'])
+def calculate_power_consumption(volt_reading, dut, multimeter=@equipment['multimeter'])
   power_consumption = Hash.new
   readings_included_power = volt_reading.key?('domain_' + multimeter.dut_power_domains[0] + '_power_readings')
   if readings_included_power
@@ -21,6 +23,7 @@ def calculate_power_consumption(volt_reading, multimeter=@equipment['multimeter'
     end
     total_power = 0
     for k in (1..num_channels) 
+      next if exclude_power_domain_from_total?(dut.name, multimeter.dut_power_domains[k - 1])
       total_power = total_power + power_consumption["domain_" + multimeter.dut_power_domains[k - 1]+ "_power_readings"][i] if power_consumption["domain_" + multimeter.dut_power_domains[k - 1]+ "_power_readings"][i]
     end
     power_consumption["all_domains"] << total_power

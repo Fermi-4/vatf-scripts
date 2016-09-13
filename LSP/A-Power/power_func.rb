@@ -105,7 +105,7 @@ def run
     }
     
     # Calculate power consumption
-    power_readings = calculate_power_consumption(volt_readings, @equipment['multimeter1'])
+    power_readings = calculate_power_consumption(volt_readings, @equipment['dut1'], @equipment['multimeter1'])
     
     # Generate the plot of the power consumption for the given application
     perf = save_results(power_readings, volt_readings)
