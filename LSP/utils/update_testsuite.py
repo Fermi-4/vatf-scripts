@@ -15,7 +15,7 @@ def _serialize_xml(write, elem, encoding, qnames, namespaces):
        elem.tag == 'execution_type' or elem.tag == 'importance' or elem.tag == 'steps' or \
        elem.tag == 'expectedresults' or elem.tag == 'notes':
         if elem.text == None: elem.text = ''
-        write("<%s><![CDATA[%s]]></%s>" % (elem.tag, elem.text, elem.tag))
+        write(("<%s><![CDATA[%s]]></%s>" % (elem.tag, elem.text, elem.tag)).encode('utf-8'))
         return
     return ET._original_serialize_xml(
          write, elem, encoding, qnames, namespaces)
@@ -44,6 +44,7 @@ def extract_test_case(text):
     return m.group(1)
 
 def test_case_exists(ts,tc):
+    if tc == None: return 0
     return 0 == subprocess.call('cat ' + os.path.join(ltp_root,'runtest',ts) + ' | grep ' + tc , shell=True)
 
 def read_words(words_file):
@@ -55,18 +56,23 @@ def find_closest_match(ts,tc):
     return cm
 
 def update_custom_field(e):
-    text = e.text
-    ts = extract_test_suite(text)
-    tc = extract_test_case(text)
-    tc_exists = test_case_exists(ts,tc)
-    if tc_exists:
-        print ts + ": " + tc + ": exists"
-    else:
-        print ts + ": " + tc + ": does NOT exist"
-    if ts == None or tc == None or tc_exists: return
-    new_testcase = find_closest_match(ts,tc)
-    warnings.append("Replacing {0} with {1}".format(tc, new_testcase))
-    e.text = text.replace(tc, new_testcase, 1)
+    try:
+        text = e.text
+        ts = extract_test_suite(text)
+        if not re.match('^ddt/.*',ts): return
+        tc = extract_test_case(text)
+        tc_exists = test_case_exists(ts,tc)
+        if tc_exists:
+            print ts + ": " + tc + ": exists"
+        else:
+            print ts + ": " + str(tc) + ": does NOT exist"
+        if ts == None or tc == None or tc_exists: return
+        new_testcase = find_closest_match(ts,tc)
+        warnings.append("Replacing {0} with {1}".format(tc, new_testcase))
+        e.text = text.replace(tc, new_testcase, 1)
+    except:
+        print "error processing ts:{0}, tc:{1}".format(ts, tc)
+        raise
 
 def usage():
     print "Update ltp test case tags in test cases under host test suites that calls ltp tests."
@@ -84,12 +90,14 @@ test_suite_file = sys.argv[2]
 tree = ET.parse(test_suite_file)
 root = tree.getroot()
 
-for cf in root.findall(".//custom_field"):
-    name = cf.findtext('name')
-    value = cf.findtext('value')
-    if params_control.match(name) and ltp_test.match(value):
-        elem = cf.find('value')
-        update_custom_field(elem)
+for ts in root.findall(".//testsuite"):
+    if ts.get('name') == 'TOBEDELETED': continue
+    for cf in ts.findall(".//custom_field"):
+        name = cf.findtext('name')
+        value = cf.findtext('value')
+        if params_control.match(name) and ltp_test.match(value):
+            elem = cf.find('value')
+            update_custom_field(elem)
         
 for m in warnings:
     print "WARNING: " + m
