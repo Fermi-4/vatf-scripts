@@ -144,7 +144,7 @@ def host_dfu_download_image(image, alt_name)
   sleep 10 #make sure the target thread dfu command was executed
   raise "host_dfu_download_image: File #{image} doesn't exist" if ! File.exist?(image)
   @equipment['server1'].send_sudo_cmd("dfu-util -D #{image} -a #{alt_name}", "Done!", 120)
-  raise "Downloading data from PC to DFU device failed!" if ! @equipment['server1'].response.match(/Starting\s+download:.*finished!/i)
+  raise "Downloading data from PC to DFU device failed!" if ! @equipment['server1'].response.match(/(Starting\s+download:.*finished!)|(Download\s+done)/i)
 end
 
 # install dfu-util if it is not in host
