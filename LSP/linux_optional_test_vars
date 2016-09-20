@@ -19,6 +19,7 @@ Strategy to use to boot DUT.
 If not defined then load software assets (e.g. kernel, dtb, fs, etc) passed in test request.
 If == 1 then power cycle DUT, set default uboot env (i.e. env default -a -f) and then boot
 If == 2 then power cycle DUT and let it boot without modifying boot Parameters
+If == 3 then power cycle DUT, set default uboot env (i.e. env default -a -f), then load software assets (e.g. kernel, dtb, fs, etc) passed in test request.
 
 var_autologin=1:
 Do not expect filesystem to provide login: prompt and instead wait for system prompt
