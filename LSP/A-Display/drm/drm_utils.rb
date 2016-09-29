@@ -457,43 +457,41 @@ def get_test_modes(drm_info, formats, conn=nil, p_formats=nil)
   drm_info['Connectors:'].each do |connector|
     c_modes = []
     drm_info['Encoders:'].each do |encoder|
-      next if encoder['id'] != connector['encoder']
-      drm_info['CRTCs:'].each do |crtc|
-        next if crtc['id'] != encoder['crtc']
-        #If planes supported and only 1 mode, repeat mode to test with/wout planes
-        if !drm_info['Planes:'].empty? && connector['modes:'].length == 1
-          connector['modes:'] << connector['modes:'][0]
+      next if encoder['id'] != connector['encoders']
+      crtc = drm_info['CRTCs:'][encoder["possible crtcs"].to_i(16)-1]
+      #If planes supported and only 1 mode, repeat mode to test with/wout planes
+      if !drm_info['Planes:'].empty? && connector['modes:'].length == 1
+        connector['modes:'] << connector['modes:'][0]
+      end
+      adj_idx = 0
+      connector['modes:'].each_index do |i| 
+        mode = connector['modes:'][i]
+        if (@equipment['dut1'].name.match(/beagle|am335x|am43xx|k2g/) && (mode['name'].match(/(\d+)x(\d+)/).captures[0].to_i > 1280 || mode['name'].match(/(\d+)x(\d+)/).captures[1].to_i > 720)) 
+          adj_idx += 1
+          next
         end
-        adj_idx = 0
-        connector['modes:'].each_index do |i| 
-          mode = connector['modes:'][i]
-          if (@equipment['dut1'].name.match(/beagle|am335x|am43xx|k2g/) && (mode['name'].match(/(\d+)x(\d+)/).captures[0].to_i > 1280 || mode['name'].match(/(\d+)x(\d+)/).captures[1].to_i > 720)) 
-            adj_idx += 1
-            next
+        formats[connector['id']].each do |format|
+          mode_params = {'connectors_ids' => [connector['id']],
+                         'connectors_names' => [connector['name'].downcase().strip()], 
+                         'crtc_id' => crtc['id'], 
+                         'mode' => mode['name'],
+                         'framerate' => mode['refresh (Hz)'],
+                         'type' => connector['type'],
+                         'encoder' => encoder['id']}
+          mode_params['format'] = format if format != 'default'
+          plane_params = nil
+          if !drm_info['Planes:'].empty? && i % 2 == 1
+            plane = drm_info['Planes:'][0]
+            width, height = mode['name'].match(/(\d+)x(\d+)/).captures
+            plane_params = {'width' => width, 
+                            'height' => height,
+                            'xyoffset' => [i-adj_idx+1,i-adj_idx+1],
+                            'scale' => [0.125, 1.to_f/(2+i-adj_idx).to_f].max,
+                            'format' => p_formats ? p_formats[rand(p_formats.length)] : plane['formats:'][rand(plane['formats:'].length)]}
           end
-          formats[connector['id']].each do |format|
-            mode_params = {'connectors_ids' => [connector['id']],
-                           'connectors_names' => [connector['name'].downcase().strip()], 
-                           'crtc_id' => crtc['id'], 
-                           'mode' => mode['name'],
-                           'framerate' => mode['refresh (Hz)'],
-                           'type' => connector['type'],
-                           'encoder' => encoder['id']}
-            mode_params['format'] = format if format != 'default'
-            plane_params = nil
-            if !drm_info['Planes:'].empty? && i % 2 == 1
-              plane = drm_info['Planes:'][0]
-              width, height = mode['name'].match(/(\d+)x(\d+)/).captures
-              plane_params = {'width' => width, 
-                              'height' => height,
-                              'xyoffset' => [i-adj_idx+1,i-adj_idx+1],
-                              'scale' => [0.125, 1.to_f/(2+i-adj_idx).to_f].max,
-                              'format' => p_formats ? p_formats[rand(p_formats.length)] : plane['formats:'][rand(plane['formats:'].length)]}
-            end
-            mode_params['plane'] = plane_params
-            c_modes << [mode_params]
-            single_disp_modes << [mode_params] if !conn || connector['name'].match(/#{conn}/i)
-          end
+          mode_params['plane'] = plane_params
+          c_modes << [mode_params]
+          single_disp_modes << [mode_params] if !conn || connector['name'].match(/#{conn}/i)
         end
       end
     end

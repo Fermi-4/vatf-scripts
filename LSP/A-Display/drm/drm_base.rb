@@ -26,7 +26,7 @@ def run
   end
 
   single_disp_modes, multi_disp_modes = get_test_modes(drm_info, formats)
-  
+
   @results_html_file.add_paragraph("")
   res_table = @results_html_file.add_table([["Connector",{:bgcolor => "4863A0"}], 
                                             ["Encoder", {:bgcolor => "4863A0"}],
