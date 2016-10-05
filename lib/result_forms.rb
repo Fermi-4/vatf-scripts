@@ -8,13 +8,14 @@ class ResultFrame < Wx::Frame
   
   attr_reader :result
   
-  def initialize(title)
+  def initialize(title, text_msg=nil)
     @result = [FrameworkConstants::Result[:nry], '']
     super(nil, -1, title)
     @res_panel = Panel.new(self)
     @c_label = StaticText.new(@res_panel, -1, 'Comment', 
                 DEFAULT_POSITION, DEFAULT_SIZE, ALIGN_LEFT)
     @c_textbox = TextCtrl.new(@res_panel, nil, :style=>Wx::TE_MULTILINE)
+    @c_textbox.set_value(text_msg) if text_msg
     @button_panel = Panel.new(@res_panel)
     @action_button_panel = Panel.new(@res_panel)
     @p_button = Button.new(@button_panel, -1, 'Pass')
@@ -84,13 +85,14 @@ end
 #App class that will be forked do not call directly
 class ResultApp < Wx::App
   
-  def initialize(title="Test Result")
+  def initialize(title="Test Result", text=nil)
     @title=title
+    @comment = text
     super()
   end
   
   def on_init()
-    @frame = ResultFrame.new(@title)
+    @frame = ResultFrame.new(@title, @comment)
     @action_buttons.each{ |buttons| @frame.add_buttons(*buttons) } if @action_buttons
     @frame.show
   end
@@ -130,7 +132,8 @@ end
 #  #get the results from the window
 #  puts "This is result" + res_win.get_result().to_s
 class ResultWindow
-  def initialize(title)
+  def initialize(title, text=nil)
+    @comment = text
     @title = title
     @b_arr = []
   end
@@ -143,7 +146,7 @@ class ResultWindow
     read, write = IO.pipe()
     w_pid = Process.fork() do
       read.close
-      app = ResultApp.new(@title)
+      app = ResultApp.new(@title, @comment)
       Signal.trap('KILL') do
         app.end_main_loop()
         Kernel.exit(9)
