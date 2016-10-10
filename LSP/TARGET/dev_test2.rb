@@ -58,6 +58,11 @@ def run_call_script
   @equipment['dut1'].send_cmd("./test.sh 2>&1 3> result.log",@equipment['dut1'].prompt, cmd_timeout)
   #write to test.log
   test_output = @equipment['dut1'].response
+  if @equipment['dut1'].timeout?
+    # Wait one more minute for test to finish
+    @equipment['dut1'].wait_for(@equipment['dut1'].prompt, 60)
+    test_output += @equipment['dut1'].response
+  end
   out_file = File.new(File.join(@linux_temp_folder,'test.log'),'w')
   out_file.write(test_output)
   out_file.close

@@ -45,8 +45,13 @@ def run_call_script
   @equipment['dut1'].send_cmd("chmod +x test.sh",@equipment['dut1'].prompt)
   cmd_timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_i : 600
   @equipment['dut1'].send_cmd("./test.sh 2>&1 3> result.log",/Done executing testcases.+#{@equipment['dut1'].prompt}/m, cmd_timeout)
-  #write to test.log
   test_output = @equipment['dut1'].response
+  if @equipment['dut1'].timeout?
+    # Wait one more minute for test to finish
+    @equipment['dut1'].wait_for(@equipment['dut1'].prompt, 60)
+    test_output += @equipment['dut1'].response
+  end
+  #write to test.log
   out_file = File.new(File.join(@linux_temp_folder,'test.log'),'w')
   out_file.write(test_output)
   out_file.close
