@@ -20,6 +20,10 @@ def run
   params['primary_bootloader_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_src_dev) ? @test_params.params_chan.primary_bootloader_src_dev[0] : 'eth'
   params['secondary_bootloader'] = @test_params.instance_variable_defined?(:@secondary_bootloader) ? @test_params.secondary_bootloader : ''
   params['secondary_bootloader_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_src_dev) ? @test_params.params_chan.secondary_bootloader_src_dev[0] : 'eth'
+  if params['secondary_bootloader'].strip == '' 
+    raise "Bootloaders are not provided"
+  end
+
   translated_boot_params = setup_host_side(params)
   translated_boot_params.each{|k,v| puts "#{k}:#{v}"}
   
