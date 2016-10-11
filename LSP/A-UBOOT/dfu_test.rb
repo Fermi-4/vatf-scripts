@@ -41,9 +41,9 @@ def run
     dfu_alt_info_fat_mmc = "\"#{alt_name_mlo_fat} fat 0 1;#{alt_name_uboot_fat} fat 0 1\""
     case @test_params.platform 
       when /am43xx/
-        dfu_alt_info_raw_mmc = "\"#{alt_name_mlo_raw} raw 0x0 0x100;#{alt_name_uboot_raw} raw 0x300 0x400\" "
+        dfu_alt_info_raw_mmc = "\"#{alt_name_mlo_raw} raw 0x0 0x100;#{alt_name_uboot_raw} raw 0x300 0x800\" "
       else
-        dfu_alt_info_raw_mmc = "\"#{alt_name_mlo_raw} raw 0x100 0x100;#{alt_name_uboot_raw} raw 0x300 0x400\" "
+        dfu_alt_info_raw_mmc = "\"#{alt_name_mlo_raw} raw 0x100 0x100;#{alt_name_uboot_raw} raw 0x300 0x800\" "
     end
   when /spi/
     alt_name_mlo_raw = "MLO"
