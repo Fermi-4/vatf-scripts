@@ -84,7 +84,7 @@ module LspTargetTestScript
     @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("chmod +x test.sh",@equipment['dut1'].prompt)
     @equipment['dut1'].send_cmd("./test.sh 2> stderr.log > stdout.log",@equipment['dut1'].prompt)
-    @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
+    @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2, false)
     @equipment['dut1'].timeout?
   end
   

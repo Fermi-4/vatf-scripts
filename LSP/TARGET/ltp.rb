@@ -56,7 +56,7 @@ def run_call_script
   out_file.write(test_output)
   out_file.close
 
-  @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
+  @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2, false)
   @equipment['dut1'].timeout?
 end
 
