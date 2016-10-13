@@ -1,4 +1,7 @@
+require File.dirname(__FILE__)+'/../default_test_module'
+
 module PowerFunctions
+  include LspTestScript
 
   # Set operating point on cpu specified. opp units in KHz as expected by cpufreq
   def set_cpu_opp(opp, cpu=0, e='dut1')
@@ -57,17 +60,12 @@ module PowerFunctions
       response = @equipment[e].response
 
     elsif wakeup_domain == 'rtc_only'
-      @equipment[e].wait_for(@equipment[e].login_prompt, max_resume_time)
-      login_attempts = 3
-      login_attempts.times do |trial|
-        begin
-          @equipment[e].send_cmd(@equipment[e].login, @equipment[e].prompt, 20, false)
-          break
-        rescue Exception => e
-          puts "Login attempt #{trial} failed, trying again....."
-          raise e if trial == login_attempts - 1
-        end
+      begin
+        @equipment[e].stop_boot(60)
+      rescue Exception => e
+        report_and_exit "DUT took more than 60 seconds to resume from rtc_only state"
       end
+      setup()
 
     else
       response = ''
@@ -84,7 +82,7 @@ module PowerFunctions
   def report_and_exit(msg, e='dut1')
     @equipment[e].log_info(msg)
     @equipment[e].log_info("Failing tests and going to try to collect power stats")
-    report_power_stats
+    report_power_stats if @equipment[e].at_prompt?({'prompt' => @equipment[e].prompt})
     raise msg
   end
 

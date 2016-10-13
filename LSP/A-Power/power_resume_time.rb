@@ -40,20 +40,23 @@ def run
     elapsed_time = Time.now - start_time
     sleep (suspend_time - elapsed_time) if elapsed_time < suspend_time and wakeup_domain == 'rtc'
     response = resume(wakeup_domain, max_resume_time)
-
-    time_captures = /PM:\s+resume\s+of\s+devices\s+complete\s+after\s+([0-9\.]+)\s+([umsec]+)/i.match(response) 
-    resume_time << time_captures[1]
-    # here assume the printed unit is same for all iterations
-    unit = time_captures[2]
+    if wakeup_domain != 'rtc_only'
+      time_captures = /PM:\s+resume\s+of\s+devices\s+complete\s+after\s+([0-9\.]+)\s+([umsec]+)/i.match(response)
+      resume_time << time_captures[1]
+      # here assume the printed unit is same for all iterations
+      unit = time_captures[2]
+    end
     i += 1
     sleep 5
   end # end of while
 
-  puts "unit: " + unit
+  puts "unit: " + unit.to_s
   puts "resume time: " + resume_time.to_s 
   if !resume_time.empty?
     perf_data = {'name' => "Resume_time", 'value' => resume_time, 'units' => unit}  
     set_result(FrameworkConstants::Result[:pass], "Resume time is captured: "+resume_time.to_s, perf_data)
+  elsif wakeup_domain == 'rtc_only'
+    set_result(FrameworkConstants::Result[:pass], "Board successfully resumed from rtc_only #{test_loop} times")
   else
     set_result(FrameworkConstants::Result[:fail], "Could not get resume time!")
   end # end of if
