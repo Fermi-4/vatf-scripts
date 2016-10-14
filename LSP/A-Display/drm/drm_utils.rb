@@ -480,7 +480,7 @@ def get_test_modes(drm_info, formats, conn=nil, p_formats=nil)
                          'encoder' => encoder['id']}
           mode_params['format'] = format if format != 'default'
           plane_params = nil
-          if !drm_info['Planes:'].empty? && i % 2 == 1
+          if drm_info['Planes:'].length > drm_info['CRTCs:'].length && i % 2 == 1
             plane = drm_info['Planes:'][0]
             width, height = mode['name'].match(/(\d+)x(\d+)/).captures
             plane_params = {'width' => width, 
