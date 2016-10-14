@@ -28,6 +28,7 @@ module PowerFunctions
     elsif wakeup_domain == 'rtc'
       @equipment[e].send_cmd("rtcwake -d /dev/rtc0 -m #{power_state} -s #{suspend_time}", suspend_regex, suspend_time, false)
     elsif wakeup_domain == 'rtc_only'
+      suspend_time += 30
       suspend_regex=/System halted|System will go to power_off|Power down|reboot: Power/i
       @equipment[e].send_cmd("rtcwake -d /dev/rtc0 -m poweroff -s #{suspend_time}", suspend_regex, suspend_time, false)
     else
@@ -61,11 +62,11 @@ module PowerFunctions
 
     elsif wakeup_domain == 'rtc_only'
       begin
-        @equipment[e].stop_boot(60)
+        @equipment[e].stop_boot(90)
       rescue Exception => e
         report_and_exit "DUT took more than 60 seconds to resume from rtc_only state"
       end
-      setup()
+      self.as(LspTestScript).setup
 
     else
       response = ''
