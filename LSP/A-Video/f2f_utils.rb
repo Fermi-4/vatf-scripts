@@ -35,6 +35,11 @@ def get_ref
                   @equipment['server1'].prompt,
                   600)
 
+  @equipment['server1'].send_cmd("ls #{local_file}",
+                  @equipment['server1'].prompt,
+                  10)
+  return nil if @equipment['server1'].response.match(/no such file/im)
+
   @equipment['server1'].send_cmd("tar -C #{@linux_temp_folder} -Jxvf #{local_file} || rm #{local_file}",
                   @equipment['server1'].prompt,
                   600)

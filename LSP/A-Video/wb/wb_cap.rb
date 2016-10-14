@@ -56,6 +56,7 @@ def run
   video_test_file = File.join(@linux_temp_folder, 'video_tst_file.raw')
 
   single_disp_modes.each do |s_mode|
+      next if s_mode[0]['mode'].match(/\d+x\d+i/)
       video_width, video_height = s_mode[0]['mode'].split('x').map(&:to_i)
       wb_devices.each do |dev|
         device = '/dev/'+dev
@@ -100,7 +101,11 @@ def run
           ref_path = get_ref do |base_uri|
              base_uri + '/host-utils/wb/ref-media/' + ref_file 
           end
-          
+          if !ref_path
+            puts "No reference #{ref_file} file found"
+            add_result_row(res_table, device, tst_format, s_mode, true,  "No reference #{ref_file} file found", plane_info_str)
+            next
+          end
           trunc_local_ref = ref_path
           if File.exists?(ref_path) && File.size(ref_path) != File.size(local_test_file)
             trunc_local_ref = ref_path+'.trunc'
@@ -153,3 +158,4 @@ def get_disp_idxs(drm_props)
   sorted_conns.each_index { |i| result[sorted_conns[i]["name"].strip().downcase()] = i }
   result
 end
+
