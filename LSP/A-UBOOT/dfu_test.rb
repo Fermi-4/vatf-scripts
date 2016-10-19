@@ -11,6 +11,7 @@ def setup
 	@equipment['dut1'].set_api('psp')
   @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
   install_dfu_util()
+  install_crc32() if @test_params.params_chan.media[0].downcase == 'ram'
 end
 
 def run
@@ -52,7 +53,18 @@ def run
       when /dra7/
         dfu_alt_info_raw_spi = "\"#{alt_name_mlo_raw} raw 0x0 0x20000;#{alt_name_uboot_raw} raw 0x40000 0x100000\" "
     end
-
+  when /ram/
+    # generate testfile in host
+    filesize = @test_params.params_chan.filesize[0]  # filesize in decimal
+puts "filesize:"+filesize
+    filesize_hex = filesize.to_i.to_s(16)
+    size_in_k = (filesize.to_i / 1024).to_s
+    filename_ram = "#{@equipment['server1'].tftp_path}/dfu_ram_testfile"
+    @equipment['server1'].send_cmd("dd if=/dev/urandom of=#{filename_ram} bs=1K count=#{size_in_k}", @equipment['server1'].prompt, 600)
+    @equipment['server1'].send_cmd("crc32 #{filename_ram}", @equipment['server1'].prompt, 600)
+    crc32_srcfile = @equipment['server1'].response.match(/^(\h+)/).captures[0]
+    puts "crc32_srcfile:"+crc32_srcfile
+    dfu_alt_info_ram = "\"ram_testimage ram ${loadaddr} 0x#{filesize_hex}\""
   end
 
   case media
@@ -64,6 +76,9 @@ def run
     dev = 1
   when /qspi/
     interface = 'sf 0:0'
+  when /ram/
+    interface = 'ram'
+    dev = 0
   else
     interface = media
     dev = 0
@@ -80,6 +95,8 @@ def run
     dfu_alt_info = dfu_alt_info_raw_spi
     alt_name_mlo = alt_name_mlo_raw
     alt_name_uboot = alt_name_uboot_raw
+  elsif media == "ram"
+    dfu_alt_info = dfu_alt_info_ram
   else
     raise "Not supported media #{media}. The supported media are fat-mmc, raw-mmc, fat-emmc, raw-emmc."
   end
@@ -97,35 +114,57 @@ def run
   tmp_path = @test_params.staf_service_name.to_s.strip.gsub('@','_')
   images_dir = File.join(@equipment['server1'].tftp_path, tmp_path)
 
-  # download mlo
-  start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
-    host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['primary_bootloader_image_name'])}", alt_name_mlo)
-  end
-  # send ctrl+c to back to uboot prompt
-  @equipment['dut1'].send_cmd("\x3", @equipment['dut1'].boot_prompt, 5)
-
-  sleep 1
-  # download u-boot.img
-  start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
-    host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['secondary_bootloader_image_name'])}", alt_name_uboot)
-  end
-  # send ctrl+c to back to uboot prompt
-  @equipment['dut1'].send_cmd("\x3", @equipment['dut1'].boot_prompt, 5)
-
-  # check if new bootloaders work
-  begin
-    @equipment['dut1'].boot_loader = nil
-    case media
-    when 'qspi'
-      translated_boot_params['primary_bootloader_dev'] = 'qspi'
-    when 'mmc'
-      translated_boot_params['primary_bootloader_dev'] = 'mmc'
-    when 'emmc'
-      translated_boot_params['primary_bootloader_dev'] = 'emmc'
+  if media == "ram"
+   
+    # download mlo
+    start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
+      host_dfu_download_image("#{filename_ram}", "ram_testimage")
     end
-    @equipment['dut1'].boot_to_bootloader(translated_boot_params)
-  rescue
-    set_result(FrameworkConstants::Result[:fail], "Test Failed: The board could not boot using the updated MLO/uboot")
+    # send ctrl+c to back to uboot prompt
+    @equipment['dut1'].send_cmd("\x3", @equipment['dut1'].boot_prompt, 5)
+
+    sleep 1
+
+    # check crc32 to see if it match the src file
+    @equipment['dut1'].send_cmd("crc32 ${loadaddr} #{filesize_hex}", @equipment['dut1'].boot_prompt, 600)
+    crc32_dstfile = @equipment['dut1'].response.match(/==>\s*(\h+)/i).captures[0]
+    puts "crc32_dstfile:"+crc32_dstfile
+
+    if (crc32_dstfile != crc32_srcfile)
+      set_result(FrameworkConstants::Result[:fail], "Ram download: crc32 of dstfile is not the same as srcfile")
+    end
+    
+  else
+    # download mlo
+    start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
+      host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['primary_bootloader_image_name'])}", alt_name_mlo)
+    end
+    # send ctrl+c to back to uboot prompt
+    @equipment['dut1'].send_cmd("\x3", @equipment['dut1'].boot_prompt, 5)
+
+    sleep 1
+    # download u-boot.img
+    start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
+      host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['secondary_bootloader_image_name'])}", alt_name_uboot)
+    end
+    # send ctrl+c to back to uboot prompt
+    @equipment['dut1'].send_cmd("\x3", @equipment['dut1'].boot_prompt, 5)
+
+    # check if new bootloaders work
+    begin
+      @equipment['dut1'].boot_loader = nil
+      case media
+      when 'qspi'
+        translated_boot_params['primary_bootloader_dev'] = 'qspi'
+      when 'mmc'
+        translated_boot_params['primary_bootloader_dev'] = 'mmc'
+      when 'emmc'
+        translated_boot_params['primary_bootloader_dev'] = 'emmc'
+      end
+      @equipment['dut1'].boot_to_bootloader(translated_boot_params)
+    rescue
+      set_result(FrameworkConstants::Result[:fail], "Test Failed: The board could not boot using the updated MLO/uboot")
+    end
   end
 
   set_result(FrameworkConstants::Result[:pass], "Test Pass")
@@ -155,10 +194,17 @@ end
 def install_dfu_util()
   @equipment['server1'].send_cmd("which dfu-util", @equipment['server1'].prompt, 5)
   @equipment['server1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
-  @equipment['server1'].send_sudo_cmd("apt-get install dfu-util", @equipment['server1'].prompt, 60) if @equipment['server1'].timeout?
+  @equipment['server1'].send_sudo_cmd("apt-get install dfu-util", @equipment['server1'].prompt, 600) if @equipment['server1'].timeout?
   @equipment['server1'].send_cmd("dfu-util -h", @equipment['server1'].prompt, 5)
   @equipment['server1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
   raise "Could not install dfu-util!" if @equipment['server1'].timeout?
+end
+
+# install crc32 if it is not in host
+def install_crc32()
+  @equipment['server1'].send_cmd("which crc32", @equipment['server1'].prompt, 5)
+  @equipment['server1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
+  @equipment['server1'].send_sudo_cmd("sudo apt-get install libarchive-zip-perl", @equipment['server1'].prompt, 600) if @equipment['server1'].timeout?
 end
 
 
