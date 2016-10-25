@@ -56,13 +56,14 @@ end
 
 def start_app(e='dut1')
   cmd_timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_i : 600
+  run_via_telnet = @test_params.params_chan.instance_variable_defined?(:@telnet) ? @test_params.params_chan.telnet[0].to_i : 1
   if @test_params.params_chan.instance_variable_defined?(:@app) and @test_params.params_chan.app[0] == 'sleep'
     Thread.new(cmd_timeout) {|t|
       @equipment[e].send_cmd("sleep #{t}", @equipment[e].prompt, t+5)
     }
   elsif @test_params.params_chan.instance_variable_defined?(:@app)
     cmd = @test_params.params_chan.app[0]
-    @cmd_thr = start_target_tests(cmd, cmd_timeout, e)
+    @cmd_thr = start_target_tests(cmd, cmd_timeout, run_via_telnet, e)
   end
 end
 
@@ -79,7 +80,7 @@ def run
 
   suspend(wakeup_domain, power_state, 120) if @test_params.params_chan.instance_variable_defined?(:@suspend) and @test_params.params_chan.suspend[0] == '1'
 
-  sleep 5
+  sleep 10  # Give enough time to apps to start running
 
   # Get voltage values for all channels in a hash
   volt_readings = @equipment['multimeter1'].get_multimeter_output(@test_params.params_control.loop_count[0].to_i, @test_params.params_equip.timeout[0].to_i) 
@@ -159,39 +160,43 @@ end
 
 
 
-def start_target_tests(cmd, timeout, e='dut1')
-  thr = Thread.new(cmd, timeout) {|c, t|
+def start_target_tests(cmd, timeout, run_via_telnet, e='dut1')
+  thr = Thread.new(cmd, timeout, run_via_telnet) {|c, t, run_via_telnet|
     time = Time.now
     failure = false
     result = [FrameworkConstants::Result[:pass], "Test completed without errors"]
+    dut_object = @equipment[e]
 
-    @eth_ip_addr = get_ip_addr()
-    if !@eth_ip_addr
-      @equipment[e].send_cmd("ifup eth0")
+    if run_via_telnet == 1
       @eth_ip_addr = get_ip_addr()
-    end
+      if !@eth_ip_addr
+        @equipment[e].send_cmd("ifup eth0")
+        @eth_ip_addr = get_ip_addr()
+      end
 
-    @equipment[e].target.platform_info.telnet_ip = @eth_ip_addr
-    old_telnet_port = @equipment[e].target.platform_info.telnet_port
-    @equipment[e].target.platform_info.telnet_port = 23
-    @equipment[e].connect({'type'=>'telnet'})
-    @equipment[e].target.platform_info.telnet_port = old_telnet_port
+      @equipment[e].target.platform_info.telnet_ip = @eth_ip_addr
+      old_telnet_port = @equipment[e].target.platform_info.telnet_port
+      @equipment[e].target.platform_info.telnet_port = 23
+      @equipment[e].connect({'type'=>'telnet'})
+      @equipment[e].target.platform_info.telnet_port = old_telnet_port
+      dut_object = @equipment[e].target.telnet
+    end
 
     cmd_timeout = t
     while ((Time.now - time) < @test_params.params_control.test_duration[0].to_f && !failure )
       begin
         actual_cmd = eval('"'+c.gsub("\\","\\\\\\\\").gsub('"','\\"')+'"')
-        @equipment[e].target.telnet.send_cmd(actual_cmd, @equipment[e].prompt, cmd_timeout)
+        dut_object.send_cmd(actual_cmd, @equipment[e].prompt, cmd_timeout)
       rescue Timeout::Error => er
-        @equipment[e].log_info("Telnet TIMEOUT ERROR. Data START:\n #{@equipment[e].target.telnet.response}\nTelnet Data END")
+        @equipment[e].log_info("TIMEOUT ERROR. Data START:\n #{dut_object.response}\nData END")
         result = [FrameworkConstants::Result[:fail], "DUT is either not responding or took more that #{cmd_timeout} seconds to run the test"]
         failure = true
       end
-      @equipment[e].log_info("Telnet Data START:\n #{@equipment[e].target.telnet.response}\nTelnet Data END")
+      @equipment[e].log_info("Data START:\n #{dut_object.response}\nData END")
       begin
-        @equipment[e].target.telnet.send_cmd("echo $?",/^0[\0\n\r]+/m, 10) if !failure
+        dut_object.send_cmd("echo $?",/^0[\0\n\r]+/m, 10) if !failure
       rescue Timeout::Error => er
-        @equipment[e].log_info("Telnet TIMEOUT ERROR. Data START:\n #{@equipment[e].target.telnet.response}\nTelnet Data END")
+        @equipment[e].log_info("TIMEOUT ERROR. Data START:\n #{dut_object.response}\nData END")
         result = [FrameworkConstants::Result[:fail], "Test returned non-zero value"]
         failure = true
       end
