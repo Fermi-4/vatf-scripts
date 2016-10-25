@@ -70,42 +70,7 @@ def get_metrics
     'regex' => 'AF_UNIX sock stream bandwidth\s*:\s*(\d*.\d*)\s*MB/sec',
     'units' => 'MB\s',
    },
-   {'name' => 'bw_mem-rd-1MB',
-    'regex' => '^\|TEST START\|bw_mem\|.+?Operation\s+\-\s+rd\|.+?Memory Blk Size\s+\-\s+1\s+MB\|.+?[\d\.]+\s+([\d\.]+)',
-    'units' => 'MB/s',
-   },
-   {'name' => 'bw_mem-wr-1MB',
-    'regex' => '^\|TEST START\|bw_mem\|.+?Operation\s+\-\s+wr\|.+?Memory Blk Size\s+\-\s+1\s+MB\|.+?[\d\.]+\s+([\d\.]+)',
-    'units' => 'MB/s',
-   },
-   {'name' => 'bw_mem-rdwr-1MB',
-    'regex' => '^\|TEST START\|bw_mem\|.+?Operation\s+\-\s+rdwr\|.+?Memory Blk Size\s+\-\s+1\s+MB\|.+?[\d\.]+\s+([\d\.]+)',
-    'units' => 'MB/s',
-   },
-   {'name' => 'bw_mem-cp-1MB',
-    'regex' => '^\|TEST START\|bw_mem\|.+?Operation\s+\-\s+cp\|.+?Memory Blk Size\s+\-\s+1\s+MB\|.+?[\d\.]+\s+([\d\.]+)',
-    'units' => 'MB/s',
-   },
-   {'name' => 'bw_mem-fwr-1MB',
-    'regex' => '^\|TEST START\|bw_mem\|.+?Operation\s+\-\s+fwr\|.+?Memory Blk Size\s+\-\s+1\s+MB\|.+?[\d\.]+\s+([\d\.]+)',
-    'units' => 'MB/s',
-   },
-   {'name' => 'bw_mem-frd-1MB',
-    'regex' => '^\|TEST START\|bw_mem\|.+?Operation\s+\-\s+frd\|.+?Memory Blk Size\s+\-\s+1\s+MB\|.+?[\d\.]+\s+([\d\.]+)',
-    'units' => 'MB/s',
-   },
-   {'name' => 'bw_mem-fcp-1MB',
-    'regex' => '^\|TEST START\|bw_mem\|.+?Operation\s+\-\s+fcp\|.+?Memory Blk Size\s+\-\s+1\s+MB\|.+?[\d\.]+\s+([\d\.]+)',
-    'units' => 'MB/s',
-   },
-   {'name' => 'bw_mem-bzero-1MB',
-    'regex' => '^\|TEST START\|bw_mem\|.+?Operation\s+\-\s+bzero\|.+?Memory Blk Size\s+\-\s+1\s+MB\|.+?[\d\.]+\s+([\d\.]+)',
-    'units' => 'MB/s',
-   },
-   {'name' => 'bw_mem-bcopy-1MB',
-    'regex' => '^\|TEST START\|bw_mem\|.+?Operation\s+\-\s+bcopy\|.+?Memory Blk Size\s+\-\s+1\s+MB\|.+?[\d\.]+\s+([\d\.]+)',
-    'units' => 'MB/s',
-   },
+   get_bw_mem_metrics(),
    {'name' => 'bw_unix',
     'regex' => '^\|TEST START\|bw_unix\|.+?AF_UNIX\s+sock\s+stream\s+bandwidth:\s+([\d\.]+)\s+[\w\/]+',
     'units' => 'MB/s',
@@ -369,6 +334,20 @@ def get_metrics
     'adj' => {'val_index' => 0, 'units_index' => 1, 'val_adj' => {/nano/ => 0.001, /micro/ => 1.0, /mili/ => 1000.0}},
     'units' => 'us',
    },
-  ]
+  ].flatten!
   perf_metrics
+end
+
+def get_bw_mem_metrics()
+  metrics = []
+  for op in ['rd','wr','rdwr','cp','fwr','frd','fcp','bzero','bcopy']
+    for i in ['1M','2M','4M','8M','16M']
+      metrics << {
+        'name' => "bw_mem-#{op}-#{i}B",
+        'regex' => "^\\|TEST START\\|bw_mem\\|.+?Operation\\s+\\-\\s+#{op}\\|.+?Memory Blk Size\\s+\\-\\s+#{i}\\|.+?[\\d\\.]+\\s+([\\d\\.]+)",
+        'units' => 'MB/s'
+      }
+    end
+  end
+  return metrics
 end
