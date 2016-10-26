@@ -113,7 +113,7 @@ module EvmData
     when /am335x-evm/
       # if there is difference from the default, add value here
       return {'primary_bootloader' => 'NAND.SPL', 'secondary_bootloader' => 'NAND.u-boot', 'u-boot-env' => 'NAND.u-boot-env', 'kernel' => 'NAND.kernel', 'dtb' => 'NAND.u-boot-spl-os', 'fs' => 'NAND.file-system'}
-    when /^k2.{0,2}-evm/
+    when /^k2.{0,2}-(hs){0,1}evm/
       # there is no kernel and dtb partition for k2 device
       return {'secondary_bootloader' => 'bootloader', 'u-boot-env' => 'params', 'fs' => 'ubifs'}
     else
@@ -124,7 +124,7 @@ module EvmData
 
   def get_spi_loc(platform)
     case platform
-    when /^k2.{0,2}-evm/
+    when /^k2.{0,2}-(hs){0,1}evm/
       return {'secondary_bootloader' => '0'}
     else
       raise "get_spi_loc: No location is being specified for SPI partitions for #{platform}"
@@ -133,7 +133,7 @@ module EvmData
 
   def get_qspi_loc(platform)
     case platform
-    when /^k2.{0,2}-evm/
+    when /^k2.{0,2}-(hs){0,1}evm/
       return {'secondary_bootloader' => '0'}
     when /dra7xx-evm|dra72x-evm|dra7xx-hsevm|dra72x-hsevm/
       return {'primary_bootloader' => '0', 'secondary_bootloader' => '0x40000'}
@@ -417,7 +417,7 @@ module EvmData
   # Define uart boot method name
   def get_uart_boot_method(platform)
     case platform.downcase
-    when /^k2.{0,2}-evm/
+    when /^k2.{0,2}-(hs){0,1}evm/
       return :LOAD_FROM_SERIAL_UBOOT
     else
       return :LOAD_FROM_SERIAL
@@ -427,7 +427,7 @@ module EvmData
   # Define nand boot method name
   def get_nand_boot_method(platform)
     case platform.downcase
-    when /^k2.{0,2}-evm/
+    when /^k2.{0,2}-(hs){0,1}evm/
       return :LOAD_FROM_NAND_BY_BMC
     else
       return :LOAD_FROM_NAND
@@ -437,7 +437,7 @@ module EvmData
   # Define qspi boot method name
   def get_qspi_boot_method(platform)
     case platform.downcase
-    when /^k2.{0,2}-evm/
+    when /^k2.{0,2}-(hs){0,1}evm/
       return :LOAD_FROM_QSPI_BY_BMC
     else
       return :LOAD_FROM_QSPI
@@ -447,7 +447,7 @@ module EvmData
   # Define spi boot method name
   def get_spi_boot_method(platform)
     case platform.downcase
-    when /^k2.{0,2}-evm/
+    when /^k2.{0,2}-(hs){0,1}evm/
       return :LOAD_FROM_SPI_BY_BMC
     else
       return :LOAD_FROM_SPI
@@ -457,7 +457,7 @@ module EvmData
   # Define no boot method name
   def get_no_boot_method(platform)
     case platform.downcase
-    when /^k2.{0,2}-evm/
+    when /^k2.{0,2}-(hs){0,1}evm/
       return :LOAD_FROM_NO_BOOT_DSP_BY_BMC
     else
       raise "dont know how boot"
