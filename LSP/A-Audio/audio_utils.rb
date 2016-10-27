@@ -414,6 +414,37 @@ def host_rec(audio_info)
   "-c #{audio_info[0]['channels']} #{audio_info[0]['file']}", p_sys.prompt, audio_info[0]['duration'].to_i + 1)
 end
 
+#Function to separate the audio channels data into an array of arrays
+#  infile, string containing the path of the audio file
+#  fmt_bytes, int indicating the number of bytes per channel of a sample
+#  channels, int indicating the number of audio channels in the audio
+#  wav_file, boolean indicating if the source file is wav container file
+#Returns, an array containing arrays with the data of each channel, i.e
+#   if in_file contained stereo sound the returned array will contain
+#   two data arrays one for the left channel and one for the right 
+def separate_audio_chans(in_file, fmt_bytes=2, channels = 2, offset_sample=0, wav_file=false)
+  data = []
+  pack_type = case(fmt_bytes)
+                when 1
+                  'c'
+                when 2
+                  's<'
+                when 3,4
+                  'l<'
+                else
+                  'q<'
+              end
+  channels.times { |i| data[i] = [] } 
+  File.open(in_file, 'rb') do |ifd|
+    ifd.read(44) if wav_file
+    ifd.read(offset_sample * fmt_bytes * channels) if offset_sample > 0
+    while !ifd.eof?
+      channels.times { |i| data[i] << (ifd.read(fmt_bytes).unpack(pack_type)[0]) }
+    end
+  end
+  return *data
+end
+
 #Function to remove the dc offset of an audio file, takes
 #  infile, string containing the path of the audio file
 #  out_file, string containing the path where the processed audio
@@ -423,8 +454,8 @@ end
 #  channels, int indicating the number of audio channels in the audio
 #  add_wav, boolean indicating if a wav header should be added to processed audio
 #  is_wav, boolean indicating if the source file is wav container file
-def remove_offset(in_file, out_file, fmt_bytes=2, s_rate=44100, channels=2, add_wav=true, is_wav=false)
-  data = []
+def remove_offset(in_file, out_file=nil, fmt_bytes=2, s_rate=44100, channels=2, add_wav=true, is_wav=false)
+  data = separate_audio_chans(in_file, fmt_bytes, channels, s_rate, is_wav)
   d_means = []
   n_arrs = []
   pack_type = case(fmt_bytes)
@@ -437,40 +468,36 @@ def remove_offset(in_file, out_file, fmt_bytes=2, s_rate=44100, channels=2, add_
                 else
                   'q<'
               end
-  channels.times { |i| data[i] = [] } 
-  data_size = File.size(in_file)
-  File.open(in_file, 'rb') do |ifd|
-    ifd.read(44) if is_wav
-    while !ifd.eof?
-		  channels.times { |i| data[i] << (ifd.read(fmt_bytes).unpack(pack_type)[0]) }
-		end
-  end
+  data_size = data[0].length * channels * fmt_bytes
   channels.times { |i| d_means << mean(data[i]) }
   puts "These are the channels means #{d_means.to_s}"
   channels.times do |i| 
     d_means[i] =  0  if d_means[i] < 130 && d_means[i] > -130
     n_arrs[i] = data[i].collect { |j| j - d_means[i] }
   end
-  File.open(out_file, 'wb') do |ofd|
-    if add_wav
-			ofd.write('RIFF')
-			ofd.write([data_size + 36].pack('l<'))
-			ofd.write('WAVE')
-			ofd.write('fmt ')
-			ofd.write([16].pack('l<'))
-			ofd.write([1].pack('s<'))
-			ofd.write([channels].pack('s<'))
-			ofd.write([s_rate].pack('l<'))
-			ofd.write([s_rate*fmt_bytes*channels].pack('l<'))
-			ofd.write([fmt_bytes*channels].pack('s<'))
-			ofd.write([fmt_bytes*8].pack('s<'))
-			ofd.write('data')
-			ofd.write([data_size].pack('l<'))
-		end
-		if channels == 1
-		  ofd.write(n_arrs[0].pack(pack_type+'*'))
-		else
-      ofd.write(n_arrs[0].zip(*n_arrs[1..-1]).flatten.pack(pack_type+'*'))
+  if out_file
+    File.open(out_file, 'wb') do |ofd|
+      if add_wav
+        ofd.write('RIFF')
+        ofd.write([data_size + 36].pack('l<'))
+        ofd.write('WAVE')
+        ofd.write('fmt ')
+        ofd.write([16].pack('l<'))
+        ofd.write([1].pack('s<'))
+        ofd.write([channels].pack('s<'))
+        ofd.write([s_rate].pack('l<'))
+        ofd.write([s_rate*fmt_bytes*channels].pack('l<'))
+        ofd.write([fmt_bytes*channels].pack('s<'))
+        ofd.write([fmt_bytes*8].pack('s<'))
+        ofd.write('data')
+        ofd.write([data_size].pack('l<'))
+      end
+      if channels == 1
+        ofd.write(n_arrs[0].pack(pack_type+'*'))
+      else
+        ofd.write(n_arrs[0].zip(*n_arrs[1..-1]).flatten.pack(pack_type+'*'))
+      end
     end
   end
+  return *n_arrs
 end
