@@ -27,8 +27,9 @@ def run
   if tsc_event == ""
     puts "No touch event HW detected\n"
   end
-  @equipment['dut1'].send_cmd("input-events #{tsc_event.match(/([0-9]+)/).captures[0]}", @equipment['dut1'].prompt, 1)
-  for i in 0..@test_params.params_chan.num_iter[0].to_i
+  event_timeout = 5 * @test_params.params_chan.coordinates.size * @test_params.params_chan.num_iter[0].to_i
+  @equipment['dut1'].send_cmd("input-events -t #{event_timeout} #{tsc_event.match(/([0-9]+)/).captures[0]}", @equipment['dut1'].prompt, 1)
+  for i in 1..@test_params.params_chan.num_iter[0].to_i
     for point in @test_params.params_chan.coordinates
       tsc_filtered_data[point] = Hash.new()
       Thread.new() {
