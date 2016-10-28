@@ -27,3 +27,8 @@ after boot command.
 
 var_fs_prompt:
 Use this string or regular expression as system prompt
+
+var_post_boot_cmd:
+Execute this command on the dut after booting the board. The variable is
+intended to be used for simple config/setup steps, therefore it has a
+fix timeout value of 60 secs

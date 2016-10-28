@@ -393,6 +393,7 @@ module LspTestScript
 
     connect_to_equipment('dut1')
     check_dut_booted()
+    @equipment['dut1'].send_cmd(@test_params.var_post_boot_cmd, @equipment['dut1'].prompt, 60) if @test_params.instance_variable_defined?(:@var_post_boot_cmd)
     query_start_stats
 
     if update_mmc != '0' and !host_side_mmc_update
