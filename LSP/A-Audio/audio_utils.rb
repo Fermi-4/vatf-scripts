@@ -418,6 +418,7 @@ end
 #  infile, string containing the path of the audio file
 #  fmt_bytes, int indicating the number of bytes per channel of a sample
 #  channels, int indicating the number of audio channels in the audio
+#  offset_sample, skip this many samples default 0
 #  wav_file, boolean indicating if the source file is wav container file
 #Returns, an array containing arrays with the data of each channel, i.e
 #   if in_file contained stereo sound the returned array will contain
@@ -453,9 +454,10 @@ end
 #  s_rate, int indicating the sample rate of the source audio
 #  channels, int indicating the number of audio channels in the audio
 #  add_wav, boolean indicating if a wav header should be added to processed audio
+#  skip, number of seconds to skip before processing
 #  is_wav, boolean indicating if the source file is wav container file
-def remove_offset(in_file, out_file=nil, fmt_bytes=2, s_rate=44100, channels=2, add_wav=true, is_wav=false)
-  data = separate_audio_chans(in_file, fmt_bytes, channels, s_rate, is_wav)
+def remove_offset(in_file, out_file=nil, fmt_bytes=2, s_rate=44100, channels=2, skip=3, add_wav=true, is_wav=false)
+  data = separate_audio_chans(in_file, fmt_bytes, channels, (s_rate*skip).to_i, is_wav)
   d_means = []
   n_arrs = []
   pack_type = case(fmt_bytes)
@@ -472,7 +474,7 @@ def remove_offset(in_file, out_file=nil, fmt_bytes=2, s_rate=44100, channels=2, 
   channels.times { |i| d_means << mean(data[i]) }
   puts "These are the channels means #{d_means.to_s}"
   channels.times do |i| 
-    d_means[i] =  0  if d_means[i] < 130 && d_means[i] > -130
+    d_means[i] =  0  if d_means[i] < 30 && d_means[i] > -30
     n_arrs[i] = data[i].collect { |j| j - d_means[i] }
   end
   if out_file

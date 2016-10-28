@@ -59,14 +59,15 @@ def run
     scp_pull_file(dut_ip, "#{dut_test_file}.card#{r_dev['card']}", t_file)
     test_audio << t_file
   end
+  s_rate = audio_info['rate']
   test_audio.each do |current_audio|
     processed_audio = current_audio + '.processed'
     left_tst, right_tst = remove_offset(current_audio, processed_audio, audio_info['sample_length']/8, audio_info['rate'], audio_info['channels'])
-    left_corr = get_correlation(left_ref[audio_info['rate']..-1], left_tst)
-    right_corr = get_correlation(right_ref[audio_info['rate']..-1], right_tst)
-    left_cross = get_correlation(left_ref[audio_info['rate']..-1], right_tst)
-    right_cross = get_correlation(right_ref[audio_info['rate']..-1], left_tst)
-    if left_corr > 0.9 && right_corr > 0.9 && left_cross.abs < 0.2 && right_cross.abs < 0.2
+    left_corr = get_correlation(left_ref[audio_info['rate']..-1], left_tst[0..-1*s_rate*2])
+    right_corr = get_correlation(right_ref[audio_info['rate']..-1], right_tst[0..-1*s_rate*2])
+    left_cross = get_correlation(left_ref[audio_info['rate']..-1], right_tst[0..-1*s_rate*2])
+    right_cross = get_correlation(right_ref[audio_info['rate']..-1], left_tst[0..-1*s_rate*2])
+    if left_corr > 0.9 && right_corr > 0.9 && left_cross.abs < 0.1 && right_cross.abs < 0.1
       @results_html_file.add_rows_to_table(res_table,[[audio_info['buffer-size'],
                                                        audio_info['period-size'], 
                                                       ["Passed",{:bgcolor => "green"}],
@@ -91,7 +92,8 @@ def get_correlation(ref_audio, test_audio)
    test_idx = zero_crossing(test_audio)
    ref = ref_audio[ref_idx..-1]
    test = test_audio[test_idx..(ref.length+test_idx-1)]
-   cross_correlation(ref, test)
+   limit = [ref.length, test.length].min
+   cross_correlation(ref[0..limit-1], test[0..limit-1])
 end
 
 def zero_crossing(arr)
