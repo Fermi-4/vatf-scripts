@@ -384,7 +384,7 @@ def setup_devices(sys=@equipment['dut1'], volume=0.6)
     #Setting volume
     set_volume(0, 'ADC', d_rec_dev['card'])
       ['PCM', 'PGA', 'Mic PGA'].each do |ctrl|
-        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(volume, ctrl, d_play_dev['card'])
+        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(volume, ctrl, d_rec_dev['card'])
       end
       dut_rec_dev << d_rec_dev
     end
