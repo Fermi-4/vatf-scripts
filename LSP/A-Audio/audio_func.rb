@@ -32,6 +32,8 @@ def run
   table_title = ''
   test_type = @test_params.params_chan.test_type[0].strip.downcase
   dut_rec_dev, dut_play_dev = setup_devices(@equipment['dut1'], 0.6)
+  dut_play_dev.select! {|p_dev| !p_dev['card_info'].match(/USB/) && !p_dev['device_info'].match(/USB/)}
+  dut_rec_dev.select! {|r_dev| !r_dev['card_info'].match(/USB/) && !r_dev['device_info'].match(/USB/)}
   table_title += "\n\nRec Dev " + dut_rec_dev.join("\nRec Dev ") if test_type.include?('record') && !dut_rec_dev.empty?
   table_title += "\n\nPlay Dev " + dut_play_dev.join("\nPlay Dev ") if test_type.include?('play') && !dut_play_dev.empty?
   host_play_dev = get_audio_play_dev(nil,'analog',@equipment['server1'])
@@ -56,7 +58,6 @@ def run
       dut_play_info = []
       dut_rec_info = []
       dut_play_dev.each do |p_dev|
-        next if p_dev['card_info'].match(/USB/) || p_dev['device_info'].match(/USB/)
         dut_play_info << dut_audio_info.merge({'card'=>p_dev['card'],
                                                'device'=>p_dev['device'],
                                                'file'=>dut_src_file,
@@ -64,7 +65,6 @@ def run
                                                'type'=>'wav'})
       end
       dut_rec_dev.each do |r_dev|
-        next if r_dev['card_info'].match(/USB/) || r_dev['device_info'].match(/USB/)
         dut_rec_info << dut_audio_info.merge({'card'=>r_dev['card'],
                                               'device'=>r_dev['device'],
                                               'file'=>"#{dut_test_file}.card#{r_dev['card']}",
