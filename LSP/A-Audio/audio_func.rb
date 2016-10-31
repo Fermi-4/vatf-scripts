@@ -56,6 +56,7 @@ def run
       dut_play_info = []
       dut_rec_info = []
       dut_play_dev.each do |p_dev|
+        next if p_dev['card_info'].match(/USB/) || p_dev['device_info'].match(/USB/)
         dut_play_info << dut_audio_info.merge({'card'=>p_dev['card'],
                                                'device'=>p_dev['device'],
                                                'file'=>dut_src_file,
@@ -63,6 +64,7 @@ def run
                                                'type'=>'wav'})
       end
       dut_rec_dev.each do |r_dev|
+        next if r_dev['card_info'].match(/USB/) || r_dev['device_info'].match(/USB/)
         dut_rec_info << dut_audio_info.merge({'card'=>r_dev['card'],
                                               'device'=>r_dev['device'],
                                               'file'=>"#{dut_test_file}.card#{r_dev['card']}",

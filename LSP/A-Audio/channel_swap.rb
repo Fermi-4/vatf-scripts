@@ -44,6 +44,7 @@ def run
   dut_audio_info = audio_info.merge({'sys'=>@equipment['dut1']})
   test_audio = []
   dut_rec_dev.each do |r_dev|
+    next if r_dev['card_info'].match(/USB/) || r_dev['device_info'].match(/USB/)
     dut_rec_info = [dut_audio_info.merge({'card'=>r_dev['card'],
                                           'device'=>r_dev['device'],
                                           'file'=>"#{dut_test_file}.card#{r_dev['card']}",
