@@ -299,6 +299,9 @@ def set_volume(level=0.75, ctrl='PCM', card=0,sys=@equipment['dut1'])
   sys.send_cmd("amixer -c #{card} sset '#{ctrl}' #{new_volume}", sys.prompt, 10)
   new_level = sys.response.match(/(?:playback|capture)\s*(\d+).*?dB\]/i).captures[0].to_i
   new_volume == new_level
+  rescue Exception => e
+    puts e.backtrace.to_s
+    return false
 end
 
 #Function to set the state of an audio control, takes
@@ -318,6 +321,9 @@ def set_state(state, ctrl, card=0, sys=@equipment['dut1'])
   sys.send_cmd("amixer -c #{card} sset #{local_ctrl} '#{state}'", sys.prompt, 10)
   new_state = sys.response.match(/(?:playback|capture|item\d+:).*?(#{state})\]*/i).captures[0].to_i
   state == new_state
+  rescue Exception => e
+    puts e.backtrace.to_s
+    return false
 end
 
 #Function to set the state of an audio control using amixer cset, takes
@@ -337,6 +343,9 @@ def cset_state(state, ctrl, card=0, sys=@equipment['dut1'])
   sys.send_cmd("amixer -c #{card} cset name=#{local_ctrl} #{state}", sys.prompt, 10)
   new_state = sys.response.match(/values=\s*(#{state})/i).captures[0].to_i if 
   state == new_state
+  rescue Exception => e
+    puts e.backtrace.to_s
+    return false
 end
 
 #Function to setup (enable/disable, gains, etc) the audio devices
