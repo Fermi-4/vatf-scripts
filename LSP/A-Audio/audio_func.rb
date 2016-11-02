@@ -37,6 +37,7 @@ def run
   table_title += "\n\nRec Dev " + dut_rec_dev.join("\nRec Dev ") if test_type.include?('record') && !dut_rec_dev.empty?
   table_title += "\n\nPlay Dev " + dut_play_dev.join("\nPlay Dev ") if test_type.include?('play') && !dut_play_dev.empty?
   host_play_dev = get_audio_play_dev(nil,'analog',@equipment['server1'])
+  host_play_dev = Hash.new('') if !host_play_dev
   dut_ip = get_ip_addr()
   @results_html_file.add_paragraph("")
   res_table = @results_html_file.add_table([[table_title,{:bgcolor => "4863A0", :colspan => "4"}]], 
