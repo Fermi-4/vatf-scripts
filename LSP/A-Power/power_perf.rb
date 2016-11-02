@@ -62,7 +62,7 @@ def start_app(e='dut1')
       @equipment[e].send_cmd("sleep #{t}", @equipment[e].prompt, t+5)
     }
   elsif @test_params.params_chan.instance_variable_defined?(:@app)
-    cmd = @test_params.params_chan.app[0]
+    cmd = @test_params.params_chan.app.join(';')
     @cmd_thr = start_target_tests(cmd, cmd_timeout, run_via_telnet, e)
   end
 end
