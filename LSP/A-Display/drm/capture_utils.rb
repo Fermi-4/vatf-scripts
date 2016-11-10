@@ -65,7 +65,7 @@ module CaptureUtils
     result = []
     install_utils(sys)
     ssim = File.join(CAP_UTILS_FOLDER, 'argb-psnr-ssim')
-    sys.send_cmd("LD_LIBRARY_PATH=#{CAP_UTILS_FOLDER} #{ssim} #{ref} #{test} #{width} #{height} #{num_comp} 0", sys.prompt, 1000)
+    sys.send_cmd("LD_LIBRARY_PATH=#{CAP_UTILS_FOLDER} #{ssim} #{ref} #{test} #{width} #{height} #{num_comp} -10000000", sys.prompt, 1000)
     a_psnr=/\s*A=([-\d\.]+)dB,/
     a_ssim=/\s*A=([-\d\.]+)%,/
     if num_comp != 4
