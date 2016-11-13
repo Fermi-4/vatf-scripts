@@ -52,16 +52,16 @@ def run
   elsif err_cnt.to_i >= 2
     if ecc_test == '0'
       if ! @equipment['dut1'].response.match(/error\s+interrupted.*Reseting\s+the\s+device\s+\.\.\./im)
-        set_result(FrameworkConstants::Result[:fail], "The board did not reset when #{ecc_cnt}-bit ecc is introduced.")
+        set_result(FrameworkConstants::Result[:fail], "The board did not reset when #{err_cnt}-bit ecc is introduced.")
       end
     else
       # ecc_test = 1
       if ! @equipment['dut1'].response.match(/error\s+interrupted/im)
-        set_result(FrameworkConstants::Result[:fail], "No interrupt when #{ecc_cnt}-bit ecc is introduced.")
+        set_result(FrameworkConstants::Result[:fail], "No interrupt when #{err_cnt}-bit ecc is introduced.")
       end
       @equipment['dut1'].send_cmd("boot", /Starting\s+kernel/i, 20)
       if ! @equipment['dut1'].response.match(/error\s+interrupted/im)
-        set_result(FrameworkConstants::Result[:fail], "No interrupt from kernel when #{ecc_cnt}-bit ecc is introduced.")
+        set_result(FrameworkConstants::Result[:fail], "No interrupt from kernel when #{err_cnt}-bit ecc is introduced.")
       end
 
     end
