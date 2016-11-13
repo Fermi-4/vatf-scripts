@@ -203,7 +203,7 @@ end
 # install crc32 if it is not in host
 def install_crc32()
   @equipment['server1'].send_cmd("crc32 -h", @equipment['server1'].prompt, 5)
-  if @equipment['server1'].response.match(/command\s+not\s+found/i)
+  if @equipment['server1'].response.match(/not\s+found/i)
     @equipment['server1'].send_sudo_cmd("sudo apt-get install libarchive-zip-perl", @equipment['server1'].prompt, 600) 
     @equipment['server1'].send_cmd("which crc32", @equipment['server1'].prompt, 5) 
   end
