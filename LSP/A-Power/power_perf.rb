@@ -69,6 +69,7 @@ end
 
 def run
   perf = []
+  app_defined = false
   power_state = @test_params.params_chan.instance_variable_defined?(:@power_state) ? @test_params.params_chan.power_state[0] : 'mem'
   wakeup_domain = @test_params.params_chan.instance_variable_defined?(:@wakeup_domain) ? @test_params.params_chan.wakeup_domain[0] : 'uart'
   
@@ -91,18 +92,19 @@ def run
   perf = save_results(power_readings, volt_readings)
 
   if @test_params.params_chan.instance_variable_defined?(:@app) and @test_params.params_chan.app[0] != 'sleep'
+    app_defined = true
     result = @cmd_thr.value
-    set_result(result[0], result[1])
   end
 
   report_power_stats
   
 ensure
-  if perf.size > 0
+  if perf.size > 0 and (!app_defined or (app_defined and result[0] == FrameworkConstants::Result[:pass]))
     set_result(FrameworkConstants::Result[:pass], "Power Performance data collected",perf)
+  elsif app_defined
+    set_result(result[0], result[1])
   else
-    errMessage = "Could not get Power Performance data" if !errMessage
-    set_result(FrameworkConstants::Result[:fail], errMessage)
+    set_result(FrameworkConstants::Result[:fail], "Could not get Power Performance data")
   end
 end
 
