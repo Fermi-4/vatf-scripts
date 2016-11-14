@@ -68,12 +68,12 @@ def run
       tftp_testfile_to_dut(testfile)
       @equipment['dut1'].send_cmd("time sf write ${loadaddr} #{test_addr} #{testsize_hex}", @equipment['dut1'].boot_prompt, 300)
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-      perfs << {'name' => "#{device.upcase} Write Throughput 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      perfs << {'name' => "#{device.upcase} Write 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
       
       loadaddr, loadaddr2 = get_loadaddres(testsize_hex)
       @equipment['dut1'].send_cmd("time sf read #{loadaddr2} #{test_addr} #{testsize_hex}", @equipment['dut1'].boot_prompt, 300)
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-      perfs << {'name' => "#{device.upcase} Read Throughput 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      perfs << {'name' => "#{device.upcase} Read 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
 
       # verify read write ok
       @equipment['dut1'].send_cmd("cmp.b #{loadaddr} #{loadaddr2} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
@@ -100,7 +100,7 @@ def run
       # read mmc contents to loadaddr
       @equipment['dut1'].send_cmd("time mmc read ${loadaddr} 0x0 #{test_blknum_hex}", @equipment['dut1'].boot_prompt, 300)
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-      perfs << {'name' => "#{device.upcase} Read Throughput #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      perfs << {'name' => "#{device.upcase} Read 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
       # since we don't want to corrupt the SD card if there is partition there, we only
       # do read when device is 'raw-mmc'
       if device == 'raw-emmc'
@@ -108,7 +108,7 @@ def run
         # write contents in ${loadaddr} to mmc
         @equipment['dut1'].send_cmd("time mmc write ${loadaddr} 0x0 #{test_blknum_hex}", @equipment['dut1'].boot_prompt, 300)
         this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-        perfs << {'name' => "#{device.upcase} Write Throughput #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+        perfs << {'name' => "#{device.upcase} Write 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
         # read back from mmc to #{loadaddr2} then compare 
         @equipment['dut1'].send_cmd("time mmc read #{loadaddr2} 0x0 #{test_blknum_hex}", @equipment['dut1'].boot_prompt, 300)
         @equipment['dut1'].send_cmd("cmp.b #{loadaddr} #{loadaddr2} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
@@ -136,12 +136,12 @@ def run
         next
       end
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-      perfs << {'name' => "#{device.upcase} Write Throughput #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      perfs << {'name' => "#{device.upcase} Write 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
 
       # read back 'test' file from mmc to loadaddr2
       @equipment['dut1'].send_cmd("time fatload mmc 0 #{loadaddr2} test ", @equipment['dut1'].boot_prompt, 300)
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-      perfs << {'name' => "#{device.upcase} Read Throughput #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      perfs << {'name' => "#{device.upcase} Read 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
       
       @equipment['dut1'].send_cmd("cmp.b #{loadaddr} #{loadaddr2} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
       if @equipment['dut1'].response.match(/!=/i)
