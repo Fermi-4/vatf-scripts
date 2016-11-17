@@ -115,3 +115,34 @@ def staf_mutex(name, timeout_in_ms=60000)
   staf_handle.submit("local", "SEM", "RELEASE MUTEX #{name}")
   puts "RELEASED MUTEX for #{name}"
 end
+
+#Function used to run an app after reducing the memmory available via
+#memtester.The purpose of this function is to allow the user to run
+#an app while the system is stressed with respect to memory, takes
+#  mem, integer representing the amount of memory in bytes that must
+#      be left unused (free). I.e. memtester will run with memory option
+#      free_memory - mem
+#  sys, (optional) the system where memtester will be called
+def use_memory(mem, sys=@equipment['dut1'])
+  sys.send_cmd('cat /proc/meminfo', sys.prompt)
+  mem_available, mem_units = sys.response.match(/^MemFree:\s*(\d+)\s*(\D)B/i).captures
+  multiplier = case (mem_units.downcase)
+               when 'k'
+                 2**10
+               when 'm'
+                 2**20
+               when 'g'
+                 2**30
+               else
+                 1
+               end
+   available_mem = mem_available.to_i * multiplier - mem
+   return if available_mem < 1
+   sys.send_cmd("memtester #{available_mem}B &>/dev/null &",sys.prompt)
+   sleep 5 # wait for system to allocate memory
+   yield
+   sys.send_cmd("killall -9 memtester")
+   sleep 5 # wait for system to reclaim memory
+   rescue Exception => e
+     puts e.to_s
+end
