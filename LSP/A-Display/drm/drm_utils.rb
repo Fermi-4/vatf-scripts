@@ -472,7 +472,7 @@ def get_test_modes(drm_info, formats, conn=nil, p_formats=nil)
       next if encoder['id'] != connector['encoders']
       crtc = drm_info['CRTCs:'][encoder["possible crtcs"].to_i(16)-1]
       #If planes supported and only 1 mode, repeat mode to test with/wout planes
-      if !drm_info['Planes:'].empty? && connector['modes:'].length == 1
+      if drm_info['Planes:'].length > drm_info['CRTCs:'].length && connector['modes:'].length == 1
         connector['modes:'] << connector['modes:'][0]
       end
       adj_idx = 0
