@@ -18,9 +18,17 @@ def run_mode_test(mode_params, perf_data=[])
   result_string = ''
   metric_name = "#{mode_params[0]['connectors_names'].join('-')}-#{mode_params[0]['mode']}@#{mode_params[0]['framerate']}-" \
                 "#{mode_params[0]['format']}"
-  fps_res, fps_data = run_perf_sync_flip_test(mode_params) do
-    sleep 60
+
+  width, height = mode_params[0]['mode'].match(/(\d+)x(\d+)/).captures
+  f_length = get_format_length(mode_params[0]['format'])
+  fps_res = nil
+  fps_data = nil
+  use_memory(width.to_i * height.to_i * 8 * f_length + 5*2**20) do
+    fps_res, fps_data = run_perf_sync_flip_test(mode_params) do
+      sleep 60
+    end
   end
+
   perf_data << {'name' => metric_name,
                 'units' => 'fps',
                 'values' => fps_data}

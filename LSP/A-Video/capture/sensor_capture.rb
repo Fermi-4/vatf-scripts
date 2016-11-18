@@ -38,6 +38,8 @@ def run
         resolution = @test_params.params_chan.instance_variable_defined?(:@scaling) ? fmt_opts['frame-size'][0] : fmt_opts['frame-size'][res_idx]
         pix_fmt = fmt_opts['pixel-format'][pix_idx]
         width,  height = resolution.split(/x/i)
+        f_length = get_format_length(pix_fmt)
+        capture_mem_needed = width.to_i * height.to_i * 12 * f_length + 5*2**20
         width,  height = get_scaled_resolution(width, height, rand()) if @test_params.params_chan.instance_variable_defined?(:@scaling)
         test_params = get_test_opts(capture_opts, "#{width}x#{height}", pix_fmt, capture_path)
         puts "Test params: " + test_params.to_s
@@ -47,7 +49,10 @@ def run
         while(trial_result == FrameworkConstants::Result[:nry])
           @equipment['dut1'].send_cmd("rm -rf #{capture_path}", @equipment['dut1'].prompt, 100)
           @equipment['server1'].send_cmd("rm -rf #{local_test_file}",@equipment['server1'].prompt)
-          cap_width, cap_height = sensor_capture(test_params, [width.to_f * height.to_f / 2000, 30].max)
+          cap_width, cap_height = nil
+          use_memory(capture_mem_needed) do
+            cap_width, cap_height = sensor_capture(test_params, [width.to_f * height.to_f / 2000, 30].max)
+          end
           if @equipment['dut1'].response.downcase.include?('unsupported video format')
             trial_result = FrameworkConstants::Result[:pass]
             res_string = "Negative test"

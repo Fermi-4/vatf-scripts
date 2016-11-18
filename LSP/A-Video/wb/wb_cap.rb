@@ -69,17 +69,6 @@ def run
           @equipment['dut1'].send_cmd("ls #{dut_test_file} && rm #{dut_test_file}", @equipment['dut1'].prompt) #Remove previous test file if any
           @equipment['server1'].send_cmd("rm #{local_test_file}") if File.exists?(local_test_file) #Remove local test file, if exists 
           
-          v4l2_log = set_mode(s_mode) do
-            sleep 3
-            @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} -i #{disp_idx[s_mode[0]['connectors_names'][0]]} --set-fmt-video=pixelformat=#{tst_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=6 --stream-count=#{num_frames} --stream-poll", @equipment['dut1'].prompt, 300)
-          end
-
-          next if @test_params.params_chan.instance_variable_defined?(:@negative_test) || v4l2_log.match(/drm.*?\*ERROR\*/)
-
-          disp_captured = v4l2_log.match(/^Video\s*input\s*set\s*to\s*\d+.*?-\s*(.*?):\s*ok/i)[1].gsub(/[\/\\]+/,'-')
-
-          scp_pull_file(dut_ip, dut_test_file, local_test_file)
-
           format_length = case(tst_format.downcase())
             when 'xr24','ar24'
               4
@@ -90,6 +79,21 @@ def run
             when 'nv12'
               1.5
           end
+
+          v4l2_log = nil
+          use_memory(video_width.to_i * video_height.to_i * 26 * format_length + 5*2**20) do
+            v4l2_log = set_mode(s_mode) do
+              sleep 3
+              @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} -i #{disp_idx[s_mode[0]['connectors_names'][0]]} --set-fmt-video=pixelformat=#{tst_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=6 --stream-count=#{num_frames} --stream-poll", @equipment['dut1'].prompt, 300)
+            end
+          end
+
+          next if @test_params.params_chan.instance_variable_defined?(:@negative_test) || v4l2_log.match(/drm.*?\*ERROR\*/)
+
+          disp_captured = v4l2_log.match(/^Video\s*input\s*set\s*to\s*\d+.*?-\s*(.*?):\s*ok/i)[1].gsub(/[\/\\]+/,'-')
+
+          scp_pull_file(dut_ip, dut_test_file, local_test_file)
+
           p_info = ''
           p_info = ["_P",
           s_mode[0]['plane']['xyoffset'][0],

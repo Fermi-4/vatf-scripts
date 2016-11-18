@@ -10,3 +10,19 @@ def get_type_devices(ip_type)
   end
   return result.empty? ? nil : result
 end
+
+#Function to obtain the bytes per pixel of a data format, takes
+#  format, string with the format name
+#Returns the length in bytes per pixel of the format
+def get_format_length(format)
+  return case(format)
+           when 'NV12', 'NV21', 'YU12', 'YV12'
+             1.5 
+           when 'UYVY', 'VYUY', 'YUYV', 'YVYU', 'NV16', 'NV61'
+             2
+           when 'BGR24', 'RGB24'
+             3
+           when 'RGB32', 'BGR32'
+             4
+           end
+end

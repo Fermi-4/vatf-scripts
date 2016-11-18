@@ -5,12 +5,15 @@ MODETEST_PIX_FMTS = ['UYVY', 'VYUY', 'YUYV', 'YVYU', 'NV12', 'NV21', 'NV16', 'NV
 #Function to run the modetest command on the dut, takes:
 #  command, string containing the modetest command to run
 #  timeout, time in sec to wait for the command to finish
+#  expected, regex defining the pattern to wait after sending the
+#            modetest command
 # Returns the output of the command
-def modetest(command, dut, timeout=5)
+def modetest(command, dut, timeout=5, expected=nil)
+  regex = expected ? expected : /trying\s*to\s*open\s*device.*?#{dut.prompt}/im
   response = ''
   dut.send_cmd("", dut.prompt)
   t1 = Thread.new do
-    dut.send_cmd("modetest #{command}", /trying\s*to\s*open\s*device.*?#{dut.prompt}/im, timeout)
+    dut.send_cmd("modetest #{command}", regex, timeout)
     response = dut.response
   end
   if block_given?
@@ -18,7 +21,7 @@ def modetest(command, dut, timeout=5)
   else
     t1.join(2)
   end
-  dut.send_cmd("\nkillall -9 modetest &> /dev/null")
+  dut.send_cmd("\nkillall -9 modetest &> /dev/null", dut.prompt)
   t1.join()
   response
 end
@@ -284,16 +287,25 @@ def run_perf_sync_flip_test(params, dut=@equipment['dut1'], timeout=600)
     s_f_test_str += get_mode_string(disp_inf, disp_inf['plane'])
     f_rates << disp_inf['framerate'].to_f
   end
-  output = modetest(s_f_test_str + ' &', dut, timeout) do
+  output = modetest(s_f_test_str + ' &', dut, timeout, /^freq:\s*([\d.]+)Hz.*?#{dut.prompt}/im) do
     yield
   end
   fps_arr = output.scan(/^freq:\s*([\d.]+)Hz/).drop(2).flatten
-  fps_arr.each do |rate|
-    err = f_rates.inject(f_rates[0]) do |error, fr|
-      c_error = (rate.to_f - fr).abs
-      error = c_error < error ? c_error : error
+  failed_samples = 0.0
+  (f_rates + fps_arr + f_rates).each_cons(2) do |rates|
+    cons_errors = true 
+    rates.each_with_object(true) do |rate, cons_f|
+      err = f_rates.inject(f_rates[0]) do |error, fr|
+        c_error = (rate.to_f - fr).abs
+        error = c_error < error ? c_error : error
+      end
+      if err > 1.5
+        failed_samples += 1
+      else
+        cons_errors = false
+      end
     end
-    return [false, fps_arr, output] if err > 2
+    return [false, fps_arr, output] if failed_samples/(fps_arr.length*2) > 0.1 || cons_errors
   end
   [!fps_arr.empty?, fps_arr, output]
 end
@@ -513,4 +525,25 @@ def get_test_modes(drm_info, formats, conn=nil, p_formats=nil)
     end
   end
   [single_disp_modes, multi_disp_modes]
+end
+
+#Function to obtain the bytes per pixel of a data format, takes
+#  format, string with the format name
+#Returns the length in bpp of the format
+def get_format_length(format)
+  return case(format)
+           when 'NV12', 'NV21', 'YU12', 'YV12'
+             1.5 
+           when 'UYVY', 'VYUY', 'YUYV', 'YVYU', 'NV16', 'NV61', \
+                'AR12', 'XR12', 'AB12', 'XB12', 'RA12', 'RX12', \
+                'BA12', 'BX12', 'AR15', 'XR15', 'AB15', 'XB15', \
+                'RA15', 'RX15', 'BA15', 'BX15', 'RG16', 'BG16'
+             2
+           when 'BG24', 'RG24'
+             3
+           when 'AR24', 'XR24', 'AB24', 'XB24', 'RA24', 'RX24', \
+                'BA24', 'BX24', 'AR30', 'XR30', 'AB30', 'XB30', \
+                'RA30', 'RX30', 'BA30', 'BX30'
+             4
+           end
 end
