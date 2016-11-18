@@ -4,6 +4,11 @@ require File.dirname(__FILE__)+'/drm_utils'
 
 include LspTestScript
 
+def setup
+  super
+  @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep && systemctl stop weston && sleep 3',@equipment['dut1'].prompt,10)
+end
+
 def run
   drm_rand = Random.new()
   perf_data = []
