@@ -138,9 +138,7 @@ module PowerFunctions
       "cat /sys/kernel/debug/suspend_stats",
       "find /sys/kernel/debug/pm_qos/* -exec echo '{}' \; -exec cat '{}' \;",
       "for s in `ls /sys/devices/system/cpu/cpu#{cpu}/cpuidle/`; do cat /sys/devices/system/cpu/cpu#{cpu}/cpuidle/${s}/time; done",
-      "cat /sys/devices/system/cpu/cpu#{cpu}/cpuidle/state*/usage",
-      "systemctl status systemd-modules-load.service",
-      "q"
+      "cat /sys/devices/system/cpu/cpu#{cpu}/cpuidle/state*/usage"
       ].each {|st| 
       @equipment[e].send_cmd("#{st}", @equipment[e].prompt, 3)
       @equipment[e].send_cmd("", @equipment[e].prompt, 1)
