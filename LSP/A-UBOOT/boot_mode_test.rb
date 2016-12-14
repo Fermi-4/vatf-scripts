@@ -11,6 +11,7 @@ end
 
 def run
   result = 0
+  result_msg = ''
   blk_boot_media = ['qspi', 'spi', 'mmc', 'emmc', 'rawmmc-emmc', 'nand', 'usbmsc']
   boot_media = @test_params.params_chan.boot_media[0].downcase
   
@@ -58,10 +59,26 @@ def run
   bparams['dut'].send_cmd("version", bparams['dut'].boot_prompt, 10)
   result += 1 if bparams['dut'].timeout? 
 
+  test_uboot = @test_params.params_chan.instance_variable_defined?(:@test_uboot) ? @test_params.params_chan.test_uboot[0].downcase : "no"
+  if test_uboot != 'no'
+    bparams['dut'].send_cmd("saveenv", /done|Writing\s+to\s+NAND.*OK/i, 10)
+    
+    if bparams['dut'].timeout? 
+      result += 1 
+      result_msg = "saveenv failed when booting from #{boot_media}; "
+    end
+
+    bparams['dut'].send_cmd("mmc rescan; mmc dev 0", bparams['dut'].boot_prompt, 10)
+    if bparams['dut'].response.match(/Card\s+did\s+not\s+respond\s+to\s+voltage\s+select!/i)
+      result += 1 
+      result_msg = "mmc card could not be detected when booting from #{boot_media}; "
+    end
+  end
+
   if result == 0
     set_result(FrameworkConstants::Result[:pass], "This test pass")
   else
-    set_result(FrameworkConstants::Result[:fail], "This test fail")
+    set_result(FrameworkConstants::Result[:fail], "This test fail! "+result_msg)
   end  
 
 end 
