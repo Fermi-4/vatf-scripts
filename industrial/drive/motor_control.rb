@@ -1,4 +1,26 @@
+
+def copy_asset(server, src, dst_dir)
+  if src != dst_dir
+    raise "Please specify TFTP path like /tftproot in Linux server in bench file." if server.tftp_path.to_s == ''
+    server.send_sudo_cmd("mkdir -p -m 777 #{dst_dir}") if !File.exists?(dst_dir)
+    if File.file?(src)
+      FileUtils.cp(src, dst_dir)
+    else
+      FileUtils.cp_r(File.join(src,'.'), dst_dir)
+    end
+  end
+end
+
+def copy_sw_assets_to_tftproot
+  asset = @test_params.app if @test_params.instance_variable_defined?(:@app)
+  copy_asset(@equipment['server1'], asset, @equipment['server1'].tftp_path)
+  bootfile = File.basename(asset)
+end
+
+
 def setup
+
+  bootfile = copy_sw_assets_to_tftproot
 
   boot_params = {'power_handler' => @power_handler}
   @equipment['dut1'].power_cycle(boot_params)
@@ -8,7 +30,15 @@ def setup
   end
   @equipment['dut1'].connect({'type'=>'serial'})
   @equipment['dut1'].log_info("serial setup")
-  @equipment['dut1'].wait_for('Motor ready to run') # if reqd., increase default timeout
+  @equipment['dut1'].wait_for(@equipment['dut1'].boot_prompt)
+  @equipment['dut1'].send_cmd("setenv serverip #{@equipment['server1'].telnet_ip}", @equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("setenv autoload no", @equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("setenv bootfile #{bootfile}", @equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("dhcp", @equipment['dut1'].boot_prompt, 30)
+  @equipment['dut1'].send_cmd("tftp", @equipment['dut1'].boot_prompt, 30)
+  @equipment['dut1'].send_cmd("fatwrite mmc 0 ${loadaddr} app ${filesize}", @equipment['dut1'].boot_prompt, 30)
+  @equipment['dut1'].send_cmd("mw.b 0x44E10040 0x18 1", @equipment['dut1'].boot_prompt, 30)
+  @equipment['dut1'].send_cmd("reset", 'Motor ready to run', 30)
 end
 
 def run
