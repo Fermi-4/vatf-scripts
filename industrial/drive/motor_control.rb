@@ -286,4 +286,9 @@ end
 def clean
   @equipment['dut1'].log_info("serial clean")
   @equipment['dut1'].disconnect('serial') if @equipment['dut1'].target.serial
+
+  # reset DUT at the end so that motor setup will not fly if something
+  # goes wrong and if mechanically the setup is not very stable
+  boot_params = {'power_handler' => @power_handler}
+  @equipment['dut1'].power_cycle(boot_params)
 end
