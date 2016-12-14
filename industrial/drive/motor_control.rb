@@ -82,6 +82,12 @@ def run
   speed_control = 0
   position_control = 1
 
+  poc = ""
+  if (@equipment['dut1'].respond_to?(:params) && @equipment['dut1'].params != nil)
+    poc = @equipment['dut1'].params['poc'] if @equipment['dut1'].params['poc']
+  end
+  @equipment['dut1'].send_cmd("#{poc}", config_end_prompt, timeout) # configure poc
+
   @equipment['dut1'].log_info("Build Level - #{build_level}")
   @equipment['dut1'].log_info("loop count - #{loop_count}")
 
