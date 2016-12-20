@@ -52,6 +52,7 @@ end
 # Calls shell script (test.sh)
 def run_call_script
   puts "\n LinuxTestScript::run_call_script"
+  get_debug_data()
   @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd("chmod +x test.sh",@equipment['dut1'].prompt)
   cmd_timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_i : 600
@@ -69,6 +70,14 @@ def run_call_script
 
   @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2, false)
   @equipment['dut1'].timeout?
+end
+
+def get_debug_data
+  if @test_params.params_chan.instance_variable_defined?(:@debug_cmds)
+    @test_params.params_chan.debug_cmds.each { |cmd|
+      @equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt)
+    }
+  end
 end
 
 
