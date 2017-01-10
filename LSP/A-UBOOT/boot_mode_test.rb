@@ -125,7 +125,7 @@ def get_soc_name_for_platform(platform)
   case platform.downcase
     when /beaglebone/, /am335x-evm/
       rtn = 'am335x'
-    when /am43xx-gpevm/, /am43xx-epos/
+    when /am43xx-gpevm/, /am43xx-epos/, /am43xx-hsevm/
       rtn = 'am43xx'
     else
       rtn = platform.downcase

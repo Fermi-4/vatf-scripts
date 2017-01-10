@@ -22,6 +22,7 @@ def run
   test_loop = @test_params.params_control.loop_count[0].to_i
   i = 0
   while i < test_loop
+    puts "Inside the loop counter = #{i}"
     @equipment['dut1'].log_info("Inside the loop counter = #{i}");
     begin
       self.as(LspTestScript).setup
