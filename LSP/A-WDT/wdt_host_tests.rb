@@ -28,7 +28,7 @@ def watchdog_timer_test
 	dut_timeout = @test_params.params_control.instance_variable_defined?(:@dut_timeout) ? @test_params.params_control.dut_timeout[0].to_i : 600
 	runtest_cmd = @test_params.params_control.script.join(";")
 	cmd = eval(('"'+runtest_cmd.gsub("\\","\\\\\\\\").gsub('"','\\"')+'"')+"\n")
-	@equipment['dut1'].send_cmd(cmd, "U-Boot", dut_timeout)
+	@equipment['dut1'].send_cmd(cmd, "U-Boot|CCCC", dut_timeout)
         if @equipment['dut1'].timeout?
            runltp_fail = true
         else
