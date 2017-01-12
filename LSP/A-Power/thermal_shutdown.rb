@@ -15,6 +15,10 @@ def run
 		return set_result FrameworkConstants::Result[:ns], "THERMAL_EMULATION kernel config option not set.\n"
 	end
 
+	if check_cmd "zcat /proc/config.gz |grep CPU_THERMAL=y", @equipment['dut1'].prompt
+		return set_result FrameworkConstants::Result[:ns], "CPU_THERMAL kernel config option not set.\n"
+	end
+
 	if check_cmd "ls /sys/class/thermal/thermal_zone0/emul_temp", @equipment['dut1'].prompt
 		return set_result FrameworkConstants::Result[:fail], "emul_temp node not found.\n"
 	end
