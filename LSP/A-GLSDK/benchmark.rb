@@ -12,14 +12,14 @@ def run
   @equipment['dut1'].send_cmd('',@equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd('mkdir ' + @linux_dst_dir,@equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd('cd ' + @linux_dst_dir,@equipment['dut1'].prompt)
-  if !dut_dir_exist?('glbenchmark')
+  if !dut_dir_exist?('glbenchmark*')
     url = @test_params.params_chan.benchmark[0]
     tarball = File.basename(url)
     @equipment['dut1'].send_cmd("wget #{url}", @equipment['dut1'].prompt, 600)
     @equipment['dut1'].send_cmd("tar -zxvf #{tarball}", @equipment['dut1'].prompt, 600)
   end
   execfile = './GLBenchmark2'
-  @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}/glbenchmark", @equipment['dut1'].prompt)
+  @equipment['dut1'].send_cmd("gl_dir=`ls -d glbenchmark*/|sort|tail -n 1`; cd $gl_dir", @equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd("#{execfile} 2>&1 | grep -i 'Log:.*GLB.*|[0-9]*'", @equipment['dut1'].prompt)
   tests_table = @equipment['dut1'].response.slice(/^Log:\s*(.*?)#{@equipment['dut1'].prompt}/im,1).gsub(/^\s*Log:\s+/im,'').split(/[\s\|]+/im)
   tests_table = Hash[*tests_table]
