@@ -46,7 +46,7 @@ def run
         raise "dfu-util failed to find DFU devices"
       end
 
-      start_server_thread("dfu-util c 1 -i 0 -a 0 -D #{bparams['secondary_bootloader']} -R", /starting\s+download:.*finished!.*done!/im, 600) do
+      start_server_thread("dfu-util c 1 -i 0 -a 0 -D #{bparams['secondary_bootloader']} -R", /(starting\s+download:.*finished!.*done!)|(Download\s+done.*Done!)/im, 600) do
         @equipment['dut1'].wait_for(/U-Boot/, 600)
         10.times do
           @equipment['dut1'].send_cmd("", @equipment['dut1'].boot_prompt, 2)
