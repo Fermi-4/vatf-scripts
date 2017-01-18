@@ -13,7 +13,7 @@ def modetest(command, dut, timeout=5, expected=nil)
   response = ''
   dut.send_cmd("", dut.prompt)
   t1 = Thread.new do
-    dut.send_cmd("modetest #{command}", regex, timeout)
+    dut.send_cmd("modetest #{command}", /#{regex}|Killed\s*modetest|modetest:\s*no\s*process\s*killed/, timeout)
     response = dut.response
   end
   if block_given?
@@ -21,7 +21,7 @@ def modetest(command, dut, timeout=5, expected=nil)
   else
     t1.join(2)
   end
-  dut.send_cmd("\nkillall -9 modetest &> /dev/null", dut.prompt)
+  dut.send_cmd("\nkillall -9 modetest 2>&1; sleep 1", dut.prompt)
   t1.join()
   response
 end
