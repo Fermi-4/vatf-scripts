@@ -155,4 +155,11 @@ module PowerFunctions
     @equipment[mm].connect({'type'=>conn_type})
   end
 
+  def wait_for_fs(e='dut1')
+    loop do
+      @equipment[e].send_cmd("uname", /Linux/, 3)
+      break if !@equipment[e].timeout?
+    end
+  end
+
 end
