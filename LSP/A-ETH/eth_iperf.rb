@@ -4,7 +4,7 @@ require File.dirname(__FILE__)+'/../../lib/utils'
 
 
 def run
-  staf_mutex("iperf", 240000) do
+  staf_mutex("iperf", 120*60*1000) do
     kill_process('iperf')
     super
   end
