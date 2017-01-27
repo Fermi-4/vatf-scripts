@@ -96,7 +96,7 @@ def run
       resume(wakeup_domain, max_resume_time)
       sleep 2
       wait_for_fs('dut1')
-      @equipment['dut1'].send_cmd(" cat #{cpufreq_0}/stats/time_in_state", @equipment['dut1'].prompt, 1)
+      @equipment['dut1'].send_cmd(" cat #{cpufreq_0}/stats/time_in_state", @equipment['dut1'].prompt)
     end
     
     volt_readings.each_key {|k|
