@@ -30,7 +30,7 @@ def extract_test_case(text):
     return m.group(1)
 
 def test_case_exists(ts,tc):
-    return 0 == subprocess.call('cat ' + os.path.join(ltp_root,'runtest',ts) + ' | grep ' + tc + '> /dev/null', shell=True)
+    return 0 == subprocess.call('cat ' + os.path.join(ltp_root,'runtest',ts) + ' | egrep ' + tc + '[[:blank:]\,[:punct:]]+ > /dev/null', shell=True)
 
 def read_words(words_file):
     return [word for line in open(words_file, 'r') for word in line.split()]
