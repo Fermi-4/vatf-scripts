@@ -67,7 +67,7 @@ def run
   elsif cleanup_errors > 0
     set_result(FrameworkConstants::Result[:fail], "There were cleanup errors #{cleanup_errors} times out of #{loop_count}")
   else
-    set_result(FrameworkConstants::Result[:fail], "Kernel failed to boot #{result} times out of #{loop_count}")
+    set_result(FrameworkConstants::Result[:fail], "Kernel failed to boot or suspend #{result} times out of #{loop_count}")
   end
 end
 
