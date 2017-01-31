@@ -208,16 +208,16 @@ module LspTestScript
     new_params = params.clone
     case params["#{part}_dev"]
     when 'nand'
-      nand_loc = get_nand_loc(@equipment['dut1'].name)
+      nand_loc = get_nand_loc(params['dut'].name)
       new_params["nand_#{part}_loc"] = nand_loc["#{part}"]
     when 'spi'
-      spi_loc = get_spi_loc(@equipment['dut1'].name)
+      spi_loc = get_spi_loc(params['dut'].name)
       new_params["spi_#{part}_loc"] = spi_loc["#{part}"]
     when 'qspi'
-      spi_loc = get_qspi_loc(@equipment['dut1'].name)
+      spi_loc = get_qspi_loc(params['dut'].name)
       new_params["spi_#{part}_loc"] = spi_loc["#{part}"]
     when /rawmmc/
-      rawmmc_loc = get_rawmmc_loc(@equipment['dut1'].name)
+      rawmmc_loc = get_rawmmc_loc(params['dut'].name)
       new_params["rawmmc_#{part}_loc"] = rawmmc_loc["#{part}"]
     else
       puts "There is no dev location to be added to params for #{part}_dev: #{params["#{part}_dev"]}"
@@ -254,9 +254,9 @@ module LspTestScript
   end
 
   def init_boot_params(params={})
+    boot_params = params.merge({'platform' => @test_params.platform.downcase}) if !params.has_key?("platform")
     boot_params = params.merge({
        'power_handler'     => @power_handler,
-       'platform'          => @test_params.platform.downcase,
        'tester'            => @tester.downcase,
        'target'            => @test_params.target.downcase ,
        'staf_service_name' => @test_params.staf_service_name.to_s
@@ -275,7 +275,7 @@ module LspTestScript
   
   def setup_host_side(params={})
     @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)    
-    @equipment['dut1'].set_api('psp')
+    params['dut'].set_api('psp')
 
     boot_params = init_boot_params(params)
 
@@ -289,55 +289,55 @@ module LspTestScript
 
   # modprobe modules specified by @test_params.params_chan.kernel_modules_list.
   # Please note that preferred way is to let udev install modules instead of using this function
-  def install_modules(translated_boot_params)
-    if translated_boot_params['kernel_modules'].to_s != ''
-      @equipment['dut1'].send_cmd("depmod -a", /#{@equipment['dut1'].prompt}/, 120) 
-      @equipment['dut1'].send_cmd("lsmod", /#{@equipment['dut1'].prompt}/, 10)
+  def install_modules(params)
+    if params['kernel_modules'].to_s != ''
+      params['dut'].send_cmd("depmod -a", /#{params['dut'].prompt}/, 120) 
+      params['dut'].send_cmd("lsmod", /#{params['dut'].prompt}/, 10)
       if @test_params.params_chan.instance_variable_defined?(:@kernel_modules_list)
         @test_params.params_chan.kernel_modules_list.each {|mod|
           mod_name = KernelModuleNames::translate_mod_name(@test_params.platform, mod.strip)
-          @equipment['dut1'].send_cmd("modprobe #{mod_name}", /#{@equipment['dut1'].prompt}/, 30)  
+          params['dut'].send_cmd("modprobe #{mod_name}", /#{params['dut'].prompt}/, 30)  
         }
       end
     end
   end
 
-  def check_dut_booted
-    raise "UUT may be hanging!" if !is_uut_up?
-    @equipment['dut1'].send_cmd("cat /proc/cmdline", /#{@equipment['dut1'].prompt}/, 10, false)
-    @equipment['dut1'].send_cmd("uname -a", /#{@equipment['dut1'].prompt}/, 10, false)
-    @equipment['dut1'].send_cmd("cat /proc/mtd", /#{@equipment['dut1'].prompt}/, 10, false)
+  def check_dut_booted(params)
+    raise "UUT may be hanging!" if !is_uut_up?(params['dut'])
+    params['dut'].send_cmd("cat /proc/cmdline", /#{params['dut'].prompt}/, 10, false)
+    params['dut'].send_cmd("uname -a", /#{params['dut'].prompt}/, 10, false)
+    params['dut'].send_cmd("cat /proc/mtd", /#{params['dut'].prompt}/, 10, false)
   end
 
   # Optionally install binaries provided by user in filesystem 
   def install_user_binaries(params)
     if params['user_bins'] != ''
-      @equipment['dut1'].send_cmd("mkdir ~/bin", @equipment['dut1'].prompt, 3)
-      @equipment['dut1'].send_cmd("export PATH=\"$PATH:~/bin\"", @equipment['dut1'].prompt, 3)
-      @equipment['dut1'].send_cmd("scp #{params['server'].telnet_login}@#{params['server'].telnet_ip}:#{params['user_bins']} ~/bin/",
-                                  /(continue connecting|password:|#{@equipment['dut1'].prompt})/, 60, false)
-      if @equipment['dut1'].response.match(/continue connecting/)
-        @equipment['dut1'].send_cmd("y", /(password:|#{@equipment['dut1'].prompt})/, 5, false)
+      params['dut'].send_cmd("mkdir ~/bin", params['dut'].prompt, 3)
+      params['dut'].send_cmd("export PATH=\"$PATH:~/bin\"", params['dut'].prompt, 3)
+      params['dut'].send_cmd("scp #{params['server'].telnet_login}@#{params['server'].telnet_ip}:#{params['user_bins']} ~/bin/",
+                                  /(continue connecting|password:|#{params['dut'].prompt})/, 60, false)
+      if params['dut'].response.match(/continue connecting/)
+        params['dut'].send_cmd("y", /(password:|#{params['dut'].prompt})/, 5, false)
       end
-      if @equipment['dut1'].response.match(/password:/)
-        @equipment['dut1'].send_cmd("#{params['server'].telnet_passwd}", @equipment['dut1'].prompt, 60, false)
+      if params['dut'].response.match(/password:/)
+        params['dut'].send_cmd("#{params['server'].telnet_passwd}", params['dut'].prompt, 60, false)
       end
-      raise "Could not install user binaries #{params['user_bins']}" if !@equipment['dut1'].response.match(@equipment['dut1'].prompt)
+      raise "Could not install user binaries #{params['user_bins']}" if !params['dut'].response.match(params['dut'].prompt)
       tar_options = get_tar_options(params['user_bins'], params)
       if tar_options != 'not tar'
         filename = File.basename(params['user_bins'])
-        @equipment['dut1'].send_cmd("cd ~/bin; tar #{tar_options} #{filename}", @equipment['dut1'].prompt, 30)
+        params['dut'].send_cmd("cd ~/bin; tar #{tar_options} #{filename}", params['dut'].prompt, 30)
       end
     end
   end
 
-  def boot_dut(translated_boot_params)
+  def boot_dut(params)
         
     @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
     @new_keys = (@test_params.params_control.instance_variable_defined?(:@booargs_append))? (@new_keys + @test_params.params_control.bootargs_append[0]) : @new_keys
-    if boot_required?(@old_keys, @new_keys) #&& translated_boot_params['kernel'] != ''
-      if !(@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) && 
-      !(@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)
+    if boot_required?(@old_keys, @new_keys) #&& params['kernel'] != ''
+      if !(params['dut'].respond_to?(:serial_port) && params['dut'].serial_port != nil) && 
+      !(params['dut'].respond_to?(:serial_server_port) && params['dut'].serial_server_port != nil)
         raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
       end
       
@@ -345,40 +345,48 @@ module LspTestScript
       boot_attempts = @test_params.var_boot_attempts.to_i if @test_params.instance_variable_defined?(:@var_boot_attempts)
       boot_attempts.times do |trial|
         begin
-          @equipment['dut1'].boot(translated_boot_params)
-          @equipment['dut1'].log_info("Sleeping 15 secs to allow systemd to finish starting processes...")
+          params['dut'].boot(params)
+          params['dut'].log_info("Sleeping 15 secs to allow systemd to finish starting processes...")
           sleep 15
           break
         rescue Exception => e
           fail_str = (trial == boot_attempts - 1) ? "Boot attempt #{trial + 1}/#{boot_attempts} failed" : \
           "Boot attempt #{trial + 1}/#{boot_attempts} failed, trying again....."
           puts fail_str
-          @equipment['dut1'].log_info(fail_str)
+          params['dut'].log_info(fail_str)
           if trial == boot_attempts -1
             #check for known Linux problems
-            new_e = Exception.new(e.inspect+"\n"+check_for_known_problem(@equipment['dut1']))
+            new_e = Exception.new(e.inspect+"\n"+check_for_known_problem(params['dut']))
             new_e.set_backtrace(e.backtrace)
             # when board failed to boot, trigger sysrq to provide kernel trace
-            @equipment['dut1'].log_info("Collecting kernel traces via sysrq...")
-            @equipment['dut1'].send_sysrq('t')
-            @equipment['dut1'].send_sysrq('l')
-            @equipment['dut1'].send_sysrq('w')
+            params['dut'].log_info("Collecting kernel traces via sysrq...")
+            params['dut'].send_sysrq('t')
+            params['dut'].send_sysrq('l')
+            params['dut'].send_sysrq('w')
             raise new_e
           end
         ensure
-          @equipment['dut1'].disconnect('serial') if @equipment['dut1'].target.serial
-          @equipment['dut1'].disconnect('bmc') if @equipment['dut1'].target.bmc
+          params['dut'].disconnect('serial') if params['dut'].target.serial
+          params['dut'].disconnect('bmc') if params['dut'].target.bmc
         end
       end 
     end
-    translated_boot_params
+    params
   end
 
-  
   def setup
+    @equipment.select{|k| k.match(/dut/i)}.keys.each {|device|
+      setup_boards(device, {})
+    }
+  end
+ 
+  def setup_boards(device_name='dut1', params={})
+    device_object = @equipment[device_name]
     update_mmc = @test_params.instance_variable_defined?(:@var_update_mmc)? @test_params.var_update_mmc : "0"
-    host_side_mmc_update = (update_mmc != '0' and @equipment['dut1'].params.has_key?("microsd_switch"))
-    translated_boot_params = setup_host_side({'host_side_mmc_update' => host_side_mmc_update})
+    host_side_mmc_update = (update_mmc != '0' and device_object.params.has_key?("microsd_switch"))
+    params = params.merge({'host_side_mmc_update' => host_side_mmc_update})
+    params['dut'] = device_object
+    translated_boot_params = setup_host_side(params)
 
     if host_side_mmc_update
         begin
@@ -391,10 +399,10 @@ module LspTestScript
 
     boot_dut(translated_boot_params)
 
-    connect_to_equipment('dut1')
-    check_dut_booted()
-    @equipment['dut1'].send_cmd(@test_params.var_post_boot_cmd, @equipment['dut1'].prompt, 60) if @test_params.instance_variable_defined?(:@var_post_boot_cmd)
-    query_start_stats
+    connect_to_equipment(device_name)
+    check_dut_booted(params)
+    device_object.send_cmd(@test_params.var_post_boot_cmd, device_object.prompt, 60) if @test_params.instance_variable_defined?(:@var_post_boot_cmd)
+    query_start_stats(device_name)
 
     if update_mmc != '0' and !host_side_mmc_update
       call_setup = false
@@ -417,8 +425,8 @@ module LspTestScript
         call_setup = true
       end
       if call_setup
-        @equipment['dut1'].system_loader = nil
-        setup
+        device_object.system_loader = nil
+        setup_boards(device_name, translated_boot_params)
       end
     end
 
@@ -447,21 +455,26 @@ module LspTestScript
     end
     
     def clean
+      clean_boards()
+    end
+
+    def clean_boards(device_name='dut1')
       puts "\nLspTestScript::clean"
+      device_object = @equipment[device_name]
       if @test_result.result == FrameworkConstants::Result[:fail] or @test_result.result == FrameworkConstants::Result[:nry]
-        query_debug_data
+        query_debug_data device_object
       end
       kernel_modules = @test_params.kernel_modules   if @test_params.instance_variable_defined?(:@kernel_modules)
       if kernel_modules
-        #kernel_modules_list = @test_params.params_chan.kernel_modules_list  
         if @test_params.params_chan.instance_variable_defined?(:@kernel_modules_list)
           @test_params.params_chan.kernel_modules_list.each {|mod|
             mod_name = KernelModuleNames::translate_mod_name(@test_params.platform, mod.strip)
-            @equipment['dut1'].send_cmd("rmmod #{mod_name}", /#{@equipment['dut1'].prompt}/, 30)  
+            device_object.send_cmd("rmmod #{mod_name}", /#{device_object.prompt}/, 30)  
           }
         end
       end
     end
+
     
     # Returns string with <chan_params_name>=<chan_params_value>[,...] format that can be passed to .runltp
     def get_params
@@ -526,7 +539,7 @@ module LspTestScript
         target_commands
     end
     
-    def execute_cmd(commands, dut_timeout=10)
+    def execute_cmd(commands, dut_timeout=10, device_object=@equipment['dut1'])
         last_cmd = nil
         result = 0 	#0=pass, 1=timeout, 2=fail message detected 
         vars = Array.new
@@ -535,18 +548,18 @@ module LspTestScript
             if cmd.ruby_code 
                 eval cmd.ruby_code
             else
-                cmd.pass_regex =  /#{@equipment['dut1'].prompt.source}/m if !cmd.instance_variable_defined?(:@pass_regex)
+                cmd.pass_regex =  /#{device_object.prompt.source}/m if !cmd.instance_variable_defined?(:@pass_regex)
                 if !cmd.instance_variable_defined?(:@fail_regex)
                     expect_regex = "(#{cmd.pass_regex})"
                 else
                     expect_regex = "(#{cmd.pass_regex}|#{cmd.fail_regex})"
                 end
                 regex = Regexp.new(expect_regex)                                                
-                @equipment['dut1'].send_cmd(cmd.cmd_to_send, regex, dut_timeout)
-                if @equipment['dut1'].timeout?
+                device_object.send_cmd(cmd.cmd_to_send, regex, dut_timeout)
+                if device_object.timeout?
                     result = 1
                     break 
-                elsif cmd.instance_variable_defined?(:@fail_regex) && Regexp.new(cmd.fail_regex).match(@equipment['dut1'].response)
+                elsif cmd.instance_variable_defined?(:@fail_regex) && Regexp.new(cmd.fail_regex).match(device_object.response)
                     result = 2
                     break
                 end
@@ -588,7 +601,7 @@ module LspTestScript
     end
 
   # Start collecting system metrics (i.e. cpu load, mem load)
-  def run_start_stats
+  def run_start_stats(device_object=@equipment['dut1'])
     begin
       # Dont collect stats if user asked so
       return if @test_params.instance_variable_defined?(:@var_test_no_stats)
@@ -596,13 +609,13 @@ module LspTestScript
       @eth_ip_addr = get_ip_addr()
       if @eth_ip_addr
         connect_to_telnet(@eth_ip_addr)
-        @equipment['dut1'].target.telnet.send_cmd("pwd", @equipment['dut1'].prompt , 3)    
+        device_object.target.telnet.send_cmd("pwd", device_object.prompt , 3)    
         @collect_stats = @test_params.params_control.collect_stats[0] if @test_params.params_control.instance_variable_defined?(:@collect_stats)
         @collect_stats_interval = @test_params.params_control.collect_stats_interval[0].to_i if @test_params.params_control.instance_variable_defined?(:@collect_stats_interval)
         start_collecting_stats(@collect_stats, @collect_stats_interval) do |cmd| 
           if cmd
-            @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
-            @equipment['dut1'].target.telnet.response
+            device_object.target.telnet.send_cmd(cmd, device_object.prompt, 10, true)
+            device_object.target.telnet.response
           end
         end
       end
@@ -612,19 +625,19 @@ module LspTestScript
   end
   
   # Stop collecting system metrics 
-  def run_stop_stats
+  def run_stop_stats(device_object=@equipment['dut1'])
     begin
       # Dont stop stats if user asked not to collect in the first place.
       return if @test_params.instance_variable_defined?(:@var_test_no_stats)
 
       @eth_ip_addr = get_ip_addr()
       if @eth_ip_addr
-        @equipment['dut1'].disconnect('telnet') if @equipment['dut1'].target.telnet
+        device_object.disconnect('telnet') if device_object.target.telnet
         connect_to_telnet(@eth_ip_addr)
         @target_sys_stats = stop_collecting_stats(@collect_stats) do |cmd| 
           if cmd
-            @equipment['dut1'].target.telnet.send_cmd(cmd, @equipment['dut1'].prompt, 10, true)
-            @equipment['dut1'].target.telnet.response
+            device_object.target.telnet.send_cmd(cmd, device_object.prompt, 10, true)
+            device_object.target.telnet.response
           end
         end
       end
@@ -656,7 +669,7 @@ module LspTestScript
   def query_debug_data(e='dut1')
     return if !@equipment.key?(e)
     this_equipment = @equipment[e]
-    if is_uut_up?
+    if is_uut_up?(this_equipment)
       this_equipment.send_cmd("echo '=====================';echo 'START DEBUG DATA';echo '====================='", this_equipment.prompt)
       this_equipment.send_cmd("dmesg", this_equipment.prompt)
       this_equipment.send_cmd("cat /var/log/messages", this_equipment.prompt)
@@ -682,29 +695,29 @@ module LspTestScript
 
    
   # export ltp-ddt path so the script/function can be called from vatf-script
-  def export_ltppath
+  def export_ltppath(device_object=@equipment['dut1'])
     ltppath = '/opt/ltp'
     if !dut_dir_exist?(ltppath+"/testcases/bin/ddt")
       raise "LTP-DDT is not in the file sytem. Please install LTP-DDT into the target filesystem"
     end
-    @equipment['dut1'].send_cmd("export LTPPATH=/opt/ltp", @equipment['dut1'].prompt, 20)
+    device_object.send_cmd("export LTPPATH=/opt/ltp", device_object.prompt, 20)
     cmd = "export PATH=\"${PATH}:${LTPPATH}/testcases/bin\"$( find ${LTPPATH}/testcases/bin/ddt -type d -exec printf \":\"{} \\; )"
-    @equipment['dut1'].send_cmd(cmd, @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("echo $PATH", @equipment['dut1'].prompt, 10)
+    device_object.send_cmd(cmd, device_object.prompt, 10)
+    device_object.send_cmd("echo $PATH", device_object.prompt, 10)
 
   end
 
-  def save_dut_orig_path()
-    @equipment['dut1'].send_cmd("echo $PATH", @equipment['dut1'].prompt, 10)
-    dut_orig_path = @equipment['dut1'].response.match(/^\/.*/)
+  def save_dut_orig_path(device_object=@equipment['dut1'])
+    device_object.send_cmd("echo $PATH", device_object.prompt, 10)
+    dut_orig_path = device_object.response.match(/^\/.*/)
   end
 
-  def restore_dut_path(dut_orig_path)
-    @equipment['dut1'].send_cmd("export PATH=#{dut_orig_path} ", @equipment['dut1'].prompt, 10)
+  def restore_dut_path(dut_orig_path, device_object=@equipment['dut1'])
+    device_object.send_cmd("export PATH=#{dut_orig_path} ", device_object.prompt, 10)
   end
 
-  def kill_process(process,opts={})
-    this_equipment = opts[:this_equipment] || @equipment['dut1']
+  def kill_process(process,opts={},device_object=@equipment['dut1'])
+    this_equipment = opts[:this_equipment] || device_object
     use_sudo = opts[:use_sudo] || false 
       if (use_sudo)
         this_equipment.send_sudo_cmd("killall -9 #{process}", this_equipment.prompt, 10)  
@@ -714,42 +727,41 @@ module LspTestScript
    end
 
   # Preserve current governor
-  def create_save_cpufreq_governors
-    @equipment['dut1'].send_cmd("cpus=$(ls /sys/devices/system/cpu | grep \"cpu[0-9].*\"); for cpu in $cpus; do cat /sys/devices/system/cpu/$cpu/cpufreq/scaling_governor; done",
-                              @equipment['dut1'].prompt)
-    previous_govs = @equipment['dut1'].response.scan(/^\w+\s*$/)
+  def create_save_cpufreq_governors(device_object=@equipment['dut1'])
+    device_object.send_cmd("cpus=$(ls /sys/devices/system/cpu | grep \"cpu[0-9].*\"); for cpu in $cpus; do cat /sys/devices/system/cpu/$cpu/cpufreq/scaling_governor; done",
+                              device_object.prompt)
+    previous_govs = device_object.response.scan(/^\w+\s*$/)
   end
 
 
  # Change to specified governor
-  def enable_cpufreq_governor(type='performance')
-    @equipment['dut1'].send_cmd("cpus=$(ls /sys/devices/system/cpu | grep \"cpu[0-9].*\"); for cpu in $cpus; do echo -n #{type} > /sys/devices/system/cpu/$cpu/cpufreq/scaling_governor; done",
-                              @equipment['dut1'].prompt)
-    @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
-    @equipment['dut1'].log_info("#{type} governor is not available") if @equipment['dut1'].timeout?
-    @equipment['dut1'].send_cmd("cpus=$(ls /sys/devices/system/cpu | grep \"cpu[0-9].*\"); for cpu in $cpus; do cat /sys/devices/system/cpu/$cpu/cpufreq/scaling_governor; done",
-                              @equipment['dut1'].prompt)
+  def enable_cpufreq_governor(type='performance', device_object=@equipment['dut1'])
+    device_object.send_cmd("cpus=$(ls /sys/devices/system/cpu | grep \"cpu[0-9].*\"); for cpu in $cpus; do echo -n #{type} > /sys/devices/system/cpu/$cpu/cpufreq/scaling_governor; done",
+                              device_object.prompt)
+    device_object.send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
+    device_object.log_info("#{type} governor is not available") if device_object.timeout?
+    device_object.send_cmd("cpus=$(ls /sys/devices/system/cpu | grep \"cpu[0-9].*\"); for cpu in $cpus; do cat /sys/devices/system/cpu/$cpu/cpufreq/scaling_governor; done",
+                              device_object.prompt)
  end
 
  # Restore previous governor
-  def restore_cpufreq_governors(previous_govs)
+  def restore_cpufreq_governors(previous_govs, device_object=@equipment['dut1'])
     previous_govs.each_with_index{|v,i|
        v.gsub!(/\s*/,'')
-       @equipment['dut1'].send_cmd("echo -n #{v} > /sys/devices/system/cpu/cpu#{i}/cpufreq/scaling_governor", @equipment['dut1'].prompt)
+       device_object.send_cmd("echo -n #{v} > /sys/devices/system/cpu/cpu#{i}/cpufreq/scaling_governor", device_object.prompt)
     }
   end
 
   # Return decimal value from address
-  def read_address(address, from_kernel=true, e='dut1')
-    raise "equipment #{e} does not exist" if !@equipment.key?(e)
+  def read_address(address, from_kernel=true, device_object=@equipment['dut1'])
     if from_kernel
-      @equipment[e].send_cmd("which devmem2; echo $?", /^0/)
-      raise "devmem2 is not available" if @equipment[e].timeout?
-      @equipment[e].send_cmd("devmem2 #{address}", @equipment[e].prompt)
-      return @equipment[e].response.match(/Read at address  #{address} .+:\s*([x0-f]+)/i).captures[0].hex
+      device_object.send_cmd("which devmem2; echo $?", /^0/)
+      raise "devmem2 is not available" if device_object.timeout?
+      device_object.send_cmd("devmem2 #{address}", device_object.prompt)
+      return device_object.response.match(/Read at address  #{address} .+:\s*([x0-f]+)/i).captures[0].hex
     else
-      @equipment[e].send_cmd("md.l #{address} 1", @equipment[e].boot_prompt, 2)
-      return @equipment[e].response.match(/#{address.gsub(/^0x/i,'')}:\s*([0-f]+)/i).captures[0].hex
+      device_object.send_cmd("md.l #{address} 1", device_object.boot_prompt, 2)
+      return device_object.response.match(/#{address.gsub(/^0x/i,'')}:\s*([0-f]+)/i).captures[0].hex
     end
   end
 
