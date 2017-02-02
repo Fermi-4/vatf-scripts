@@ -32,7 +32,7 @@ def watchdog_timer_test
         if @equipment['dut1'].timeout?
            runltp_fail = true
         else
-	   @equipment['dut1'].send_cmd('', "(abort|stop)\sautoboot", 2)
+	   @equipment['dut1'].send_cmd('', "(abort|stop)\sautoboot", 5)
            if @equipment['dut1'].timeout?
               @equipment['dut1'].send_cmd('', "CCCC", 20)
 	   else
