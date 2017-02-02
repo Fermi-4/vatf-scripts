@@ -20,15 +20,16 @@ def setup
   end
 
   #set the binary prefix--can change based on the build
-  @base_dir = @test_params.params_chan.instance_variable_defined?(:@path_prefix) ?@test_params.params_chan.path_prefix.to_s : nil
+  @equipment['server1'].send_cmd("tar -tf #{rtos_bins} | grep ipc_ |  head -n 1")
+  @base_dir =  @equipment['server1'].response
   if (@base_dir == nil)
     raise "Please specify the prefix path i.e. '/mytestdir/bios_66AK2E_norebuild/ipc_3_42_00_00_eng'"
   end
-  @base_dir = @base_dir[3...-4]
+  @base_dir = @base_dir[1...-2]  
 
   #create the temp directory and untar the binaires
   @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)
-  @rtos_bins_dir = "#{@linux_temp_folder}/rtos_bins"
+  @rtos_bins_dir = "#{@linux_temp_folder}"
   @equipment['server1'].send_cmd("mkdir -p #{@rtos_bins_dir}")
   untar(rtos_bins, @rtos_bins_dir)
 
@@ -65,10 +66,14 @@ def run
   thr0 = Thread.new() {
              @equipment['dut1'].run "",
                         1000,
-                        {'reset' => 'yes',
+                        {
+						 #System Reset
+						 'resetSystem' => 'yes',
+						 #Core Reset
+		     		     'reset' => 'yes',
                          'no_profile' => 'yes',
                          'timeout' => @test_params.params_chan.instance_variable_defined?(:@timeout) ?@test_params.params_chan.timeout[0] : '9000'}
-       }
+       					}
 
   #kill the thread and print the result
   thr0.join()
@@ -145,7 +150,6 @@ def check_ROV(criteria_regex, rov_paths)
   #move the rov.xs to the appropriate dir then run the coredump on each core
   passed = true
   (0..bins.length - 1).each do |i|
-    @equipment['server1'].send_cmd("cp #{rov_paths[i]} `dirname #{bins[i]}`")
     @equipment['server1'].send_cmd("export XDCTOOLS_JAVA_HOME=#{jre};export XDCPATH=#{rovtools}\\;#{bios}\\;#{dss}\\;$XDCPATH;echo \"m #{rov_field[i]}\\nq\"| #{xdc}/xs xdc.rov.coredump -e #{bins[i]} -d #{bins[i]}.raw 2>&1 | tee #{bins[i]}.txt")
 
     #if any core fails, the whole test fails
