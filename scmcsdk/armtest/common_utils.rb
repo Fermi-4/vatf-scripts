@@ -183,4 +183,28 @@ def tftp_file_from_host(file, host_ip, timeout_secs,look_for,dut_timeout=nil)
   end
 end
 
+# Function to run dsptop test
+def dsptop_debugss(example_exec,example_dir)
 
+        example_dir=File.join(example_dir,example_exec)
+        rc_file='./.dsptoprc'
+        log_file=File.join(example_dir,'summary')
+
+        cmd = "ret=1;i=0;"\
+              " while read line; do test $i -eq 1 && ((i=i+1)) && continue;"\
+              " usage=`echo $line | cut -d \" \" -f3`; usage=`echo $usage | cut -d . -f1`;"\
+              " if [[ $usage -gt 0 ]]; then ret=0; break; fi; done <#{log_file}.txt;"\
+              " rm -f #{log_file}; if [[ \"$ret\" != 0 ]]; then echo \"dsptop test failed.\";"\
+              " else echo \"dsptop test successful.\"; fi"
+
+
+        @equipment['dut1'].send_cmd("rm -f #{log_file} #{rc_file}",@equipment['dut1'].prompt, 10)
+        @equipment['dut1'].send_cmd("echo \"-q -s 0 -o #{log_file}\" >> #{rc_file}",@equipment['dut1'].prompt, 10)
+        @equipment['dut1'].send_cmd("echo \"Running dsptop with the following options...\"",@equipment['dut1'].prompt, 10)
+        @equipment['dut1'].send_cmd("cat #{rc_file}",@equipment['dut1'].prompt, 10)
+        @equipment['dut1'].send_cmd("dsptop_sync \"pushd #{example_dir} && ./#{example_exec} >"\
+                                    " /dev/null 2>&1 && popd\"",@equipment['dut1'].prompt, 10)
+        @equipment['dut1'].send_cmd("cat #{log_file}.txt",@equipment['dut1'].prompt, 10)
+        @equipment['dut1'].send_cmd(cmd,@equipment['dut1'].prompt, 60)
+
+end
