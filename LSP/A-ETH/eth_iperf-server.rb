@@ -9,23 +9,29 @@ include ParsePerfomance
 
 def setup
   super
-  test_type = @test_params.params_control.type[0]
-  interface_num = @test_params.params_control.instance_variable_defined?(:@interface_num) ? @test_params.params_control.interface_num[0] : 1
-  array_of_interfaces = Array.new
 
-  if (test_type.match(/udp/i))
-    set_eth_sys_control_optimize('dut1')
-  end
+end
+
+def run  
+
+  staf_mutex("iperf", 240000) do
+    test_type = @test_params.params_control.type[0]
+    interface_num = @test_params.params_control.instance_variable_defined?(:@interface_num) ? @test_params.params_control.interface_num[0] : 1
+    array_of_interfaces = Array.new
+
+    if (test_type.match(/udp/i))
+      set_eth_sys_control_optimize('dut1')
+    end
 
   
-  kill_process('iperf')
-  if (interface_num.to_i > 1)
-    array_of_interfaces = get_eth_interfaces
-  else
-    array_of_interfaces = [@test_params.params_control.iface[0]] 
-  end
+    kill_process('iperf')
+    if (interface_num.to_i > 1)
+      array_of_interfaces = get_eth_interfaces
+    else
+      array_of_interfaces = [@test_params.params_control.iface[0]] 
+    end
 
-  array_of_interfaces.each{|dut_eth|
+    array_of_interfaces.each{|dut_eth|
          if (dut_eth != 'eth0')
             run_down_up_udhcpc('dut1', dut_eth)
          end
@@ -37,21 +43,7 @@ def setup
              raise "iperf can not be started. Please make sure iperf is installed in the DUT"    
          end
         }
-
-end
-
-def run  
-
-  staf_mutex("iperf", 240000) do
     kill_process('iperf', :this_equipment => @equipment['server1'], :use_sudo => true)
-    test_type = @test_params.params_control.type[0]
-    interface_num = @test_params.params_control.instance_variable_defined?(:@interface_num) ? @test_params.params_control.interface_num[0] : 1
-    array_of_interfaces = Array.new
-    if (interface_num.to_i > 1)
-      array_of_interfaces = get_eth_interfaces
-    else
-      array_of_interfaces = [@test_params.params_control.iface[0]] 
-    end
     if @test_params.params_control.type.length > 1
       test_vars = @test_params.params_control.type[1]
     else
@@ -63,7 +55,6 @@ def run
 
     run_start_stats
 
-    test_type = @test_params.params_control.type[0]
     array_of_interfaces.each{|dut_eth|
         dut_ip=get_ip_addr('dut1', dut_eth)
         if (test_type.match(/udp/i))
