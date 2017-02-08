@@ -41,6 +41,7 @@ def run
          enum_data=@equipment['dut1'].response
          @equipment['dut1'].log_info("Iteration #{i}: \n #{enum_data}")
          successful_enums = successful_enums + 1 if (verify_dut_detection_msg(enum_data) == 1 && verify_host_detection_msg(num_usb_dev_before, num_usb_dev_after, usb_dev_after) == 1)
+         @equipment['dut1'].log_info("Iteration #{i} Successful Enum is #{successful_enums}")
          i = i+1
      end
 
