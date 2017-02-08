@@ -275,6 +275,7 @@ module LspTestScript
   
   def setup_host_side(params={})
     @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)    
+    params['dut'] = @equipment['dut1'] if !params['dut']
     params['dut'].set_api('psp')
 
     boot_params = init_boot_params(params)
@@ -290,6 +291,7 @@ module LspTestScript
   # modprobe modules specified by @test_params.params_chan.kernel_modules_list.
   # Please note that preferred way is to let udev install modules instead of using this function
   def install_modules(params)
+    params['dut'] = @equipment['dut1'] if !params['dut']
     if params['kernel_modules'].to_s != ''
       params['dut'].send_cmd("depmod -a", /#{params['dut'].prompt}/, 120) 
       params['dut'].send_cmd("lsmod", /#{params['dut'].prompt}/, 10)
@@ -303,6 +305,7 @@ module LspTestScript
   end
 
   def check_dut_booted(params)
+    params['dut'] = @equipment['dut1'] if !params['dut']
     raise "UUT may be hanging!" if !is_uut_up?(params['dut'])
     params['dut'].send_cmd("cat /proc/cmdline", /#{params['dut'].prompt}/, 10, false)
     params['dut'].send_cmd("uname -a", /#{params['dut'].prompt}/, 10, false)
@@ -311,6 +314,7 @@ module LspTestScript
 
   # Optionally install binaries provided by user in filesystem 
   def install_user_binaries(params)
+    params['dut'] = @equipment['dut1'] if !params['dut']
     if params['user_bins'] != ''
       params['dut'].send_cmd("mkdir ~/bin", params['dut'].prompt, 3)
       params['dut'].send_cmd("export PATH=\"$PATH:~/bin\"", params['dut'].prompt, 3)
@@ -332,7 +336,7 @@ module LspTestScript
   end
 
   def boot_dut(params)
-        
+    params['dut'] = @equipment['dut1'] if !params['dut'] 
     @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
     @new_keys = (@test_params.params_control.instance_variable_defined?(:@booargs_append))? (@new_keys + @test_params.params_control.bootargs_append[0]) : @new_keys
     if boot_required?(@old_keys, @new_keys) #&& params['kernel'] != ''
