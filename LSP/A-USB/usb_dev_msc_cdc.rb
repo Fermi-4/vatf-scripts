@@ -254,10 +254,10 @@ def usb_dev_msc()
   case
   when $cmd.match(/_msc_slave/)  
     MSC_Mount_Device("#{mscdev}","#{mscmount}")
-    MSC_Raw_Write("#{mscmount}","50")
+    MSC_Raw_Write("#{mscmount}","150")
     
     MSC_Mount_Device("#{mscdev}","#{mscmount}")  
-    MSC_Raw_Read("#{mscmount}","50")
+    MSC_Raw_Read("#{mscmount}","150")
 
     puts "DONE Mount, raw read, raw write\n"
   else
