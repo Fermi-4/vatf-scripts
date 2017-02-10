@@ -36,6 +36,8 @@ module CcsTestScript
   out_file.puts("autotestEnv = {};")
   out_file.puts("autotestEnv.inIpc = \"#{@linux_temp_folder}/in\";")
   out_file.puts("autotestEnv.outIpc = \"#{@linux_temp_folder}/out\";")
+  out_file.puts("autotestEnv.resetSystem = true;")
+  out_file.puts("autotestEnv.asyncRunCores = true;")
   val = @test_params.instance_variable_defined?(:@ccsConfig) ? "\"#{@test_params.ccsConfig}\"" : @equipment['dut1'].params.key?('ccsConfig') ? "\"#{@equipment['dut1'].params['ccsConfig']}\"" : "null"
   out_file.puts("autotestEnv.ccsConfig = #{val};")
   val = @test_params.instance_variable_defined?(:@gelFile) ? "\"#{@test_params.gelFile}\"" : @equipment['dut1'].params.key?('gelFile') ? "\"#{@equipment['dut1'].params['gelFile']}\"" : "null"

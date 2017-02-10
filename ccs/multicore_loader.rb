@@ -67,10 +67,8 @@ def run
              @equipment['dut1'].run "",
                         1000,
                         {
-						 #System Reset
-						 'resetSystem' => 'yes',
-						 #Core Reset
-		     		     'reset' => 'yes',
+                          #individual core reset disabled, system reset enabled by default
+                         'reset' => 'no',
                          'no_profile' => 'yes',
                          'timeout' => @test_params.params_chan.instance_variable_defined?(:@timeout) ?@test_params.params_chan.timeout[0] : '9000'}
        					}
