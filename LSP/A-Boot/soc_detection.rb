@@ -14,14 +14,18 @@ def run
       return
     end
     
-    # Check max OPP is available
-    @equipment['dut1'].send_cmd('cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq', @equipment['dut1'].prompt)
-    max_opp_string = get_max_opp_string(params)
-    if !@equipment['dut1'].response.match(/#{max_opp_string}/i)
-      set_result(FrameworkConstants::Result[:fail], "Max OPP is not available. Expected #{max_opp_string}")
+    # Check max OPP is available if cpufreq is enabled
+    if check_cmd?("zcat /proc/config.gz |grep  _CPUFREQ=y") or check_cmd?("zcat /proc/config.gz |grep  _CPUFREQ=m")
+      @equipment['dut1'].send_cmd('cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq', @equipment['dut1'].prompt)
+      max_opp_string = get_max_opp_string(params)
+      if !@equipment['dut1'].response.match(/#{max_opp_string}/i)
+        set_result(FrameworkConstants::Result[:fail], "Max OPP is not available. Expected #{max_opp_string}")
+        return
+      end
+    else
+      set_result(FrameworkConstants::Result[:pass], "SoC was properly detected but Max OPP was not verified because cpufreq is not enabled")
       return
     end
-
     set_result(FrameworkConstants::Result[:pass], "SoC was properly detected and Max OPP is #{max_opp_string}")
   rescue Exception => e  
     puts e.message 

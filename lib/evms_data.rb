@@ -195,6 +195,8 @@ module EvmData
     machines['dra7xx-evm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/,
                               '3.14' => /Machine model: TI DRA742/,
                               }
+    machines['dra71x-evm']  = {'0.0' => /Machine model: TI DRA718 EVM/ }
+    machines['dra71x-hsevm']  = {'0.0' => /Machine model: TI DRA718 EVM/ }
     machines['dra72x-evm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/,
                               '3.14' => /Machine model: TI DRA722/,
                               }
@@ -220,7 +222,7 @@ module EvmData
     machines['am437x-idk'] = {'3.14' => /Machine model: TI AM437x Industrial Development Kit/, }
     machines['am57xx-evm'] = {'0.0' => /Machine model: TI (AM572x EVM|AM5728 BeagleBoard-X15|AM5728 EVM)/, }
     machines['am572x-idk'] = {'0.0' => /Machine model: TI AM572x IDK/, }
-    machines['am571x-idk'] = {'0.0' => /Machine model: TI AM571x IDK/, }
+    machines['am571x-idk'] = {'0.0' => /Machine model: TI AM5718 IDK/, }
     machines['k2hk-evm'] = {'0.0' => /Machine model:.*Keystone 2 Kepler\/Hawking EVM/, }
     machines['k2e-evm'] = {'0.0' => /Machine model:.*Keystone 2 Edison EVM/, }
     machines['k2l-evm'] = {'0.0' => /Machine model:.*Keystone 2 Lamarr EVM/, }
@@ -239,12 +241,17 @@ module EvmData
     machines['dra72x-evm']  = {'0.0' => '1500000'}
     machines['dra7xx-hsevm']  = {'0.0' => '1500000'}
     machines['dra72x-hsevm']  = {'0.0' => '1500000'}
+    machines['dra71x-evm']  = {'0.0' => '1500000'}
+    machines['dra71x-hsevm']  = {'0.0' => '1500000'}
     machines['omap5-evm']   = {'0.0' => '1500000'}
     machines['am43xx-epos'] = {'0.0' => '1000000'}
     machines['am43xx-gpevm'] = {'0.0' => '1000000'}
     machines['am43xx-hsevm'] = {'0.0' => '1000000'}
     machines['am437x-sk'] = {'0.0' => '1000000'}
+    machines['am437x-idk'] = {'0.0' => '1000000'}
     machines['am57xx-evm']  = {'0.0' => '1500000'}
+    machines['am571x-idk']  = {'0.0' => '1500000'}
+    machines['am572x-idk']  = {'0.0' => '1500000'}
     params.merge!({'dict' => machines})
     get_cmd(params)
   end
