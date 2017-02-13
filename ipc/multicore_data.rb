@@ -56,7 +56,7 @@ module MulticoreData
                                              'ROV' => [],
                                              'LOGGERBUF_FIELD' => [],
                                              'OUTPUT' => ""},
-                             'MESSAGEQ' => {'CORES' => %w[CortexA15 C66xx],
+                             'MESSAGEQ' => {'CORES' => %w[C66xx CortexA15],
                                              'BINARIES' => [],
                                              'ROV' => [],
                                              'LOGGERBUF_FIELD' => [],
@@ -121,14 +121,14 @@ module MulticoreData
 
     key_platforms_k2g.each { |evm|
       (0..data_list[evm]['MESSAGEQ']['CORES'].length - 2).each do |i|
-        data_list[evm]['MESSAGEQ']['BINARIES'][i] = "/examples/bios/ex02_messageq/release/app_host.xa15fg"
-        data_list[evm]['MESSAGEQ']['ROV'][i] = "/examples/bios/ex02_messageq/release/Host_pa15fg.rov.xs"
+        data_list[evm]['MESSAGEQ']['BINARIES'][i] = "/examples/bios/ex02_messageq/release/server_core0.xe66"
+        data_list[evm]['MESSAGEQ']['ROV'][i] = "/examples/bios/ex02_messageq/release/Core0_pe66.rov.xs"
         #K2G does not have the sysbios loggerbuf field
 	data_list[evm]['MESSAGEQ']['LOGGERBUF_FIELD'][0] = "xdc.runtime.LoggerBuf Records" 
       end
 
-      data_list[evm]['MESSAGEQ']['BINARIES'][data_list[evm]['MESSAGEQ']['CORES'].length - 1] = "/examples/bios/ex02_messageq/release/server_core0.xe66"
-      data_list[evm]['MESSAGEQ']['ROV'][data_list[evm]['MESSAGEQ']['CORES'].length - 1] = "/examples/bios/ex02_messageq/release/Core0_pe66.rov.xs"
+      data_list[evm]['MESSAGEQ']['BINARIES'][data_list[evm]['MESSAGEQ']['CORES'].length - 1] = "/examples/bios/ex02_messageq/release/app_host.xa15fg"
+      data_list[evm]['MESSAGEQ']['ROV'][data_list[evm]['MESSAGEQ']['CORES'].length - 1] = "/examples/bios/ex02_messageq/release/Host_pa15fg.rov.xs"
       data_list[evm]['MESSAGEQ']['LOGGERBUF_FIELD'][data_list[evm]['MESSAGEQ']['CORES'].length - 1] = "xdc.runtime.LoggerBuf Records"
 
       data_list[evm]['MESSAGEQ']['OUTPUT'] = "(<-- Server_delete|App_delete: <--)"
