@@ -193,12 +193,10 @@ end
 
 # install dfu-util if it is not in host
 def install_dfu_util()
-  @equipment['server1'].send_cmd("which dfu-util", @equipment['server1'].prompt, 5)
-  @equipment['server1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
+  @equipment['server1'].send_cmd("which dfu-util; echo $?", /^0[\0\n\r]+/im, 2)
   @equipment['server1'].send_sudo_cmd("apt-get install dfu-util", @equipment['server1'].prompt, 600) if @equipment['server1'].timeout?
-  @equipment['server1'].send_cmd("dfu-util -h", @equipment['server1'].prompt, 5)
-  @equipment['server1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2)
-  raise "Could not install dfu-util!" if @equipment['server1'].timeout?
+  @equipment['server1'].send_cmd("which dfu-util; echo $?", /^0[\0\n\r]+/im, 5)
+  raise "dfu-util is not installed!" if @equipment['server1'].timeout?
 end
 
 # install crc32 if it is not in host
