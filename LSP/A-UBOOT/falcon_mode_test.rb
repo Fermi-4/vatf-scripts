@@ -8,7 +8,6 @@ include LspTestScript
 def setup
 	@equipment['dut1'].set_api('psp')
   install_fdtput()
-exit
 end
 
 def run
@@ -31,7 +30,7 @@ def run
   end
 
   # modify dtb to add needed bootargs
-  @equipment['server1'].send_cmd("fdtput -v -t s #{bparams['dtb']} \"/chosen\" bootargs #{bparams['dut'].boot_args} ")
+  @equipment['server1'].send_cmd("fdtput -v -t s #{File.join(@equipment['server1'].tftp_path, bparams['dtb_image_name'])} \"/chosen\" bootargs #{bparams['dut'].boot_args} ")
 
   puts "Updating bootloader, kernel and dtb..."
   bparams['dut'].update_bootloaderkernel(bparams)
