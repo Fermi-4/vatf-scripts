@@ -170,7 +170,6 @@ module EvmData
       'am335x-sk' => 'am335x-evmsk.dtb',
       'am437x-sk' => 'am437x-sk-evm.dtb',
       'am43xx-epos' => 'am43x-epos-evm.dtb',
-      'dra72x-evm' => 'dra72-evm.dtb',
       'k2g-evm' => 'k2g-evm.dtb',
     }
     raise "The dtbname table does not have the entry for #{platform}; Please add the entry in 'lib/get_dtb_name'!" if !dtb_names.has_key?(platform)
