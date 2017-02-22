@@ -665,6 +665,7 @@ module LspTestScript
   def query_start_stats(e='dut1')
     return if !@equipment.key?(e)
     this_equipment = @equipment[e]
+    this_equipment.send_cmd("ls -l /lib/firmware; ls -lR /lib/firmware/ipc", this_equipment.prompt)
     this_equipment.send_cmd("cat /proc/diskstats", this_equipment.prompt)
     this_equipment.send_cmd("cat /proc/interrupts", this_equipment.prompt)
     this_equipment.send_cmd("cat /proc/softirqs", this_equipment.prompt)
