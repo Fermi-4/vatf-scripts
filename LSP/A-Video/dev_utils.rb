@@ -16,9 +16,11 @@ end
 #Returns the length in bytes per pixel of the format
 def get_format_length(format)
   return case(format)
+           when 'SBGGR8'
+             1
            when 'NV12', 'NV21', 'YU12', 'YV12'
              1.5 
-           when 'UYVY', 'VYUY', 'YUYV', 'YVYU', 'NV16', 'NV61'
+           when 'UYVY', 'VYUY', 'YUYV', 'YVYU', 'NV16', 'NV61', 'RGB565X'
              2
            when 'BGR24', 'RGB24'
              3

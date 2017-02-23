@@ -21,6 +21,7 @@ def run
   ip_type = @test_params.params_chan.capture_ip_type[0]
   cap_devs = get_type_devices(ip_type)
   raise "No capture device of type #{ip_type} found" if !cap_devs
+  capture_mem_needed = 1600*1200*48
   cap_devs.each do |dev|
     capture_device = '/dev/' + dev
     fmt_opts = get_fmt_options(capture_device)
@@ -39,7 +40,6 @@ def run
         pix_fmt = fmt_opts['pixel-format'][pix_idx]
         width,  height = resolution.split(/x/i)
         f_length = get_format_length(pix_fmt)
-        capture_mem_needed = width.to_i * height.to_i * 12 * f_length + 5*2**20
         width,  height = get_scaled_resolution(width, height, rand()) if @test_params.params_chan.instance_variable_defined?(:@scaling)
         test_params = get_test_opts(capture_opts, "#{width}x#{height}", pix_fmt, capture_path)
         puts "Test params: " + test_params.to_s
