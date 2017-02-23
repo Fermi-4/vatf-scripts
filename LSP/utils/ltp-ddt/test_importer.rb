@@ -85,8 +85,7 @@ class TestImporter
       puts "Test scenario file #{File.basename(file)} does not have mandatory @name and @desc annotations"
       return []
     end
-  
-    if /^\s*#\s*@setup_requires\s+([-\w]+)$/ =~ data
+    if /^\s*#\s*@setup_requires\s+([-\w]+)\s*$/ =~ data
       common['setup_requires'] = $1.strip
     end
     testcases = []
