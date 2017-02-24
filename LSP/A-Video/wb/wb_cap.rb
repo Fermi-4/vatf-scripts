@@ -24,7 +24,8 @@ def setup
   @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep && systemctl stop weston && sleep 3',@equipment['dut1'].prompt,10)
   @equipment['server1'].send_cmd("mkdir #{@linux_temp_folder}") if !File.exists?(@linux_temp_folder) #make sure the data folder exists 
   @equipment['dut1'].send_cmd("ls #{@linux_dst_dir} || mkdir #{@linux_dst_dir}",@equipment['dut1'].prompt) 
-  @equipment['dut1'].send_cmd("rm #{@linux_dst_dir}/*",@equipment['dut1'].prompt) 
+  @equipment['dut1'].send_cmd("rm #{@linux_dst_dir}/*",@equipment['dut1'].prompt)
+  @equipment['dut1'].send_cmd("killall -9 kmstest; killall -9 memtester", @equipment['dut1'].prompt)
 end
 
 def run
@@ -54,7 +55,7 @@ def run
   single_disp_modes, multi_disp_modes = get_test_modes(drm_info, formats, nil, ['XR24'])
   
   video_test_file = File.join(@linux_temp_folder, 'video_tst_file.raw')
-
+  free_mem = 1920 * 1080 * 26 * 4
   single_disp_modes.each do |s_mode|
       next if s_mode[0]['mode'].match(/\d+x\d+i/)
       video_width, video_height = s_mode[0]['mode'].split('x').map(&:to_i)
@@ -81,14 +82,14 @@ def run
           end
 
           v4l2_log = nil
-          use_memory(video_width.to_i * video_height.to_i * 26 * format_length + 5*2**20) do
-            v4l2_log = set_mode(s_mode) do
+          use_memory(free_mem) do
+            v4l2_log = set_mode(s_mode[0],/Video input set to.*?#{@equipment['dut1'].prompt}/im) do
               sleep 3
               @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} -i #{disp_idx[s_mode[0]['connectors_names'][0]]} --set-fmt-video=pixelformat=#{tst_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=6 --stream-count=#{num_frames} --stream-poll", @equipment['dut1'].prompt, 300)
             end
           end
 
-          next if @test_params.params_chan.instance_variable_defined?(:@negative_test) || v4l2_log.match(/drm.*?\*ERROR\*/)
+          next if @test_params.params_chan.instance_variable_defined?(:@negative_test) || v4l2_log.match(/drm.*?\*ERROR\*|Atomic\s*test\s*failed/im)
 
           disp_captured = v4l2_log.match(/^Video\s*input\s*set\s*to\s*\d+.*?-\s*(.*?):\s*ok/i)[1].gsub(/[\/\\]+/,'-')
 
@@ -163,3 +164,99 @@ def get_disp_idxs(drm_props)
   result
 end
 
+#Function to set a drm mode, takes:
+#  params, a hashe that defines a mode to set on
+#          a display by specifying the following hash entries:
+#
+#     format => <value>                     :the format of the data to display, needs to be one of the following
+#                                            /* YUV packed */
+#                                                 UYVY
+#                                                 VYUY
+#                                                 YUYV
+#                                                 YVYU
+#                                            /* YUV semi-planar */
+#                                                 NV12
+#                                                 NV21
+#                                                 NV16
+#                                                 NV61
+#                                            /* YUV planar */
+#                                                 YU12
+#                                                 YV12
+#                                            /* RGB16 */
+#                                                 AR12
+#                                                 XR12
+#                                                 AB12
+#                                                 XB12
+#                                                 RA12
+#                                                 RX12
+#                                                 BA12
+#                                                 BX12
+#                                                 AR15
+#                                                 XR15
+#                                                 AB15
+#                                                 XB15
+#                                                 RA15
+#                                                 RX15
+#                                                 BA15
+#                                                 BX15
+#                                                 RG16
+#                                                 BG16
+#                                            /* RGB24 */
+#                                                 BG24
+#                                                 RG24
+#                                            /* RGB32 */
+#                                                 AR24
+#                                                 XR24
+#                                                 AB24
+#                                                 XB24
+#                                                 RA24
+#                                                 RX24
+#                                                 BA24
+#                                                 BX24
+#                                                 AR30
+#                                                 XR30
+#                                                 AB30
+#                                                 XB30
+#                                                 RA30
+#                                                 RX30
+#                                                 BA30
+#                                                 BX30
+#     crtc_id => <value>                    : id of the crtc to used, for -P and optionally for -s and -v.
+#                                             Optional if not specifying plane_params, otherwise required
+#     connectors_ids => [id1,id2, ..., idx] : array of connector ids,
+#     mode => <value>                       : string containing the mode, i.e. 800x480
+#     framerate => <value>                  : expected frame rate in Hz
+#    'plane' => (Optional) a Hash whose entries are:
+#       width => <value>                      : width of the plane in pixels
+#       height => <value>                     : height of the plane in pixels
+#       scale => <value>                      : (Optional) fraction to scale, i.e. 0.5,
+#       xyoffset => [<xoffset>,<yoffset>]     : (Optional) x,y offsets array in pixels, 
+def set_mode(params, expected=nil, dut=@equipment['dut1'], timeout=600)
+  regex = expected ? expected : /press\s*enter\s*to\s*exit.*?#{dut.prompt}/im
+  response = ''
+  p_string = ''
+  if params['plane']
+    p = params['plane']
+    p_string = ' -p '
+    p_string += "@#{p['id']}:"
+    p_string += p['xyoffset'].join(',') + '-' if p['xyoffset']
+    p_string += "#{(p['width'].to_f*p['scale']).to_i}x"
+    p_string += "#{(p['height'].to_f*p['scale']).to_i}"
+    p_string += ' -f '+ p['format'] if p['format']
+  end
+  t1 = Thread.new do
+    dut.send_cmd("kmstest -c #{params['connectors_names'][0]} -r " \
+                 "@#{params['crtc_id']}:#{params['mode']}@#{params['framerate']}" \
+                 " -f XR24 #{p_string} 2>&1 &",
+                 /#{regex}|Killed\s*kmstest|kmstest:\s*no\s*process\s*killed/, timeout)
+    response = dut.response
+  end
+  if block_given?
+    yield
+  else
+    t1.join(2)
+  end
+  dut.send_cmd("\nkillall -9 kmstest 2>&1; sleep 1", dut.prompt)
+  t1.join()
+  response
+end

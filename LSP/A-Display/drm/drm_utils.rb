@@ -176,14 +176,14 @@ end
 #       height => <value>                     : height of the plane in pixels
 #       scale => <value>                      : (Optional) fraction to scale, i.e. 0.5,
 #       xyoffset => [<xoffset>,<yoffset>]     : (Optional) x,y offsets array in pixels, 
-def set_mode(params, dut=@equipment['dut1'], timeout=600)
+def set_mode(params, expected_re=nil, dut=@equipment['dut1'], timeout=600)
   #-s <connector_id>[,<connector_id>][@<crtc_id>]:<mode>[@<format>]  set a mode
   m_str = ''
   params.each do |disp_inf|
     disp_inf['plane']['crtc_id'] = disp_inf['crtc_id']  if disp_inf['plane']
     m_str += get_mode_string(disp_inf, disp_inf['plane'])
   end
-  modetest(m_str + ' &', dut, timeout) do
+  modetest(m_str + ' &', dut, timeout, expected_re) do
     yield
   end
 end
@@ -465,14 +465,25 @@ end
 #arrays returned by this functions are the same
 def get_test_modes(drm_info, formats, conn=nil, p_formats=nil)
   single_disp_modes = []
-  multi_disp_modes = nil         
+  multi_disp_modes = nil
+  overlay_planes = []
+  if drm_info['Planes:'].length > drm_info['CRTCs:'].length
+    drm_info['Planes:'].each do |p|
+      p['props:'].each do |k, v|
+       if k.match(/\d+\s*type:/)
+          val = v['value:'].strip
+          overlay_planes << p['id'] if v['enums:'].match(/Overlay\s*=\s*#{val}[^\d]/)
+        end
+      end
+    end
+  end
   drm_info['Connectors:'].each do |connector|
     c_modes = []
     drm_info['Encoders:'].each do |encoder|
       next if encoder['id'] != connector['encoders']
       crtc = drm_info['CRTCs:'][encoder["possible crtcs"].to_i(16)-1]
       #If planes supported and only 1 mode, repeat mode to test with/wout planes
-      if drm_info['Planes:'].length > drm_info['CRTCs:'].length && connector['modes:'].length == 1
+      if !overlay_planes.empty? && connector['modes:'].length == 1
         connector['modes:'] << connector['modes:'][0]
       end
       adj_idx = 0
@@ -492,10 +503,11 @@ def get_test_modes(drm_info, formats, conn=nil, p_formats=nil)
                          'encoder' => encoder['id']}
           mode_params['format'] = format if format != 'default'
           plane_params = nil
-          if drm_info['Planes:'].length > drm_info['CRTCs:'].length && i % 2 == 1
+          if !overlay_planes.empty? && i % 2 == 1
             plane = drm_info['Planes:'][0]
             width, height = mode['name'].match(/(\d+)x(\d+)/).captures
-            plane_params = {'width' => width, 
+            plane_params = {'id' => overlay_planes.rotate!()[0],
+                            'width' => width, 
                             'height' => height,
                             'xyoffset' => [i-adj_idx+1,i-adj_idx+1],
                             'scale' => [0.125, 1.to_f/(2+i-adj_idx).to_f].max,
