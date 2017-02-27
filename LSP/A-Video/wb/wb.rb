@@ -54,6 +54,8 @@ def run
               2
             when 'nv12'
               1.5
+            else
+              4 if @test_params.params_chan.instance_variable_defined?(:@negative_test)
           end
         @equipment['dut1'].send_cmd("rm #{dut_test_file}", @equipment['dut1'].prompt, 30) #Remove previous test file if any
         use_memory(src_video_width.to_i * src_video_height.to_i * 8 * format_length + 5*2**20) do
