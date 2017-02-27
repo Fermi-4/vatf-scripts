@@ -4,7 +4,7 @@ require File.dirname(__FILE__)+'/../../../lib/utils'
 require File.dirname(__FILE__)+'/../play_utils'
 require File.dirname(__FILE__)+'/../f2f_utils'
 require File.dirname(__FILE__)+'/../dev_utils'
-require File.dirname(__FILE__)+'/../../A-Display/drm/drm_utils'
+require File.dirname(__FILE__)+'/wb_cap'
 
 include LspTargetTestScript
 
@@ -62,7 +62,7 @@ def run
       plane_info_str = "Scale: #{s_mode[0]['plane']['scale']}, pix_fmt: #{s_mode[0]['plane']['format']}" if s_mode[0]['plane']
       test_formats.each do |tst_format|
         
-        v4l2_log = set_mode(s_mode) do
+        v4l2_log = set_mode(s_mode,/Video input set to.*?#{@equipment['dut1'].prompt}/im) do
           sleep 3
           @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} -i #{disp_idx[s_mode[0]['connectors_names'][0]]} --set-fmt-video=pixelformat=#{tst_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=6 --stream-count=#{num_frames} --stream-poll", @equipment['dut1'].prompt, 300)
         end

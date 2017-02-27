@@ -83,7 +83,7 @@ def run
 
           v4l2_log = nil
           use_memory(free_mem) do
-            v4l2_log = set_mode(s_mode[0],/Video input set to.*?#{@equipment['dut1'].prompt}/im) do
+            v4l2_log = set_mode(s_mode,/Video input set to.*?#{@equipment['dut1'].prompt}/im) do
               sleep 3
               @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} -i #{disp_idx[s_mode[0]['connectors_names'][0]]} --set-fmt-video=pixelformat=#{tst_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=6 --stream-count=#{num_frames} --stream-poll", @equipment['dut1'].prompt, 300)
             end
@@ -234,20 +234,24 @@ end
 def set_mode(params, expected=nil, dut=@equipment['dut1'], timeout=600)
   regex = expected ? expected : /press\s*enter\s*to\s*exit.*?#{dut.prompt}/im
   response = ''
-  p_string = ''
-  if params['plane']
-    p = params['plane']
-    p_string = ' -p '
-    p_string += "@#{p['id']}:"
-    p_string += p['xyoffset'].join(',') + '-' if p['xyoffset']
-    p_string += "#{(p['width'].to_f*p['scale']).to_i}x"
-    p_string += "#{(p['height'].to_f*p['scale']).to_i}"
-    p_string += ' -f '+ p['format'] if p['format']
+  command = 'kmstest'
+  params.each do |mode|
+    p_string = ''
+    if mode['plane']
+      p = mode['plane']
+      p_string = ' -p '
+      p_string += "@#{p['id']}:"
+      p_string += p['xyoffset'].join(',') + '-' if p['xyoffset']
+      p_string += "#{(p['width'].to_f*p['scale']).to_i}x"
+      p_string += "#{(p['height'].to_f*p['scale']).to_i}"
+      p_string += ' -f '+ p['format'] if p['format']
+    end
+    command += " -c #{mode['connectors_names'][0]} -r " \
+               "@#{mode['crtc_id']}:#{mode['mode']}@#{mode['framerate']}" \
+               " -f XR24 #{p_string}"
   end
   t1 = Thread.new do
-    dut.send_cmd("kmstest -c #{params['connectors_names'][0]} -r " \
-                 "@#{params['crtc_id']}:#{params['mode']}@#{params['framerate']}" \
-                 " -f XR24 #{p_string} 2>&1 &",
+    dut.send_cmd("#{command} 2>&1 &",
                  /#{regex}|Killed\s*kmstest|kmstest:\s*no\s*process\s*killed/, timeout)
     response = dut.response
   end
