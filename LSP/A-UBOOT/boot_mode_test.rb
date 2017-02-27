@@ -24,7 +24,19 @@ def run
   end
   if blk_boot_media.include?(boot_media)
     puts "Updating bootloader..."
-    bparams['dut'].update_bootloader(bparams)
+
+    bparams['primary_bootloader_dev'] = 'mmc' # So the board just power cycle
+    puts "=============boot params for bootloader============="
+    bparams.each{|k,v| puts "#{k}:#{v}"}
+    bparams['dut'].set_bootloader(bparams)
+    bparams['dut'].boot_loader.run(bparams)
+
+    set_bootloader_devs(bparams, boot_media)
+    puts "=============boot params for systemloader============="
+    bparams.each{|k,v| puts "#{k}:#{v}"}
+    bparams['dut'].set_systemloader(bparams.merge({'systemloader_class' => SystemLoader::UbootFlashBootloaderSystemLoader}))
+    bparams['dut'].system_loader.run(bparams)
+    #bparams['dut'].update_bootloader(bparams)
   end    
 
   case boot_media
