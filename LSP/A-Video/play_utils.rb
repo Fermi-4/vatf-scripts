@@ -57,6 +57,7 @@ def play_video(params)
                 "RGB565X" => 'rgb565be',
                 "RGB32" => 'rgba',
                 "RGB24" => 'rgb24',
+                "BGR32" => 'bgra',
                 "XR24" => 'bgra',
                 "AR24" => 'bgra',
                 "YUYV2X8" => 'yuyv422',
