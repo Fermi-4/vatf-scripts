@@ -53,55 +53,64 @@ def run
       current_test_res = FrameworkConstants::Result[:nry]
       current_comment = ''
       host_audio_info = audio_info.merge({'sys'=>@equipment['server1'],
-                                          'card'=>host_play_dev['card'],
-                                          'device'=>host_play_dev['device']})
+                                          'card'=>host_play_dev ? host_play_dev['card'] : 'nocard',
+                                          'device'=> host_play_dev ? host_play_dev['device'] : 'nodevice'})
       dut_audio_info = audio_info.merge({'sys'=>@equipment['dut1']})
-      dut_play_info = []
-      dut_rec_info = []
-      dut_play_dev.each do |p_dev|
-        dut_play_info << dut_audio_info.merge({'card'=>p_dev['card'],
-                                               'device'=>p_dev['device'],
-                                               'file'=>dut_src_file,
-                                               'duration'=>duration,
-                                               'type'=>'wav'})
-      end
-      dut_rec_dev.each do |r_dev|
-        dut_rec_info << dut_audio_info.merge({'card'=>r_dev['card'],
-                                              'device'=>r_dev['device'],
-                                              'file'=>"#{dut_test_file}.card#{r_dev['card']}",
-                                              'duration'=>rec_duration,
-                                              'type' => 'raw'})
-      end
       host_chk_rec_info = host_audio_info.merge({'duration'=>rec_duration,
                                                  'type'=>'raw',
                                                  'file'=>local_test_file})
       test_audio = []
 			case (test_type)
 				when 'play'
-					play_rec_audio(dut_play_info, host_chk_rec_info.merge({'sys'=>@equipment['server1'],
-																															   'duration'=>rec_duration,
-																															   'type'=>'raw',
-																															   'playout_func' => :host_rec}))
-				  test_audio << host_chk_rec_info['file']
+          dut_play_dev.each do |p_dev|
+            dut_play_info = [dut_audio_info.merge({'card'=>p_dev['card'],
+                                                 'device'=>p_dev['device'],
+                                                 'file'=>dut_src_file,
+                                                 'duration'=>duration,
+                                                 'type'=>'wav'})]
+            play_rec_audio(dut_play_info, host_chk_rec_info.merge({'sys'=>@equipment['server1'],
+                                                                   'duration'=>rec_duration,
+                                                                   'type'=>'raw',
+                                                                   'playout_func' => :host_rec}))
+            test_audio << host_chk_rec_info['file']
+          end
 				when 'record'
-					play_rec_audio([host_audio_info.merge({'sys'=>@equipment['server1'],
-																								 'file'=>ref_path,
-																								 'duration'=>duration,
-																								 'type'=>'wav',
-																								 'playout_func' => :host_playout})], 
-																								 dut_rec_info)
-					dut_rec_dev.each do |r_dev|
+          dut_rec_dev.each do |r_dev|
+            dut_rec_info = [dut_audio_info.merge({'card'=>r_dev['card'],
+                                              'device'=>r_dev['device'],
+                                              'file'=>"#{dut_test_file}.card#{r_dev['card']}",
+                                              'duration'=>rec_duration,
+                                              'type' => 'raw'})]
+            play_rec_audio([host_audio_info.merge({'sys'=>@equipment['server1'],
+                                                   'file'=>ref_path,
+                                                   'duration'=>duration,
+                                                   'type'=>'wav',
+                                                   'playout_func' => :host_playout})], 
+                                                   dut_rec_info)
 					  t_file = File.join(@linux_temp_folder, "local_test_file.card#{r_dev['card']}")
 						scp_pull_file(dut_ip, "#{dut_test_file}.card#{r_dev['card']}", t_file)
 						test_audio << t_file
 					end
 				when 'play+record'
-					play_rec_audio(dut_play_info, dut_rec_info)
-					dut_rec_dev.each do |r_dev|
-					  t_file = File.join(@linux_temp_folder, "local_test_file.card#{r_dev['card']}")
-						scp_pull_file(dut_ip, "#{dut_test_file}.card#{r_dev['card']}", t_file)
-						test_audio << t_file
-					end
+          dut_play_dev.each do |p_dev|
+            dut_rec_dev.each do |r_dev|
+              next if p_dev['card_info'] != r_dev['card_info']
+              dut_rec_info = [dut_audio_info.merge({'card'=>r_dev['card'],
+                                                'device'=>r_dev['device'],
+                                                'file'=>"#{dut_test_file}.card#{r_dev['card']}",
+                                                'duration'=>rec_duration,
+                                                'type' => 'raw'})]
+              dut_play_info = [dut_audio_info.merge({'card'=>p_dev['card'],
+                                                 'device'=>p_dev['device'],
+                                                 'file'=>dut_src_file,
+                                                 'duration'=>duration,
+                                                 'type'=>'wav'})]
+              play_rec_audio(dut_play_info, dut_rec_info)
+              t_file = File.join(@linux_temp_folder, "local_test_file.card#{r_dev['card']}")
+              scp_pull_file(dut_ip, "#{dut_test_file}.card#{r_dev['card']}", t_file)
+              test_audio << t_file
+            end
+          end
 				else
 					raise "Test type #{test_type} not supported"
 			end

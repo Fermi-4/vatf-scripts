@@ -5,7 +5,7 @@ require File.dirname(__FILE__)+'/audio_utils'
 #       recording device information will be parsed
 #Returns the array specified in parse_dev_info
 def get_pulseaudio_rec_dev(dut=@equipment['dut1'])
-  dut.send_cmd("pulseaudio --start; pactl list", dut.prompt, 5)
+  dut.send_cmd("pulseaudio --start; pactl list", dut.prompt, 15)
   parse_pulseaudio_dev_info(dut.response, "Source")
 end
 
@@ -14,7 +14,7 @@ end
 #       recording device information will be parsed
 #Returns the array specified in parse_dev_info
 def get_pulseaudio_play_dev(dut=@equipment['dut1'])
-  dut.send_cmd("pulseaudio --start; pactl list", dut.prompt, 5)
+  dut.send_cmd("pulseaudio --start; pactl list", dut.prompt, 15)
   parse_pulseaudio_dev_info(dut.response, "Sink")
 end
 
@@ -85,11 +85,11 @@ def prep_audio_string(audio_info={}, add_opts='')
                'format' => 's16le', 'channels' => 2, 
                'file' => nil}.merge(audio_info)
   raise "Audio file not specified" if !audio_inf['file']
-  "-d #{audio_inf['card']} --raw " \
+  "-d #{audio_inf['card']} --latency=#{audio_inf['period-size']} " \
+  "--process-time=#{audio_inf['buffer-size']}" \
   "--rate=#{audio_inf['rate']} --format=#{audio_inf['format'].downcase().delete("_")} " \
-  "--channels=#{audio_inf['channels']} --latency=#{audio_inf['period-size']} " \
-  "--process-time=#{audio_inf['buffer-size']} --file-format=wav " \
-  "--volume=65535 #{add_opts} #{audio_inf['file']}" 
+  "--channels=#{audio_inf['channels']} --file-format=wav " \
+  " #{add_opts} #{audio_inf['file']}" 
 end
 
 #Function to record audio in a file, takes an array of
@@ -118,9 +118,9 @@ end
 #                                         system in whic the audio will be recorded
 def rec_audio(audio_info)
   r_sys = audio_info[0]['sys']
-  r_string = 'pulseaudio --start; pids=( ) ; pacat -r ' + prep_audio_string(audio_info[0]) + ' & pids+=( $! )' 
+  r_string = 'pulseaudio --start; pids=( ) ; pacat -r ' + prep_audio_string(audio_info[0], '--volume=50000 --raw') + ' & pids+=( $! )' 
   audio_info[1..-1].each do |r_info|
-    r_string += " ; pacat -r " + prep_audio_string(r_info) + ' & pids+=( $! )'
+    r_string += " ; pacat -r " + prep_audio_string(r_info, '--volume=50000 --raw') + ' & pids+=( $! )'
     r_sys = r_info['sys']
   end
   r_string += " ; pidof pacat && sleep #{audio_info[0]['duration']} ; kill ${pids[@]}"
@@ -153,9 +153,9 @@ end
 #                                         system in which the audio will be played
 def play_audio(audio_info)
   p_sys = audio_info[0]['sys']
-  p_string = 'pulseaudio --start; pids=( ) ; pacat -p ' + prep_audio_string(audio_info[0], "--passthrough")  + ' & pids+=( $! )' 
+  p_string = 'pulseaudio --start; pids=( ) ; pacat -p ' + prep_audio_string(audio_info[0])  + ' & pids+=( $! )' 
   audio_info[1..-1].each do |p_info|
-    p_string += " ; pacat -p " + prep_audio_string(p_info, "--passthrough") + ' & pids+=( $! )'
+    p_string += " ; pacat -p " + prep_audio_string(p_info) + ' & pids+=( $! )'
   end
   p_string += " ; pidof pacat && sleep #{audio_info[0]['duration']} ; kill ${pids[@]}"
   p_sys.send_cmd(p_string, p_sys.prompt, audio_info[0]['duration'].to_i + 1)
@@ -187,9 +187,9 @@ end
 #                                         system in which the audio will be played/recorded
 def play_rec_audio(play_audio_info, rec_audio_info)
   r_sys = rec_audio_info[0]['sys']
-  r_string = 'pulseaudio --start; pids=( ) ; pacat -r ' + prep_audio_string(rec_audio_info[0]) + ' & pids+=( $! )' 
+  r_string = 'pulseaudio --start; pids=( ) ; pacat -r ' + prep_audio_string(rec_audio_info[0],'--volume=50000 --raw') + ' & pids+=( $! )' 
   rec_audio_info[1..-1].each do |r_info|
-    r_string += ' ; pacat -r ' + prep_audio_string(r_info) + ' & pids+=( $! )'
+    r_string += ' ; pacat -r ' + prep_audio_string(r_info,'--volume=50000 --raw') + ' & pids+=( $! )'
   end
   r_sys.send_cmd(r_string, r_sys.prompt, 5)
   r_sys.send_cmd("\necho ${pids[@]}",r_sys.prompt,5)
@@ -198,19 +198,16 @@ def play_rec_audio(play_audio_info, rec_audio_info)
     send(play_audio_info[0]['playout_func'],play_audio_info)
   else
 		p_sys = play_audio_info[0]['sys']
+    p_string = ' '
 		if p_sys != r_sys
-		  p_string = 'pulseaudio --start; pids=( ) ; pacat -p ' + prep_audio_string(play_audio_info[0], "--passthrough") + ' & pids+=( $! )'
-		  play_audio_info[1..-1].each do |p_info|
-			  p_string += " ; pacat -p " + prep_audio_string(p_info, "--passthrough") + ' & pids+=( $! )'
-		  end
-		else
-		  p_string = "pacat -p -d #{play_audio_info[0]['card']} --raw --passthrough #{play_audio_info[0]['file']}  & pids+=( $! )"
-		  play_audio_info[1..-1].each do |p_info|
-			  p_string += " ; pacat -p -d #{p_info['card']} --raw --passthrough #{p_info['file']}  & pids+=( $! )"
-		  end
-		end
-		p_string += " ; pidof pacat && sleep #{rec_audio_info[0]['duration']} ; kill ${pids[@]}"
-		p_sys.send_cmd(p_string, p_sys.prompt, play_audio_info[0]['duration'].to_i)
+		  p_string = 'pulseaudio --start; pids=( ) ;'
+    end
+    p_string += 'pacat -p ' + prep_audio_string(play_audio_info[0]) + ' & pids+=( $! )'
+    play_audio_info[1..-1].each do |p_info|
+      p_string += " ; pacat -p " + prep_audio_string(p_info) + ' & pids+=( $! )'
+    end
+		p_string += " ; pidof pacat && sleep #{rec_audio_info[0]['duration'].to_i} ; kill ${pids[@]}"
+		p_sys.send_cmd(p_string, p_sys.prompt, play_audio_info[0]['duration'].to_i + 5)
 	end
   r_sys.send_cmd("kill #{r_pids}") 
   sleep(5) #wait 5 secs for recording to finish
@@ -220,8 +217,11 @@ end
 #before running the play/capture test, takes
 #  sys, object used to communicate with the system where the volume of the control will
 #       be set
+#  volume, float representing the volume setting for the devices
+#          [0-1] 0-silence, 1-100%
 #Returns, two arrays. Element 0 contains the rec devices info and element
 #         1 containg the playout devices info 
-def setup_devices(sys=@equipment['dut1'])
+def setup_devices(sys=@equipment['dut1'], volume=0.6)
+  config_devices(sys, volume)
   [get_pulseaudio_rec_dev, get_pulseaudio_play_dev(sys)]
 end

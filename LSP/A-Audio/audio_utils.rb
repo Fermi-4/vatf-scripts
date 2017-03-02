@@ -348,13 +348,23 @@ def cset_state(state, ctrl, card=0, sys=@equipment['dut1'])
     return false
 end
 
+#API Function to setup (enable/disable, gains, etc) the audio devices
+#before running the play/capture test, takes
+#  sys, object used to communicate with the system where the volume of the control will
+#       be set
+#Returns, two arrays. Element 0 contains the rec devices info and element
+#         1 containg the playout devices info  
+def setup_devices(sys=equipment['dut1'], volume=0.6)
+  config_devices(sys, 0.6)
+end
+
 #Function to setup (enable/disable, gains, etc) the audio devices
 #before running the play/capture test, takes
 #  sys, object used to communicate with the system where the volume of the control will
 #       be set
 #Returns, two arrays. Element 0 contains the rec devices info and element
 #         1 containg the playout devices info  
-def setup_devices(sys=@equipment['dut1'], volume=0.6)
+def config_devices(sys=@equipment['dut1'], volume=0.6)
   dut_rec_dev = []
   dut_play_dev = []
   sys.send_cmd("ls /sys/class/sound/ | grep 'card'", sys.prompt,10)
@@ -433,25 +443,28 @@ end
 #   if in_file contained stereo sound the returned array will contain
 #   two data arrays one for the left channel and one for the right 
 def separate_audio_chans(in_file, fmt_bytes=2, channels = 2, offset_sample=0, wav_file=false)
-  data = []
+  data = nil
   pack_type = case(fmt_bytes)
                 when 1
-                  'c'
+                  'c*'
                 when 2
-                  's<'
+                  's<*'
                 when 3,4
-                  'l<'
+                  'l<*'
                 else
-                  'q<'
+                  'q<*'
               end
-  channels.times { |i| data[i] = [] } 
+  offset=0
   File.open(in_file, 'rb') do |ifd|
-    ifd.read(44) if wav_file
-    ifd.read(offset_sample * fmt_bytes * channels) if offset_sample > 0
-    while !ifd.eof?
-      channels.times { |i| data[i] << (ifd.read(fmt_bytes).unpack(pack_type)[0]) }
+    offset += 44 if wav_file
+    offset += offset_sample * fmt_bytes * channels if offset_sample > 0
+    read_length = ((ifd.size - offset)/(channels * fmt_bytes)).to_i * channels * fmt_bytes
+    ifd.seek(offset, IO::SEEK_SET)
+    if !ifd.eof?
+      data = ifd.read(read_length).unpack(pack_type).partition.with_index { |_, index| index % channels ==0 }
     end
   end
+
   return *data
 end
 
@@ -466,7 +479,7 @@ end
 #  skip, number of seconds to skip before processing
 #  is_wav, boolean indicating if the source file is wav container file
 def remove_offset(in_file, out_file=nil, fmt_bytes=2, s_rate=44100, channels=2, skip=3, add_wav=true, is_wav=false)
-  data = separate_audio_chans(in_file, fmt_bytes, channels, (s_rate*skip).to_i, is_wav)
+  data = separate_audio_chans(in_file, fmt_bytes, channels, (s_rate*skip/(channels*fmt_bytes)).to_i * channels * fmt_bytes , is_wav)
   d_means = []
   n_arrs = []
   pack_type = case(fmt_bytes)
