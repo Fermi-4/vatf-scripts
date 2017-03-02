@@ -148,7 +148,7 @@ def check_ROV(criteria_regex, rov_paths)
   #move the rov.xs to the appropriate dir then run the coredump on each core
   passed = true
   (0..bins.length - 1).each do |i|
-    @equipment['server1'].send_cmd("export XDCTOOLS_JAVA_HOME=#{jre};export XDCPATH=#{rovtools}\\;#{bios}\\;#{dss}\\;$XDCPATH;echo \"m #{rov_field[i]}\\nq\"| #{xdc}/xs xdc.rov.coredump -e #{bins[i]} -d #{bins[i]}.raw 2>&1 | tee #{bins[i]}.txt")
+    @equipment['server1'].send_cmd("export XDCTOOLS_JAVA_HOME=#{jre};export XDCPATH=#{rovtools}\\;#{bios}\\;#{dss}\\;$XDCPATH;echo \"m #{rov_field[i]}\\nq\"| #{xdc}/xs xdc.rov.coredump -e #{bins[i]} -d #{bins[i]}.raw 2>&1 | tee #{bins[i]}.txt",/.*/,60)
 
     #if any core fails, the whole test fails
     if !(File.open("#{bins[i]}.txt").read() =~ criteria_regex)
