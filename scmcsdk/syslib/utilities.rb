@@ -3503,9 +3503,9 @@ class IpsecUtilitiesVatf
     # Start IPSEC and list the certs
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec start", "", @error_bit, 5)
     return if (is_failed(is_alpha_side, function_name, " IPSEC: did not start properly.\r\n"))
-    @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec listcerts", "authkey:", @error_bit, 0)
+    @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec listcerts", "authkey", @error_bit, 0)
     return if (is_failed(is_alpha_side, function_name, " IPSEC: listcerts response not correct.\r\n"))
-    @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec listcacerts", "authkey:", @error_bit, 0)
+    @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec listcacerts", "authkey", @error_bit, 0)
     return if (is_failed(is_alpha_side, function_name, " IPSEC: listcacerts response not correct.\r\n"))
   end
 
