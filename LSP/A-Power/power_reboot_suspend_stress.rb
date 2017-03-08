@@ -32,6 +32,7 @@ def run
   max_resume_time = @test_params.params_chan.instance_variable_defined?(:@max_resume_time) ? @test_params.params_chan.max_resume_time[0].to_i : 60
   while counter < loop_count
     begin
+      connect_to_equipment('dut1')
       if is_soft_boot == 'yes'
         puts "soft-reboot....\n\n"
         power_port_o = @equipment['dut1'].power_port
