@@ -417,7 +417,8 @@ def get_supported_fmts(connectors)
       mode_str = set_mode([m_params]){sleep 2}
       mode_str = mode_str.downcase()
       pix_fmts[c_info['id']] << current_fmt if ['unsupported pixel format', 'invalid pixel format',
-                                                'invalid argument', 'segmentation fault', 'invalid pitch'].inject(true) do |t, str| 
+                                                'invalid argument', 'segmentation fault', 'invalid pitch',
+                                                'Function not implemented'].inject(true) do |t, str| 
                                                     t &&= !mode_str.include?(str)
                                                end
     end
