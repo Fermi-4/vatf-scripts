@@ -37,3 +37,7 @@ var_primary_bootloader_dev:
 Boot the target from this dev. Ex, if var_primary_bootloader_dev=uart, boot the target from UART.
 In uart case, secondary_bootloader and primary_bootloader should be provided for non k2;
 secondary_bootloader should be provided for k2 devices.
+
+var_fs_type:
+Select media to mount root filesystem on, mainly by setting bootargs in u-boot
+Possible values are nfs, ramfs, mmcfs and ubifs
