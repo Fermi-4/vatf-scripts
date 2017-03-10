@@ -14,6 +14,7 @@ include LspTestScript
 include CaptureUtils
 
 def run
+  @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep && systemctl stop weston && sleep 3',@equipment['dut1'].prompt,10)
   num_passed = 0
   hpd_times = []
   @results_html_file.add_paragraph("")
@@ -33,6 +34,7 @@ def run
       end
       @equipment['hdmi_sw'].connect_video_audio(@equipment['dut1'].video_io_info.hdmi_outputs.values[0], @equipment['server1'].video_io_info.hdmi_inputs.values[0])
       sleep(1)
+      @equipment['dut1'].send_cmd("kmstest &", /press\s*enter\s*to\s*exit/im,10)
       @equipment['dut1'].send_cmd("udevadm monitor --udev --property --subsystem-match=drm", /UDEV.*?processing/im,10)
       thr = Thread.new do
         @equipment['dut1'].wait_for(e_re,10)
@@ -60,6 +62,7 @@ def run
       else
         iter_comment = "Hot plug detection failed\n#{event_info}"
       end
+      @equipment['dut1'].send_cmd("killall -9 kmstest", @equipment['dut1'].prompt,10)
       @results_html_file.add_rows_to_table(res_table,[[iter, 
                                                        iter_comment]])
     end
