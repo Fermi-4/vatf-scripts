@@ -69,6 +69,7 @@ def check_timestamps(logs, regex)
     # Read observed timestamps
     expect_regex = Regexp.new(@timestamp_regex.gsub(/^\'/,'').gsub(/\'$/,''))
     puts expect_regex
+    puts "EXPECT_REGEX is #{expect_regex}\n"
     data.scan(expect_regex) { |vals|
       obs_arr << vals[0].to_f
     }
@@ -89,16 +90,16 @@ def check_timestamps(logs, regex)
     for i in (1..(obs_arr.length - 1)) do
       diff_arr << (ref_arr[i] - obs_arr[i]).abs
       if diff_arr[-1] > @offset_res
-        puts "Offset difference greater that #{@offset_res} seconds detected"
+        @equipment['dut1'].log_info("Offset difference greater that #{@offset_res} seconds detected")
         @incorrect_offset_detected =  @incorrect_offset_detected + 1
       end
     end
-    puts "unsorted #{diff_arr}"
+    @equipment['dut1'].log_info("Unsorted #{diff_arr}")
 
     for i in (-1).downto(-(diff_arr.length-1))
-    puts "comparing #{diff_arr[i]} and #{diff_arr[i-1]}"
+    @equipment['dut1'].log_info("Comparing #{diff_arr[i]} and #{diff_arr[i-1]}")
       if diff_arr[i] > diff_arr[i-1]        
-        puts "drift detected at index #{i-1}"
+        @equipment['dut1'].log_info("drift detected at index #{i-1}")
         start_index = i-1
       else
         break
@@ -108,7 +109,7 @@ def check_timestamps(logs, regex)
     # report drift only if observed in last 5 readings or more
     if start_index != nil && start_index < -5
       @drift = 1
-      puts "drift observed from #{diff_arr.length+start_index} reading. Total readings #{diff_arr.length}"
+      @equipment['dut1'].log_info("drift observed from #{diff_arr.length+start_index} reading. Total readings #{diff_arr.length}")
     end
     puts "********************"
     puts "Total readings #{diff_arr.length}"
