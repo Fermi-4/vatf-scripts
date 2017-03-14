@@ -39,8 +39,7 @@ def run
         @equipment['dut1'].power_port = nil
       end
       run_suspend_resume(wakeup_domain, power_state, max_suspend_time, max_resume_time)
-      @equipment['dut1'].disconnect
-      self.as(LspTestScript).setup if (counter + 1) < loop_count
+
     rescue SignalException => e
       puts "Error message seen during reboot on iteration #{counter}: " + e.to_s + ": " + e.backtrace.to_s
       @equipment['dut1'].log_info("Error message seen during reboot on iteration #{counter}")
@@ -50,14 +49,12 @@ def run
       @equipment['dut1'].log_info("Failed to boot or to suspend/resume on Iteration #{counter}")
       result += 1
       # try to hardreset the board to recover if soft boot fails
-      if is_soft_boot == 'yes'
-        @equipment['dut1'].power_port = power_port_o
-        self.as(LspTestScript).setup
-      end
-
     ensure
       counter += 1
       @old_keys=''  # Clean boot keys.
+      @equipment['dut1'].disconnect
+      self.as(LspTestScript).setup if (counter + 1) < loop_count
+
     end
   end
 
