@@ -30,16 +30,17 @@ def run
   @equipment['dut1'].send_cmd("cd /sys/kernel/config/pci_ep", @equipment['dut1'].prompt, 20)
 
   @equipment['dut1'].send_cmd("fun_driver_name=`ls /sys/bus/pci-epf/drivers`", @equipment['dut1'].prompt, 20)
-  @equipment['dut1'].send_cmd("mkdir ${fun_driver_name}.0", @equipment['dut1'].prompt, 20)
-  @equipment['dut1'].send_cmd("cd ${fun_driver_name}.0", @equipment['dut1'].prompt, 20)
+  @equipment['dut1'].send_cmd("mkdir -p dev/epf/${fun_driver_name}.0", @equipment['dut1'].prompt, 20)
+  @equipment['dut1'].send_cmd("cd dev/epf/${fun_driver_name}.0", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("ls", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("cat vendorid", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("cat interrupt_pin", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("echo 0x104c > vendorid", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("echo #{msi_int} > msi_interrupts", @equipment['dut1'].prompt, 20)
+  @equipment['dut1'].send_cmd("cd /sys/kernel/config/pci_ep", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("ctrl_driver_name=`ls /sys/class/pci_epc`", @equipment['dut1'].prompt, 20)
-  @equipment['dut1'].send_cmd('echo "${ctrl_driver_name}" > epc', @equipment['dut1'].prompt, 20)
-  @equipment['dut1'].send_cmd("cat epc", @equipment['dut1'].prompt, 20)
+  @equipment['dut1'].send_cmd('echo "${ctrl_driver_name}" > dev/epc', @equipment['dut1'].prompt, 20)
+  @equipment['dut1'].send_cmd("cat dev/epc", @equipment['dut1'].prompt, 20)
   raise "Failed to setup PCIe EP" if ! @equipment['dut1'].response.match(/pcie_ep/i)
 
   puts "Bringup RC board..."
