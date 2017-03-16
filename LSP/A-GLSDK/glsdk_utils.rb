@@ -363,28 +363,33 @@ module GlsdkUtils
     glsdk_tar_includes = "error_reports/ logs/ *.csv *.txt *.html wkar"
     host_glsdk_logs_subdir = "glsdk_logs"
     
-    host_tftp_ip = equip_srv.telnet_ip
-    tftp_remote_tar = File.join(tee_instance_id, glsdk_test_report_tar_name)
-    host_glsdk_test_report_tar = File.join(equip_srv.tftp_path, tftp_remote_tar)
+    host_glsdk_test_report_tar = File.join(@linux_temp_folder, glsdk_test_report_tar_name)
     command_wait_message = equip_evm.prompt
     wait_secs = 120
     chk_cmd_echo = true
     
     # Create tarball for logs files on the EVM
     equip_evm.send_cmd("cd #{glsdk_dir}; tar cvzf #{glsdk_test_report_tar_name} #{glsdk_tar_includes}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-    # TFTP tarball from EVM to linux PC
-    equip_evm.send_cmd("cd #{glsdk_dir}; tftp -p -l #{glsdk_test_report_tar_name} -r #{tftp_remote_tar} #{host_tftp_ip}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+    dut_ip = get_ip_addr()
+    scp_pull_file(dut_ip, File.join(glsdk_dir, glsdk_test_report_tar_name), host_glsdk_test_report_tar)
     # Upload PC tarball file to log directory
     host_file_ref = upload_file(host_glsdk_test_report_tar)
-    host_logs_dir = File.join(File.dirname(host_file_ref[0]), host_glsdk_logs_subdir)
-    command_wait_message = equip_srv.prompt
-    # Untar tarball on host
-    equip_srv.send_cmd("mkdir -p #{host_logs_dir}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-    equip_srv.send_cmd("cd #{host_logs_dir}; tar -xvzf ../#{glsdk_test_report_tar_name}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-    # Remove tarball on host
-    equip_srv.send_cmd("cd #{File.dirname(host_file_ref[0])}; rm #{glsdk_test_report_tar_name}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
-    # Create report file link
-    report_file_web_link = host_file_ref[1].gsub(glsdk_test_report_tar_name, File.join(host_glsdk_logs_subdir, report_file_name))
+    if host_file_ref
+    	host_logs_dir = File.join(File.dirname(host_file_ref[0]), host_glsdk_logs_subdir)
+		command_wait_message = equip_srv.prompt
+		# Untar tarball on host
+		equip_srv.send_cmd("mkdir -p #{host_logs_dir}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+		equip_srv.send_cmd("cd #{host_logs_dir}; tar -xvzf ../#{glsdk_test_report_tar_name}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+		# Remove tarball on host
+		equip_srv.send_cmd("cd #{File.dirname(host_file_ref[0])}; rm #{glsdk_test_report_tar_name}", /#{command_wait_message}/, wait_secs, chk_cmd_echo)
+		# Create report file link
+		report_file_web_link = host_file_ref[1].gsub(glsdk_test_report_tar_name, File.join(host_glsdk_logs_subdir, report_file_name))
+	else
+	    puts "Unable to fetch logs from dut!!!"
+	    equip_srv.log_info("Unable to fetch logs from dut!!!")
+	    report_file_web_link = nil
+	end
+
     return report_file_web_link
   end
 
@@ -569,7 +574,7 @@ module GlsdkUtils
       end
       # Copy test result files to log path and get web link to glsdk test report html
       report_html_web_path = copy_glsdk_results_to_log_server(equip_evm, equip_srv, glsdk_dir, tee_instance_id, glsdk_test_report_tar_name, report_file_name)
-      report_link  = "<p><a href=\"http://#{report_html_web_path}\" target=\"_blank\">GLSDK Test Report</a></p>"
+      report_link  = "<p><a href=\"http://#{report_html_web_path}\" target=\"_blank\">GLSDK Test Report</a></p>" if report_html_web_path
       
       # Get pass/fail counts and determine pass/fail result
       test_counts_string = glsdk_test_counts(equip_evm, counts_file, pass_phrase, fail_phrase, kill_phrase)

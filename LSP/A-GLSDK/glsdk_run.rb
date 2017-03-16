@@ -1,4 +1,5 @@
 require File.dirname(__FILE__)+'/../default_test_module'
+require File.dirname(__FILE__)+'/../../lib/utils'
 require File.dirname(__FILE__)+'/glsdk_utils.rb'
 
 # Default Test script implementation for LSP releases
