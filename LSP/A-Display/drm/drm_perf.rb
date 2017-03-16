@@ -23,7 +23,7 @@ def run_mode_test(mode_params, perf_data=[])
   f_length = get_format_length(mode_params[0]['format'])
   fps_res = nil
   fps_data = nil
-  use_memory(width.to_i * height.to_i * 8 * f_length + 5*2**20) do
+  use_memory(1920 * 1080 * 26 * 4) do
     fps_res, fps_data = run_perf_sync_flip_test(mode_params) do
       sleep 60
     end
