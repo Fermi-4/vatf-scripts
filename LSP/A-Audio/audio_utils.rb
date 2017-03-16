@@ -383,7 +383,8 @@ def config_devices(sys=@equipment['dut1'], volume=0.6)
       ['Left PGA Mixer Line1L', 'Right PGA Mixer Line1R', 
        'Left PGA Mixer Mic3L', 'Right PGA Mixer Mic3R', 'Output Left From MIC1LP',
        'Output Left From MIC1RP', 'Output Right From MIC1RP',
-       'Left PGA Mixer Mic2L', 'Right PGA Mixer Mic2R'
+       'Left PGA Mixer Mic2L', 'Right PGA Mixer Mic2R',
+       'Line'
        ].each do |ctrl|
           puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl, d_rec_dev['card'])
       end
@@ -401,7 +402,8 @@ def config_devices(sys=@equipment['dut1'], volume=0.6)
     if d_play_dev
       [['Speaker Driver', 0], 'Speaker Left', 'Speaker Right', ['SP Driver', 0], 
         'SP Left', 'SP Right', 'Output Left From Left DAC', 'Output Right From Right DAC',
-        ['HP Driver',0], 'HP Left', 'HP Right'].each do |ctrl|
+        ['HP Driver',0], 'HP Left', 'HP Right', ['Left DAC Mux','DAC_L1'],
+        ['Right DAC Mux','DAC_R1']].each do |ctrl|
         puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl, d_play_dev['card'])
       end
       ['PCM', 'HP DAC', 'DAC', 'HP Analog', 'SP Analog', 'Speaker Analog', 'Mic PGA'].each do |ctrl|
