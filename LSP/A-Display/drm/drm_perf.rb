@@ -19,12 +19,11 @@ def run_mode_test(mode_params, perf_data=[])
   metric_name = "#{mode_params[0]['connectors_names'].join('-')}-#{mode_params[0]['mode']}@#{mode_params[0]['framerate']}-" \
                 "#{mode_params[0]['format']}"
 
-  width, height = mode_params[0]['mode'].match(/(\d+)x(\d+)/).captures
-  f_length = get_format_length(mode_params[0]['format'])
   fps_res = nil
   fps_data = nil
+  output = ''
   use_memory(1920 * 1080 * 26 * 4) do
-    fps_res, fps_data = run_perf_sync_flip_test(mode_params) do
+    fps_res, fps_data, output = run_perf_sync_flip_test(mode_params) do
       sleep 60
     end
   end
@@ -32,10 +31,13 @@ def run_mode_test(mode_params, perf_data=[])
   perf_data << {'name' => metric_name,
                 'units' => 'fps',
                 'values' => fps_data}
-  if !fps_res
-    result_string += ", fps Failed in sync flip test "
+  if output.match(/Invalid\s*argument/im)
+    result_string = "negative test"
+    fps_res = true
+  elsif !fps_res
+    result_string = "fps Failed in sync flip test "
   else
-    result_string += ", fps Passed in sync flip test " 
+    result_string = "fps Passed in sync flip test " 
   end
   test_result &= fps_res
   [test_result, result_string]
