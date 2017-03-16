@@ -90,7 +90,7 @@ def run
   ensure
     @equipment['dut1'].send_cmd('modprobe -r ti-vpe', @equipment['dut1'].prompt, 10)
     if @equipment['dut1'].timeout?
-      raise "Unable to remove module, system may have hung"
+      raise "Unable to remove module, system may have hung" if !is_uut_up?(@equipment['dut1'])
     end
 end
 
