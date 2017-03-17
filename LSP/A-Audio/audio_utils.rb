@@ -249,7 +249,7 @@ def play_rec_audio(play_audio_info, rec_audio_info)
     p_string += " ; aplay " + prep_audio_string(p_info) + ' & pids+=( $! )'
   end
   p_string += ' ; wait ${pids[@]}'
-  p_sys.send_cmd(p_string, p_sys.prompt, play_audio_info[0]['duration'].to_i)
+  p_sys.send_cmd(p_string, p_sys.prompt, play_audio_info[0]['duration'].to_i + 5)
   sleep(5) #wait 5 secs for recording to finish
 end
 
