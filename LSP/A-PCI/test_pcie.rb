@@ -36,6 +36,7 @@ def run
   @equipment['dut1'].send_cmd("cat vendorid", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("cat interrupt_pin", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("echo 0x104c > vendorid", @equipment['dut1'].prompt, 20)
+  @equipment['dut1'].send_cmd("echo 0xb500 > deviceid", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("echo #{msi_int} > msi_interrupts", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("cd /sys/kernel/config/pci_ep", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("ctrl_driver_name=`ls /sys/class/pci_epc`", @equipment['dut1'].prompt, 20)
@@ -56,6 +57,8 @@ def run
   @equipment['dut2'].send_cmd("lspci -vv", @equipment['dut2'].prompt, 10)
   @equipment['dut2'].send_cmd("pcitest -h", @equipment['dut2'].prompt, 10)
   raise "pcitest app is missing from filesystem" if @equipment['dut2'].response.match(/command\s+not\s+found/i)
+  @equipment['dut2'].send_cmd("ls /dev/pci-endpoint-test*", @equipment['dut2'].prompt, 10)
+  raise "pci-endpoint-test driver devnode is missing!" if @equipment['dut2'].response.match(/No\s+such\s+file\s+or\s+directory/i)
 
   i = 0
   while i < num_bars.to_i do
