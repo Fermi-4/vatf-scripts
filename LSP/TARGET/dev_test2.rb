@@ -93,6 +93,7 @@ end
 def clean
   super
   if !is_uut_up?(@equipment['dut1'])
+    @test_params.var_boot_attempts = 3
     self.as(LspTestScript).setup
   end
   restore_firmware

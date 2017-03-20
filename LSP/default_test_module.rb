@@ -346,7 +346,7 @@ module LspTestScript
       end
       
       boot_attempts = 1
-      boot_attempts = @test_params.var_boot_attempts.to_i if @test_params.instance_variable_defined?(:@var_boot_attempts)
+      boot_attempts = @test_params.var_boot_attempts.to_i if @test_params.instance_variable_defined?(:@var_boot_attempts) and @test_params.var_boot_attempts.to_i > 0
       boot_attempts.times do |trial|
         begin
           params['dut'].boot(params)
