@@ -27,6 +27,8 @@ module PowerFunctions
       @equipment[e].send_cmd("echo #{power_state} > /sys/power/state", suspend_regex, suspend_time, false)
     elsif wakeup_domain == 'rtc'
       @equipment[e].send_cmd("rtcwake -d /dev/rtc0 -m #{power_state} -s #{suspend_time}", suspend_regex, suspend_time, false)
+      # Handle case where late interrupt may abort suspend sequence
+      @equipment[e].send_cmd("rtcwake -d /dev/rtc0 -m #{power_state} -s #{suspend_time}", suspend_regex, suspend_time, false) if @equipment[e].timeout?
     elsif wakeup_domain == 'rtc_only'
       suspend_time += 30
       suspend_regex=/System halted|System will go to power_off|Power down|reboot: Power/i
