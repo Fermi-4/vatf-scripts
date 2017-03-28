@@ -103,17 +103,17 @@ def run
     rw_sizes.split(' ').each {|size|
       puts "size is: #{size}"
       @equipment['dut2'].send_cmd("pcitest -w -s #{size}", @equipment['dut2'].prompt, 120)
-      if @equipment['dut2'].response.match(/not\s+okay/i)
+      if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
         result_msg += result_msg + "Write test w/ #{size} failed" 
         result += 1
       end
       @equipment['dut2'].send_cmd("pcitest -r -s #{size}", @equipment['dut2'].prompt, 120)
-      if @equipment['dut2'].response.match(/not\s+okay/i)
+      if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
         result_msg += result_msg + "Read test w/ #{size} failed" 
         result += 1
       end
       @equipment['dut2'].send_cmd("pcitest -c -s #{size}", @equipment['dut2'].prompt, 120)
-      if @equipment['dut2'].response.match(/not\s+okay/i)
+      if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
         result_msg += result_msg + "Copy test w/ #{size} test failed" 
         result += 1
       end
