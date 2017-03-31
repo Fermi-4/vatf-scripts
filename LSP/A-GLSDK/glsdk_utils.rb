@@ -455,8 +455,7 @@ module GlsdkUtils
   
   def setup_and_run_glsdk_framework()
     # If true then clone GLSDK to the NFS directory on the Linux PC. If false then clone GLSDK directly on the EVM
-    @equipment['dut1'].send_cmd('cat /proc/cmdline',@equipment['dut1'].prompt)
-    is_clone_git_repo_on_pc = @equipment['dut1'].response.match(/root=\/dev\/nfs/)
+    is_clone_git_repo_on_pc = false
 
     # Set Host and EVM equipment references
     equip_srv = @equipment['server1']
