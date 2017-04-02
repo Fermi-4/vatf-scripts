@@ -595,11 +595,10 @@ def iperftest_cdc(server_usb_interface, test_duration)
 
   system ("kill -9 $(pidof iperf)")
   system ("ps | grep iperf")
-  match_string=response.scan(/\d+.\d\sMbits\/sec/)
+  match_string=response.scan(/\d+.\d+\sMbits\/sec/)
   if (match_string.length == 0)
     $result = 1
-    $result_message = "IPERF response does not have performance numbers for #{wsize}"
-    return 
+    $result_message += "IPERF response does not have performance numbers for #{wsize}"
   end
   throughput = match_string[0].split(' Mbits/sec')[0].to_f+match_string[1].split(' Mbits/sec')[0].to_f
   output_string += " Packetsize="+wsize.to_s+"_Throughput="+throughput.to_s
