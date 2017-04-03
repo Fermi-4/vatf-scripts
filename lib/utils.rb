@@ -124,7 +124,7 @@ end
 #      free_memory - mem
 #  sys, (optional) the system where memtester will be called
 def use_memory(mem, sys=@equipment['dut1'])
-  sys.send_cmd('cat /proc/meminfo', sys.prompt)
+  sys.send_cmd('cat /proc/meminfo', /MemTotal:.*?#{sys.prompt}/im)
   mem_available, mem_units = sys.response.match(/^MemFree:\s*(\d+)\s*(\D)B/i).captures
   multiplier = case (mem_units.downcase)
                when 'k'
