@@ -386,6 +386,7 @@ module LspTestScript
  
   def setup_boards(device_name='dut1', params={})
     device_object = @equipment[device_name]
+    device_object.set_api('psp')
     update_mmc = @test_params.instance_variable_defined?(:@var_update_mmc)? @test_params.var_update_mmc : "0"
     host_side_mmc_update = (update_mmc != '0' and device_object.params.has_key?("microsd_switch"))
     params = params.merge({'host_side_mmc_update' => host_side_mmc_update})

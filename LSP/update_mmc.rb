@@ -7,7 +7,6 @@ module UpdateMMC
   include LspHelpers    
   PRIMARY_BOOLOADER_MD5_FILE = "primary_bootloader.md5"
   FS_MD5_FILE = "fs.md5"
-  SLEEP_TIME = 4
 
   # Check mlo's signature and if mlo signature is different, we update both mlo and uboot
 
@@ -84,6 +83,7 @@ module UpdateMMC
     end
   end
   
+  # Check if create partition is needed
   def check_partition(boot_partition,params,boot_mnt_point,host_node,num_partitions)
     mount_partition(boot_partition, boot_mnt_point, 'vfat', params)
     partition_file = "#{boot_mnt_point}/partition_info.txt"
@@ -136,6 +136,7 @@ module UpdateMMC
     if tot_size.to_i > 100
       raise "Partition size cannot be greater than 100%!"
     end
+    report_msg "Creating partition with #{part_str}"
     my_staf_handle = STAFHandle.new("my_staf")
     staf_req = my_staf_handle.submit("local","PARTITION",part_str)
     if(staf_req.rc == 0)
@@ -148,27 +149,45 @@ module UpdateMMC
 
 
   def flash_sd_card_from_host(params)
-    begin
       report_msg "Going to flash SD card from host if required ..."
       boot_mnt_point = File.join(@linux_temp_folder, 'mnt', 'boot')
       rootfs_mnt_point = File.join(@linux_temp_folder, 'mnt', 'rootfs')
       params['dut'].connect({'type'=>'serial'}) if !params['dut'].target.serial
       params['dut'].poweroff(params) if params['dut'].at_prompt?({'prompt'=>params['dut'].prompt})
       params['dut'].disconnect('serial')
+
+      #Resolve symlink and get nodes
+      host_node = params['dut'].params['microsd_host_node']
+      if File.symlink?(host_node)
+        node = "/dev/#{File.readlink(host_node)}"
+      else
+        node = host_node
+      end
+      node = node.strip.sub(/\d*$/, '') # only keep base node like sdb not sdb1.
       setup_ti_test_gadget(params)
       @equipment['ti_test_gadget'].set_interfaces(params['dut'].params)
-      host_node = params['dut'].params['microsd_host_node']
-      params['server'].send_sudo_cmd("eject #{params['dut'].params['microsd_host_node']}",params['server'].prompt, 60)
-      @equipment['ti_test_gadget'].switch_microsd_to_dut(params['dut'])
-      sleep SLEEP_TIME
+
+    begin
+      report_msg "Switching to host"
       @equipment['ti_test_gadget'].switch_microsd_to_host(params['dut'])
-      sleep SLEEP_TIME
-      params['server'].send_sudo_cmd("partprobe", params['server'].prompt, 30)
-      #Resolve symlink and get nodes
-      node = "/dev/#{File.readlink(host_node)}"
-      params['server'].send_cmd("ls #{node}[[:digit:]]*", params['server'].prompt, 10)
+      sleep 2 
+      20.times {
+        params['server'].send_cmd("ls #{node}[[:digit:]]*; echo $?", /^0[\0\n\r]+/im, 2)
+        if params['server'].timeout?
+          sleep 2
+        else
+          break
+        end
+      }
+      params['server'].send_sudo_cmd("partprobe -s", params['server'].prompt, 30)
+      params['server'].send_cmd("ls #{node}[[:digit:]]*; echo $?", /^0[\0\n\r]+/im, 2)
+      raise "Failed to switch to host" if params['server'].timeout?
       nodes = params['server'].response.split("\n")
-      check_partition(nodes[0],params,boot_mnt_point,host_node,nodes.length)
+      sleep 1
+
+      # Temporally comment out check_partition to skip partition creation part
+      #check_partition(nodes[0],params,boot_mnt_point,host_node,nodes.length)
+
       params['server'].send_cmd("ls #{node}[[:digit:]]*", params['server'].prompt, 10)
       nodes = params['server'].response.split("\n")
       if nodes.size < 2
@@ -180,30 +199,44 @@ module UpdateMMC
 
     rescue Exception => e
       raise e
-
     ensure
-      unmount_partition(nodes[0], params)
-      unmount_partition(nodes[1], params)
-      params['server'].send_sudo_cmd("eject #{params['dut'].params['microsd_host_node']}",params['server'].prompt, 60)
-      sleep SLEEP_TIME
+      if nodes
+        unmount_partition(nodes[0], params)
+        unmount_partition(nodes[1], params)
+      end
+      report_msg "Switching to DUT..."
       @equipment['ti_test_gadget'].switch_microsd_to_dut(params['dut'])
+      params['server'].send_sudo_cmd("eject #{params['dut'].params['microsd_host_node']}",params['server'].prompt, 60)
+      sleep 5
     end
 
   end
 
   def mount_partition(partition, mnt_point, type, params)
+    # skip mount if already mounted
+    params['server'].send_cmd("mount |grep #{partition}", params['server'].prompt,10)
+    return if params['server'].response.match(/#{partition}\s+on\s+#{mnt_point}/i)
+
     params['server'].send_cmd("mkdir -p #{mnt_point}", params['server'].prompt, 10)
     params['server'].send_sudo_cmd("mount -t #{type} #{partition} #{mnt_point}", params['server'].prompt, 90)
     raise "Could not mount #{partition} on host PC" if ! system "mount | grep #{partition}"
   end
 
   def unmount_partition(partition, params)
-    params['server'].send_sudo_cmd("umount -l #{partition}", params['server'].prompt, 300)
-    sleep SLEEP_TIME
+    # unmount all mount points for this partition
+    count = 0 # Using count to prevent while-loop stuck
+    while count < 10 
+      params['server'].send_cmd("mount |grep #{partition}; echo $?", /^0[\0\n\r]+/im, 30)
+      break if params['server'].timeout?
+      params['server'].send_sudo_cmd("umount -l #{partition}", params['server'].prompt, 300)
+      sleep 1
+      count += 1
+    end
     raise "Could not umount #{partition} on host PC" if system "mount | grep #{partition}"
   end
 
   def need_update_mmcbootloader_from_host?(boot_partition, mnt_point, params)
+    mount_partition(boot_partition,mnt_point,'vfat',params)
     signature_file = "#{mnt_point}/#{PRIMARY_BOOLOADER_MD5_FILE}"
     return true if ! system "ls #{signature_file}"
     old_signature = read_signature(signature_file, params['server'])
@@ -237,9 +270,7 @@ module UpdateMMC
   end
 
   def flash_sd_rootfs_partition_from_host(root_partition, mnt_point, params)
-    if params.has_key?('fs')
-      # Following command required to boot using new images flashed to SD card
-      params['var_use_default_env'] = 1   if !params.has_key?('var_use_default_env')
+    if params.has_key?('fs') && params['fs'] != ''
       if need_update_rootfs_from_host?(root_partition, mnt_point, params)
         report_msg "Updating rootfs in MMC from host ..."
         fs_signature = params.has_key?('fs_signature') ? params['fs_signature'] : calculate_signature(params['fs'])
@@ -309,7 +340,7 @@ module UpdateMMC
     report_msg("Writing signature to #{dst}")
     if sudo
       device.send_sudo_cmd("sh -c 'echo #{signature} > #{dst}'", device.prompt, 5)
-      device.send_sudo_cmd("cat #{dst} |grep #{signature}", device.prompt, 5)
+      device.send_cmd("cat #{dst} |grep #{signature}", device.prompt, 5)
     else
       device.send_cmd("echo #{signature} > #{dst}", device.prompt, 5)
       device.send_cmd("cat #{dst} |grep #{signature}", device.prompt, 5)
