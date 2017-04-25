@@ -137,11 +137,12 @@ def use_memory(mem, sys=@equipment['dut1'])
                  1
                end
    available_mem = mem_available.to_i * multiplier - mem
-   return if available_mem < 1
-   sys.send_cmd("memtester #{available_mem}B &>/dev/null &",sys.prompt)
-   sleep 5 # wait for system to allocate memory
+   if available_mem > 0
+     sys.send_cmd("memtester #{available_mem}B &>/dev/null &",sys.prompt)
+     sleep 5 # wait for system to allocate memory
+   end
    yield
-   sys.send_cmd("killall -9 memtester")
+   sys.send_cmd("killall -9 memtester") if available_mem > 0
    sleep 5 # wait for system to reclaim memory
    rescue Exception => e
      puts e.to_s

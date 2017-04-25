@@ -181,7 +181,8 @@ def get_reference(video_url, width, height, format)
               format].join('_') 
   ref_file += '.' + format + '.tar.xz'
   
-  get_ref do |base_uri|
+  files = get_ref do |base_uri|
     base_uri + '/host-utils/wb/ref-media/' + ref_file 
   end
+  files[0]
 end

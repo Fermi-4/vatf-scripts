@@ -15,18 +15,26 @@ module CaptureUtils
     fields.collect{ |f| ref_name + f + "-#{fmt}" + p_info + ".rgb"}
   end
   
+  def adjust_4ch_frames(src_frames, adj_frames, width, height, contrast , brightness, sys=@equipment['server1'])
+    install_utils(sys)
+    b_c = File.join(CAP_UTILS_FOLDER, 'brightness_cont')
+    sys.send_cmd("LD_LIBRARY_PATH=#{CAP_UTILS_FOLDER} #{b_c} #{src_frames} #{width} #{height} #{contrast*' '} #{brightness*' '} #{adj_frames}", sys.prompt, 1000)
+    sys.response
+  end 
+  
   def install_utils(cap_sys=@equipment['server1'])
       capture_bin = File.join(CAP_UTILS_FOLDER, 'Capture')
       psnr_bin = File.join(CAP_UTILS_FOLDER, 'argb-psnr-ssim')
-      if !File.exists?(capture_bin) || !File.exists?(psnr_bin)
-        cap_sys.send_cmd("wget --no-proxy #{HOST_UTILS_URL}/capture-utils.tar.gz -P #{SiteInfo::UTILS_FOLDER} || " \
+      picture_bin = File.join(CAP_UTILS_FOLDER, 'brightness_cont')
+      if !File.exists?(capture_bin) || !File.exists?(psnr_bin) || !File.exists?(picture_bin)
+        cap_sys.send_cmd("rm -rf #{SiteInfo::UTILS_FOLDER}/capture-utils*; wget --no-proxy #{HOST_UTILS_URL}/capture-utils.tar.gz -P #{SiteInfo::UTILS_FOLDER} || " \
                          "wget #{HOST_UTILS_URL}/capture-utils.tar.gz -P #{SiteInfo::UTILS_FOLDER}",
                          cap_sys.prompt,
                          180)
         cap_sys.send_cmd("tar -C #{SiteInfo::UTILS_FOLDER} -zxvf #{File.join(SiteInfo::UTILS_FOLDER, 'capture-utils.tar.gz')}",
                       cap_sys.prompt,
                       180)
-        raise "Unable to fetch capture utility" if !File.exists?(capture_bin) || !File.exists?(psnr_bin)
+        raise "Unable to fetch capture utility" if !File.exists?(capture_bin) || !File.exists?(psnr_bin) || !File.exists?(picture_bin)
       end
   end
   

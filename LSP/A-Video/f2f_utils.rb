@@ -43,5 +43,6 @@ def get_ref
   @equipment['server1'].send_cmd("tar -C #{@linux_temp_folder} -Jxvf #{local_file} || rm #{local_file}",
                   @equipment['server1'].prompt,
                   600)
-  return File.join(@linux_temp_folder, @equipment['server1'].response.strip()) if !@equipment['server1'].response.match(/Error/i)
+
+  @equipment['server1'].response.strip().split(/[\r\n]+/).map{|f| File.join(@linux_temp_folder, f)} if !@equipment['server1'].response.match(/Error/i)
 end

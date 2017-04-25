@@ -104,8 +104,9 @@ def get_reference(video_url, width, height, format, interlace)
               interlace == 0 ? 'nodeinter' : 'deinter'].join('_') 
   ref_file += '.' + format + '.tar.xz'
   
-  get_ref do |base_uri|
+  files = get_ref do |base_uri|
     base_uri + '/host-utils/vpe/ref-media/' + ref_file 
   end
+  files[0]
 end
 

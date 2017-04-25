@@ -91,12 +91,17 @@ end
 #        --skip n      Skip the first n frames
 #        --sleep-forever    Sleep forever after configuring the device
 #        --stride value    Line stride in bytes
-def sensor_capture(params, timeout, dut=@equipment['dut1'])
-  cmd = 'yavta'
+def sensor_capture(parms, timeout, dut=@equipment['dut1'])
+  params = parms.clone()
+  width, height = params['-s'].split('x').map(&:to_i)
+  skip_frames = 150
+  skip_frames = [(200*1280*720/(width*height)).to_i,400].min
+  params['-c'] = params['-c'] + skip_frames
+  cmd = "yavta --skip #{skip_frames}"
   params.each{|key,val| cmd += ' ' + key + val.to_s}
+  puts cmd
   dut.send_cmd(cmd, dut.prompt, timeout)
-  #Video format: NV12 (3231564e) 336x244 (stride 336) field none buffer size 122976
-  res_match = dut.response.match(/Video\s*format:\s*#{params['-f']}\s.*?\)\s*(\d+)x(\d+).*?/) 
+  res_match = dut.response.match(/Video\s*format:\s*#{params['-f']}\s.*?\)\s*(\d+)x(\d+).*?/)
   return res_match.captures if res_match
   [nil, nil]
 end
