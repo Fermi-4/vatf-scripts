@@ -52,8 +52,8 @@ module UpdateMMC
     fs_tarball_src = "/#{File.basename(params['fs'])}"
     fs_tarball_path = params['nfs_root'].sub("#{params['server'].telnet_ip}:","")+fs_tarball_src
     params['server'].send_sudo_cmd("rm -f #{fs_tarball_path}", params['server'].prompt, 60)
-    params['server'].send_sudo_cmd("cp #{params['fs']} #{fs_tarball_path}", params['server'].prompt, 120)
-    raise "Failed to copy fs tarball from #{params['fs']} to nfsroot: #{fs_tarball_path}" if !cmd_exit_zero?(params['server'])
+    params['server'].send_sudo_cmd("cp #{params['fs']} #{fs_tarball_path} ; echo $?", /^0[\0\n\r]+/im, 120)
+    raise "Failed to copy fs tarball from #{params['fs']} to nfsroot: #{fs_tarball_path}" if params['server'].timeout?
     params['mmc_fs_mnt_point'] = find_mmc_mnt_point('fs')
 
     # remove everything in mmc p2 before extract rootfs tarball
@@ -171,7 +171,7 @@ module UpdateMMC
       report_msg "Switching to host"
       @equipment['ti_test_gadget'].switch_microsd_to_host(params['dut'])
       sleep 2 
-      20.times {
+      30.times {
         params['server'].send_cmd("ls #{node}[[:digit:]]*; echo $?", /^0[\0\n\r]+/im, 2)
         if params['server'].timeout?
           sleep 2
@@ -260,10 +260,10 @@ module UpdateMMC
      need_update_mmcbootloader_from_host?(boot_partition, mnt_point, params)
       report_msg "Updating bootloader in MMC from host ..."
       mlo_signature = params.has_key?('mlo_signature') ? params['mlo_signature'] : calculate_signature(params['primary_bootloader'])
-      params['server'].send_sudo_cmd("cp -f #{params['primary_bootloader']} #{mnt_point}/MLO", params['server'].prompt, 30)
-      raise "Could not copy primary_bootloader to SD card" if !cmd_exit_zero?(params['server'])
-      params['server'].send_sudo_cmd("cp -f #{params['secondary_bootloader']} #{mnt_point}/u-boot.img", params['server'].prompt, 30)
-      raise "Could not copy secondary_bootloader to SD card" if !cmd_exit_zero?(params['server'])
+      params['server'].send_sudo_cmd("cp -f #{params['primary_bootloader']} #{mnt_point}/MLO ; echo $?", /^0[\0\n\r]+/im, 30)
+      raise "Could not copy primary_bootloader to SD card" if params['server'].timeout?
+      params['server'].send_sudo_cmd("cp -f #{params['secondary_bootloader']} #{mnt_point}/u-boot.img ; echo $?", /^0[\0\n\r]+/im, 30)
+      raise "Could not copy secondary_bootloader to SD card" if params['server'].timeout?
       save_signature(mlo_signature, mnt_point+"/#{PRIMARY_BOOLOADER_MD5_FILE}", true, params['server'])
     end
     return params
@@ -274,11 +274,11 @@ module UpdateMMC
       if need_update_rootfs_from_host?(root_partition, mnt_point, params)
         report_msg "Updating rootfs in MMC from host ..."
         fs_signature = params.has_key?('fs_signature') ? params['fs_signature'] : calculate_signature(params['fs'])
-        params['server'].send_sudo_cmd("rm -rf #{mnt_point}/*", params['server'].prompt, 120)
-        raise "Could not remove old filesystem from SD card" if !cmd_exit_zero?(params['server'])
+        params['server'].send_sudo_cmd("rm -rf #{mnt_point}/* ; echo $?", /^0[\0\n\r]+/im, 120)
+        raise "Could not remove old filesystem from SD card" if params['server'].timeout?
         tar_options = get_tar_options(params['fs'], params)
-        params['server'].send_sudo_cmd("tar -C #{mnt_point}/ #{tar_options} #{params['fs']}", params['server'].prompt, 2400)
-        raise "Could not untar rootfs to SD card" if !cmd_exit_zero?(params['server'])
+        params['server'].send_sudo_cmd("tar -C #{mnt_point}/ #{tar_options} #{params['fs']} ; echo $?", /^0[\0\n\r]+/im, 2400)
+        raise "Could not untar rootfs to SD card" if params['server'].timeout?
         save_signature(fs_signature, mnt_point+"/#{FS_MD5_FILE}", true, params['server'])
       end
     end
@@ -340,12 +340,14 @@ module UpdateMMC
     report_msg("Writing signature to #{dst}")
     if sudo
       device.send_sudo_cmd("sh -c 'echo #{signature} > #{dst}'", device.prompt, 5)
-      device.send_cmd("cat #{dst} |grep #{signature}", device.prompt, 5)
+      device.send_cmd("cat #{dst} |grep #{signature} ; echo $?", /^0[\0\n\r]+/im, 5)
+      raise "Failed to save signature to #{dst}" if device.timeout?
+      
     else
       device.send_cmd("echo #{signature} > #{dst}", device.prompt, 5)
       device.send_cmd("cat #{dst} |grep #{signature}", device.prompt, 5)
+      raise "Failed to save signature to #{dst}" if !cmd_exit_zero?(device)
     end
-    raise "Failed to save signature to #{dst}" if !cmd_exit_zero?(device)
   end
 
   def read_signature(file, device=@equipment['dut1'])
