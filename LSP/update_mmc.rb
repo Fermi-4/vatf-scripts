@@ -179,7 +179,6 @@ module UpdateMMC
           break
         end
       }
-      params['server'].send_sudo_cmd("partprobe -s", params['server'].prompt, 30)
       params['server'].send_cmd("ls #{node}[[:digit:]]*; echo $?", /^0[\0\n\r]+/im, 2)
       raise "Failed to switch to host" if params['server'].timeout?
       nodes = params['server'].response.split("\n")
@@ -219,7 +218,7 @@ module UpdateMMC
 
     params['server'].send_cmd("mkdir -p #{mnt_point}", params['server'].prompt, 10)
     params['server'].send_sudo_cmd("mount -t #{type} #{partition} #{mnt_point}", params['server'].prompt, 90)
-    raise "Could not mount #{partition} on host PC" if ! system "mount | grep #{partition}"
+    raise "Could not mount #{partition} on host PC" if ! system "mount | grep #{mnt_point}"
   end
 
   def unmount_partition(partition, params)
@@ -229,6 +228,7 @@ module UpdateMMC
       params['server'].send_cmd("mount |grep #{partition}; echo $?", /^0[\0\n\r]+/im, 30)
       break if params['server'].timeout?
       params['server'].send_sudo_cmd("umount -l #{partition}", params['server'].prompt, 300)
+      params['server'].send_cmd("sync", params['server'].prompt, 120)
       sleep 1
       count += 1
     end
@@ -260,9 +260,9 @@ module UpdateMMC
      need_update_mmcbootloader_from_host?(boot_partition, mnt_point, params)
       report_msg "Updating bootloader in MMC from host ..."
       mlo_signature = params.has_key?('mlo_signature') ? params['mlo_signature'] : calculate_signature(params['primary_bootloader'])
-      params['server'].send_sudo_cmd("cp -f #{params['primary_bootloader']} #{mnt_point}/MLO ; echo $?", /^0[\0\n\r]+/im, 30)
+      params['server'].send_cmd("cp -f #{params['primary_bootloader']} #{mnt_point}/MLO; echo $? ", /^0[\0\n\r]+/im, 30)
       raise "Could not copy primary_bootloader to SD card" if params['server'].timeout?
-      params['server'].send_sudo_cmd("cp -f #{params['secondary_bootloader']} #{mnt_point}/u-boot.img ; echo $?", /^0[\0\n\r]+/im, 30)
+      params['server'].send_cmd("cp -f #{params['secondary_bootloader']} #{mnt_point}/u-boot.img ; echo $? ", /^0[\0\n\r]+/im, 30)
       raise "Could not copy secondary_bootloader to SD card" if params['server'].timeout?
       save_signature(mlo_signature, mnt_point+"/#{PRIMARY_BOOLOADER_MD5_FILE}", true, params['server'])
     end
@@ -274,10 +274,10 @@ module UpdateMMC
       if need_update_rootfs_from_host?(root_partition, mnt_point, params)
         report_msg "Updating rootfs in MMC from host ..."
         fs_signature = params.has_key?('fs_signature') ? params['fs_signature'] : calculate_signature(params['fs'])
-        params['server'].send_sudo_cmd("rm -rf #{mnt_point}/* ; echo $?", /^0[\0\n\r]+/im, 120)
+        params['server'].send_sudo_cmd("sh -c 'rm -rf #{mnt_point}/* && echo PASS ' ", /PASS/m, 120)
         raise "Could not remove old filesystem from SD card" if params['server'].timeout?
         tar_options = get_tar_options(params['fs'], params)
-        params['server'].send_sudo_cmd("tar -C #{mnt_point}/ #{tar_options} #{params['fs']} ; echo $?", /^0[\0\n\r]+/im, 2400)
+        params['server'].send_sudo_cmd("sh -c 'tar -C #{mnt_point}/ #{tar_options} #{params['fs']} && echo PASS' ", /PASS/m, 2400)
         raise "Could not untar rootfs to SD card" if params['server'].timeout?
         save_signature(fs_signature, mnt_point+"/#{FS_MD5_FILE}", true, params['server'])
       end
