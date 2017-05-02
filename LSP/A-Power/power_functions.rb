@@ -21,7 +21,7 @@ module PowerFunctions
   end
 
   def suspend(wakeup_domain, power_state, suspend_time, e='dut1')
-    suspend_regex=/Suspending\s+console/i
+    suspend_regex=/(Freezing remaining freezable tasks|Suspending\s+console)/i
     @equipment[e].send_cmd("sync", @equipment[e].prompt, 120)
     if wakeup_domain == 'uart' or wakeup_domain == 'gpio'
       @equipment[e].send_cmd("echo #{power_state} > /sys/power/state", suspend_regex, suspend_time, false)
