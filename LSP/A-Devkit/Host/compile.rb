@@ -28,7 +28,7 @@ def run
   return if run_and_check_cmd(download_cmd, equip, /DOWNLOADPASSED/)
   toolchain_filename = Dir.entries("#{Dir.home()}/#{toolchains_url.sub('http://','')}/#{arch}")[-1]
   toolchain_dirname = File.basename(toolchain_filename, ".tar.xz")
-  if equip.send_sudo_cmd("tar xvf ~/#{toolchains_url.sub('http://','')}/#{arch}/#{toolchain_filename} -C /opt && echo 'INSTALLATIONPASSED'", /INSTALLATIONPASSED/, 120)
+  if equip.send_sudo_cmd(["tar xvf ~/#{toolchains_url.sub('http://','')}/#{arch}/#{toolchain_filename} -C /opt", "echo 'INSTALLATIONPASSED'"], /INSTALLATIONPASSED/, 120)
     set_result(FrameworkConstants::Result[:fail], "Error trying to install toolchain")
     return
   end
