@@ -51,8 +51,6 @@ def configure_dut(e='dut1')
   enable_sleep_while_idle
   enable_off_mode
   set_opp
-  @equipment[e].send_cmd("systemctl stop weston", @equipment[e].prompt)
-  sleep 5
 end
 
 def start_app(e='dut1')
