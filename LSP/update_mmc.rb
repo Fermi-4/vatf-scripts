@@ -260,9 +260,9 @@ module UpdateMMC
      need_update_mmcbootloader_from_host?(boot_partition, mnt_point, params)
       report_msg "Updating bootloader in MMC from host ..."
       mlo_signature = params.has_key?('mlo_signature') ? params['mlo_signature'] : calculate_signature(params['primary_bootloader'])
-      params['server'].send_cmd("cp -f #{params['primary_bootloader']} #{mnt_point}/MLO; echo $? ", /^0[\0\n\r]+/im, 30)
+      params['server'].send_sudo_cmd(["cp -f #{params['primary_bootloader']} #{mnt_point}/MLO", "echo PASS"], /PASS/m, 30)
       raise "Could not copy primary_bootloader to SD card" if params['server'].timeout?
-      params['server'].send_cmd("cp -f #{params['secondary_bootloader']} #{mnt_point}/u-boot.img ; echo $? ", /^0[\0\n\r]+/im, 30)
+      params['server'].send_sudo_cmd(["cp -f #{params['secondary_bootloader']} #{mnt_point}/u-boot.img", "echo PASS"], /PASS/m, 30)
       raise "Could not copy secondary_bootloader to SD card" if params['server'].timeout?
       save_signature(mlo_signature, mnt_point+"/#{PRIMARY_BOOLOADER_MD5_FILE}", true, params['server'])
     end
