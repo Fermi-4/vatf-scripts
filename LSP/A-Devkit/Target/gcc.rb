@@ -9,11 +9,11 @@ def run
     filenames.each {|filename|
       scp_push_file(dut_ip, File.join(File.dirname(__FILE__), '..', filename), File.join('/tmp', filename))
       compiler = filename.match(/\.c$/) ? "gcc" : "g++"
-      if ! check_cmd?("#{compiler} #{filename} -o hello")
+      if ! check_cmd?("#{compiler} #{filename} -o hello", @equipment['dut1'], 30)
         set_result(FrameworkConstants::Result[:fail], "#{compiler} could not compile #{filename}")
         return
       end
-      if ! check_cmd?('./hello')
+      if ! check_cmd?('./hello', @equipment['dut1'], 20)
         set_result(FrameworkConstants::Result[:fail], "Error executing compiled hello program")
         return
       end
