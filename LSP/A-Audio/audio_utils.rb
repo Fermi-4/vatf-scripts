@@ -354,7 +354,7 @@ end
 #       be set
 #Returns, two arrays. Element 0 contains the rec devices info and element
 #         1 containg the playout devices info  
-def setup_devices(sys=equipment['dut1'], volume=0.6)
+def setup_devices(sys=@equipment['dut1'], volume=0.6)
   config_devices(sys, 0.6)
 end
 
