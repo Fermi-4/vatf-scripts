@@ -50,12 +50,12 @@ def run
     while (i < test_iterations.to_i) do
        return_non_zero=start_client(client)
        i=i+1
-       if return_non_zero
+       if (return_non_zero==1)
          break
        end
     end
     
-  if return_non_zero
+  if (return_non_zero==1)
     set_result(FrameworkConstants::Result[:fail],
             "Openssl Test returned non-zero value. \n")
   else
@@ -132,8 +132,9 @@ def start_client(device='dut1', server='server1', port=4433)
     start_client_cmd = "openssl s_client -connect #{server_ip_address}:#{port} -CAfile cert.pem </dev/null"
     @equipment[device].send_cmd("#{start_client_cmd}", @equipment[device].prompt, 10)
     client_response = @equipment[device].response
-    match_string = /return\s*code\s*\s*\S*\s*\d*\s*\S*\w*/.match(client_response)
-    if (match_string.to_s.scan('ok').size != 0 && match_string.to_s.scan('0').size != 0)
+    match_string = /return\s*code:\s*0\s*\(ok\)/.match(client_response)
+    @equipment['dut1'].log_info("Match String\n #{match_string}\n")
+    unless match_string.nil?
        return_non_zero = 0
     end
 end
