@@ -100,12 +100,21 @@ def clean
 end
 
 def save_firmware(e=@equipment['dut1'])
-  e.send_cmd("find /lib/firmware/ -type l -print -exec realpath {} \\;", e.prompt)
+  check_firmware_links(e)
+  e.send_cmd("find /lib/firmware/ -type l -exec realpath {} \\; -print 2>/dev/null", e.prompt)
   @firmware_links = Hash[*e.response.scan(/^\/lib\/firmware\/.+/)]
 end
 
 def restore_firmware(e=@equipment['dut1'])
   @firmware_links.each {|k,v|
-    e.send_cmd("ln -sf #{v.strip} #{k.strip}")
+    e.send_cmd("ln -sf #{k.strip} #{v.strip}")
   }
+  check_firmware_links(e, 'RESTORE')
+end
+
+def check_firmware_links(e=@equipment['dut1'], info='SAVE')
+  e.send_cmd("find /lib/firmware/ -type l ! -exec realpath {} \\;", e.prompt)
+  if e.response.match(/realpath:\s*.\/lib/im)
+    e.log_info("TEST_#{info}_FW_WARNING: Broken Links: #{e.response.scan(/realpath:([^\r\n]+)/im)*", "} ....")
+  end
 end
