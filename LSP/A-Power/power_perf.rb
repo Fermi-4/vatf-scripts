@@ -152,9 +152,9 @@ def save_results(power_consumption,voltage_reading,multimeter=@equipment['multim
   }
  
  for i in (1..multimeter.number_of_channels/2)
-  perf << {'name' => @equipment['multimeter1'].dut_power_domains[i - 1] + " Power", 'value' =>power_consumption["domain_" + @equipment['multimeter1'].dut_power_domains[i - 1] + "_power_readings"], 'units' => "mw"}
+  perf << {'name' => @equipment['multimeter1'].dut_power_domains[i - 1] + " Power", 'value' =>power_consumption["domain_" + @equipment['multimeter1'].dut_power_domains[i - 1] + "_power_readings"], 'units' => "mw", 'significant_difference' => 100}
   end 
-  perf << {'name' => "Total Power", 'value' => power_consumption["all_domains"], 'units' => "mw"}
+  perf << {'name' => "Total Power", 'value' => power_consumption["all_domains"], 'units' => "mw", 'significant_difference' => 100}
   return perf
 end
 

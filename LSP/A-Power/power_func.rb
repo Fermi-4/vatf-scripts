@@ -167,9 +167,9 @@ def save_results(power_consumption,voltage_reading,multimeter=@equipment['multim
   }
  
   multimeter.dut_power_domains.each do |domain|
-    perf << {'name' => domain + " Power", 'value' =>power_consumption["domain_" + domain + "_power_readings"], 'units' => "mw"}
+    perf << {'name' => domain + " Power", 'value' =>power_consumption["domain_" + domain + "_power_readings"], 'units' => "mw", 'significant_difference' => 100}
   end 
-  perf << {'name' => "Total Power", 'value' => power_consumption["all_domains"], 'units' => "mw"}
+  perf << {'name' => "Total Power", 'value' => power_consumption["all_domains"], 'units' => "mw", 'significant_difference' => 100}
   return perf
 end
 
