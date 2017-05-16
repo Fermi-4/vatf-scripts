@@ -158,7 +158,7 @@ module PowerFunctions
   end
 
   def wait_for_fs(e='dut1')
-    loop do
+    20.times do
       @equipment[e].send_cmd("uname", /Linux/, 3)
       break if !@equipment[e].timeout?
     end
