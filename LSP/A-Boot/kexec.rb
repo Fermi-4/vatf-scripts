@@ -16,6 +16,11 @@ def run
       return
     end
 
+    initial_cpu_mode = ''
+    final_cpu_mode = ''
+    cpu_mode_match = @equipment['dut1'].boot_log.match(/CPU: All CPU.*? started in (\w+) mode/)
+    initial_cpu_mode = cpu_mode_match.captures[0] if cpu_mode_match
+
     kexec_image = @test_params.instance_variable_defined?(:@var_kexec_image) ? @test_params.var_kexec_image : '/boot/zImage'
     @equipment['dut1'].send_cmd("kexec -d -l #{kexec_image}", @equipment['dut1'].prompt)
 
@@ -27,6 +32,9 @@ def run
       return
     end
 
+    cpu_mode_match = @equipment['dut1'].response.match(/CPU: All CPU.*? started in (\w+) mode/)
+    final_cpu_mode = cpu_mode_match.captures[0] if cpu_mode_match
+
     3.times {
       @equipment['dut1'].send_cmd(@equipment['dut1'].login, @equipment['dut1'].prompt, 40)
       break if !@equipment['dut1'].timeout?
@@ -37,7 +45,13 @@ def run
       return
     end
 
-    set_result(FrameworkConstants::Result[:pass], "KEXEC loaded new kernel image")
+    if initial_cpu_mode == ''
+      set_result(FrameworkConstants::Result[:pass], "KEXEC loaded new kernel image. WARNING: CPU mode (e.g. HYP, SVC) was not detected")
+    elsif initial_cpu_mode != final_cpu_mode
+      set_result(FrameworkConstants::Result[:fail], "KEXEC loaded new kernel image but it stated in #{final_cpu_mode} mode instead of #{initial_cpu_mode}")
+    else
+      set_result(FrameworkConstants::Result[:pass], "KEXEC loaded new kernel image and CPUs started in same #{final_cpu_mode} mode")
+    end
 
   rescue Exception => e
     puts e.message
