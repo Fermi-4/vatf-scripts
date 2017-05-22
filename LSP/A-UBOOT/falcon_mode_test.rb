@@ -46,7 +46,8 @@ def run
   bparams.each{|k,v| puts "#{k}:#{v}"}
   bparams['dut'].set_systemloader(bparams.merge({'systemloader_class' => SystemLoader::UbootFlashBootloaderKernelSystemLoader}))
   bparams['dut'].system_loader.run(bparams)
-
+  bparams['dut'].send_cmd("setenv boot_os 1", bparams['dut'].prompt, 5)
+  bparams['dut'].send_cmd("saveenv", bparams['dut'].prompt, 5)
   #By now, all images should be flashed into qspi. 
   # Change to qspi boot, then power cycle
   begin
