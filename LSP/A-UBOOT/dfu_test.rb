@@ -154,11 +154,11 @@ puts "filesize:"+filesize
     begin
       @equipment['dut1'].boot_loader = nil
       case media
-      when 'qspi'
+      when /qspi/
         translated_boot_params['primary_bootloader_dev'] = 'qspi'
-      when 'mmc'
+      when /-mmc/
         translated_boot_params['primary_bootloader_dev'] = 'mmc'
-      when 'emmc'
+      when /emmc/
         translated_boot_params['primary_bootloader_dev'] = 'emmc'
       end
       @equipment['dut1'].boot_to_bootloader(translated_boot_params)
