@@ -51,13 +51,13 @@ def run
   
     if skip_bootloader_time == 'no'
       time_start = Time.now
-      #@equipment['dut1'].log_info( "-----------------------time_start is: "+time_start.to_s)
+      @equipment['dut1'].log_info( "-----------------------time_start is: "+time_start.to_s)
       @equipment['dut1'].send_cmd("", regex_spl, 60)
       
       if !@equipment['dut1'].timeout?
         time_spl = Time.now
         puts ( "---------------------------time_spl is: "+time_spl.to_s)
-        #@equipment['dut1'].log_info( "---------------------------time_spl is: "+time_spl.to_s)
+        @equipment['dut1'].log_info( "---------------------------time_spl is: "+time_spl.to_s)
       else
         res += 1
         break
@@ -68,12 +68,12 @@ def run
       if !@equipment['dut1'].timeout?
         time_uboot = Time.now
         puts ( "---------------------------time_uboot is: "+time_uboot.to_s)
-        #@equipment['dut1'].log_info( "---------------------------time_uboot is: "+time_uboot.to_s)
+        @equipment['dut1'].log_info( "---------------------------time_uboot is: "+time_uboot.to_s)
       else
         res += 1
         break
       end
-    end
+    end #skip_bootloader_time
     @equipment['dut1'].stop_boot()
     set_uboot_env(translated_boot_params)
 
@@ -82,7 +82,7 @@ def run
     @equipment['dut1'].send_cmd("boot", regex_startkernel, timeout)
     if !@equipment['dut1'].timeout?
       time_initkernel = Time.now
-      #@equipment['dut1'].log_info( "---------------------------time_initkernel is: "+time_initkernel.to_s)
+      @equipment['dut1'].log_info( "---------------------------time_initkernel is: "+time_initkernel.to_s)
     else
       res += 1
       break
@@ -92,7 +92,7 @@ def run
       @equipment['dut1'].wait_for(regex_startfs,timeout)
       if !@equipment['dut1'].timeout?
         time_initfs = Time.now
-        #@equipment['dut1'].log_info( "---------------------------time_initfs is: "+time_initfs.to_s)
+        @equipment['dut1'].log_info( "---------------------------time_initfs is: "+time_initfs.to_s)
       else
         res += 1
         break
@@ -102,7 +102,7 @@ def run
     @equipment['dut1'].wait_for(regex_doneboot,timeout)
     if !@equipment['dut1'].timeout?
       time_doneboot = Time.now
-      #@equipment['dut1'].log_info( "---------------------------time_doneboot is: "+time_doneboot.to_s)
+      @equipment['dut1'].log_info( "---------------------------time_doneboot is: "+time_doneboot.to_s)
     else
       res += 1
       break

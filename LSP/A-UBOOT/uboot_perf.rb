@@ -187,7 +187,7 @@ def get_loadaddres(testsize_hex)
   # when read, read to a different location instead of ${loadaddr} so we can compare read write
   @equipment['dut1'].send_cmd("print loadaddr", @equipment['dut1'].boot_prompt, 10)
   # ex: loadaddr=0x82000000
-  loadaddr = @equipment['dut1'].response.match(/loadaddr=0x(\d+)/i).captures[0]
+  loadaddr = @equipment['dut1'].response.match(/loadaddr=0x(\h+)/i).captures[0]
   loadaddr2 = ( loadaddr.to_i(16) + testsize_hex.to_i(16) ).to_s(16)
   raise "Failed to get loadaddr and loadaddr2" if (loadaddr == nil or loadaddr2 == nil)
   return [loadaddr, loadaddr2]
