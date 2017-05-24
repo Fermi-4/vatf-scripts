@@ -478,6 +478,7 @@ module LspTestScript
           }
         end
       end
+      device_object.reset_sysboot(device_object)
     end
 
     
