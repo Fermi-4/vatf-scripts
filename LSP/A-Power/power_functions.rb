@@ -32,7 +32,7 @@ module PowerFunctions
     elsif wakeup_domain == 'rtc_only'
       suspend_time += 30
       suspend_regex=/System halted|System will go to power_off|Power down|reboot: Power/i
-      @equipment[e].send_cmd("expr `date '+%s'` + #{suspend_time} > /sys/class/rtc/rtc0/wakealarm; poweroff", suspend_regex, suspend_time, false)
+      @equipment[e].send_cmd("echo +#{suspend_time} > /sys/class/rtc/rtc0/wakealarm; poweroff", suspend_regex, suspend_time, false)
     else
       raise "#{wakeup_domain} wakeup domain is not supported"
     end
