@@ -33,6 +33,11 @@ def run
     this_boot_params['dut'].set_bootloader(this_boot_params) 
     this_boot_params['dut'].boot_loader.run(this_boot_params)
 
+    if pre_boot != 'no'
+      this_boot_params['dut'].send_cmd("env default -a -f", boot_params['dut'].boot_prompt, 10)
+      this_boot_params['dut'].send_cmd("saveenv", boot_params['dut'].boot_prompt, 10)
+    end
+
     puts "=============boot params============="
     boot_params.each{|k,v| puts "#{k}:#{v}"}
 
