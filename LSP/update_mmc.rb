@@ -181,6 +181,7 @@ module UpdateMMC
       }
       params['server'].send_cmd("ls #{node}[[:digit:]]*; echo $?", /^0[\0\n\r]+/im, 2)
       raise "Failed to switch to host" if params['server'].timeout?
+      report_msg "Switching to host done"
       nodes = params['server'].response.split("\n")
       sleep 1
 
@@ -203,7 +204,7 @@ module UpdateMMC
         unmount_partition(nodes[0], params)
         unmount_partition(nodes[1], params)
       end
-      report_msg "Switching to DUT..."
+      report_msg "Switching back to DUT..."
       @equipment['ti_test_gadget'].switch_microsd_to_dut(params['dut'])
       params['server'].send_sudo_cmd("eject #{params['dut'].params['microsd_host_node']}",params['server'].prompt, 60)
       sleep 5

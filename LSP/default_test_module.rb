@@ -397,7 +397,7 @@ module LspTestScript
         begin
             translated_boot_params = flash_sd_card_from_host(translated_boot_params)
         rescue Exception => e
-            report_msg "Failed to update SD card from host"
+            report_msg "Failed to switch to host or update SD card. "+e.to_s
             raise e
         end
     end
