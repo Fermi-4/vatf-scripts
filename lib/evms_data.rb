@@ -423,6 +423,16 @@ module EvmData
     ! unsupported.include? platform 
   end
 
+  # Define eth boot method name
+  def get_eth_boot_method(platform)
+    case platform.downcase
+    when /^k2.{0,2}-(hs){0,1}evm/
+      return :LOAD_FROM_ETHERNET_BY_BMC
+    else
+      return :LOAD_FROM_ETHERNET
+    end
+  end
+
   # Define uart boot method name
   def get_uart_boot_method(platform)
     case platform.downcase

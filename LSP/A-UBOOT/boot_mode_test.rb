@@ -40,10 +40,14 @@ def run
   end    
 
   case boot_media
-  when /usbeth/
+  when "usbeth"
     staf_mutex("usbeth_setup", 60000) do
       setup_host_for_usbeth_boot(bparams)
       setup_usbeth_images(bparams)
+    end
+  when "eth"
+    staf_mutex("ethboot_setup", 60000) do
+      setup_ethboot_images(bparams)
     end
   end
 
@@ -109,6 +113,8 @@ def set_bootloader_devs(params, media)
   when "mmc"
     bootloader_dev = 'mmc'
     mmc_dev = 0
+  when "eth"
+    bootloader_dev = "ethernet"
   else
     bootloader_dev = media 
   end
@@ -131,6 +137,37 @@ def setup_usbeth_images(params)
     copy_with_path(srcfile, dstfile)
   end
 
+end
+
+def setup_ethboot_images(params)
+  case @test_params.platform.downcase
+    when /am43xx-gpevm/
+      srcfile = File.join(params['server'].tftp_path, params['primary_bootloader_image_name'] )
+      dstfile = File.join(params['server'].tftp_path, "emac_boot/u-boot-spl.bin-am437x-evm")
+      copy_with_path(srcfile, dstfile)
+      srcfile = File.join(params['server'].tftp_path, params['secondary_bootloader_image_name'] )
+      dstfile = File.join(params['server'].tftp_path, "emac_boot/u-boot-am437x-evm\.img")
+      copy_with_path(srcfile, dstfile)
+      
+    when /am43xx-hsevm/
+      srcfile = File.join(params['server'].tftp_path, params['primary_bootloader_image_name'] )
+      dstfile = File.join(params['server'].tftp_path, "emac_boot/MLO-am437x-hs-evm")
+      copy_with_path(srcfile, dstfile)
+      srcfile = File.join(params['server'].tftp_path, params['secondary_bootloader_image_name'] )
+      dstfile = File.join(params['server'].tftp_path, "emac_boot/u-boot-am437x-hs-evm\.img")
+      copy_with_path(srcfile, dstfile)
+
+    when /k2g-evm/
+      srcfile = File.join(params['server'].tftp_path, params['secondary_bootloader_image_name'] )
+      dstfile = File.join(params['server'].tftp_path, "emac_boot/u-boot-k2g-evm\.bin")
+      copy_with_path(srcfile, dstfile)
+    when /k2hk-evm/
+      srcfile = File.join(params['server'].tftp_path, params['secondary_bootloader_image_name'] )
+      dstfile = File.join(params['server'].tftp_path, "emac_boot/u-boot-k2hk-evm\.bin")
+      copy_with_path(srcfile, dstfile)
+    else
+      raise "No ethboot test automation support for #{platform} yet"
+  end
 end
 
 def get_soc_name_for_platform(platform)
