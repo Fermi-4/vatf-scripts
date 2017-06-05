@@ -22,9 +22,9 @@ def get_format_length(format)
              1.5 
            when 'UYVY', 'VYUY', 'YUYV', 'YVYU', 'NV16', 'NV61', 'RGB565X', 'RGBR', 'RGBP'
              2
-           when 'BGR24', 'RGB24'
+           when 'BGR24', 'RGB24', 'RGB3', 'BGR3'
              3
-           when 'RGB32', 'BGR32'
+           when 'RGB32', 'BGR32', 'RGB4', 'BGR4'
              4
            end
 end
