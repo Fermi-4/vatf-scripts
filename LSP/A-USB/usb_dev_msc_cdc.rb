@@ -190,6 +190,7 @@ def usb_dev_msc()
       command = "umount "+sd_drive
       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)      
       command = "modprobe g_mass_storage file="+sd_dev+" stall=0 removable=1"
+      @equipment['server2'].send_sudo_cmd("dmesg -c", @equipment['server2'].prompt, 5)
     
     when $cmd.match(/_msc_usb/)
       command = "umount /media/sda1"
@@ -213,6 +214,8 @@ def usb_dev_msc()
 
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   response = @equipment['dut1'].response
+  @equipment['server2'].send_sudo_cmd("dmesg", @equipment['server2'].prompt, 5)
+  dmesg_output = @equipment['server2'].response
   if response.include?('Error')
     $result = 1
     $result_message = "g_mass_storage.ko insertion failed"
@@ -232,19 +235,25 @@ def usb_dev_msc()
   mscmount= find_newmedia()
   puts "mscdev =#{mscdev}"
   puts "mscmount =#{mscmount}"
-  if mscdev == mscmount then
+  if (mscdev == '')
+     # check dmesg
+    mscdev=dmesg_output.match /sd\S/ 
+    puts "MSCDEV is #{mscdev}\n"
+  end
+  if (mscdev == '')
 
     puts "Host does not detect any USB device"
     $result = 1
     $result_message = "Host PC did not detect a USB device"
     # if (simultaneous_host_device_test)
      if (@test_params.params_control.instance_variable_defined?(:@simultaneous_host))
-     @stop_test=true
+       @stop_test=true
     end
     return
   end
-
-  @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
+  if (mscmount != '')
+     @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
+  end
   mountfolder = 'test'
   @equipment['server2'].send_sudo_cmd("mkdir -p /media/#{mountfolder}", @equipment['server2'].prompt , 30)
   mscmount = "/media/#{mountfolder}"
@@ -453,7 +462,7 @@ end
 #ping test
 def pingtest_cdc(server_usb_interface, packet_count, zlp_test=0)
   packetsize=Array.new
-  if (zlp_test=1)
+  if (zlp_test==1)
      packet_count=3
      (470..500).each do |n|
        packetsize.push n
@@ -629,7 +638,7 @@ def find_newdevice()
     end
   end
   end
-return dev
+  return dev
 end 
 
 #Finding /media mount point
