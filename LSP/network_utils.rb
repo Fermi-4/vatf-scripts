@@ -80,6 +80,13 @@ module NetworkUtils
     eth_iface ? eth_iface : nil
   end
 
+  def get_ip_address_by_interface(dev='dut1', eth_iface='eth0')
+    this_equipment = @equipment["#{dev}"]
+    ip_addr = nil
+    this_equipment.send_cmd("ifconfig #{eth_iface} | grep \"inet addr\"")
+    ip_addr =  this_equipment.response.split(":")[1].split("Bcast")[0].strip!
+  end
+
   def convert_mac_to_ipv6_addr(mac_addr, ipv6_prefix)
     mac_items = mac_addr.downcase.split(":")
     ipv6_addr = (ipv6_prefix.include?(":") ? ipv6_prefix.gsub("::", ":") : ipv6_prefix + ":")
