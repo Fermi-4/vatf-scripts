@@ -41,8 +41,14 @@ end
 def sensor_capture(params, timeout, dut=@equipment['dut1'])
   dut.send_cmd("v4l2-ctl --device=#{params['--device']} --try-fmt-video=#{params['--set-fmt-video']}", dut.prompt, timeout)
   res_match = dut.response.match(/Width\/Height\s*:\s*(\d+)\/(\d+).*?/)
-  skip_frames = 150
-  skip_frames = [(200*1280*720/(res_match.captures[0].to_i*res_match.captures[1].to_i)).to_i,400].min if res_match
+  skip_frames = 300
+  cmd = "v4l2-ctl --stream-skip=100"
+  params.merge({'--stream-count' => 1, '--stream-to' => '/dev/null'}).each{|key,val| cmd += ' ' + key + (val.to_s == '' ? '' : '=' + val.to_s)}
+  dut.send_cmd(cmd, dut.prompt, timeout)
+  fps = dut.response.scan(/[\d\.]+(?=\s*fps)/im).map(&:to_f)
+  if !fps.empty?
+    skip_frames=(mean(fps)*10).to_i
+  end
   cmd = "v4l2-ctl --stream-skip=#{skip_frames}"
   params.each{|key,val| cmd += ' ' + key + (val.to_s == '' ? '' : '=' + val.to_s)}
   dut.send_cmd(cmd, dut.prompt, timeout)
