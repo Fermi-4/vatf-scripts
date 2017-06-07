@@ -154,7 +154,7 @@ def run
             qual_res = false
             result = []
             first_frame = 17
-            pass_criteria = 95
+            pass_criteria = 90
             qual_res = false
             frame_pass_info = {}
             failed_frames = -1
