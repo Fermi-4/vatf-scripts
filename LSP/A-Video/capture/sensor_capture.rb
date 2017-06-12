@@ -69,10 +69,16 @@ def run
   capture_mem_needed = 1600*1200*48
   cap_devs.each do |dev|
     capture_device = '/dev/' + dev
+    if @equipment['dut1'].name == 'omapl138-lcdk'
+      next if @equipment['dut1'].send_cmd("v4l2-ctl -d #{capture_device} -I", @equipment['dut1'].prompt, 10).match(/S-Video/im)
+    end
     fmt_opts = get_fmt_options(capture_device)
     capture_opts = get_sensor_capture_options(capture_device)
     dev_interrupt_info = ''
-    if cap_devs.length > 1
+    if @test_params.params_chan.instance_variable_defined?(:@video_standard)
+      dev_interrupt_info = @test_params.params_chan.video_standard[0].upcase()+'_'
+      raise "Unable to set the video standard on the input" if !set_video_standard(@test_params.params_chan.video_standard[0], capture_device)
+    elsif cap_devs.length > 1
       @equipment['dut1'].send_cmd("hexdump /sys/class/video4linux/#{dev}/device/of_node/interrupts",@equipment['dut1'].prompt,10)
       dev_interrupt_info = (@equipment['dut1'].response.scan(/^[0-9A-F ]+/im)*'').gsub(/\s+/,'').sub(/0+/,'') + "_"
     end
