@@ -6,6 +6,7 @@ devkit_path=$2
 c_app_path=$3
 cpp_app_path=$4
 pthread_app_path=$5
+cmake_app_path=$6
 
 # Cleanup temp directory
 function finish {
@@ -45,6 +46,13 @@ tar xf gst-plugins-good-1.2.0.tar.xz  || exit 1
 cd gst-plugins-good-1.2.0/ || exit 1
 ./configure --host=i686 --disable-deinterlace --disable-goom  || exit 1
 make  || exit 1
+
+# Test cmake compilation
+cd $cmake_app_path || exit 1
+cmake . || exit 1
+make || exit 1
+file Tutorial | grep ARM || exit 1
+
 
 echo "All host-side devkit checks passed"
 exit 0
