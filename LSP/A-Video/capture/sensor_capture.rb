@@ -164,11 +164,13 @@ def run
             qual_res = false
             frame_pass_info = {}
             failed_frames = -1
+            fail_info = []
             video_ref_file.each do |v_ref|
               l_files.each do |l_file|
+                fail_info << {'file' => l_file, 'fr' => -1, 'score' => 300}
                 fail_count = 0
                 result = get_psnr_ssim_argb(v_ref, l_file, play_width, play_height, format_length)
-                if result.empty?
+                if result.empty? || !result[first_frame]
                   trial_result = FrameworkConstants::Result[:fail]
                   res_string = "-Capture test failed, could not asses quality\n"
                   break
@@ -179,7 +181,11 @@ def run
                   t_frame_num = i+first_frame
                   frame_res = h['ssim']['r'] >= pass_criteria && h['ssim']['g'] >= pass_criteria && h['ssim']['b'] >= pass_criteria
                   qual_res &= frame_res
-                  fail_count += 1 if !frame_res
+                  if !frame_res
+                    fail_count += 1
+                    fail_sum = h['ssim']['r'] + h['ssim']['g'] + h['ssim']['b']
+                    fail_info[-1].merge!({'fr' => t_frame_num, 'score' => fail_sum}) if fail_info[-1]['score'] > fail_sum
+                  end
                   frame_pass_info["#{v_ref}/#{l_file}"][0] = t_frame_num if frame_res && frame_pass_info["#{v_ref}/#{l_file}"][0] > t_frame_num
                   frame_pass_info["#{v_ref}/#{l_file}"][1] = t_frame_num if frame_res && frame_pass_info["#{v_ref}/#{l_file}"][1] < t_frame_num
                   #vals = Vector::elements(h['ssim'].values)
@@ -213,11 +219,13 @@ def run
               res_string = "-Capture Result: #{failed_frames} video frames failed\n"
               trial_result = FrameworkConstants::Result[:fail]
               if File.exists?(local_test_file)
-                FileUtils.mv(local_test_file, File.join(File.dirname(local_test_file),"failed_#{dev_interrupt_info}#{play_width}x#{play_height}_#{pix_fmt}.raw"))
-                FileUtils.mv(l_files[0], File.join(File.dirname(l_files[0]),"failed_#{dev_interrupt_info}#{play_width}x#{play_height}_#{pix_fmt}.argb")) if format_length != 1 
+                bad_frame = fail_info.max { |a,b| a['score'] <=> b['score'] }
+                @equipment['server1'].send_cmd("dd if=#{bad_frame['file']} of=#{test_frame} bs=$((#{play_width}*#{play_height}*#{format_length != 1 ? 4 : 1})) count=1 skip=#{bad_frame['fr']}")
                 @equipment['server1'].send_cmd("tar -Jcvf #{test_frame}.tar.xz #{test_frame}")
                 failed_frame_info = upload_file("#{test_frame}.tar.xz")
                 @results_html_file.add_paragraph("failed_#{play_width}x#{play_height}_#{pix_fmt}.argb.tar.xz",nil,nil,failed_frame_info[1]) if failed_frame_info
+                FileUtils.mv(local_test_file, File.join(File.dirname(local_test_file),"failed_#{dev_interrupt_info}#{play_width}x#{play_height}_#{pix_fmt}.raw"))
+                FileUtils.mv(l_files[0], File.join(File.dirname(l_files[0]),"failed_#{dev_interrupt_info}#{play_width}x#{play_height}_#{pix_fmt}.argb")) if format_length != 1
               end
             end
           else
