@@ -21,7 +21,7 @@ include LspTargetTestScript
 def setup
   super
   @equipment['dut1'].send_cmd('',@equipment['dut1'].prompt) #making sure that the board is ok
-  @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep && systemctl stop weston && sleep 3',@equipment['dut1'].prompt,10)
+  @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep && /etc/init.d/weston stop && sleep 3',@equipment['dut1'].prompt,10)
   @equipment['server1'].send_cmd("mkdir #{@linux_temp_folder}") if !File.exists?(@linux_temp_folder) #make sure the data folder exists 
   @equipment['dut1'].send_cmd("ls #{@linux_dst_dir} || mkdir #{@linux_dst_dir}",@equipment['dut1'].prompt) 
   @equipment['dut1'].send_cmd("rm #{@linux_dst_dir}/*",@equipment['dut1'].prompt)
@@ -111,6 +111,7 @@ def run
             add_result_row(res_table, device, tst_format, s_mode, true,  "No reference #{ref_file} file found", plane_info_str)
             next
           end
+          ref_path = ref_path[0]
           trunc_local_ref = ref_path
           if File.exists?(ref_path) && File.size(ref_path) != File.size(local_test_file)
             trunc_local_ref = ref_path+'.trunc'
@@ -165,7 +166,7 @@ def get_disp_idxs(drm_props)
 end
 
 #Function to set a drm mode, takes:
-#  params, a hashe that defines a mode to set on
+#  params, a hash that defines a mode to set on
 #          a display by specifying the following hash entries:
 #
 #     format => <value>                     :the format of the data to display, needs to be one of the following
@@ -246,7 +247,7 @@ def set_mode(params, expected=nil, dut=@equipment['dut1'], timeout=600)
       p_string += "#{(p['height'].to_f*p['scale']).to_i}"
       p_string += ' -f '+ p['format'] if p['format']
     end
-    command += " -c #{mode['connectors_names'][0]} -r " \
+    command += " -c @#{mode['connectors_ids'][0]} -r " \
                "@#{mode['crtc_id']}:#{mode['mode']}@#{mode['framerate']}" \
                " -f XR24 #{p_string}"
   end

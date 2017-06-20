@@ -71,8 +71,7 @@ def run
     end
   end
 
-  @equipment['dut1'].send_cmd("ls && echo 'Negative test passed!!!'", @equipment['dut1'].prompt)
-  set_result(@equipment['dut1'].response.match(/^Negative test passed!!!/m) ? \
+  set_result(is_uut_up?(@equipment['dut1']) ? \
                FrameworkConstants::Result[:pass] :
                FrameworkConstants::Result[:fail], @equipment['dut1'].response)
 end
