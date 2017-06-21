@@ -100,7 +100,7 @@ end
 #Function to create the string for plane related tests, takes the
 #same params value as required by set_plane
 def get_plane_string(params)
-  p_string = ' -P '
+  p_string = ' -d -P '
   p_string += params['crtc_id']
   p_string += ':'+ params['width'].to_s + 'x' + params['height'].to_s
   p_string += '+'+ params['xyoffset'].join('+') if params['xyoffset']
@@ -314,7 +314,7 @@ end
 #  params, same params value as required by set_mode
 #  plane_params, same params value as required by set_plane
 def get_mode_string(params, plane_params=nil)
-  result = ' -s '
+  result = ' -d -s '
   result += params['connectors_ids'].join(',')
   result += '@' + params['crtc_id'] if params.has_key?('crtc_id')
   result += ':' + params['mode']
