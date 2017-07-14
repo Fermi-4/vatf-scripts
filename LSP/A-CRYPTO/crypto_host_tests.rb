@@ -22,6 +22,9 @@ end
 def crypto_test
 	runltp_fail = false
 	dut_timeout = @test_params.params_control.instance_variable_defined?(:@dut_timeout) ? @test_params.params_control.dut_timeout[0].to_i : 600
+        # Default behavior will be to fallback to threshold of 9 buffers unless test case specifies otherwise
+	apply_fallback_threshold = @test_params.params_control.instance_variable_defined?(:@apply_fallback_threshold) ? @test_params.params_control.apply_fallback_threshold[0] : "true"
+	fallback_threshold = @test_params.params_control.instance_variable_defined?(:@fallback_threshold) ? @test_params.params_control.fallback_threshold[0] : 9
         if (@test_params.params_control.type[0].match('openssl_hw'))
           @equipment['dut1'].send_cmd("ls /dev|grep crypto",@equipment['dut1'].prompt, 10)
           crypto_device = @equipment['dut1'].response.lines.to_a[1..-1].join.strip
@@ -30,6 +33,9 @@ def crypto_test
             puts "CRYPTO device is not present and hence not hardware accelerated\n"
             set_result(FrameworkConstants::Result[:fail], "Test Failed since hardware crypto device was not found. Verify that cryptodev module is built and inserted before re-running this test.")
             return
+          end
+          if (apply_fallback_threshold.match(/true/i))
+             set_fallback_threshold('dut1', fallback_threshold)
           end
         elsif (@test_params.params_control.type[0].match('openssl_sw'))
           @equipment['dut1'].send_cmd("ls /dev|grep crypto",@equipment['dut1'].prompt, 10)
@@ -79,6 +85,17 @@ def crypto_test
         end
 end
  
+def set_fallback_threshold(device, threshold=9)
+        @equipment[device].send_cmd("find /sys -name fallback|grep 'aes\\\|sham\\\|des\\\|md5' ", @equipment[device].prompt)
+        @equipment[device].response.each_line {|line|
+                                               if (!(line.include? "find") && (line.include? "fallback"))
+                                                 @equipment['server1'].log_info(@equipment[device].send_cmd("cat #{line}", @equipment[device].prompt))
+                                                 @equipment[device].send_cmd("echo #{threshold} > #{line}", @equipment[device].prompt)
+                                                 @equipment[device].send_cmd("cat #{line}", @equipment[device].prompt)
+                                               end
+                                              }
+end
+
 def run_crypto_performance(log)
     perf_data = []
     variable_name=''
