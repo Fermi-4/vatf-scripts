@@ -8,7 +8,7 @@ def setup
   super
   iface = @test_params.params_control.instance_variable_defined?(:@iface) ? @test_params.params_control.iface[0].to_s : 'eth0'
   host_env_name = iface+"_SERVER"
-  server_iface = get_local_iface_name(@equipment['server1'],get_ip_addr('dut1',iface))
+  server_iface = get_local_iface_name(@equipment['server1'],get_ip_address_by_interface('dut1',iface))
   server_ip_address = get_ip_address_by_interface('server1', server_iface)
   @equipment['dut1'].send_cmd("export #{host_env_name}=#{server_ip_address}")
 end

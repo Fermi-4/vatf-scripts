@@ -83,6 +83,10 @@ module NetworkUtils
   def get_ip_address_by_interface(dev='dut1', eth_iface='eth0')
     this_equipment = @equipment["#{dev}"]
     ip_addr = nil
+    #Bring up ethernet interface in case it did not come up autommatically. Skip eth0 because nfs may be in use.
+    if (eth_iface != 'eth0')
+       this_equipment.send_cmd("ifup #{eth_iface}", this_equipment.prompt)
+    end
     this_equipment.send_cmd("ifconfig #{eth_iface} | grep \"inet addr\"")
     ip_addr =  this_equipment.response.split(":")[1].split("Bcast")[0].strip!
   end
