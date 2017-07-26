@@ -223,6 +223,7 @@ module EvmData
     machines['am437x-sk'] = {'3.14' => /Machine model: TI AM437x SK EVM/, }
     machines['am437x-idk'] = {'3.14' => /Machine model: TI AM437x Industrial Development Kit/, }
     machines['am57xx-evm'] = {'0.0' => /Machine model: TI (AM572x EVM|AM5728 BeagleBoard-X15|AM5728 EVM)/, }
+    machines['am57xx-hsevm'] = {'0.0' => /Machine model: TI (AM572x EVM|AM5728 BeagleBoard-X15|AM5728 EVM)/, }
     machines['am572x-idk'] = {'0.0' => /Machine model: TI AM572x IDK/, }
     machines['am571x-idk'] = {'0.0' => /Machine model: TI AM5718 IDK/, }
     machines['k2hk-evm'] = {'0.0' => /Machine model:.*Keystone 2 Kepler\/Hawking EVM/, }
@@ -252,6 +253,7 @@ module EvmData
     machines['am437x-sk'] = {'0.0' => '1000000'}
     machines['am437x-idk'] = {'0.0' => '1000000'}
     machines['am57xx-evm']  = {'0.0' => '1500000'}
+    machines['am57xx-hsevm']  = {'0.0' => '1500000'}
     machines['am571x-idk']  = {'0.0' => '1500000'}
     machines['am572x-idk']  = {'0.0' => '1500000'}
     params.merge!({'dict' => machines})
