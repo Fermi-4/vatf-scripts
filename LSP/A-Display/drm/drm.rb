@@ -38,7 +38,7 @@ def run_mode_test(mode_params, perf_data=[])
     result_string += output
     test_result &= false
   else
-    result_string += 'negative test' if output.match(/Invalid\s*argument/im)
+    result_string += 'negative test' if output.match(/Invalid\s*argument|Not\s*enough\s*bandwidth/im)
     test_result &= true
   end
 
@@ -55,7 +55,7 @@ def run_mode_test(mode_params, perf_data=[])
     result_string += ", #{output}"
     test_result &= false
   else
-    result_string += ', negative test' if output.match(/Invalid\s*argument/im)
+    result_string += ', negative test' if output.match(/Invalid\s*argument|Not\s*enough\s*bandwidth/im)
     test_result &= true
     fps_res = true
   end
