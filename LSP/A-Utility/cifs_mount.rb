@@ -16,10 +16,10 @@ def run
 
   puts "server_iface: " + server_iface
   puts "server_ip_address: " + server_ip_address
-  smba_usrname = @equipment['server1'].smba_usrname
-  smba_passwd = @equipment['server1'].smba_passwd
-  smba_share_name = @equipment['server1'].smba_share_name
-  smba_share_path = @equipment['server1'].smba_share_path
+  smba_usrname = @equipment['server1'].params['smba_usrname']
+  smba_passwd = @equipment['server1'].params['smba_passwd']
+  smba_share_name = @equipment['server1'].params['smba_share_name']
+  smba_share_path = @equipment['server1'].params['smba_share_path']
 
   mnt_point = '/mnt/smba_mnt'
   mnt_fs = 'cifs'
