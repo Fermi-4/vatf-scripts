@@ -136,6 +136,9 @@ module LspTestScript
                              @test_params.instance_variable_defined?(:@var_fit_image_name) ? @test_params.var_fit_image_name :
                              new_params['fit'] != '' ? File.basename(new_params['fit']) : 'fit'
 
+    new_params['fit_config_suffix'] = new_params['fit_config_suffix'] ? new_params['fit_config_suffix'] :
+                             @test_params.params_chan.instance_variable_defined?(:@fit_config_suffix) ? @test_params.params_chan.fit_config_suffix[0] : ''
+
     new_params['dtb']        = new_params['dtb'] ? new_params['dtb'] : 
                              @test_params.instance_variable_defined?(:@dtb) ? @test_params.dtb : 
                              @test_params.instance_variable_defined?(:@dtb_file) ? @test_params.dtb_file : 
