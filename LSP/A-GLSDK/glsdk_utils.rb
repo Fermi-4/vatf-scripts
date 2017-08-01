@@ -36,7 +36,7 @@
 module GlsdkUtils
   
   def get_glsdk_git_repository()
-    glsdk_git_repository = "git://gitorious.design.ti.com/glsdk-jenkins-automation/glsdk-jenkins-automation.git"
+    glsdk_git_repository = "https://bitbucket.itg.ti.com/scm/glsdk/glsdk-product-test.git"
     glsdk_git_repository = @test_params.var_glsdk_git_repo.tr("\"", "") if @test_params.instance_variable_defined?(:@var_glsdk_git_repo)
     return glsdk_git_repository
   end
@@ -60,7 +60,7 @@ module GlsdkUtils
   end
   
   def get_glsdk_directory()
-    glsdk_dir = File.join(get_glsdk_clone_to_directory(), "glsdk-jenkins-automation")
+    glsdk_dir = File.join(get_glsdk_clone_to_directory(), "glsdk-product-test")
     glsdk_dir = @test_params.var_glsdk_dir.tr("\"", "") if @test_params.instance_variable_defined?(:@var_glsdk_dir)
     return glsdk_dir
   end
