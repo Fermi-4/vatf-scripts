@@ -190,6 +190,52 @@ module LspTestScript
     new_params['boot_cmds']  = new_params['boot_cmds'] ? new_params['boot_cmds'] : 
                              @test_params.instance_variable_defined?(:@boot_cmds) ? @test_params.boot_cmds : 
                              ''     
+    # New Simulator SW assets
+    new_params['atf']     = new_params['atf'] ? new_params['atf'] :
+                             @test_params.instance_variable_defined?(:@atf) ? @test_params.atf :
+                             @test_params.instance_variable_defined?(:@atf_file) ? @test_params.atf_file :
+                             ''
+    new_params['atf_dev'] = new_params['atf_dev'] ? new_params['atf_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@atf_dev) ? @test_params.params_chan.atf_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_atf_dev) ? @test_params.var_atf_dev :
+                             new_params['atf'] != '' ? 'eth' : 'none'
+    new_params['atf_image_name'] = new_params['atf_image_name'] ? new_params['atf_image_name'] :
+                             @test_params.instance_variable_defined?(:@var_atf_image_name) ? @test_params.var_atf_image_name :
+                             new_params['atf'] != '' ? File.basename(new_params['atf']) : 'atf'
+    new_params['atf_fdt']     = new_params['atf_fdt'] ? new_params['atf_fdt'] :
+                             @test_params.instance_variable_defined?(:@atf_fdt) ? @test_params.atf_fdt :
+                             @test_params.instance_variable_defined?(:@atf_fdt_file) ? @test_params.atf_fdt_file :
+                             ''
+    new_params['atf_fdt_dev'] = new_params['atf_fdt_dev'] ? new_params['atf_fdt_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@atf_fdt_dev) ? @test_params.params_chan.atf_fdt_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_atf_fdt_dev) ? @test_params.var_atf_fdt_dev :
+                             new_params['atf_fdt'] != '' ? 'eth' : 'none'
+    new_params['atf_fdt_image_name'] = new_params['atf_fdt_image_name'] ? new_params['atf_fdt_image_name'] :
+                             @test_params.instance_variable_defined?(:@var_atf_fdt_image_name) ? @test_params.var_atf_fdt_image_name :
+                             new_params['atf_fdt'] != '' ? File.basename(new_params['atf_fdt']) : 'atf_fdt'
+    new_params['teeos']     = new_params['teeos'] ? new_params['teeos'] :
+                             @test_params.instance_variable_defined?(:@teeos) ? @test_params.teeos :
+                             @test_params.instance_variable_defined?(:@teeos_file) ? @test_params.teeos_file :
+                             ''
+    new_params['teeos_dev'] = new_params['teeos_dev'] ? new_params['teeos_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@teeos_dev) ? @test_params.params_chan.teeos_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_teeos_dev) ? @test_params.var_teeos_dev :
+                             new_params['teeos'] != '' ? 'eth' : 'none'
+    new_params['teeos_image_name'] = new_params['teeos_image_name'] ? new_params['teeos_image_name'] :
+                             @test_params.instance_variable_defined?(:@var_teeos_image_name) ? @test_params.var_teeos_image_name :
+                             new_params['teeos'] != '' ? File.basename(new_params['teeos']) : 'teeos'
+    new_params['linux_system']     = new_params['linux_system'] ? new_params['linux_system'] :
+                             @test_params.instance_variable_defined?(:@linux_system) ? @test_params.linux_system :
+                             @test_params.instance_variable_defined?(:@linux_system_file) ? @test_params.linux_system_file :
+                             ''
+    new_params['linux_system_dev'] = new_params['linux_system_dev'] ? new_params['linux_system_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@linux_system_dev) ? @test_params.params_chan.linux_system_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_linux_system_dev) ? @test_params.var_linux_system_dev :
+                             new_params['linux_system'] != '' ? 'eth' : 'none'
+    new_params['linux_system_image_name'] = new_params['linux_system_image_name'] ? new_params['linux_system_image_name'] :
+                             @test_params.instance_variable_defined?(:@var_linux_system_image_name) ? @test_params.var_linux_system_image_name :
+                             new_params['linux_system'] != '' ? File.basename(new_params['linux_system']) : 'linux_system'
+
     new_params = add_dev_loc_to_params(new_params, 'primary_bootloader')
     new_params = add_dev_loc_to_params(new_params, 'secondary_bootloader')
     new_params = add_dev_loc_to_params(new_params, 'kernel')
