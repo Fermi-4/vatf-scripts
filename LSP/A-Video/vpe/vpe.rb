@@ -3,6 +3,7 @@ require File.dirname(__FILE__)+'/../../default_target_test'
 require File.dirname(__FILE__)+'/../../../lib/utils'
 require File.dirname(__FILE__)+'/../play_utils'
 require File.dirname(__FILE__)+'/../f2f_utils'
+require File.dirname(__FILE__)+'/../dev_utils'
 
 include LspTargetTestScript
 
@@ -14,6 +15,7 @@ def run
     set_result(FrameworkConstants::Result[:fail], "Unable to load vpe modules")
     return
   end
+  vpe_dev = '/dev/' + get_type_devices('vpe')[0]
   ref_file_url = @test_params.params_chan.instance_variable_defined?(:@ref_video_url) ? @test_params.params_chan.ref_video_url[0] : nil
   ref_path, dut_src_file = get_file_from_url(@test_params.params_chan.video_url[0], ref_file_url)
   src_format = @test_params.params_chan.src_format[0]
@@ -34,7 +36,7 @@ def run
   local_test_file = File.join(@linux_temp_folder, 'video_tst_file.yuv')
   @equipment['dut1'].send_cmd("rm -rf #{dut_test_file}", @equipment['dut1'].prompt)
   @equipment['server1'].send_cmd("rm -rf #{local_test_file}",@equipment['server1'].prompt)
-  @equipment['dut1'].send_cmd("testvpe #{dut_src_file} #{src_video_width} #{src_video_height} #{src_format} #{dut_test_file} #{video_width} #{video_height} #{test_format} #{interlace} #{translen}", @equipment['dut1'].prompt, 300)
+  @equipment['dut1'].send_cmd("test-v4l2-m2m #{vpe_dev} #{dut_src_file} #{src_video_width} #{src_video_height} #{src_format} #{dut_test_file} #{video_width} #{video_height} #{test_format} #{interlace} #{translen}", @equipment['dut1'].prompt, 300)
   num_frames = @equipment['dut1'].response.match(/frames\s*left\s*(\d+)/im)[1].to_i + 1
   dut_ip = get_ip_addr()
   scp_pull_file(dut_ip, dut_test_file, local_test_file)
