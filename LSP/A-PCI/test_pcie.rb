@@ -5,14 +5,18 @@ require File.dirname(__FILE__)+'/../default_test_module'
    
 include LspTestScript
 def setup
-  # boot up dut1 --- EP board
-  self.as(LspTestScript).setup
   # dut2->RC board  
   add_equipment('dut2', @equipment['dut1'].params['rc']) do |e_class, log_path|
     e_class.new(@equipment['dut1'].params['rc'], log_path)
   end
   @equipment['dut2'].set_api('psp')
   @power_handler.load_power_ports(@equipment['dut2'].power_port)
+
+  # before configuring EP, power down RC
+  @equipment['dut2'].shutdown({'power_handler' => @power_handler})
+
+  # boot up dut1 --- EP board
+  setup_boards('dut1')
 end
 
 def run
@@ -23,13 +27,14 @@ def run
   num_bars = @test_params.params_chan.instance_variable_defined?(:@num_bars) ? @test_params.params_chan.num_bars[0] : '6'   
   rw_sizes = @test_params.params_chan.instance_variable_defined?(:@rw_sizes) ? @test_params.params_chan.rw_sizes[0] : '1 1024'   
   test_duration = @test_params.params_chan.instance_variable_defined?(:@test_duration) ? @test_params.params_chan.test_duration[0] : '60'   
-  # before configuring EP, power down RC
-  @equipment['dut2'].shutdown({'power_handler' => @power_handler})
+
+  deviceid = get_pci_deviceid(@equipment['dut1'].name)
 
   # Config EP
   @equipment['dut1'].send_cmd("cd /sys/kernel/config/pci_ep", @equipment['dut1'].prompt, 20)
 
   @equipment['dut1'].send_cmd("fun_driver_name=`ls /sys/bus/pci-epf/drivers`", @equipment['dut1'].prompt, 20)
+  @equipment['dut1'].send_cmd("fun_driver_name=${fun_driver_name}_k2g", @equipment['dut1'].prompt, 20) if @equipment['dut1'].name.match(/k2g/i)
   epf_dir = "dev/epf/"
   #epf_dir = "" # 4.4kernel
   @equipment['dut1'].send_cmd("mkdir -p #{epf_dir}${fun_driver_name}.0", @equipment['dut1'].prompt, 20)
@@ -38,7 +43,7 @@ def run
   @equipment['dut1'].send_cmd("cat #{epf_dir}${fun_driver_name}.0/vendorid", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("cat #{epf_dir}${fun_driver_name}.0/interrupt_pin", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("echo 0x104c > #{epf_dir}${fun_driver_name}.0/vendorid", @equipment['dut1'].prompt, 20)
-  @equipment['dut1'].send_cmd("echo 0xb500 > #{epf_dir}${fun_driver_name}.0/deviceid", @equipment['dut1'].prompt, 20)
+  @equipment['dut1'].send_cmd("echo #{deviceid} > #{epf_dir}${fun_driver_name}.0/deviceid", @equipment['dut1'].prompt, 20)
   @equipment['dut1'].send_cmd("echo #{msi_int} > #{epf_dir}${fun_driver_name}.0/msi_interrupts", @equipment['dut1'].prompt, 20)
   #@equipment['dut1'].send_cmd("cd /sys/kernel/config/pci_ep", @equipment['dut1'].prompt, 20)
   epc_dir = "dev/"
@@ -68,6 +73,7 @@ def run
   raise "pci-endpoint-test driver devnode is missing!" if @equipment['dut2'].response.match(/No\s+such\s+file\s+or\s+directory/i)
 
   i = 0
+  i = 1 if @equipment['dut1'].name.match(/k2g/i)
   while i < num_bars.to_i do
     @equipment['dut2'].send_cmd("pcitest -b #{i}", @equipment['dut2'].prompt, 10)
     if !@equipment['dut2'].response.match(/bar\d+:\s+okay/i)

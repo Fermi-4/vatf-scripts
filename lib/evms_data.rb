@@ -425,6 +425,19 @@ module EvmData
     ! unsupported.include? platform 
   end
 
+  def get_pci_deviceid(platform)
+    case platform.downcase
+      when /k2g/
+        return "0xb00b"
+      when /dra7xx/
+        return "0xb500"
+      when /dra72x/
+        return "0xb501"
+      else
+        raise "PCI Device ID is not defined for #{platform}"
+    end
+  end
+
   # Define eth boot method name
   def get_eth_boot_method(platform)
     case platform.downcase
