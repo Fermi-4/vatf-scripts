@@ -132,7 +132,9 @@ def get_sensor_name(device, dut=@equipment['dut1'])
     ports.each do |p|
       dut.send_cmd("cat #{dev_dir}/#{p}/status", dut.prompt)
       if dut.response.match(/^okay/im)
-        dut.send_cmd("hexdump #{dev_dir}/#{p}/endpoint/remote-endpoint", dut.prompt)
+        dut.send_cmd("ls #{dev_dir}/#{p}/",dut.prompt)
+        ep = dut.response.scan(/endpoint[^\s]*/)[0]
+        dut.send_cmd("hexdump #{dev_dir}/#{p}/#{ep}/remote-endpoint", dut.prompt)
         handle = dut.response.match(/0000000[^\r\n]+/im)[0].strip()
         dut.send_cmd("find #{fw_dir} -name 'phandle' -print -exec hexdump {} \\; | grep -B1 '#{handle}'", dut.prompt)
         sensor_path = dut.response.match(/^#{fw_dir}[^\r\n]+/m)[0].gsub(fw_dir,'').gsub('/port/endpoint/phandle','')
