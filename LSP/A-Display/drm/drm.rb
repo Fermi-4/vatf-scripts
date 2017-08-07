@@ -37,7 +37,7 @@ def run_mode_test(mode_params, perf_data=[])
   if output.match(/cut\s*here/im)
     result_string += output
     test_result &= false
-  elsif output.match(/Invalid\s*argument|Not\s*enough\s*bandwidth/im)
+  elsif output.match(/Invalid\s*argument|Not\s*enough\s*bandwidth|Function\s*not\s*implemented/im)
     result_string += 'negative test' 
     test_result &= true
   elsif output.match(/error/im)
@@ -58,7 +58,7 @@ def run_mode_test(mode_params, perf_data=[])
   if output.match(/cut\s*here/im)
     result_string += ", #{output}"
     test_result &= false 
-  elsif output.match(/Invalid\s*argument|Not\s*enough\s*bandwidth/im)
+  elsif output.match(/Invalid\s*argument|Not\s*enough\s*bandwidth|Function\s*not\s*implemented/im)
     result_string += ', negative test' 
     test_result &= true
     fps_res = true
