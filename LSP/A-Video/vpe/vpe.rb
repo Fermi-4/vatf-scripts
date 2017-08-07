@@ -29,7 +29,7 @@ def run
   interlace = 0
   if @test_params.params_chan.instance_variable_defined?(:@deinterlace)
     interlace = 1
-    src_video_height = (video_height/2).to_i
+    src_video_height = (src_video_height/2).to_i
   end
   translen = 1 + rand(3)
   dut_test_file = File.join(@linux_dst_dir,'video_test_file.yuv')
