@@ -99,7 +99,7 @@ def run
       end
     end
 
-    @equipment['dut1'].wait_for(regex_doneboot,timeout)
+    @equipment['dut1'].wait_for(regex_doneboot,300)
     if !@equipment['dut1'].timeout?
       time_doneboot = Time.now
       @equipment['dut1'].log_info( "---------------------------time_doneboot is: "+time_doneboot.to_s)
