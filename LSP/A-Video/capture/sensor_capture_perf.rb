@@ -124,8 +124,6 @@ end
 
 def get_sensor_name(device, dut=@equipment['dut1'])
   dev_dir = "/sys/class/video4linux/#{device}/device/of_node"
-  fw_dir = "/sys/firmware/devicetree/base"
-  devices = "/sys/devices"
   dut.send_cmd("ls #{dev_dir}",dut.prompt)
   if dut.response.match(/port@\d+/)
     ports = dut.response.scan(/port[^\s]*/)
@@ -134,29 +132,38 @@ def get_sensor_name(device, dut=@equipment['dut1'])
       if dut.response.match(/^okay/im)
         dut.send_cmd("ls #{dev_dir}/#{p}/",dut.prompt)
         ep = dut.response.scan(/endpoint[^\s]*/)[0]
-        dut.send_cmd("hexdump #{dev_dir}/#{p}/#{ep}/remote-endpoint", dut.prompt)
-        handle = dut.response.match(/0000000[^\r\n]+/im)[0].strip()
-        dut.send_cmd("find #{fw_dir} -name 'phandle' -print -exec hexdump {} \\; | grep -B1 '#{handle}'", dut.prompt)
-        sensor_path = dut.response.match(/^#{fw_dir}[^\r\n]+/m)[0].gsub(fw_dir,'').gsub('/port/endpoint/phandle','')
-        dut.send_cmd("grep -sr '#{sensor_path}' #{devices} | grep -v of_node", dut.prompt, 30)
-        sensor_data = dut.response.match(/^\/sys\/.*OF_FULLNAME/m)[0]
-        dut.send_cmd("cat #{File.dirname(sensor_data)}/name | xargs echo \"sensor: \"",dut.prompt)
-        return dut.response.match(/^sensor: ([^\r\n]+)/m).captures[0].strip()
+        return find_sensor_name("#{dev_dir}/#{p}/#{ep}/remote-endpoint", dut)
+      end
+    end
+  elsif dut.response.match(/ports/)
+    dev_dir = dev_dir + '/ports'
+    dut.send_cmd("ls #{dev_dir}",dut.prompt)
+    ports = dut.response.scan(/port@[^\s]*/)
+    ports.each do |p|
+      dut.send_cmd("ls #{dev_dir}/#{p}", dut.prompt)
+      dut.response.scan(/endpoint[^\s]*/).each do |ep|
+        return find_sensor_name("#{dev_dir}/#{p}/#{ep}/remote-endpoint", dut)
       end
     end
   else
     dut.send_cmd("cat #{dev_dir}/status", dut.prompt)
     if dut.response.match(/^okay/im)
-      dut.send_cmd("hexdump #{dev_dir}/port/endpoint/remote-endpoint", dut.prompt)
-      handle = dut.response.match(/0000000[^\r\n]+/im)[0].strip()
-      dut.send_cmd("find #{fw_dir} -name 'phandle' -print -exec hexdump {} \\; | grep -B1 '#{handle}'", dut.prompt)
-      sensor_path = dut.response.match(/^#{fw_dir}[^\r\n]+/m)[0].gsub(fw_dir,'').gsub('/port/endpoint/phandle','')
-      dut.send_cmd("grep -sr '#{sensor_path}' #{devices} | grep -v of_node", dut.prompt, 30)
-      sensor_data = dut.response.match(/^\/sys\/.*OF_FULLNAME/m)[0]
-      dut.send_cmd("cat #{File.dirname(sensor_data)}/name | xargs echo \"sensor: \"",dut.prompt)
-      return dut.response.match(/^sensor: ([^\r\n]+)/m).captures[0].strip()
+      return find_sensor_name("#{dev_dir}/port/endpoint/remote-endpoint", dut)
     end
   end
   nil
+end
+
+def find_sensor_name(ep_path, dut)
+  devices = "/sys/devices"
+  fw_dir = "/sys/firmware/devicetree/base"
+  dut.send_cmd("hexdump #{ep_path}", dut.prompt)
+  handle = dut.response.match(/0000000[^\r\n]+/im)[0].strip()
+  dut.send_cmd("find #{fw_dir} -name 'phandle' -print -exec hexdump {} \\; | grep -B1 '#{handle}'", dut.prompt)
+  sensor_path = dut.response.match(/^#{fw_dir}[^\r\n]+/m)[0].gsub(fw_dir,'').gsub(/\/port\/endpoint.*\/phandle/,'')
+  dut.send_cmd("grep -sr '#{sensor_path}' #{devices} | grep -v of_node", dut.prompt, 30)
+  sensor_data = dut.response.match(/^\/sys\/.*OF_FULLNAME/m)[0]
+  dut.send_cmd("cat #{File.dirname(sensor_data)}/name | xargs echo \"sensor: \"",dut.prompt)
+  return dut.response.match(/^sensor: ([^\r\n]+)/m).captures[0].strip()
 end
 
