@@ -122,7 +122,8 @@ def run
     end
 
   when /fat-mmc/
-    testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000", "0x4000000"] # [4M, 8M, 16M, 32M, 64M]
+    #testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000", "0x4000000"] # [4M, 8M, 16M, 32M, 64M]
+    testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000"] # [4M, 8M, 16M, 32M, 64M]
     @equipment['dut1'].send_cmd("mmc dev #{mmcdev}", @equipment['dut1'].boot_prompt, 10)
     @equipment['dut1'].send_cmd("mmcinfo", @equipment['dut1'].boot_prompt, 10)
 
