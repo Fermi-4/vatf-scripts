@@ -65,6 +65,11 @@ def run
     bparams['dut'].reset_sysboot(bparams['dut'])
     raise e
 
+  ensure
+    #bparams['dut'].boot_loader = nil
+    bparams['dut'].boot_to_bootloader(bparams)
+    bparams['dut'].send_cmd("setenv boot_os 0", bparams['dut'].prompt, 5)
+    bparams['dut'].send_cmd("saveenv", bparams['dut'].prompt, 5)
   end
 
   if result == 0
