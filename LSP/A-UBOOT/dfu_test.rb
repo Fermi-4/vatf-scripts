@@ -162,12 +162,19 @@ puts "filesize:"+filesize
         translated_boot_params['primary_bootloader_dev'] = 'emmc'
       end
       @equipment['dut1'].boot_to_bootloader(translated_boot_params)
-    rescue
+
+    rescue Exception => e
+      @equipment['dut1'].reset_sysboot(translated_boot_params['dut'])
       set_result(FrameworkConstants::Result[:fail], "Test Failed: The board could not boot using the updated MLO/uboot")
     end
   end
 
   set_result(FrameworkConstants::Result[:pass], "Test Pass")
+end
+
+def clean
+  puts "cleaning..."
+  @equipment['dut1'].reset_sysboot(@equipment['dut1'])
 end
 
 def start_dfu_on_target(cmd, exp1, exp2)
