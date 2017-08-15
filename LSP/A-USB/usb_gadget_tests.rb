@@ -52,6 +52,8 @@ def run_performance
   mount_type = @test_params.params_control.instance_variable_defined?(:@dev_type) ? @test_params.params_control.dev_type[0] : 'msc_mmc'
   block_num = @test_params.params_control.instance_variable_defined?(:@number_of_blocks) ? @test_params.params_control.number_of_blocks[0] : 1
   duration = @test_params.params_control.instance_variable_defined?(:@duration) ? @test_params.params_control.duration[0].to_i : 60 
+  test_sequence = @test_params.params_control.instance_variable_defined?(:@testsequence) ? @test_params.params_control.testsequence[0] : "1234567890" 
+  iterations = @test_params.params_control.instance_variable_defined?(:@iterations) ? @test_params.params_control.iterations[0].to_i : 10 
   device_details = Hash.new
 
   if module_name.match(/configfs/)
@@ -60,14 +62,14 @@ def run_performance
      puts "GADGET_TYPES is #{gadget_types}\n"
      command="modprobe g_ffs"
      @equipment['dut1'].send_cmd(command,@equipment['dut1'].prompt)
-     @equipment['server2'].send_sudo_cmd("dmesg -c",@equipment['server2'].prompt)  
+     @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt)  
      @equipment['dut1'].send_cmd("dmesg -c",@equipment['dut1'].prompt)  
      setup_configfs
      sleep 30
-     @equipment['server2'].send_cmd("dmesg",@equipment['server2'].prompt)  
+     @equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
      @equipment['dut1'].send_cmd("dmesg",@equipment['dut1'].prompt)  
      dut_response = @equipment['dut1'].response
-     host_response = @equipment['server2'].response
+     host_response = @equipment['server1'].response
      if (!dut_response.match(/configfs-gadget/))
         set_result(FrameworkConstants::Result[:fail], "#{gadget_types} configfs-gadget not enumerated on DUT.")
         return
@@ -122,7 +124,7 @@ def run_performance
    sleep 20 # starting acm or msc thread a few seconds later to ensure iperf test is setup
    
    if module_name.match(/configfs/)
-     t2 = Thread.new{ start_usb_dev_acm(host_acm_name, "ttyGS0", duration) }
+     t2 = Thread.new{ start_usb_dev_acm(host_acm_name, "ttyGS0", test_sequence, iterations) }
    else
      t2 = Thread.new{ start_usb_dev_msc(device_details['mscmount'], device_details['mscdev'], mode, block_num) }
    end
@@ -150,7 +152,7 @@ def run_performance
              perf_data << {'name' => psize, 'value' => throughput, 'units' => "Mbits/s"}
             }
          }
-   set_result(FrameworkConstants::Result[:pass], "Performance data is are collected.",perf_data)
+   set_result(FrameworkConstants::Result[:pass], "Performance data is collected.",perf_data)
 end
 
 # Configfs Commands to be sent to the Dut
@@ -208,12 +210,12 @@ end
 
 def modprobe_on_device(module_name,gadget_types,action)
   if (action == 'remove')
-    @equipment['server2'].send_sudo_cmd("dmesg -c",@equipment['server2'].prompt)  
+    @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt)  
     cmd = 'modprobe -r'
     @equipment['dut1'].send_cmd("#{cmd} g_#{module_name}",@equipment['dut1'].prompt)  
-    @equipment['server2'].send_cmd("dmesg",@equipment['server2'].prompt)  
+    @equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
     dut_response = @equipment['dut1'].response
-    host_response = @equipment['server2'].response
+    host_response = @equipment['server1'].response
     if (!dut_response.match(/USB disconnect/))
       set_result(FrameworkConstants::Result[:fail], "Disconnect message not seen on target during module removal.")
       return
@@ -244,10 +246,10 @@ def modprobe_on_device(module_name,gadget_types,action)
      command = "umount /media/"+dir_path[mount_type].to_s
      @equipment['dut1'].send_cmd("#{command}",@equipment['dut1'].prompt)
    end
-   @equipment['server2'].send_sudo_cmd("dmesg -c",@equipment['server2'].prompt)  
+   @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt)  
    puts "EXTRA_PARAMS is #{extra_params}\n"
    @equipment['dut1'].send_cmd("#{cmd} g_#{module_name} #{extra_params}",@equipment['dut1'].prompt)  
-   #@equipment['server2'].send_cmd("dmesg",@equipment['server2'].prompt)  
+   #@equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
   end
 end
 
@@ -276,16 +278,17 @@ def check_enum_on_host(gadget_types)
   host_gadget_string = Hash.new
   host_gadget_string = {'mass_storage'=>'usb-storage','ether'=>'cdc_ether',
                        'serial'=>'cdc_acm', 'acm'=>'cdc_acm', 'ncm' => 'cdc_ncm'}
-  @equipment['server2'].send_cmd("dmesg",@equipment['server2'].prompt)  
-  host_response = @equipment['server2'].response
+  system("sleep 10")
+  @equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
+  host_response = @equipment['server1'].response
   # Verify that string matches with gadget type
   gadget_found = false
   gadget_types.each do |gadget|
        if host_response.match(host_gadget_string[gadget])
-            @equipment['server2'].log_info("FOUND in host #{host_gadget_string[gadget]}")
+            @equipment['server1'].log_info("FOUND in host #{host_gadget_string[gadget]}")
             gadget_found = true
        else
-            @equipment['server2'].log_info("NOT FOUND in host #{host_gadget_string[gadget]}")
+            @equipment['server1'].log_info("NOT FOUND in host #{host_gadget_string[gadget]}")
             gadget_found = false
        end                    
   end
@@ -294,23 +297,23 @@ end
 
 def check_mount_interface_on_host(gadget_types)
   module_name = @test_params.params_control.module_name[0]
-  @equipment['server2'].send_sudo_cmd("dmesg -c",@equipment['server2'].prompt)  
-  @equipment['server2'].send_sudo_cmd('bash -c "df | grep /dev > dev_string1.txt"', @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd('bash -c "df | grep /media > media_string1.txt"', @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt)  
+  @equipment['server1'].send_sudo_cmd('bash -c "df | grep /dev > dev_string1.txt"', @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd('bash -c "df | grep /media > media_string1.txt"', @equipment['server1'].prompt , 30)
   modprobe_on_device(module_name, gadget_types, 'insert')
   #system("sleep 20")
-  @equipment['server2'].send_cmd("dmesg",@equipment['server2'].prompt)  
-  host_response =  @equipment['server2'].response
-  @equipment['server2'].send_sudo_cmd('bash -c "df | grep /dev > dev_string2.txt"', @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd('bash -c "df | grep /media > media_string2.txt"', @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
+  host_response =  @equipment['server1'].response
+  @equipment['server1'].send_sudo_cmd('bash -c "df | grep /dev > dev_string2.txt"', @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd('bash -c "df | grep /media > media_string2.txt"', @equipment['server1'].prompt , 30)
   mscdev= find_newdevice()
   mscmount = find_newmedia()
   puts "mscdev =#{mscdev}"
   puts "mscmount =#{mscmount}"
-  @equipment['server2'].send_sudo_cmd("rm dev_string1.txt",@equipment['server2'].prompt)
-  @equipment['server2'].send_sudo_cmd("rm media_string1.txt",@equipment['server2'].prompt)
-  @equipment['server2'].send_sudo_cmd("rm dev_string2.txt",@equipment['server2'].prompt)
-  @equipment['server2'].send_sudo_cmd("rm media_string2.txt",@equipment['server2'].prompt)
+  @equipment['server1'].send_sudo_cmd("rm dev_string1.txt",@equipment['server1'].prompt)
+  @equipment['server1'].send_sudo_cmd("rm media_string1.txt",@equipment['server1'].prompt)
+  @equipment['server1'].send_sudo_cmd("rm dev_string2.txt",@equipment['server1'].prompt)
+  @equipment['server1'].send_sudo_cmd("rm media_string2.txt",@equipment['server1'].prompt)
   if mscdev == mscmount then
     puts "Host does not detect any USB device"
     set_result(FrameworkConstants::Result[:fail], "No new USB mount is reported on host.")
@@ -334,12 +337,12 @@ end
 #MSC test
 def start_usb_dev_msc(mscmount, mscdev, mode, blocknum)
   puts "ENTERED start_usb_dev_msc test\n"
-  @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("umount #{mscmount}", @equipment['server1'].prompt , 30)
   mountfolder = 'test'
-  @equipment['server2'].send_sudo_cmd("mkdir -p /media/#{mountfolder}", @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("mkdir -p /media/#{mountfolder}", @equipment['server1'].prompt , 30)
   
   mscmount = "/media/#{mountfolder}"
-  @equipment['server2'].send_sudo_cmd("mount #{mscdev} #{mscmount}", @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("mount #{mscdev} #{mscmount}", @equipment['server1'].prompt , 30)
   @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)    
   out_file = File.new(File.join(@linux_temp_folder,'msc_test.log'),'w')
   MSC_Unmount_Device("#{mscdev}","#{mscmount}")
@@ -357,7 +360,7 @@ def start_usb_dev_msc(mscmount, mscdev, mode, blocknum)
   out_file_name = File.join(@linux_temp_folder, 'msc_test.log')
   add_log_to_html(out_file_name)
 
-  @equipment['server2'].send_sudo_cmd("rm -rf /media/test", @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("rm -rf /media/test", @equipment['server1'].prompt , 30)
 end
 
 
@@ -380,69 +383,76 @@ def start_usb_dev_cdc(usb_interface,duration)
     return
     end
 
-  command ="bash -c 'ifconfig #{server_usb_interface} #{@equipment['server2'].usb_ip} up'"
- @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt , 5)
-  response = @equipment['server2'].response
+  command ="bash -c 'ifconfig #{server_usb_interface} #{@equipment['server1'].usb_ip} up'"
+ @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 5)
+  response = @equipment['server1'].response
   if response.include?('No such device')
     $result = 1
     set_result(FrameworkConstants::Result[:fail], "Linux system ip address is not assigned properly.")
     return
   end
   system ("sleep 10")
-  #throughtput_hash = Hash.new
   output_string=''
-  #throughput_hash = iperftest_cdc(server_usb_interface)
   output_string = iperftest_cdc(server_usb_interface, duration)
-  #out_file.write(throughput_hash)
   out_file.write(output_string)
   out_file.close
   out_file_name = File.join(@linux_temp_folder, 'cdc_test.log')
   add_log_to_html(out_file_name)
-  #puts "HASH is #{throughput_hash}\n"
 end
 
 
-#ACM test
-def start_usb_dev_acm(host_serial_interface, device_serial_interface, duration)
+# ACM test
+# test_sequence is the string to be sent from ACM port on host PC to ACM client port on dut
+# iterations is the number of times the same test sequence is to be sent
+
+def start_usb_dev_acm(host_serial_interface, device_serial_interface, test_sequence, iterations)
 
     @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)    
     out_file = File.new(File.join(@linux_temp_folder,'acm_test.log'),'w')
-  #throughput_hash = iperftest_cdc(server_usb_interface)
-    output = serialtest_acm(host_serial_interface, device_serial_interface, duration)
-    puts "OUTPUT_HOST is #{output['host']}\n"
-    puts "OUTPUT_DUT is #{output['dut']}\n"
-  #out_file.write(throughput_hash)
-    out_file.write(output)
+    serial_result = serialtest_acm(host_serial_interface, device_serial_interface, test_sequence, iterations)
+    out_file.write(serial_result)
     out_file.close
     out_file_name = File.join(@linux_temp_folder, 'acm_test.log')
     add_log_to_html(out_file_name)
-    if (output['host'] != TRUE)
+    if (serial_result['serial_result'] != "pass")
        $result=1
-       $result_comment="Serial Test of configfs did not exit successfully on host side"
+       $result_comment="Serial Test of configfs did not complete successfully "
        set_result(FrameworkConstants::Result[:fail], "Serial Test of configfs did not exit successfully on host side.")
        return
     end
     
 end
 
-# linux-serial-test application is being used to test the serial interface.
-# Reference: https://github.com/cbrake/linux-serial-test
-# Exit code on host side is being used as a success criterion in this 
-# implementation.
-
-def serialtest_acm(host_interface, device_interface, duration)
+# Echo and cat features are used to validate ACM functionality between host PC and DUT
+def serialtest_acm(host_interface, device_interface, test_sequence, iterations)
    output=Hash.new 
+   pass_count=0
+   dut_cmd="cat /dev/#{device_interface}>/home/root/serial_test.txt &"
+   #host_cmd="cat /dev/#{host_interface} &"
+   host_cmd="echo \"#{test_sequence}\" > /dev/#{host_interface}"
+   
+   for i in 1..iterations
+      dut_output=""
+      @equipment['dut1'].send_cmd(dut_cmd, @equipment['dut1'].prompt)
+      @equipment['server1'].send_cmd(host_cmd, @equipment['server1'].prompt)
+      @equipment['dut1'].send_cmd("kill -9 $(pidof cat)", @equipment['dut1'].prompt)
+      dut_output=@equipment['dut1'].send_cmd("while read p; do
+                                              echo $p
+                                              done </home/root/serial_test.txt", @equipment['dut1'].prompt)
+      dut_output=dut_output.split(/serial_test.txt/)
+      dut_output=dut_output.reverse[0]
+      dut_output=dut_output.split(/#{@equipment['dut1'].login}/)[0].strip
+      if (test_sequence.to_s == dut_output.to_s)
+        pass_count += 1
+      end
+      @equipment['dut1'].send_cmd("rm /home/root/serial_test.txt")
+   end
 
-   baudrate = @test_params.params_control.instance_variable_defined?(:@baudrate) ? @test_params.params_control.baudrate[0].to_i : 115200 
-   latency = @test_params.params_control.instance_variable_defined?(:@latency) ? @test_params.params_control.baudrate[0].to_i : 250 
-   tx_duration = duration-10
-   rx_duration = duration+30
-
-   dut_command= "timeout -t #{rx_duration} linux-serial-test -c -B -s -e -p /dev/#{device_interface} -b #{baudrate} -o #{tx_duration} -i #{rx_duration} -l #{latency}&"
-   host_command= "linux-serial-test -c -B -s -e -p /dev/#{host_interface} -b #{baudrate} -o #{tx_duration} -i #{rx_duration} -l #{latency}"
-   @equipment['dut1'].send_cmd(dut_command, @equipment['dut1'].prompt)
-   #@equipment['server2'].send_cmd(host_command, @equipment['server2'].prompt)
-   output['host']=system(host_command)
-   output['dut']=''
+   if (pass_count<iterations)
+      output['serial_result']="fail"
+   else
+      output['serial_result']="pass"
+   end
+      output['serial_string']="Pass_count is #{pass_count} and iterations is #{iterations}"
    output
 end
