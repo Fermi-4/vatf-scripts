@@ -12,8 +12,8 @@ def run
   setup_wpantund(@test_params.params_chan.wpantund_git[0])
   @equipment['dut1'].send_cmd("rm -r wpantund*", @equipment['dut1'].prompt, 20)
   transfer_to_dut("wpantund.tar.gz", @equipment['server1'].telnet_ip)
-  result ûuild_wpantund(@test_params.params_chan.constraints[0], @test_params.params_chan.constraints[1])
-  if result ÿ0
+  result = build_wpantund(@test_params.params_chan.constraints[0], @test_params.params_chan.constraints[1])
+  if result == 0
     set_result(FrameworkConstants::Result[:pass], "Test Passed. WPANTUND build successfully on target")
   else
     set_result(FrameworkConstants::Result[:fail], "Test Failed. WPANTUND build failed on target")
@@ -31,12 +31,12 @@ def build_wpantund(pass_crit,fail_crit)
   @equipment['dut1'].send_cmd("date -s '#{Time.now.strftime("%Y-%m-%d %H:%M:%S")}'", \
                                @equipment['dut1'].prompt, 10)
   @equipment['dut1'].send_cmd("./configure", @equipment['dut1'].prompt, 300)
-  dut_log ÿequipment['dut1'].response
+  dut_log = @equipment['dut1'].response
   @equipment['dut1'].send_cmd("make", @equipment['dut1'].prompt, 1500)
-  dut_log +ÿequipment['dut1'].response
+  dut_log += @equipment['dut1'].response
   @equipment['dut1'].send_cmd("make install", @equipment['dut1'].prompt, 300)
-  dut_log +ÿequipment['dut1'].response
-  if @equipment['dut1'].timeout? or !(dut_log ÿ/(#{pass_crit})/) or (dut_log ÿ/(#{fail_crit})/)
+  dut_log += @equipment['dut1'].response
+  if @equipment['dut1'].timeout? or !(dut_log =~ /(#{pass_crit})/) or (dut_log =~ /(#{fail_crit})/)
     return 1
   else
     return 0
