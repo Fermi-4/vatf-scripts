@@ -429,9 +429,9 @@ module EvmData
     case platform.downcase
       when /k2g/
         return "0xb00b"
-      when /dra7xx/
+      when /dra7xx/i
         return "0xb500"
-      when /dra72x/
+      when /dra71x|dra72x/i
         return "0xb501"
       else
         raise "PCI Device ID is not defined for #{platform}"
