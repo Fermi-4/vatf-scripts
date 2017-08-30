@@ -138,7 +138,7 @@ module EvmData
     case platform
     when /^k2.{0,2}-(hs){0,1}evm/
       return {'secondary_bootloader' => '0'}
-    when /dra7xx-evm|dra72x-evm|dra7xx-hsevm|dra72x-hsevm|am571x-idk|am572x-idk/
+    when /dra7|am571x-idk|am572x-idk/
       return {'primary_bootloader' => '0', 'secondary_bootloader' => '0x40000', 'dtb' => '0x140000', 'kernel' => '0x1e0000'}
     else
       raise "get_qspi_loc: No location is being specified for QSPI partitions for #{platform}"
