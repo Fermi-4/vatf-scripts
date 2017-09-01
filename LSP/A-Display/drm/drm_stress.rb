@@ -38,18 +38,26 @@ def run
   end
 
   modes.each do |t_mode|
-    res, fps_data = run_perf_sync_flip_test(t_mode, @equipment['dut1'], connector_test_time + 300) do
+    res, fps_data, output = run_perf_sync_flip_test(t_mode, @equipment['dut1'], connector_test_time + 300) do
                             sleep connector_test_time
                         end
-    test_result &= res
+    if output.match(/cut\s*here/im)
+      test_result &= false
+    elsif output.match(/Invalid\s*argument|Not\s*enough\s*bandwidth|Function\s*not\s*implemented/im)
+      test_result &= true
+    elsif output.match(/error/im)
+      test_result &= false
+    else
+      test_result &= res
+    end
     @results_html_file.add_rows_to_table(res_table,[[t_mode.to_s, 
                                          res ? ["Passed",{:bgcolor => "green"}] : 
                                          ["Failed",{:bgcolor => "red"}]]])
   end
-  if test_result
-    set_result(FrameworkConstants::Result[:pass], "DRM Stress Test Passed", perf_data)
+  if test_result && is_uut_up?(@equipment['dut1'])
+    set_result(FrameworkConstants::Result[:pass], "DRM Stress Test Passed", [])
   else
-    set_result(FrameworkConstants::Result[:fail], "DRM Stress Test failed", perf_data)
+    set_result(FrameworkConstants::Result[:fail], "DRM Stress Test failed", [])
   end
 end
 
