@@ -357,7 +357,7 @@ module EvmData
   # Define usb controller instance for usb gadget
   def get_usb_gadget_number(platform)
     case platform.downcase
-    when "am57xx-evm"
+    when /am57/
       return 1
     else
       return 0
