@@ -48,6 +48,12 @@ def run
     end
     i += 1
     sleep 5
+    # wait until 30 seconds (3 * 10) for board prompt
+    if ! @equipment['dut1'].at_prompt?({'prompt' => @equipment['dut1'].prompt, 'wait' => 10})
+      msg = "Board did not return to prompt"
+      @equipment['dut1'].log_info(msg)
+      raise msg
+    end
   end # end of while
 
   puts "unit: " + unit.to_s
