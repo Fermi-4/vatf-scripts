@@ -15,7 +15,7 @@ def run
   @results_html_file.add_paragraph("")
   test_result = false
   comment = "Failed: "
-  @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep && systemctl stop weston && sleep 3', @equipment['dut1'].prompt)
+  @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep && /etc/init.d/weston stop && sleep 3', @equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd("modetest -c | grep -i connected | grep HDMI | grep -o '^[0-9]*'",@equipment['dut1'].prompt)
   hdmi_conn = @equipment['dut1'].response.match(/(^\d+)/im).captures[0] if @equipment['dut1'].response.match(/^\d+/im)
   case (test_type)

@@ -14,7 +14,7 @@ include LspTestScript
 include CaptureUtils
 
 def run
-  @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep && systemctl stop weston && sleep 3',@equipment['dut1'].prompt,10)
+  @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep && /etc/init.d/weston stop && sleep 3',@equipment['dut1'].prompt,10)
   num_passed = 0
   hpd_times = []
   @results_html_file.add_paragraph("")

@@ -6,7 +6,7 @@ include LspTestScript
 
 def setup
   super
-  @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep && systemctl stop weston && sleep 3',@equipment['dut1'].prompt,10)
+  @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep && /etc/init.d/weston stop && sleep 3',@equipment['dut1'].prompt,10)
 end
 
 def run
