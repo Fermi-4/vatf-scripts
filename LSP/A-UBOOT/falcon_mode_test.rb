@@ -81,8 +81,8 @@ def run
     bparams['dut'].power_cycle(bparams)
     bparams['dut'].connect({'type'=>'serial'})
 
-    60.times {
-      bparams['dut'].send_cmd("c", bparams['dut'].boot_prompt, 0.5)
+    200.times {
+      bparams['dut'].send_cmd("c", bparams['dut'].boot_prompt, 0.1)
       break if !bparams['dut'].timeout?
     }
 
