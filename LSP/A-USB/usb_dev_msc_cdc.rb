@@ -144,8 +144,8 @@ end
 #MSC test
 def usb_dev_msc()
 
-  @equipment['server2'].send_sudo_cmd('bash -c "df | grep /dev > dev_string1.txt"', @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd('bash -c "df | grep /media > media_string1.txt"', @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd('bash -c "df | grep /dev > dev_string1.txt"', @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd('bash -c "df | grep /media > media_string1.txt"', @equipment['server1'].prompt , 30)
 
   command = "depmod -a"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,20)
@@ -190,7 +190,7 @@ def usb_dev_msc()
       command = "umount "+sd_drive
       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)      
       command = "modprobe g_mass_storage file="+sd_dev+" stall=0 removable=1"
-      @equipment['server2'].send_sudo_cmd("dmesg -c", @equipment['server2'].prompt, 5)
+      @equipment['server1'].send_sudo_cmd("dmesg -c", @equipment['server1'].prompt, 5)
     
     when $cmd.match(/_msc_usb/)
       command = "umount /media/sda1"
@@ -214,8 +214,8 @@ def usb_dev_msc()
 
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   response = @equipment['dut1'].response
-  @equipment['server2'].send_sudo_cmd("dmesg", @equipment['server2'].prompt, 5)
-  dmesg_output = @equipment['server2'].response
+  @equipment['server1'].send_sudo_cmd("dmesg", @equipment['server1'].prompt, 5)
+  dmesg_output = @equipment['server1'].response
   if response.include?('Error')
     $result = 1
     $result_message = "g_mass_storage.ko insertion failed"
@@ -229,8 +229,8 @@ def usb_dev_msc()
 
   system ("sleep 20")
 
-  @equipment['server2'].send_sudo_cmd('bash -c "df | grep /dev > dev_string2.txt"', @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd('bash -c "df | grep /media > media_string2.txt"', @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd('bash -c "df | grep /dev > dev_string2.txt"', @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd('bash -c "df | grep /media > media_string2.txt"', @equipment['server1'].prompt , 30)
   mscdev= find_newdevice()
   mscmount= find_newmedia()
   puts "mscdev =#{mscdev}"
@@ -252,12 +252,12 @@ def usb_dev_msc()
     return
   end
   if (mscmount != '')
-     @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
+     @equipment['server1'].send_sudo_cmd("umount #{mscmount}", @equipment['server1'].prompt , 30)
   end
   mountfolder = 'test'
-  @equipment['server2'].send_sudo_cmd("mkdir -p /media/#{mountfolder}", @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("mkdir -p /media/#{mountfolder}", @equipment['server1'].prompt , 30)
   mscmount = "/media/#{mountfolder}"
-  @equipment['server2'].send_sudo_cmd("mount #{mscdev} #{mscmount}", @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("mount #{mscdev} #{mscmount}", @equipment['server1'].prompt , 30)
 
   MSC_Unmount_Device("#{mscdev}","#{mscmount}")
   case
@@ -297,11 +297,11 @@ end
   command = "modprobe -r g_mass_storage"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
 
-  @equipment['server2'].send_sudo_cmd("rm -rf  dev_string1.txt", @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd("rm -rf  dev_string2.txt", @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd("rm -rf  media_string1.txt", @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd("rm -rf  media_string2.txt", @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd("rm -rf /media/test", @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("rm -rf  dev_string1.txt", @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("rm -rf  dev_string2.txt", @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("rm -rf  media_string1.txt", @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("rm -rf  media_string2.txt", @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("rm -rf /media/test", @equipment['server1'].prompt , 30)
 end
 
 
@@ -331,7 +331,7 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
 
   command = "dmesg -c"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,30)
-  @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt,10)
+  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt,10)
 
   system ("sleep 2")
 
@@ -350,9 +350,9 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
   sleep 10
   command = "dmesg"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,4)
-  @equipment['server2'].send_cmd(command, @equipment['server2'].prompt,4)
+  @equipment['server1'].send_cmd(command, @equipment['server1'].prompt,4)
   response = @equipment['dut1'].response
-  response_server = @equipment['server2'].response
+  response_server = @equipment['server1'].response
   if response.include?('usb0')
     puts "#{gadget_name} module inserted succesfully"
   else
@@ -399,9 +399,9 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
 
   #system ("sleep  60")
 
-  command ="bash -c 'ifconfig #{server_usb_interface} #{@equipment['server2'].usb_ip} up'"
-  @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt , 5)
-  response = @equipment['server2'].response
+  command ="bash -c 'ifconfig #{server_usb_interface} #{@equipment['server1'].usb_ip} up'"
+  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 5)
+  response = @equipment['server1'].response
   if response.include?('No such device')
     $result = 1
     $result_message = "Linux system ip address is not assigned properly"
@@ -445,16 +445,16 @@ end
 
 
 def assign_server_ip(server_usb_interface)
-  command ="bash -c 'ifconfig #{server_usb_interface} #{@equipment['server2'].usb_ip} up'"
-  @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt , 5)
-  response = @equipment['server2'].response
+  command ="bash -c 'ifconfig #{server_usb_interface} #{@equipment['server1'].usb_ip} up'"
+  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 5)
+  response = @equipment['server1'].response
   if response.include?('No such device')
     $result = 1
     $result_message = "Linux system ip address is not assigned properly"
     return
   end
   command ="ping -I #{server_usb_interface} #{@equipment['dut1'].usb_ip} -c 3"
-  @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt , 5)
+  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 5)
   system ("sleep 1")
 end
 
@@ -476,7 +476,7 @@ def pingtest_cdc(server_usb_interface, packet_count, zlp_test=0)
   packetsize.each { |psize| 
   #Ping from DUT to host
 
-  command ="ping -c #{packet_count} #{@equipment['server2'].usb_ip} -s #{psize}"
+  command ="ping -c #{packet_count} #{@equipment['server1'].usb_ip} -s #{psize}"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,test_timeout)
   response = @equipment['dut1'].response
   if response.include?(' 0% packet loss')
@@ -490,8 +490,8 @@ def pingtest_cdc(server_usb_interface, packet_count, zlp_test=0)
   #Ping from host to DUT
 
   command="ping -c #{packet_count} #{@equipment['dut1'].usb_ip} -s #{psize}"
-  @equipment['server2'].send_cmd(command, @equipment['server2'].prompt,test_timeout)
-  response = @equipment['server2'].response
+  @equipment['server1'].send_cmd(command, @equipment['server1'].prompt,test_timeout)
+  response = @equipment['server1'].response
   if response.include?(' 0% packet loss')
     puts "Ping from host to DUT is successful "
   else
@@ -514,8 +514,8 @@ def floodpingtest_cdc(server_usb_interface, packet_count)
   #Flood ping from host to DUT
 
   command="ping -f -c #{packet_count} #{@equipment['dut1'].usb_ip} -s #{psize}"
-  @equipment['server2'].send_sudo_cmd(command, @equipment['server2'].prompt,test_timeout)
-  response = @equipment['server2'].response
+  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt,test_timeout)
+  response = @equipment['server1'].response
   if response.include?(' 0% packet loss')
     puts "Flood ping from host to DUT is successful "
   else
@@ -555,8 +555,8 @@ def iperftest_cdc(server_usb_interface, test_duration)
   end
 
   command="iperf -c #{@equipment['dut1'].usb_ip} -w #{wsize}K -d -t #{test_duration}"
-  @equipment['server2'].send_cmd(command, @equipment['server2'].prompt,test_timeout)
-  response = @equipment['server2'].response
+  @equipment['server1'].send_cmd(command, @equipment['server1'].prompt,test_timeout)
+  response = @equipment['server1'].response
   if response.include?('Connection refused')
     $result = 1
     $result_message = "IPERF application could not be started on DUT"
@@ -581,8 +581,8 @@ def iperftest_cdc(server_usb_interface, test_duration)
   system ("ps | grep iperf")
 
   command ="ps"
-  @equipment['server2'].send_cmd(command, @equipment['server2'].prompt,3)
-  response = @equipment['server2'].response
+  @equipment['server1'].send_cmd(command, @equipment['server1'].prompt,3)
+  response = @equipment['server1'].response
   if response.include?('iperf')
     puts "iperf application started succesfully"
   else
@@ -591,7 +591,7 @@ def iperftest_cdc(server_usb_interface, test_duration)
     return 
   end
 
-  command="iperf -c #{@equipment['server2'].usb_ip} -w #{wsize}K -d -t #{test_duration}"
+  command="iperf -c #{@equipment['server1'].usb_ip} -w #{wsize}K -d -t #{test_duration}"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt, test_timeout)
   response = @equipment['dut1'].response
   if response.include?('Connection refused')
@@ -671,7 +671,7 @@ end
 
 def MSC_Unmount_Device(mscdev,mscmount)
 
-  @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("umount #{mscmount}", @equipment['server1'].prompt , 30)
   
 
 end
@@ -681,7 +681,7 @@ end
 
 def MSC_Mount_Device(mscdev, mscmount)
 
-  @equipment['server2'].send_sudo_cmd("mount #{mscdev} #{mscmount}", @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("mount #{mscdev} #{mscmount}", @equipment['server1'].prompt , 30)
 end
 
 
@@ -690,11 +690,11 @@ end
 
 def MSC_Raw_Write(mscmount, mbsize)
 
-  @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd("time dd of=#{mscmount}/#{mbsize}mb if=/dev/zero bs=1M count=#{mbsize} oflag=direct", @equipment['server2'].prompt , 120)
-  response = @equipment['server2'].response
-  @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("time dd of=#{mscmount}/#{mbsize}mb if=/dev/zero bs=1M count=#{mbsize} oflag=direct", @equipment['server1'].prompt , 120)
+  response = @equipment['server1'].response
+  @equipment['server1'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("umount #{mscmount}", @equipment['server1'].prompt , 30)
   system ("sleep 5")
   return response
 end
@@ -704,12 +704,12 @@ end
 
 def MSC_Raw_Read(mscmount, mbsize)
   
-  @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd("time dd if=#{mscmount}/#{mbsize}mb of=/dev/zero bs=1M count=#{mbsize}", @equipment['server2'].prompt , 120)
-  response = @equipment['server2'].response
-  @equipment['server2'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd("umount #{mscmount}", @equipment['server2'].prompt , 30)
-  @equipment['server2'].send_sudo_cmd("sleep 5", @equipment['server2'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("time dd if=#{mscmount}/#{mbsize}mb of=/dev/zero bs=1M count=#{mbsize}", @equipment['server1'].prompt , 120)
+  response = @equipment['server1'].response
+  @equipment['server1'].send_sudo_cmd('bash -c "echo 3 > /proc/sys/vm/drop_caches"', @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("umount #{mscmount}", @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("sleep 5", @equipment['server1'].prompt , 30)
   return response
 end
 
