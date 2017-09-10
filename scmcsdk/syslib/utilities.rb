@@ -1,4 +1,5 @@
 require File.dirname(__FILE__)+'/../armtest/common_utils.rb'
+require File.dirname(__FILE__)+'/../../LSP/A-CRYPTO/crypto_host_tests.rb'
 
 def get_platform()
   if @equipment['dut1'].id.split("_").grep(/k2.?/).size > 0
@@ -3473,6 +3474,7 @@ class IpsecUtilitiesVatf
           @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "modprobe -r #{module_name}", "", @error_bit, 2)
         else
           @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "modprobe #{module_name}", "", @error_bit, 2)
+          set_queue_length('dut1', 300)
           if !module_running?(module_name, @equipment[side_ref])
             @result_text += "Error: Unable to start module: #{module_name}"
             @result += @error_bit

@@ -22,9 +22,10 @@ end
 def crypto_test
 	runltp_fail = false
 	dut_timeout = @test_params.params_control.instance_variable_defined?(:@dut_timeout) ? @test_params.params_control.dut_timeout[0].to_i : 600
-        # Default behavior will be to fallback to threshold of 9 buffers unless test case specifies otherwise
-	apply_fallback_threshold = @test_params.params_control.instance_variable_defined?(:@apply_fallback_threshold) ? @test_params.params_control.apply_fallback_threshold[0] : "true"
+        # Default behavior will be to not fallback to threshold of 9 buffers unless test case specifies otherwise
+	apply_fallback_threshold = @test_params.params_control.instance_variable_defined?(:@apply_fallback_threshold) ? @test_params.params_control.apply_fallback_threshold[0] : "false"
 	fallback_threshold = @test_params.params_control.instance_variable_defined?(:@fallback_threshold) ? @test_params.params_control.fallback_threshold[0] : 9
+	queue_len = @test_params.params_control.instance_variable_defined?(:@queue_length) ? @test_params.params_control.queue_length[0] : 300
         if (@test_params.params_control.type[0].match('openssl_hw'))
           @equipment['dut1'].send_cmd("ls /dev|grep crypto",@equipment['dut1'].prompt, 10)
           crypto_device = @equipment['dut1'].response.lines.to_a[1..-1].join.strip
@@ -37,6 +38,8 @@ def crypto_test
           if (apply_fallback_threshold.match(/true/i))
              set_fallback_threshold('dut1', fallback_threshold)
           end
+
+          set_queue_length('dut1', queue_len)
         elsif (@test_params.params_control.type[0].match('openssl_sw'))
           @equipment['dut1'].send_cmd("ls /dev|grep crypto",@equipment['dut1'].prompt, 10)
           @equipment['dut1'].send_cmd("modprobe -rf omap_aes_driver",@equipment['dut1'].prompt,10)
@@ -91,6 +94,17 @@ def set_fallback_threshold(device, threshold=9)
                                                if (!(line.include? "find") && (line.include? "fallback"))
                                                  @equipment['server1'].log_info(@equipment[device].send_cmd("cat #{line}", @equipment[device].prompt))
                                                  @equipment[device].send_cmd("echo #{threshold} > #{line}", @equipment[device].prompt)
+                                                 @equipment[device].send_cmd("cat #{line}", @equipment[device].prompt)
+                                               end
+                                              }
+end
+
+def set_queue_length(device, queue_len=300)
+        @equipment[device].send_cmd("find /sys -name queue_len|grep 'aes\\\|sham\\\|des\\\|md5' ", @equipment[device].prompt)
+        @equipment[device].response.each_line {|line|
+                                               if (!(line.include? "find") && (line.include? "queue_len"))
+                                                 @equipment['server1'].log_info(@equipment[device].send_cmd("cat #{line}", @equipment[device].prompt))
+                                                 @equipment[device].send_cmd("echo #{queue_len} > #{line}", @equipment[device].prompt)
                                                  @equipment[device].send_cmd("cat #{line}", @equipment[device].prompt)
                                                end
                                               }
