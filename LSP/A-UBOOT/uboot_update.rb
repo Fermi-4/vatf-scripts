@@ -35,6 +35,7 @@ def run
 
     if pre_boot != 'no'
       this_boot_params['dut'].send_cmd("env default -a -f", boot_params['dut'].boot_prompt, 10)
+      this_boot_params['dut'].send_cmd("setenv bootdelay 5", boot_params['dut'].boot_prompt, 10)
       this_boot_params['dut'].send_cmd("saveenv", boot_params['dut'].boot_prompt, 10)
     end
 
@@ -51,6 +52,7 @@ def run
     boot_params['dut'].boot_loader = nil
     boot_params['dut'].boot_to_bootloader(boot_params)
     boot_params['dut'].send_cmd("env default -a -f", boot_params['dut'].boot_prompt, 10)
+    boot_params['dut'].send_cmd("setenv bootdelay 5", boot_params['dut'].boot_prompt, 10)
     boot_params['dut'].send_cmd("saveenv", boot_params['dut'].boot_prompt, 10)
     boot_params['dut'].send_cmd("version", boot_params['dut'].boot_prompt, 10)
     result += 1 if boot_params['dut'].timeout? 
