@@ -94,7 +94,6 @@ def run
       fmt_opts['pixel-format'].each_index do |pix_idx|
         resolution = @test_params.params_chan.instance_variable_defined?(:@scaling) ? fmt_opts['frame-size'][0] : fmt_opts['frame-size'][res_idx]
         pix_fmt = fmt_opts['pixel-format'][pix_idx]
-        next if @test_params.params_chan.instance_variable_defined?(:@scaling) && raw_sensor_fmts_list.include?(pix_fmt)
         width,  height = resolution.split(/x/i)
         f_length = get_format_length(pix_fmt)
         width,  height = get_scaled_resolution(width, height, cap_rand.rand()) if @test_params.params_chan.instance_variable_defined?(:@scaling)
