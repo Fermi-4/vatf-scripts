@@ -77,6 +77,11 @@ module EvmData
                                                        'J6_VDD_1V8' => '0.01', 'EVM_VDD_1V8' => '0.01', 'J6_VDD_DDR' => '0.01',
                                                        'EVM_VDD_DDR' => '0.01', 'VDD_SHV8' => '0.01', 'VDD_SHV5' => '0.01',
                                                        'VDDA_PHY' => '0.01', 'VDDA_USB3V3' => '0.01', 'VDDA_PLL' => '0.01', 'VDDA_1V8_PHY2' => '0.01'}}
+    power_data['dra71x-evm'] = {'power_domains' => ['VDD_CORE', 'VDD_DSP', 'VDDS_1V8', 'VDD_DDR_1V35', 'VDA_1V8_PLL', 'VDA_1V8_PHY',
+                                                    'VDDSHV8', 'VDDA_USB3V3', 'VDDSHV_3V3', 'VDD_DDR'],
+                                'domain_resistors' => {'VDD_CORE' => '0.01', 'VDD_DSP' => '0.01', 'VDDS_1V8' => '0.01', 'VDD_DDR_1V35' => '0.01',
+                                                       'VDA_1V8_PLL' => '0.01', 'VDA_1V8_PHY' => '0.01', 'VDDSHV8' => '0.01',
+                                                       'VDDA_USB3V3' => '0.01', 'VDDSHV_3V3' => '0.01', 'VDD_DDR' => '0.01'}}
     power_data['am57xx-evm'] = {'power_domains' => ['3V3', 'VDD_DSP','CORE_VDD', '5V0', 'VDD_MPU'],
                                 'domain_resistors' => {'3V3' => '0.01', 'VDD_DSP' => '0.01','CORE_VDD' => '0.02',
                                                        '5V0' => '0.01', 'VDD_MPU' => '0.01'}}
@@ -102,6 +107,13 @@ module EvmData
       case domain
       when "VDD_DSPEVE", "VDD_GPU", "VDD_IVA"
         return 'VDD_GPU_IVA_DSPEVE'
+      end
+    when "dra71x-evm"
+      case domain
+      when "VDD_DSPEVE", "VDD_IVA"
+        return 'VDD_DSP'
+      when "VDD_MPU", "VDD_GPU"
+        return 'VDD_CORE'
       end
     end
     return domain
@@ -166,6 +178,7 @@ module EvmData
       'dra7xx-hsevm' => 'dra7-evm.dtb',
       'dra72x-evm' => 'dra72-evm.dtb',
       'dra72x-hsevm' => 'dra72-evm.dtb',
+      'dra71x-evm' => 'dra71-evm.dtb',
       'am57xx-evm' => 'am57xx-evm.dtb',
       'am571x-idk' => 'am571x-idk.dtb',
       'am572x-idk' => 'am572x-idk.dtb',
@@ -197,8 +210,8 @@ module EvmData
     machines['dra7xx-evm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/,
                               '3.14' => /Machine model: TI DRA742/,
                               }
-    machines['dra71x-evm']  = {'0.0' => /Machine model: TI DRA718 EVM/ }
-    machines['dra71x-hsevm']  = {'0.0' => /Machine model: TI DRA718 EVM/ }
+    machines['dra71x-evm']  = {'0.0' => /Machine model: TI DRA71/ }
+    machines['dra71x-hsevm']  = {'0.0' => /Machine model: TI DRA71/ }
     machines['dra72x-evm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/,
                               '3.14' => /Machine model: TI DRA722/,
                               }
@@ -244,8 +257,8 @@ module EvmData
     machines['dra72x-evm']  = {'0.0' => '1500000'}
     machines['dra7xx-hsevm']  = {'0.0' => '1500000'}
     machines['dra72x-hsevm']  = {'0.0' => '1500000'}
-    machines['dra71x-evm']  = {'0.0' => '1500000'}
-    machines['dra71x-hsevm']  = {'0.0' => '1500000'}
+    machines['dra71x-evm']  = {'0.0' => '1000000'}
+    machines['dra71x-hsevm']  = {'0.0' => '1000000'}
     machines['omap5-evm']   = {'0.0' => '1500000'}
     machines['am43xx-epos'] = {'0.0' => '1000000'}
     machines['am43xx-gpevm'] = {'0.0' => '1000000'}
@@ -284,6 +297,7 @@ module EvmData
     machines['am43xx-gpevm'] = {'0.0' => data}
     machines['dra7xx-evm']  = {'0.0' => data}
     machines['dra72x-evm']  = {'0.0' => data}
+    machines['dra71x-evm']  = {'0.0' => data}
     machines['am57xx-evm']  = {'0.0' => data.select{|item| /VDD/.match(item)}}
     params.merge!({'dict' => machines})
     get_cmd(params)
@@ -329,6 +343,7 @@ module EvmData
                                'VDD_MPU' => {'OPP_NOM'=>'0x4A003B20','OPP_OD'=>'0x4A003B24','OPP_HIGH'=>'0x4A003B28'}, 
                               }
     machines['am57xx-evm']   = machines['dra7xx-evm']
+    machines['dra71x-evm']   = machines['dra72x-evm']
     raise "AVS class0 data not defined for #{platform}" if !machines.key?(platform)
     machines[platform]
   end
@@ -337,6 +352,22 @@ module EvmData
   def get_ganged_rails(platform, domain, opp)
     data = get_avs_class0_data(platform)
     case platform.downcase
+    when "dra71x-evm"
+      case domain
+      when "VDD_GPU"
+        return [data['VDD_CORE']['OPP_NOM'], data['VDD_MPU'][opp]]
+      when "VDD_CORE"
+        return [data['VDD_GPU'][opp], data['VDD_MPU'][opp]]
+      when "VDD_MPU"
+        return [data['VDD_GPU'][opp], data['VDD_CORE']['OPP_NOM']]
+      when "VDD_DSPEVE"
+        return [data['VDD_IVA'][opp]]
+      when "VDD_IVA"
+        return [data['VDD_DSPEVE'][opp]]
+      else
+        return []
+      end
+
     when "dra72x-evm"
       case domain
       when "VDD_GPU"
@@ -378,6 +409,15 @@ module EvmData
         end
       }
     
+    when "dra71x-evm"
+      return data.map{|domain,opps|
+        if domain == 'VDD_IVA' or domain == 'VDD_DSPEVE'
+          { domain => opps.select{|name,address| name == "OPP_HIGH"} }
+        else
+          { domain => opps.select{|name,address| name == "OPP_NOM"} }
+        end
+      }
+
     else
       raise "AVS class0 uboot requirements are not defined for #{platform}" 
     end
@@ -399,6 +439,15 @@ module EvmData
         end
       }
 
+    when "dra71x-evm"
+      return data.map{|domain,opps|
+        if domain == 'VDD_IVA' or domain == 'VDD_DSPEVE'
+          { domain => opps.select{|name,address| name == "OPP_HIGH"} }
+        else
+          { domain => opps.select{|name,address| name == "OPP_NOM"} }
+        end
+      }
+
     else
       raise "AVS class0 Linux requirements are not defined for #{platform}" 
     end
@@ -412,6 +461,11 @@ module EvmData
     machines['dra7xx-evm']  = {'CPU' => {'OPP_NOM'=>'1000000','OPP_OD'=>'1176000','OPP_HIGH'=>'1500000'},
                                'GPU' => {'OPP_NOM'=>'425600','OPP_OD'=>'500000', 'OPP_HIGH'=>'532000'},
                                'IVA' => {'OPP_NOM'=>'388300','OPP_OD'=>'430000','OPP_HIGH'=>'532000'},
+                              }
+    machines['dra71x-evm']  = {'CPU' => {'OPP_NOM'=>'1000000'},
+                               'GPU' => {'OPP_NOM'=>'425600'},
+                               'IVA' => {'OPP_NOM'=>'388300','OPP_HIGH'=>'532000'},
+                               'DSP' => {'OPP_NOM'=>'600000','OPP_HIGH'=>'750000'},
                               }
     machines['dra72x-evm']  = machines['dra7xx-evm']      
     machines['am57xx-evm']  = machines['dra7xx-evm']
