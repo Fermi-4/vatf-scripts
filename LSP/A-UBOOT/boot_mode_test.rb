@@ -51,50 +51,81 @@ def run
     end
   end
 
-  begin
+  counter = 0
+  bootfail_cnt = 0
+  loop_count = @test_params.params_chan.instance_variable_defined?(:@loop_count) ? @test_params.params_chan.loop_count[0].to_i : 1
+  while counter < loop_count
+    report_msg "Inside the loop counter = #{counter} "
 
-    # Verify if the board can boot using the updated bootloader
-    sleep 2
-    # powercycle or reset the board to check
-    bparams['dut'].boot_loader = nil
-    case boot_media
-    when /usbeth/
-      staf_mutex("usbeth_boot", 600000) do
+    begin
+      #bparams['dut'].power_cycle(bparams)
+      # Verify if the board can boot using the updated bootloader
+      sleep 2
+      # powercycle or reset the board to check
+      bparams['dut'].boot_loader = nil
+      case boot_media
+      when /usbeth/
+        staf_mutex("usbeth_boot", 600000) do
+          bparams['dut'].boot_to_bootloader(bparams)
+        end
+      else
         bparams['dut'].boot_to_bootloader(bparams)
       end
-    else
-      bparams['dut'].boot_to_bootloader(bparams)
+
+      bparams['dut'].send_cmd("version", bparams['dut'].boot_prompt, 10)
+      result += 1 if bparams['dut'].timeout? 
+      report_msg ("DUT is able to boot from #{boot_media} on iteration #{counter}.")
+
+      test_uboot = @test_params.params_chan.instance_variable_defined?(:@test_uboot) ? @test_params.params_chan.test_uboot[0].downcase : "no"
+      if test_uboot != 'no'
+        bparams['dut'].send_cmd("saveenv", /done|Writing\s+to\s+NAND.*OK/i, 10)
+        
+        if bparams['dut'].timeout? 
+          result += 1 
+          result_msg = result_msg + "saveenv failed when booting from #{boot_media}; "
+        end
+
+        bparams['dut'].send_cmd("mmc rescan; mmc dev 0", bparams['dut'].boot_prompt, 10)
+        if bparams['dut'].response.match(/Card\s+did\s+not\s+respond\s+to\s+voltage\s+select!/i)
+          result += 1 
+          result_msg = result_msg + "mmc card could not be detected when booting from #{boot_media}; "
+        end
+      end
+
+      test_kernel = @test_params.params_chan.instance_variable_defined?(:@test_kernel) ? @test_params.params_chan.test_kernel[0].downcase : "no"
+      if test_kernel == 'yes'
+        raise "kernel is not provided and could not load kernel" if bparams['kernel'].strip == ''
+
+        # load kernel from the boot_media
+        # flash kernel/dtb to boot_media if it is storage type
+        set_bootloader_devs(bparams, boot_media)
+        puts "=============boot params for systemloader============="
+        bparams.each{|k,v| puts "#{k}:#{v}"}
+        if blk_boot_media.include?(boot_media)
+          puts "Updating kernel/dtb..."
+          bparams['dut'].set_systemloader(bparams.merge({'systemloader_class' => SystemLoader::UbootFlashKernelSystemLoader}))
+          bparams['dut'].system_loader.run(bparams)
+        end
+
+        bparams['dut'].set_systemloader(bparams.merge({'systemloader_class' => SystemLoader::UbootKernelSystemLoader}))
+        bparams['dut'].system_loader.run(bparams)
+
+      end
+
+    rescue Exception => e
+      report_msg "Test failed on iteration #{counter}: " + e.to_s + ": " + e.backtrace.to_s
+      result += 1
+      bootfail_cnt += 1
+      bparams['dut'].reset_sysboot(bparams['dut'])
+    ensure
+      counter += 1
     end
-
-  rescue Exception => e
-    bparams['dut'].reset_sysboot(bparams['dut'])
-    raise e
-    
-  end
-
-  bparams['dut'].send_cmd("version", bparams['dut'].boot_prompt, 10)
-  result += 1 if bparams['dut'].timeout? 
-
-  test_uboot = @test_params.params_chan.instance_variable_defined?(:@test_uboot) ? @test_params.params_chan.test_uboot[0].downcase : "no"
-  if test_uboot != 'no'
-    bparams['dut'].send_cmd("saveenv", /done|Writing\s+to\s+NAND.*OK/i, 10)
-    
-    if bparams['dut'].timeout? 
-      result += 1 
-      result_msg = "saveenv failed when booting from #{boot_media}; "
-    end
-
-    bparams['dut'].send_cmd("mmc rescan; mmc dev 0", bparams['dut'].boot_prompt, 10)
-    if bparams['dut'].response.match(/Card\s+did\s+not\s+respond\s+to\s+voltage\s+select!/i)
-      result += 1 
-      result_msg = "mmc card could not be detected when booting from #{boot_media}; "
-    end
-  end
+  end # end of while loop
 
   if result == 0
     set_result(FrameworkConstants::Result[:pass], "This test pass")
   else
-    set_result(FrameworkConstants::Result[:fail], "This test fail! "+result_msg)
+    set_result(FrameworkConstants::Result[:fail], "This test fail! Failed #{bootfail_cnt} times out of #{loop_count}, "+ result_msg)
   end  
 
 end 
@@ -114,12 +145,14 @@ def set_bootloader_devs(params, media)
     bootloader_dev = 'mmc'
     mmc_dev = 0
   when "eth"
-    bootloader_dev = "ethernet"
+    bootloader_dev = "eth"
   else
     bootloader_dev = media 
   end
   params['primary_bootloader_dev'] = bootloader_dev
   params['secondary_bootloader_dev'] = bootloader_dev
+  params['kernel_dev'] = bootloader_dev
+  params['dtb_dev'] = bootloader_dev
   params['mmcdev'] = mmc_dev if defined?(mmc_dev)
 end
 
