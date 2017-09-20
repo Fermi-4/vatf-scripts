@@ -19,6 +19,7 @@ module PlatformSpecificVarNames
       'am43xx-gpevm'=>'0x81000000',
       'am43xx-hsevm'=>'0x81000000',
       'dra7xx-evm'=>'0x80200000',
+      'dra71x-evm'=>'0x80200000',
       'dra7xx-hsevm'=>'0x80200000',
       'am57xx-evm'=>'0x80200000',
       'dra72x-evm'=>'0x80200000',
@@ -42,6 +43,7 @@ module PlatformSpecificVarNames
       'am43xx-gpevm'=>'0x82000000',
       'am43xx-hsevm'=>'0x82000000',
       'dra7xx-evm'=>'0x81200000',
+      'dra71x-evm'=>'0x81200000',
       'dra7xx-hsevm'=>'0x81200000',
       'am57xx-evm'=>'0x81200000',
       'dra72x-evm'=>'0x81200000',
@@ -60,6 +62,7 @@ module PlatformSpecificVarNames
       'am43xx-gpevm'=>'0x84000000',
       'am43xx-hsevm'=>'0x84000000',
       'dra7xx-evm'=>'0x84000000',
+      'dra71x-evm'=>'0x84000000',
       'dra7xx-hsevm'=>'0x84000000',
       'am57xx-evm'=>'0x84000000',
       'dra72x-evm'=>'0x84000000',
@@ -87,6 +90,7 @@ module PlatformSpecificVarNames
       'am43xx-gpevm'=>'81000004',
       'am43xx-hsevm'=>'81000004',
       'dra7xx-evm'=>'80200004',
+      'dra71x-evm'=>'80200004',
       'dra7xx-hsevm'=>'80200004',
       'am57xx-evm'=>'80200004',
       'dra72x-evm'=>'80200004',
@@ -120,6 +124,7 @@ module PlatformSpecificVarNames
       {
       'am335x-evm'=>'00900000',
       'dra7xx-evm'=>'00900000',
+      'dra71x-evm'=>'00900000',
       'dra72x-evm'=>'00900000',
       'am43xx-gpevm'=>'00900000',
       },
@@ -129,6 +134,7 @@ module PlatformSpecificVarNames
     @platform_specific_var_name['qspi_test_addr'].merge!(
       {
       'dra7xx-evm'=>'0x1e0000',
+      'dra71x-evm'=>'0x1e0000',
       'k2g-evm'=>'0x9c0000',
       },
     )
