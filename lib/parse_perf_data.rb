@@ -33,7 +33,11 @@ module ParsePerfomance
         else  
           values = parse_data(metric['regex'], data)
         end
-        perfdata << {'name' => metric['name'], 'value' => values, 'units' => metric['units']}
+        if metric.has_key?('significant_difference')
+          perfdata << {'name' => metric['name'], 'value' => values, 'units' => metric['units'], 'significant_difference' => metric['significant_difference']}
+        else
+          perfdata << {'name' => metric['name'], 'value' => values, 'units' => metric['units']}
+        end
       rescue Exception => e
         puts e.backtrace.to_s
         next
