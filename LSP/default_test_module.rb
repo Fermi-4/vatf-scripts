@@ -163,7 +163,8 @@ module LspTestScript
                              ''                                                          
     new_params['fs_dev']     = new_params['fs_dev'] ? new_params['fs_dev'] : 
                              @test_params.params_chan.instance_variable_defined?(:@fs_dev) ? @test_params.params_chan.fs_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_fs_dev) ? @test_params.var_fs_dev : 'mmc'                                
+                             @test_params.instance_variable_defined?(:@var_fs_dev) ? @test_params.var_fs_dev :
+                             new_params['fs'] != '' ? 'eth' : 'mmc'
     new_params['fs_src_dev']     = new_params['fs_src_dev'] ? new_params['fs_src_dev'] : 
                              @test_params.params_chan.instance_variable_defined?(:@fs_src_dev) ? @test_params.params_chan.fs_src_dev[0] : 
                              @test_params.instance_variable_defined?(:@var_fs_src_dev) ? @test_params.var_fs_src_dev : 
