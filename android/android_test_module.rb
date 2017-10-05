@@ -1,189 +1,155 @@
 require File.dirname(__FILE__)+'/metrics'
 require File.dirname(__FILE__)+'/../lib/plot'
 require File.dirname(__FILE__)+'/keyevents_module'
+require File.dirname(__FILE__)+'/../LSP/default_test_module' 
 
 include Metrics
 include TestPlots
 include AndroidKeyEvents
+include LspTestScript
+
+
+LOG_TAG = "VATF::ANDROID::RESULT::"
+  
+def setup
+  self.as(LspTestScript).setup
+  send_adb_cmd("shell svc power stayon true")
+  send_events_for('__menu__')
+  setupTest(:@test_libs,:@var_test_libs_root)
+end
+
+def clean
+end
+
+def setup_host_side(params={})
+  @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s, 'android')
+  params['dut'] = @equipment['dut1'] if !params['dut']
+  params['server'] = @equipment['server1']  if !params['server']
+  params['dut'].set_api('psp')
+  params['workdir'] = @linux_temp_folder
+
+  boot_params = init_boot_params(params)
+
+  translated_boot_params = translate_boot_params(boot_params)
+
+  tarballs = []
+  @test_params.instance_variables.each  do |i_v|
+    if i_v.to_s.match(/^(?:var_|test_script_root|assign_to|@params)/)
+      next
+    elsif i_v.to_s.end_with?('_tarball')
+      tarballs << @test_params.instance_variable_get(i_v)
+    else
+      img = i_v.to_s.gsub(/^[:@]+/,'')
+      translated_boot_params[img] = @test_params.instance_variable_get(i_v)
+    end
+  end
+
+  translated_boot_params = setup_tarballs(tarballs, @linux_temp_folder+ '/tar_folder', translated_boot_params)
+
+  if tarballs.length < 1
+    setup_nfs translated_boot_params if @test_params.instance_variable_defined?(:@var_nfs) || @test_params.instance_variable_defined?(:@nfs)
+  end
+
+  copy_sw_assets_to_tftproot translated_boot_params
+
+  @android_boot_params = translated_boot_params
+
+  return translated_boot_params
+
+end
 
 module AndroidTest
-    LOG_TAG = "VATF::ANDROID::RESULT::"
-    
-  # output params hash in format expected by BootLoader and SystemLoader classes
-  def translate_boot_params(params)
+
+  #Process the tarballs containing the binaries used for a test. The
+  #function inflates the tarballs and sets the patch of the .imgs files
+  #primary bootloader, secondary bootloader, dtb files and android tools
+  #if not already defined.
+  #Takes: tbs, an array containing the path of the tarballs to be processed
+  #       dest, path of the folder where the tarball will be inflated
+  #       params, Hash where the values of the assets found will be stored
+  def setup_tarballs(tbs, dest, params)
     new_params = params.clone
-    new_params['dut']        = @equipment['dut1']     if !new_params['dut'] 
-    new_params['server']     = @equipment['server1']  if !new_params['server']
-    new_params['primary_bootloader'] = new_params['primary_bootloader'] ? new_params['primary_bootloader'] : 
-                             @test_params.instance_variable_defined?(:@primary_bootloader) ? @test_params.primary_bootloader : 
-                             ''                                
-    new_params['secondary_bootloader'] = new_params['secondary_bootloader'] ? new_params['secondary_bootloader'] : 
-                             @test_params.instance_variable_defined?(:@secondary_bootloader) ? @test_params.secondary_bootloader : 
-                             ''
-    new_params['primary_bootloader_dev']   = new_params['primary_bootloader_dev'] ? new_params['primary_bootloader_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_dev) ? @test_params.params_chan.primary_bootloader_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_primary_bootloader_dev) ? @test_params.var_primary_bootloader_dev : 
-                             new_params['primary_bootloader'] != '' ? 'uart' : 'none'  
-    new_params['secondary_bootloader_dev']   = new_params['secondary_bootloader_dev'] ? new_params['secondary_bootloader_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_dev) ? @test_params.params_chan.secondary_bootloader_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_secondary_bootloader_dev) ? @test_params.var_secondary_bootloader_dev : 
-                             new_params['secondary_bootloader'] != '' ? 'eth' : 'none'  
-    new_params['kernel']     = new_params['kernel'] ? new_params['kernel'] : 
-                             @test_params.instance_variable_defined?(:@kernel) ? @test_params.kernel : 
-                             ''                                
-    new_params['kernel_dev'] = new_params['kernel_dev'] ? new_params['kernel_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@kernel_dev) ? @test_params.params_chan.kernel_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_kernel_dev) ? @test_params.var_kernel_dev : 
-                             new_params['kernel'] != '' ? 'eth' : 'mmc'   
-    new_params['kernel_image_name'] = new_params['kernel_image_name'] ? new_params['kernel_image_name'] : 
-                             @test_params.instance_variable_defined?(:@var_kernel_image_name) ? @test_params.var_kernel_image_name : 
-                             new_params['kernel'] != '' ? File.basename(new_params['kernel']) : 'uImage'                          
-    new_params['kernel_modules'] = new_params['kernel_modules'] ? new_params['kernel_modules'] : 
-                             @test_params.instance_variable_defined?(:@kernel_modules) ? @test_params.kernel_modules : 
-                             ''  
-    new_params['dtb']        = new_params['dtb'] ? new_params['dtb'] : 
-                             @test_params.instance_variable_defined?(:@dtb) ? @test_params.dtb : 
-                             @test_params.instance_variable_defined?(:@dtb_file) ? @test_params.dtb_file : 
-                             ''     
-    new_params['dtb_dev']    = new_params['dtb_dev'] ? new_params['dtb_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@dtb_dev) ? @test_params.params_chan.dtb_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_dtb_dev) ? @test_params.var_dtb_dev : 
-                             new_params['dtb'] != '' ? 'eth' : 'none'   
-    new_params['dtb_image_name'] = new_params['dtb_image_name'] ? new_params['dtb_image_name'] : 
-                             @test_params.instance_variable_defined?(:@var_dtb_image_name) ? @test_params.var_dtb_image_name : 
-                             File.basename(new_params['dtb'])                          
-    new_params['fs']         = new_params['fs'] ? new_params['fs'] : 
-                             @test_params.instance_variable_defined?(:@fs) ? @test_params.fs : 
-                             @test_params.instance_variable_defined?(:@nfs) ? @test_params.nfs : 
-                             @test_params.instance_variable_defined?(:@ramfs) ? @test_params.ramfs : 
-                             ''                                                          
-    new_params['fs_dev']     = new_params['fs_dev'] ? new_params['fs_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@fs_dev) ? @test_params.params_chan.fs_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_fs_dev) ? @test_params.var_fs_dev : 
-                             new_params['fs'] != '' ? 'eth' : 'mmc'                                
-    new_params['fs_type']    = new_params['fs_type'] ? new_params['fs_type'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@fs_type) ? @test_params.params_chan.fs_type[0] : 
-                             @test_params.instance_variable_defined?(:@var_fs_type) ? @test_params.var_fs_type : 
-                             @test_params.instance_variable_defined?(:@nfs) || @test_params.instance_variable_defined?(:@var_nfs) ? 'nfs' : 
-                             @test_params.instance_variable_defined?(:@ramfs) ? 'ramfs' : 
-                             'mmcfs'
-    new_params['fs_image_name'] = new_params['fs_image_name'] ? new_params['fs_image_name'] : 
-                             @test_params.instance_variable_defined?(:@var_fs_image_name) ? @test_params.var_fs_image_name : 
-                             new_params['fs_type'] != 'nfs' ? File.basename(new_params['fs']) : ''                             
+    if tbs.length < 1
+      new_params['fastboot'] = 'fastboot' if !new_params['fastboot']
+      new_params['make_ext4fs'] = 'make_ext4fs' if !new_params['make_ext4fs']
+      new_params['simg2img'] = 'simg2img' if !new_params['simg2img']
+      return new_params
+    end
+
+    tb_check = "#{dest}/tarball_check.md5"
+    installed_check = "#{dest}/installed.md5"
+    new_params['server'].send_cmd("ls #{dest} || mkdir -p #{dest}")
+    new_params['server'].send_cmd("ls #{tb_check} && rm #{tb_check}")
+    new_params['server'].send_cmd("ls #{installed_check} || echo 'New installation so creating entry to trigger install' > #{installed_check}")
+    new_params['server'].send_cmd("md5sum  #{tbs.join(' ')} |  cut -d' ' -f 1 | sort &> #{tb_check}")
+    new_params['server'].send_cmd("diff #{tb_check} #{installed_check} 2>&1")
+    if  new_params['server'].response != ''
+      new_params['server'].send_cmd("rm -rf #{dest}/*")
+      tbs.each do |path|
+        tar_opts = get_tar_options(path,params)
+        raise "Unable to setup #{path} file (#{tar_opts})" if tar_opts.downcase().match(/not\s*tar/)
+        new_params['server'].send_cmd("tar -C #{dest} #{get_tar_options(path,params)} #{path}", /.*/, 2400)
+        raise "Unable to setup #{path}" if new_params['server'].timeout? 
+      end
+      new_params['server'].send_cmd("md5sum  #{tbs.join(' ')} |  cut -d' ' -f 1 | sort > #{installed_check}")
+    end
+
+    ['fastboot', 'make_ext4fs', 'simg2img'].each do |a_u|
+      if !new_params[a_u]
+        new_params['server'].send_cmd("ls #{dest}/#{a_u}")
+        new_params[a_u] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
+      end
+      new_params['server'].send_cmd("chmod 755 #{dest}/#{a_u}")
+    end
+    new_params['server'].send_cmd("ls #{dest}/*.img")
+    new_params['server'].response.split(/[\r\n]+/).each do |img|
+      img_name =File.basename(img,'.img').gsub('-','_')
+      new_params[img_name] = img if !new_params[img_name]
+    end
+    loaders = case new_params['dut'].name
+      when /-hsevm$/i
+        ["u-boot-spl_HS_X-LOADER","HS_u-boot.img"]
+      when /-evm$/i
+        ["MLO","u-boot.img"]
+    end
+    dtb = case new_params['dut'].name
+      when /^dra7xx-/i
+        case params['dut'].id
+          when /revh/i
+            "dra7-evm-lcd-osd.dtb"
+          else
+            "dra7-evm-lcd-lg.dtb"
+        end
+      when /^dra72x-/i
+        case new_params['dut'].id
+          when /revc/i
+            "dra72-evm-revc-lcd-osd101t2045.dtb"
+          else
+            "dra72-evm-lcd-lg.dtb"
+        end
+      when /^dra71x-/i
+        "dra71-evm-lcd-auo-g101evn01.0.dtb"
+      when /^am57xx-/i
+        "am57xx-evm-reva3.dtb"
+    end
+    new_params['server'].send_cmd("ls #{dest}/#{loaders[0]}")
+    new_params['primary_bootloader'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
+    new_params['server'].send_cmd("ls #{dest}/#{loaders[1]}")
+    new_params['secondary_bootloader'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
+    new_params['server'].send_cmd("ls #{dest}/#{dtb}")
+    new_params['dtb'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
     new_params
   end
-  
-  def setup_nfs(params)
-    return(nil) if params['fs_type'] != 'nfs'
-     
-    nfs_root_path_temp  = params['dut'].nfs_root_path
-          
-    if params['server'].kind_of? LinuxLocalHostDriver
-      params['server'].connect({})     # In this case, nothing happens as the server is running locally
-    elsif params['server'].respond_to?(:telnet_port) and params['server'].respond_to?(:telnet_ip) and !params['server'].target.telnet
-      params['server'].connect({'type'=>'telnet'})
-    elsif !params['server'].target.telnet 
-          raise "You need Telnet connectivity to the Linux Server. Please check your bench file" 
-        end
-   
-    params['server'].send_cmd("mkdir -p #{@linux_temp_folder}", params['server'].prompt)
-    if params['fs_type'] == 'nfs' and !params.has_key?('var_nfs')
-      fs = params['fs']
-      fs.gsub!(/\\/,'/')
-      build_id = /\/([^\/\\]+?)\/[\w\.\-]+?$/.match("#{fs.strip}").captures[0]
-  params['server'].send_sudo_cmd("mkdir -p -m 777  #{nfs_root_path_temp}/autofs", params['server'].prompt, 10)  if !File.directory?("#{nfs_root_path_temp}/autofs")   
-      nfs_root_path_temp 	= nfs_root_path_temp + "/autofs/#{build_id}"
-      # Untar nfs filesystem if it doesn't exist
-      if !File.directory?("#{nfs_root_path_temp}/sys")
-        params['server'].send_sudo_cmd("mkdir -p  #{nfs_root_path_temp}", params['server'].prompt, 10)    
-        params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} -jxvf #{fs}", params['server'].prompt, 300)
-      end
-    end
-        
-    if params['kernel_modules'] != '' and params['fs_type'] == 'nfs' and !params.has_key?('var_nfs')
-      params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} -jxvf #{params['kernel_modules']}", params['server'].prompt, 30)
-    end
-      
-    @samba_root_path_temp = nfs_root_path_temp
-    @nfs_root_path_temp   = nfs_root_path_temp
-    nfs_root_path_temp = "#{params['server'].telnet_ip}:#{nfs_root_path_temp}"
-    nfs_root_path_temp = params['var_nfs']  if params.has_key? 'var_nfs'   # Optionally use external nfs server
-    params['nfs_path'] = nfs_root_path_temp
-  end
-      
-  def copy_sw_assets_to_tftproot(params)
-    tmp_path = File.join(@tester.downcase.strip, @test_params.target.downcase.strip, @test_params.platform.downcase.strip)
-    assets = params.select{|k,v| k.match(/_dev/i) && v.match(/eth/i) }.keys.map{|k| k.match(/(.+)_dev/).captures[0] }
-    assets.each do |asset|
-      next if  params[asset] == ''
-      copy_asset(params['server'], params[asset], File.join(params['server'].tftp_path, tmp_path))
-      params[asset+'_image_name'] = File.join(tmp_path, File.basename(params[asset]))
-    end
-  end
 
-  def copy_asset(server, src, dst_dir)
-    if src != dst_dir
-      raise "Please specify TFTP path like /tftproot in Linux server in bench file." if server.tftp_path.to_s == ''
-      server.send_sudo_cmd("mkdir -p -m 777 #{dst_dir}") if !File.exists?(dst_dir)
-      if File.file?(src)
-        FileUtils.cp(src, dst_dir)
-      else 
-        FileUtils.cp_r(File.join(src,'.'), dst_dir)
-      end
-    end
-  end
-  
-  def setup_host_side
-    @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)    
-    
-    boot_params = {
-       'power_handler'     => @power_handler,
-       'platform'          => @test_params.platform.downcase,
-       'tester'            => @tester.downcase,
-       'target'            => @test_params.target.downcase ,
-       'staf_service_name' => @test_params.staf_service_name.to_s
-    }
-		  boot_params['bootargs'] = @test_params.params_chan.bootargs[0] if @test_params.params_chan.instance_variable_defined?(:@bootargs)
-    boot_params['var_nfs']  = @test_params.var_nfs  if @test_params.instance_variable_defined?(:@var_nfs)
-
-    translated_boot_params = translate_boot_params(boot_params)
-
-    setup_nfs translated_boot_params
-
-    copy_sw_assets_to_tftproot translated_boot_params
-
-    return translated_boot_params
-  end
-    
-  def setup
-    translated_boot_params = setup_host_side()
-    
-    @new_keys = (@test_params.params_chan.instance_variable_defined?(:@bootargs))? (get_keys() + @test_params.params_chan.bootargs[0]) : (get_keys()) 
-    if @old_keys != @new_keys
-	    if !(@equipment['dut1'].respond_to?(:serial_port) && @equipment['dut1'].serial_port != nil) && 
-         !(@equipment['dut1'].respond_to?(:serial_server_port) && @equipment['dut1'].serial_server_port != nil)
-      	 raise "You need direct or indirect (i.e. using Telnet/Serial Switch) serial port connectivity to the board to boot. Please check your bench file" 
-      end  
-      @equipment['dut1'].boot(translated_boot_params) 
-    end
-          
-    connect_to_equipment()
-    send_adb_cmd("shell svc power stayon true") 
-    send_events_for('__menu__') 
-    setupTest(:@test_libs,:@var_test_libs_root)
-  end
-	
-  def clean   
-  end
-	
   # Send command to an android device
   def send_adb_cmd (cmd, device=@equipment['dut1'])  
     device.send_adb_cmd(cmd)
   end
   
   # Send command to host (TEE) PC
-  def send_host_cmd (cmd, device=@equipment['dut1'])  
-    device.send_host_cmd(cmd)
+  def send_host_cmd (cmd, expected_match=/.*/, timeout=10, check_cmd_echo=true, device=@equipment['server1'])
+    device.send_cmd(cmd, expected_match, timeout, check_cmd_echo)
+    device.response
   end
     
   # Returns true if named package is installed
@@ -256,28 +222,7 @@ module AndroidTest
     end
     {'response' => response, 'perf_data' => perf_matches, 'res_file' => res_file}
   end
-  
-  def get_keys
-    keys = @test_params.platform.to_s
-    keys
-  end
-    
-  def set_paths(samba, nfs)
-    @samba_root_path_temp = samba
-    @nfs_root_path_temp   = nfs
-  end
-  
-  def connect_to_equipment(equipment='dut1')
-      this_equipment = @equipment["#{equipment}"]
-      if this_equipment.respond_to?(:telnet_port) && this_equipment.telnet_port != nil  && !this_equipment.target.telnet
-        this_equipment.connect({'type'=>'telnet'})
-      elsif ((this_equipment.respond_to?(:serial_port) && this_equipment.serial_port != nil ) || (this_equipment.respond_to?(:serial_server_port) && this_equipment.serial_server_port != nil)) && !this_equipment.target.serial
-        this_equipment.connect({'type'=>'serial'})
-      elsif !this_equipment.target.telnet && !this_equipment.target.serial
-        raise "You need Telnet or Serial port connectivity to #{equipment}. Please check your bench file" 
-      end
-    end
-  
+
   def install_selenium_server
     response = send_adb_cmd "shell ps"
     if !/org\.openqa\.selenium\.android\.app/m.match(response)

@@ -48,9 +48,8 @@ def run
   sys_stats = stop_collecting_stats(@test_params.params_control.collect_stats) if @test_params.params_control.instance_variable_defined?(:@collect_stats)
   fps_values = get_fps
   result,comment,perfdata = save_results(fps_values)
-  sys_stats.each do |current_stats|
-    perfdata.concat(current_stats)
-  end
+  perfdata.concat(sys_stats)
+
   set_result(result,comment,perfdata)
 end 
 
