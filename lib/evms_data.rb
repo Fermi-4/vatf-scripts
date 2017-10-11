@@ -150,7 +150,7 @@ module EvmData
     case platform
     when /^k2.{0,2}-(hs){0,1}evm/
       return {'secondary_bootloader' => '0'}
-    when /dra7|am571x-idk|am572x-idk/
+    when /dra7|am571x-idk|am572x-idk|am574x-idk/
       return {'primary_bootloader' => '0', 'secondary_bootloader' => '0x40000', 'dtb' => '0x140000', 'kernel' => '0x1e0000'}
     else
       raise "get_qspi_loc: No location is being specified for QSPI partitions for #{platform}"
@@ -239,6 +239,7 @@ module EvmData
     machines['am57xx-hsevm'] = {'0.0' => /Machine model: TI (AM572x EVM|AM5728 BeagleBoard-X15|AM5728 EVM)/, }
     machines['am572x-idk'] = {'0.0' => /Machine model: TI AM572x IDK/, }
     machines['am571x-idk'] = {'0.0' => /Machine model: TI (AM5718 IDK|AM571x IDK)/, }
+    machines['am574x-idk'] = {'0.0' => /Machine model: TI AM5748 IDK/, }
     machines['k2hk-evm'] = {'0.0' => /Machine model:.*Keystone 2 Kepler\/Hawking EVM/, }
     machines['k2e-evm'] = {'0.0' => /Machine model:.*Keystone 2 Edison EVM/, }
     machines['k2l-evm'] = {'0.0' => /Machine model:.*Keystone 2 Lamarr EVM/, }
@@ -269,6 +270,7 @@ module EvmData
     machines['am57xx-hsevm']  = {'0.0' => '1500000'}
     machines['am571x-idk']  = {'0.0' => '1500000'}
     machines['am572x-idk']  = {'0.0' => '1500000'}
+    machines['am574x-idk']  = {'0.0' => '1500000'}
     params.merge!({'dict' => machines})
     get_cmd(params)
   end
