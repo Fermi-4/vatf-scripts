@@ -113,7 +113,8 @@ def run
       end
 
     rescue Exception => e
-      report_msg "Test failed on iteration #{counter}: " + e.to_s + ": " + e.backtrace.to_s
+      result_msg = result_msg + "Test failed on iteration #{counter}: " + e.to_s
+      report_msg result_msg + e.backtrace.to_s
       result += 1
       bootfail_cnt += 1
       bparams['dut'].reset_sysboot(bparams['dut'])
@@ -125,7 +126,7 @@ def run
   if result == 0
     set_result(FrameworkConstants::Result[:pass], "This test pass")
   else
-    set_result(FrameworkConstants::Result[:fail], "This test fail! Failed #{bootfail_cnt} times out of #{loop_count}, "+ result_msg)
+    set_result(FrameworkConstants::Result[:fail], "This test fail! #{result_msg}")
   end  
 
 end 
