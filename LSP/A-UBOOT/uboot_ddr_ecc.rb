@@ -48,7 +48,7 @@ def run
     if orig_data != read_data
       set_result(FrameworkConstants::Result[:fail], "Read data with 1-bit ecc is not the same as original data and DDR ECC test failed")
     end 
-    @equipment['dut1'].send_cmd("boot", /Starting\s+kernel/i, 20)
+    @equipment['dut1'].send_cmd("boot", /Starting\s+kernel.*Booting\s+Linux\s+on/i, 30)
   elsif err_cnt.to_i >= 2
     if ecc_test == '0'
       if ! @equipment['dut1'].response.match(/error\s+interrupted.*Reseting\s+the\s+device\s+\.\.\./im)
