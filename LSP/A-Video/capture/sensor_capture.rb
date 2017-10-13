@@ -124,7 +124,7 @@ def run
             filter = 'hqdn3d=20:20' if sub8bit_ch_fmts_list.include?(pix_fmt)
             l_files << convert_to_argb(local_test_file, play_width, play_height, pix_fmt, filter)
             format_length = 4
-            test_frame = File.join(@linux_temp_folder,"tstFrame#{play_width}x#{play_height}.#{pix_fmt}.argb")
+            test_frame = File.join(@linux_temp_folder,"#{dev_interrupt_info}tstFrame#{play_width}x#{play_height}.#{pix_fmt}.argb")
             ref_name = "#{dev_interrupt_info}#{@equipment['dut1'].params['sensor_info']['id']}_#{play_width}x#{play_height}.4.argb"
             brightness_adj = 0
             if raw_sensor_fmts_list.include?(pix_fmt) || sub8bit_ch_fmts_list.include?(pix_fmt)
