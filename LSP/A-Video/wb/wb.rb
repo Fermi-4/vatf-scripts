@@ -161,6 +161,7 @@ def get_video_ext(format)
   
   result['xr24']='bgra'
   result['ar24']='bgra'
+  result['nm12']='nv12'
   
   result[fmt]
 end

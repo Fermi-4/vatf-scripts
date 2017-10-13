@@ -18,7 +18,7 @@ def get_format_length(format)
   return case(format)
            when 'SBGGR8', 'SGBRG8', 'SGRBG8', 'SRGGB8', 'BA81'
              1
-           when 'NV12', 'NV21', 'YU12', 'YV12'
+           when 'NV12', 'NV21', 'YU12', 'YV12', 'NM12'
              1.5 
            when 'UYVY', 'VYUY', 'YUYV', 'YVYU', 'NV16', 'NV61', 'RGB565X', 'RGBR', 'RGBP'
              2

@@ -64,6 +64,7 @@ def process_video(params)
                 "UYVY2X8" => 'uyvy422',
                 "UYVY" => 'uyvy422',
                 "NV12" => 'nv12',
+                "NM12" => 'nv12',
                 "YUV420" => 'yuv420p',
                 "422P" => 'yuv422p',
                 #You need to download and compile raw2rgbpnm from git@gitorious.org:raw2rgbpnm/raw2rgbpnm.git
