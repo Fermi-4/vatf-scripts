@@ -297,7 +297,7 @@ module LspTestScript
     tmp_path = @test_params.staf_service_name.to_s.strip.gsub('@','_')
     assets = params.select{|k,v| k.match(/_dev/i) && v.match(/eth/i) }.keys.map{|k| k.match(/(.+?)(?:_src_dev|_dev)/).captures[0] }
     assets.each do |asset|
-      next if  (params[asset] == '' or (params['host_side_mmc_update'] and asset == 'fs'))
+      next if  (params[asset].to_s == '' or (params['host_side_mmc_update'] and asset == 'fs'))
       copy_asset(params['server'], params[asset], File.join(params['server'].tftp_path, tmp_path))
       params[asset+'_image_name'] = File.join(tmp_path, File.basename(params[asset])).sub(/^\//,'')
     end
