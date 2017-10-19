@@ -93,13 +93,13 @@ end
 #  crtc_id => <value>                      : id of the crtc to used
 #  scale => <value>                        : (Optional) fraction to scale,
 #  xyoffset => [<xoffset>,<yoffset>]       : (Optional) x,y offsets array in pixels, 
-def set_plane(params, dut=@equipment['dut1'], timeout=600)
+def set_plane(params, expected_re=/testing.*?overlay/im, dut=@equipment['dut1'], timeout=600)
   #-P <crtc_id>:<w>x<h>[+<x>+<y>][*<scale>][@<format>]     set a plane
   p_string = ''
   params.each do |plane_inf|
     p_string += get_mode_string(plane_inf)
   end
-  modetest(p_string, dut, timeout) do
+  modetest(p_string, dut, timeout, expected_re) do
     yield
   end
 end
@@ -412,7 +412,7 @@ end
 #                enabled on the board, of the same syntax as the value referenced
 #                by the Connectors: key of the hash returned by get_properties()
 #Returns, a Hash of syntax {<connector id> => [ array of supported pix fmts]}
-def get_supported_fmts(connectors)
+def get_supported_fmts(connectors, dut=@equipment['dut1'])
   pix_fmts = Hash.new(){|h,k| h[k] = []}
   connectors.each do |c_info|
     next if !c_info['modes:']
@@ -421,7 +421,7 @@ def get_supported_fmts(connectors)
     m_params['connectors_ids'] = [c_info['id']]
     MODETEST_PIX_FMTS.each do |current_fmt|
       m_params['format'] = current_fmt
-      mode_str = set_mode([m_params]){sleep 2}
+      mode_str = set_mode([m_params],/setting\s*mode.*?#{dut.prompt}/){sleep 2}
       pix_fmts[c_info['id']] << current_fmt if UNSUPPORTED_FMT_ERR.inject(true) do |t, str| 
                                                     t &&= !mode_str.match(/#{str}/im)
                                                end
@@ -435,7 +435,7 @@ end
 #               enabled on the board, of the same syntax as the value referenced
 #               by the CRTCs: key of the hash returned by get_properties()
 #Returns, a Hash of syntax {<crtc id> => [ array of supported pix fmts]}
-def get_supported_plane_pix_fmts(crtcs_info)
+def get_supported_plane_pix_fmts(crtcs_info, dut=@equipment['dut1'])
   pix_fmts = Hash.new(){|h,k| h[k] = []}
   crtcs_info.each do |c_info|
     p_params = {}
@@ -445,7 +445,7 @@ def get_supported_plane_pix_fmts(crtcs_info)
     p_params['crtc_id'] = c_info['id'] 
     MODETEST_PIX_FMTS.each do |current_fmt|
       p_params['format'] = current_fmt
-      plane_str = set_plane([{'plane'=>p_params}]){sleep 2}
+      plane_str = set_plane([{'plane'=>p_params}], /testing.*?overlay.*?#{dut.prompt}/im){sleep 2}
       pix_fmts[c_info['id']] << current_fmt if UNSUPPORTED_FMT_ERR.inject(true) do |t, str| 
                                                     t &&= !plane_str.match(/#{str}/im)
                                                end
