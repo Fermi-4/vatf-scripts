@@ -85,6 +85,14 @@ module EvmData
     power_data['am57xx-evm'] = {'power_domains' => ['3V3', 'VDD_DSP','CORE_VDD', '5V0', 'VDD_MPU'],
                                 'domain_resistors' => {'3V3' => '0.01', 'VDD_DSP' => '0.01','CORE_VDD' => '0.02',
                                                        '5V0' => '0.01', 'VDD_MPU' => '0.01'}}
+    power_data['dra76x-evm'] = {'power_domains' => ['VDD_MPU', 'VDD_GPU', 'VDD_DSPEVE', 'VDD_CORE',
+                                                    'VDD_IVA', 'VDDR', 'VDDR_SOC',
+                                                    'VDDS_1V8', 'VDD_SDIO', 'VDA_USB',
+                                                    'VDA_PLL', 'VDA_PHY2', 'VDA_PHY1'],
+                                'domain_resistors' => {'VDD_MPU' => '0.01', 'VDD_GPU' => '0.01', 'VDD_DSPEVE' => '0.01', 'VDD_CORE' => '0.01',
+                                                       'VDD_IVA' => '0.01', 'VDDR' => '0.01', 'VDDR_SOC' => '0.01',
+                                                       'VDDS_1V8' => '0.01', 'VDD_SDIO' => '0.01', 'VDA_USB' => '0.01',
+                                                       'VDA_PLL' => '0.01', 'VDA_PHY2' => '0.01', 'VDA_PHY1' => '0.01'}}
 
     return power_data[key]
   end
@@ -218,6 +226,7 @@ module EvmData
     machines['dra7xx-hsevm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/,
                               '3.14' => /Machine model: TI DRA742/,
                               }
+    machines['dra76x-evm']  = {'0.0' => /Machine model: TI DRA76.* EVM/ }
     machines['dra72x-hsevm']  = {'0.0' => /Machine: Generic DRA7XX \(Flattened Device Tree\), model: TI DRA7/,
                               '3.14' => /Machine model: TI DRA722/,
                               }
@@ -254,6 +263,7 @@ module EvmData
     machines['am335x-sk']   = {'0.0' => '1000000'}
     machines['beaglebone']  = {'0.0' => '720000'}
     machines['beaglebone-black'] = {'0.0' => '1000000'}
+    machines['dra76x-evm']  = {'0.0' => '1800000'}
     machines['dra7xx-evm']  = {'0.0' => '1500000'}
     machines['dra72x-evm']  = {'0.0' => '1500000'}
     machines['dra7xx-hsevm']  = {'0.0' => '1500000'}
@@ -282,6 +292,7 @@ module EvmData
     machines['beaglebone']  = {'0.0' => nil}
     machines['beaglebone-black'] = {'0.0' => nil}
     machines['dra7xx-evm']  = {'0.0' => nil}
+    machines['dra76x-evm']  = {'0.0' => nil}
     machines['am57xx-evm']  = {'0.0' => nil}
     machines['omap5-evm']   = {'0.0' => nil}
     machines['am43xx-epos'] = {'0.0' => {'VDD_CORE' => 0.95, 'VDD_MPU' => 0.95}}
@@ -298,6 +309,7 @@ module EvmData
     machines['am335x-evm']  = {'0.0' => data.select{|item| ! /RTC/.match(item)}}
     machines['am43xx-gpevm'] = {'0.0' => data}
     machines['dra7xx-evm']  = {'0.0' => data}
+    machines['dra76x-evm']  = {'0.0' => data}
     machines['dra72x-evm']  = {'0.0' => data}
     machines['dra71x-evm']  = {'0.0' => data}
     machines['am57xx-evm']  = {'0.0' => data.select{|item| /VDD/.match(item)}}
@@ -343,6 +355,12 @@ module EvmData
                                'VDD_IVA' => {'OPP_NOM'=>'0x4A0025CC','OPP_OD'=>'0x4A0025D0','OPP_HIGH'=>'0x4A0025D4'},
                                'VDD_DSPEVE' => {'OPP_NOM'=>'0x4A0025E0','OPP_OD'=>'0x4A0025E4','OPP_HIGH'=>'0x4A0025E8'},
                                'VDD_MPU' => {'OPP_NOM'=>'0x4A003B20','OPP_OD'=>'0x4A003B24','OPP_HIGH'=>'0x4A003B28'}, 
+                              }
+    machines['dra76x-evm']  = {'VDD_IVA' => {'OPP_NOM'=>'0x4A0025CC','OPP_OD'=>'0x4A0025D0','OPP_HIGH'=>'0x4A0025D4', 'OPP_PLUS'=>'0x4A0025D8'},
+                               'VDD_DSPEVE' => {'OPP_NOM'=>'0x4A0025E0','OPP_OD'=>'0x4A0025E4','OPP_HIGH'=>'0x4A0025E8','OPP_PLUS'=>'0x4A0025EC'},
+                               'CORE_VDD' => {'OPP_NOM'=>'0x4A0025F4'},
+                               'VDD_GPU' => {'OPP_NOM'=>'0x4A003B08','OPP_OD'=>'0x4A003B0C','OPP_HIGH'=>'0x4A003B10','OPP_PLUS'=>'0x4A003B14'},
+                               'VDD_MPU' => {'OPP_NOM'=>'0x4A003B20','OPP_OD'=>'0x4A003B24','OPP_HIGH'=>'0x4A003B28','OPP_PLUS'=>'0x4A003B2C'},
                               }
     machines['am57xx-evm']   = machines['dra7xx-evm']
     machines['dra71x-evm']   = machines['dra72x-evm']
@@ -402,7 +420,7 @@ module EvmData
     data = get_avs_class0_data(platform)
     case platform
     
-    when "dra7xx-evm", "dra72x-evm", "am57xx-evm"
+    when "dra7xx-evm", "dra72x-evm", "am57xx-evm", "dra76x-evm"
       return data.map{|domain,opps|
         if domain == 'VDD_IVA' or domain == 'VDD_DSPEVE' or domain == 'VDD_GPU'
           { domain => opps.select{|name,address| name == "OPP_HIGH"} }
@@ -430,10 +448,10 @@ module EvmData
     data = get_avs_class0_data(platform)
     case platform
     
-    when "dra7xx-evm", "am57xx-evm", "dra72x-evm"
+    when "dra7xx-evm", "am57xx-evm", "dra72x-evm", "dra76x-evm"
       return data.map{|domain,opps| 
         if domain == 'VDD_MPU'
-          { domain => opps.select{|name,address| name == "OPP_NOM" or name == "OPP_HIGH" or name == "OPP_OD"} }
+          { domain => opps.select{|name,address| name == "OPP_NOM" or name == "OPP_HIGH" or name == "OPP_OD" or name == "OPP_PLUS"} }
         elsif domain == 'VDD_IVA' or domain == 'VDD_DSPEVE' or domain == 'VDD_GPU'
           { domain => opps.select{|name,address| name == "OPP_HIGH"} }
         else
@@ -468,6 +486,11 @@ module EvmData
                                'GPU' => {'OPP_NOM'=>'425600'},
                                'IVA' => {'OPP_NOM'=>'388300','OPP_HIGH'=>'532000'},
                                'DSP' => {'OPP_NOM'=>'600000','OPP_HIGH'=>'750000'},
+                              }
+    machines['dra76x-evm']  = {'CPU' => {'OPP_NOM'=>'1000000','OPP_OD'=>'1176000','OPP_HIGH'=>'1500000', 'OPP_PLUS'=>'1800000'},
+                               'GPU' => {'OPP_NOM'=>'425600','OPP_OD'=>'500000', 'OPP_HIGH'=>'532000', 'OPP_PLUS'=>'665000'},
+                               'IVA' => {'OPP_NOM'=>'388300','OPP_OD'=>'430000','OPP_HIGH'=>'532000', 'OPP_PLUS'=>'617000'},
+                               'DSP' => {'OPP_NOM'=>'600000','OPP_OD'=>'700000','OPP_HIGH'=>'850000', 'OPP_PLUS'=>'1000000'},
                               }
     machines['dra72x-evm']  = machines['dra7xx-evm']      
     machines['am57xx-evm']  = machines['dra7xx-evm']
