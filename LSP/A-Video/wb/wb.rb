@@ -45,18 +45,7 @@ def run
       test_formats.each do |test_format|
         scaling = @test_params.params_chan.instance_variable_defined?(:@scaling) ? @test_params.params_chan.scaling[0].to_f : get_scaling(src_video_width, src_video_height, prand)
         video_width, video_height = get_scaled_resolution(src_video_width, src_video_height, scaling)
-        format_length = case(test_format.downcase())
-            when 'xr24','ar24'
-              4
-            when 'bg24','rg24'
-              3
-            when 'yuyv','uyvy'
-              2
-            when 'nv12'
-              1.5
-            else
-              4 if @test_params.params_chan.instance_variable_defined?(:@negative_test)
-          end
+        format_length = @test_params.params_chan.instance_variable_defined?(:@negative_test) ? 4 : get_format_length(test_format)
         @equipment['dut1'].send_cmd("rm #{dut_test_file}", @equipment['dut1'].prompt, 30) #Remove previous test file if any
         use_memory(src_video_width.to_i * src_video_height.to_i * 8 * format_length + 5*2**20) do
           @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --set-fmt-video-out=width=#{src_video_width},height=#{src_video_height},pixelformat=#{src_format.upcase()} --stream-from=#{dut_src_file} --set-fmt-video=width=#{video_width},height=#{video_height},pixelformat=#{test_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=#{mmap_buffs} --stream-out-mmap=#{mmap_buffs} --stream-count=#{num_frames} --stream-poll", @equipment['dut1'].prompt, 300)
