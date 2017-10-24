@@ -358,7 +358,7 @@ module EvmData
                               }
     machines['dra76x-evm']  = {'VDD_IVA' => {'OPP_NOM'=>'0x4A0025CC','OPP_OD'=>'0x4A0025D0','OPP_HIGH'=>'0x4A0025D4', 'OPP_PLUS'=>'0x4A0025D8'},
                                'VDD_DSPEVE' => {'OPP_NOM'=>'0x4A0025E0','OPP_OD'=>'0x4A0025E4','OPP_HIGH'=>'0x4A0025E8','OPP_PLUS'=>'0x4A0025EC'},
-                               'CORE_VDD' => {'OPP_NOM'=>'0x4A0025F4'},
+                               'VDD_CORE' => {'OPP_NOM'=>'0x4A0025F4'},
                                'VDD_GPU' => {'OPP_NOM'=>'0x4A003B08','OPP_OD'=>'0x4A003B0C','OPP_HIGH'=>'0x4A003B10','OPP_PLUS'=>'0x4A003B14'},
                                'VDD_MPU' => {'OPP_NOM'=>'0x4A003B20','OPP_OD'=>'0x4A003B24','OPP_HIGH'=>'0x4A003B28','OPP_PLUS'=>'0x4A003B2C'},
                               }
