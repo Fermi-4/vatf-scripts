@@ -28,7 +28,7 @@ end
 def build_wpantund(pass_crit,fail_crit)
   @equipment['dut1'].send_cmd("tar xzvf wpantund.tar.gz", @equipment['dut1'].prompt, 300)
   @equipment['dut1'].send_cmd("cd wpantund", @equipment['dut1'].prompt, 10)
-  @equipment['dut1'].send_cmd("date -s '#{(Time.now + (24*60*60)).strftime("%Y-%m-%d %H:%M:%S")}'", \
+  @equipment['dut1'].send_cmd("date -s '#{Time.now.getutc.strftime("%Y-%m-%d %H:%M:%S")}'", \
                                @equipment['dut1'].prompt, 10)
   @equipment['dut1'].send_cmd("find . -exec touch {} \\;", @equipment['dut1'].prompt, 30)
   @equipment['dut1'].send_cmd("./configure", @equipment['dut1'].prompt, 300)
