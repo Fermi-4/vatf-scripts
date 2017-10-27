@@ -70,16 +70,7 @@ def run
           @equipment['dut1'].send_cmd("ls #{dut_test_file} && rm #{dut_test_file}", @equipment['dut1'].prompt) #Remove previous test file if any
           @equipment['server1'].send_cmd("rm #{local_test_file}") if File.exists?(local_test_file) #Remove local test file, if exists 
           
-          format_length = case(tst_format.downcase())
-            when 'xr24','ar24'
-              4
-            when 'bg24','rg24'
-              3
-            when 'yuyv','uyvy'
-              2
-            when 'nv12'
-              1.5
-          end
+          format_length = get_format_length(tst_format)
 
           v4l2_log = nil
           use_memory(free_mem) do
