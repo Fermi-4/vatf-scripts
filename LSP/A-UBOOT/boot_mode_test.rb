@@ -126,7 +126,7 @@ def run
   if result == 0
     set_result(FrameworkConstants::Result[:pass], "This test pass")
   else
-    set_result(FrameworkConstants::Result[:fail], "This test fail! #{result_msg}")
+    set_result(FrameworkConstants::Result[:fail], "This test failed #{bootfail_cnt.to_s} out of #{loop_count.to_s}.")
   end  
 
 end 

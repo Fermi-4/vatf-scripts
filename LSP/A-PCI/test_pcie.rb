@@ -85,7 +85,7 @@ def run
   while i < num_bars.to_i do
     @equipment['dut2'].send_cmd("pcitest -b #{i}", @equipment['dut2'].prompt, 10)
     if !@equipment['dut2'].response.match(/bar\d+:\s+okay/i)
-      result_msg += result_msg + "BAR #{i} test failed" 
+      report_msg "BAR #{i} test failed" 
       result += 1
     end
     i += 1
@@ -96,7 +96,7 @@ def run
     while i <= msi_int.to_i do
       @equipment['dut2'].send_cmd("pcitest -m #{i}", @equipment['dut2'].prompt, 10)
       if !@equipment['dut2'].response.match(/msi\d+:\s+okay/i)
-        result_msg += result_msg + "MSI Interrupt #{i} test failed" 
+        report_msg "MSI Interrupt #{i} test failed" 
         result += 1
       end
       i += 1
@@ -104,7 +104,7 @@ def run
   else #msi_int=0 for Legacy IRQ
       @equipment['dut2'].send_cmd("pcitest -l", @equipment['dut2'].prompt, 10)
       if @equipment['dut2'].response.match(/not\s+okay/i)
-        result_msg += result_msg + "Legacy Interrupt test failed"
+        report_msg "Legacy Interrupt test failed"
         result += 1
       end
   end
@@ -118,17 +118,17 @@ def run
       puts "size is: #{size}"
       @equipment['dut2'].send_cmd("pcitest -w -s #{size}", @equipment['dut2'].prompt, 120)
       if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
-        result_msg += result_msg + "Write test w/ #{size} failed" 
+        report_msg "Write test w/ #{size} failed" 
         result += 1
       end
       @equipment['dut2'].send_cmd("pcitest -r -s #{size}", @equipment['dut2'].prompt, 120)
       if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
-        result_msg += result_msg + "Read test w/ #{size} failed" 
+        report_msg "Read test w/ #{size} failed" 
         result += 1
       end
       @equipment['dut2'].send_cmd("pcitest -c -s #{size}", @equipment['dut2'].prompt, 120)
       if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
-        result_msg += result_msg + "Copy test w/ #{size} test failed" 
+        report_msg "Copy test w/ #{size} test failed" 
         result += 1
       end
     }
@@ -138,7 +138,7 @@ def run
   if result == 0 
     set_result(FrameworkConstants::Result[:pass], "Test Pass")
   else
-    set_result(FrameworkConstants::Result[:fail], result_msg)
+    set_result(FrameworkConstants::Result[:fail], "Test Failed")
   end
 
 end
