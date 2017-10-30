@@ -11,7 +11,6 @@ end
 
 def run
   result = 0
-  result_msg = ''
   blk_boot_media = ['qspi', 'spi', 'mmc', 'emmc', 'rawmmc-emmc', 'nand', 'usbmsc']
   boot_media = @test_params.params_chan.boot_media[0].downcase
   
@@ -56,6 +55,7 @@ def run
   loop_count = @test_params.params_chan.instance_variable_defined?(:@loop_count) ? @test_params.params_chan.loop_count[0].to_i : 1
   while counter < loop_count
     report_msg "Inside the loop counter = #{counter} "
+    result_msg = ''
 
     begin
       #bparams['dut'].power_cycle(bparams)
