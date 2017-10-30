@@ -12,10 +12,15 @@ def setup
   @equipment['dut2'].set_api('psp')
   # boot 1st EVM
   setup_boards('dut1')
-  params2 = {'platform'=>@equipment['dut2'].name}
-  boot_params2 = translate_params2(params2)
   # boot 2nd EVM
-  setup_boards('dut2', boot_params2)
+  # check if both dut's not same
+  if @equipment['dut1'].name != @equipment['dut2'].name
+    params2 = {'platform'=>@equipment['dut2'].name}
+    boot_params2 = translate_params2(params2)
+    setup_boards('dut2', boot_params2)
+  else
+    setup_boards('dut2')
+  end
 end
 
 def run
