@@ -19,8 +19,6 @@ def setup
 end
 
 def run
-  result_msg = ''
-  result = 0
 
   platform = @test_params.platform
   puts "platform: "+platform
@@ -28,9 +26,9 @@ def run
   @equipment['dut1'].send_cmd("help ddr", @equipment['dut1'].boot_prompt, 5)
 
   if ! @equipment['dut1'].response.match(/ddr\s+ecc_err\s+<addr/i)
-    result += 1
-    result_msg = result_msg + "ddr ecc_err command does not exist ; "
+    result_msg = "ddr ecc_err command does not exist ; "
     set_result(FrameworkConstants::Result[:fail], result_msg)
+    return
   end
 
   # err_pattern is 0x1 or 0x1001 etc; err_cnt is 1, 2, etc
@@ -47,32 +45,32 @@ def run
     read_data = @equipment['dut1'].response.match(/Enabling\s+DDR\s+ECC\s+\.\.\..*,\s+read\s+data\s+0x(\h+)/im).captures[0]
     if orig_data != read_data
       set_result(FrameworkConstants::Result[:fail], "Read data with 1-bit ecc is not the same as original data and DDR ECC test failed")
+      return
     end 
-    @equipment['dut1'].send_cmd("boot", /Starting\s+kernel.*Booting\s+Linux\s+on/i, 30)
+    @equipment['dut1'].send_cmd("boot", /Starting\s+kernel.*Booting\s+Linux\s+on/im, 30)
   elsif err_cnt.to_i >= 2
     if ecc_test == '0'
-      if ! @equipment['dut1'].response.match(/error\s+interrupted.*Reseting\s+the\s+device\s+\.\.\./im)
+      if ! @equipment['dut1'].response.match(/error\s+interrupted.*(resetting|Reseting\s+the\s+device)\s+\.\.\./im)
         set_result(FrameworkConstants::Result[:fail], "The board did not reset when #{err_cnt}-bit ecc is introduced.")
+        return
       end
     else
       # ecc_test = 1
       if ! @equipment['dut1'].response.match(/error\s+interrupted/im)
         set_result(FrameworkConstants::Result[:fail], "No interrupt when #{err_cnt}-bit ecc is introduced.")
+        return
       end
       @equipment['dut1'].send_cmd("boot", /Starting\s+kernel/i, 20)
       if ! @equipment['dut1'].response.match(/error\s+interrupted/im)
         set_result(FrameworkConstants::Result[:fail], "No interrupt from kernel when #{err_cnt}-bit ecc is introduced.")
+        return
       end
 
     end
     
   end 
 
-  if result == 0
-    set_result(FrameworkConstants::Result[:pass], "Test pass")
-  else
-    set_result(FrameworkConstants::Result[:fail], result_msg)
-  end
+  set_result(FrameworkConstants::Result[:pass], "Test pass")
 
 end
 
