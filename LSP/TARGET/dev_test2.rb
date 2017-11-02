@@ -57,6 +57,7 @@ def run_call_script
   @equipment['dut1'].send_cmd("cd #{@linux_dst_dir}",@equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd("chmod +x test.sh",@equipment['dut1'].prompt)
   cmd_timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.timeout[0].to_i : 600
+  cmd_timeout = @test_params.params_chan.timeout[0].to_i if @test_params.params_chan.instance_variable_defined?(:@timeout)
   @equipment['dut1'].send_cmd("./test.sh 2>&1 3> result.log",@equipment['dut1'].prompt, cmd_timeout)
   #write to test.log
   test_output = @equipment['dut1'].response
