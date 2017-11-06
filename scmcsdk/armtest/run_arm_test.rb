@@ -54,6 +54,8 @@ def run
 
   commands = assign_commands()
   criteria = assign_criteria()
+  user_git_repo =  @test_params.params_chan.instance_variable_defined?(:@user_git_repo) ? @test_params.params_chan.user_git_repo[0] : ''
+  clone_user_git_repo(user_git_repo)
   @timeout = assign_timeout()
   @soft_reboot = @test_params.params_control.instance_variable_defined?(:@soft_reboot) ? \
                         (@test_params.params_control.soft_reboot[0].to_s) : @test_params.params_chan.instance_variable_defined?(:@soft_reboot) ? \
@@ -603,6 +605,26 @@ end
 def eval_and_send(cmd,args_array)
   cmd_to_send = eval('"'+cmd+'"')
   run_command(Array.new.push(cmd_to_send),args_array)
+end
+
+# Function to clone user specified git repository on server and copy to dut
+def clone_user_git_repo(git_repo)
+  if git_repo != ''
+    git_branch = @test_params.params_chan.instance_variable_defined?(:@git_branch) ? @test_params.params_chan.git_branch[0] : ''
+    git_dir = git_repo.match(/\/([\w]+).git/)[1]
+    tmp_path = @test_params.staf_service_name.to_s.strip.gsub('@','_')
+    @equipment['server1'].send_sudo_cmd("rm -r /tftpboot/#{tmp_path}/#{git_dir} /tftpboot/#{tmp_path}/#{git_dir}.tar.gz", \
+                                         @equipment['server1'].prompt, 10)
+    @equipment['server1'].send_cmd("git clone #{git_repo} /tftpboot/#{tmp_path}/#{git_dir} ", \
+                                    @equipment['server1'].prompt, 60)
+    if git_branch != ''
+      @equipment['server1'].send_cmd("cd /tftpboot/#{tmp_path}/#{git_dir}; git checkout #{git_branch}", \
+                                      @equipment['server1'].prompt, 30)
+    end
+      @equipment['server1'].send_cmd("cd /tftpboot/#{tmp_path}; tar -cvzf #{git_dir}.tar.gz #{git_dir}", \
+                                      @equipment['server1'].prompt, 60)
+    @equipment['dut1'].send_cmd("tftp -g -r #{tmp_path}/#{git_dir}.tar.gz #{@equipment['server1'].telnet_ip}", @equipment['dut1'].prompt, 60)
+  end
 end
 
 def clean
