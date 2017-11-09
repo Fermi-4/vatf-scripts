@@ -9,6 +9,7 @@ def setup
     e_class.new(@equipment['dut1'].params['dut2'], log_path)
   end
   @equipment['dut2'].set_api('psp')
+  @power_handler.load_power_ports(@equipment['dut2'].power_port)
   # boot 1st EVM
   setup_boards('dut1')
   # boot 2nd EVM
