@@ -62,6 +62,7 @@ def run
 						(@test_params.params_chan.soft_reboot[0].to_s) : "false"
   iterations = assign_iterations()
   @platform = get_platform()
+  @board = get_board()
   @dsp_cores = get_dsp_cores(@platform)
   @secure_device = is_secure_device?()
   test_folder_location = nil
@@ -252,6 +253,11 @@ def get_platform()
   else
     "k2h"
   end
+end
+
+# function to get board name
+def get_board()
+    @equipment['dut1'].name.match(/(\w*)/)[0]
 end
 
 def is_secure_device?()
