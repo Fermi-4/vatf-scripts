@@ -48,6 +48,7 @@ def run
       return
     end 
     @equipment['dut1'].send_cmd("boot", /Starting\s+kernel.*Booting\s+Linux\s+on/im, 30)
+    sleep 1  # to collect more booting log
   elsif err_cnt.to_i >= 2
     if ecc_test == '0'
       if ! @equipment['dut1'].response.match(/error\s+interrupted.*(resetting|Reseting\s+the\s+device)\s+\.\.\./im)
