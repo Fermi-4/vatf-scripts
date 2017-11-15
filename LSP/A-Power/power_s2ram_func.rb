@@ -38,7 +38,6 @@ def run
   puts "\n===> waiting on suspend_thr"
   suspend_thr.kill
   puts "\n===> waiting on test_thr"
-  test_thr.kill
   result = test_thr.value           # This will block (join) until test_thr completes
   puts "\n===> all threads finished"
   result ? set_result(result[0], result[1]) : set_result(FrameworkConstants::Result[:fail], "Test Thread timed out")
