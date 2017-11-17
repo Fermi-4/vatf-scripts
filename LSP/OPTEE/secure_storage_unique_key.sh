@@ -5,7 +5,7 @@
 # the files can't be decrypted.
 
 TESTFILES_MOUNT='/mnt/gtautoftp'
-TESTFILES_NFS_ROOT='10.218.103.34:/tftpboot/anonymous'
+TESTFILES_NFS_ROOT='10.218.103.34:/volume1/tftpboot/anonymous'
 TESTFILES_DIR="${TESTFILES_MOUNT}/linux/lcpd/test_files/secure_storage"
 TESTFILE_NAME="0"
 TESTFILES_DBFILE="dirf.db"
