@@ -64,6 +64,10 @@ module LspTargetTestScript
     puts "\n LinuxTestScript::run_transfer_script"
     in_file = File.new(File.join(@linux_temp_folder,'test.sh'), 'r')
     raw_test_lines = in_file.readlines
+    if @equipment['server1'].instance_variable_defined?(:@params) and @equipment['server1'].params['iperfhost_ip2'] != ''
+      iperfhost2 = @equipment['server1'].params['iperfhost_ip2']
+      @equipment['dut1'].send_cmd("export IPERFHOST2=#{iperfhost2}", @equipment['dut1'].prompt)
+    end
     @equipment['dut1'].send_cmd("export IPERFHOST=#{@equipment['server1'].telnet_ip}", @equipment['dut1'].prompt) if @equipment['server1'].respond_to?(:telnet_ip)
     @equipment['dut1'].send_cmd("export NFS_SERVER=#{@equipment['server1'].telnet_ip}", @equipment['dut1'].prompt) if @equipment['server1'].respond_to?(:telnet_ip)
     @equipment['dut1'].send_cmd("export NFS_ROOT_PATH=#{@equipment['dut1'].nfs_root_path}", @equipment['dut1'].prompt) if @equipment['dut1'].respond_to?(:nfs_root_path)
