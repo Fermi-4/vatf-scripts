@@ -120,8 +120,8 @@ def setup_eth2_eth3(dut, eth2_ip, eth3_ip)
 end
 
 # function to verify ping
-def ping_status(dut, ipaddr)
-  dut.send_cmd("ping -c 10 #{ipaddr}", dut.prompt, 10)
+def ping_status(dut, ipaddr, count=10)
+  dut.send_cmd("ping -c #{count} #{ipaddr}", dut.prompt, count)
   if dut.timeout? or !(dut.response =~ Regexp.new("(\s0%\spacket\sloss)"))
     raise "Ping failed to IP Address: #{ipaddr}."
   end
