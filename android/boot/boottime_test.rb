@@ -11,7 +11,7 @@ def run
   boottimes = Array.new()
   regexp2 = /init:\s*Service\s*'bootanim'\s*\(pid\s*\d+\)\s*exited\s*with\s*status\s*0/im
   trials = @test_params.params_chan.instance_variable_defined?(:@boot_trials) ?
-           @test_params.params_chan.instance_variable_defined?(:@boot_trials).to_i :
+           @test_params.params_chan.boot_trials[0].to_i :
            5
   for i in (1..trials)
    @equipment['dut1'].boot_to_bootloader(@android_boot_params)
