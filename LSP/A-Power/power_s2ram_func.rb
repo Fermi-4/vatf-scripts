@@ -37,6 +37,8 @@ def run
   @stop_test = true
   puts "\n===> waiting on suspend_thr"
   suspend_thr.kill
+  sleep 1
+  @queue.push(1)
   puts "\n===> waiting on test_thr"
   result = test_thr.value           # This will block (join) until test_thr completes
   puts "\n===> all threads finished"
