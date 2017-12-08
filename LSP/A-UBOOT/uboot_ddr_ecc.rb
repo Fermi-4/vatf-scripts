@@ -6,6 +6,12 @@ include LspTestScript
 
 def setup
 	@equipment['dut1'].set_api('psp')
+end
+
+def run
+
+  platform = @test_params.platform
+  puts "platform: "+platform
 
   translated_boot_params = setup_host_side()
   translated_boot_params['dut'].set_bootloader(translated_boot_params) if !@equipment['dut1'].boot_loader
@@ -15,13 +21,6 @@ def setup
   @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
   @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 5)
   raise 'Bootloader was not loaded properly. Failed to get bootloader prompt' if @equipment['dut1'].timeout?
-  
-end
-
-def run
-
-  platform = @test_params.platform
-  puts "platform: "+platform
 
   @equipment['dut1'].send_cmd("help ddr", @equipment['dut1'].boot_prompt, 5)
 
@@ -47,7 +46,9 @@ def run
       set_result(FrameworkConstants::Result[:fail], "Read data with 1-bit ecc is not the same as original data and DDR ECC test failed")
       return
     end 
-    @equipment['dut1'].send_cmd("boot", /Starting\s+kernel.*Booting\s+Linux\s+on/im, 30)
+    translated_boot_params['bootargs'] = @equipment['dut1'].boot_args
+    @equipment['dut1'].system_loader.run translated_boot_params
+    #@equipment['dut1'].send_cmd("boot", /Starting\s+kernel.*Booting\s+Linux\s+on/im, 30)
     sleep 1  # to collect more booting log
   elsif err_cnt.to_i >= 2
     if ecc_test == '0'
@@ -57,8 +58,11 @@ def run
       end
     else
       # ecc_test = 1
-      @equipment['dut1'].send_cmd("boot", /Starting\s+kernel/i, 20)
-      if ! @equipment['dut1'].response.match(/error\s+interrupted/im)
+      translated_boot_params['bootargs'] = @equipment['dut1'].boot_args
+      @equipment['dut1'].system_loader.run translated_boot_params
+      #@equipment['dut1'].send_cmd("boot", /Starting\s+kernel/i, 20)
+      #if ! @equipment['dut1'].response.match(/error\s+interrupted/im)
+      if ! @equipment['dut1'].boot_log.match(/error\s+interrupted/im)
         set_result(FrameworkConstants::Result[:fail], "No interrupt from kernel when #{err_cnt}-bit ecc is introduced.")
         return
       end
