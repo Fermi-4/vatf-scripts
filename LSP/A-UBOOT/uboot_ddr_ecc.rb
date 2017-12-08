@@ -57,10 +57,6 @@ def run
       end
     else
       # ecc_test = 1
-      if ! @equipment['dut1'].response.match(/error\s+interrupted/im)
-        set_result(FrameworkConstants::Result[:fail], "No interrupt when #{err_cnt}-bit ecc is introduced.")
-        return
-      end
       @equipment['dut1'].send_cmd("boot", /Starting\s+kernel/i, 20)
       if ! @equipment['dut1'].response.match(/error\s+interrupted/im)
         set_result(FrameworkConstants::Result[:fail], "No interrupt from kernel when #{err_cnt}-bit ecc is introduced.")
