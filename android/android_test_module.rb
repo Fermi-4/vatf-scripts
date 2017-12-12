@@ -73,6 +73,7 @@ module AndroidTest
       new_params['fastboot'] = 'fastboot' if !new_params['fastboot']
       new_params['make_ext4fs'] = 'make_ext4fs' if !new_params['make_ext4fs']
       new_params['simg2img'] = 'simg2img' if !new_params['simg2img']
+      new_params['adb'] = 'adb' if !new_params['adb']
       return new_params
     end
 
@@ -94,7 +95,7 @@ module AndroidTest
       new_params['server'].send_cmd("md5sum  #{tbs.join(' ')} |  cut -d' ' -f 1 | sort > #{installed_check}")
     end
 
-    ['fastboot', 'make_ext4fs', 'simg2img'].each do |a_u|
+    ['fastboot', 'make_ext4fs', 'simg2img', 'adb'].each do |a_u|
       if !new_params[a_u]
         new_params['server'].send_cmd("ls #{dest}/#{a_u}")
         new_params[a_u] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
