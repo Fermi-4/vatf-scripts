@@ -12,8 +12,12 @@ include LspTestScript
 LOG_TAG = "VATF::ANDROID::RESULT::"
   
 def setup
+  @linux_dst_dir='/sdcard/test'
+  @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s, 'android')
+  FileUtils.mkdir_p @linux_temp_folder
   self.as(LspTestScript).setup
-  send_adb_cmd("shell svc power stayon true")
+  send_adb_cmd("shell mkdir #{@linux_dst_dir}")
+  send_adb_cmd("shell su root svc power stayon true")
   send_events_for('__menu__')
   setupTest(:@test_libs,:@var_test_libs_root)
 end
@@ -22,7 +26,6 @@ def clean
 end
 
 def setup_host_side(params={})
-  @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s, 'android')
   params['dut'] = @equipment['dut1'] if !params['dut']
   params['server'] = @equipment['server1']  if !params['server']
   params['dut'].set_api('psp')
@@ -143,7 +146,7 @@ module AndroidTest
   end
 
   # Send command to an android device
-  def send_adb_cmd (cmd, device=@equipment['dut1'])  
+  def send_adb_cmd (cmd, device=@equipment['dut1']) 
     device.send_adb_cmd(cmd)
   end
   
