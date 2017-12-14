@@ -20,7 +20,7 @@ def run
   src_video_height = video_height
   src_video_width = video_width
   scaling = @test_params.params_chan.instance_variable_defined?(:@scaling) ? @test_params.params_chan.scaling[0].to_f : 1
-  cropping = @test_params.params_chan.instance_variable_defined?(:@cropping) ? @test_params.params_chan.cropping : [0]*4
+  cropping = @test_params.params_chan.instance_variable_defined?(:@cropping) ? @test_params.params_chan.cropping.map(&:to_i) : [0]*4
   video_width, video_height = get_scaled_resolution(src_video_width, src_video_height, scaling) if scaling != 1
   interlace = 0
   if @test_params.params_chan.instance_variable_defined?(:@deinterlace)
@@ -49,7 +49,8 @@ def run
                             video_width,
                             video_height,
                             test_format,
-                            interlace)
+                            interlace,
+                            cropping)
   trunc_local_ref = ref_path
   if File.size(ref_path) != File.size(local_test_file)
     trunc_local_ref = ref_path+'.trunc'
@@ -66,13 +67,18 @@ def run
 end
 
 
-def get_reference(video_url, width, height, format, interlace)
+def get_reference(video_url, width, height, format, interlace, cropping)
   ref_file = ['ref',
               File.basename(video_url), 
               'to',
               "#{width}x#{height}",
               format,
-              interlace == 0 ? 'nodeinter' : 'deinter'].join('_') 
+              interlace == 0 ? 'nodeinter' : 'deinter'].join('_')
+
+  if cropping.inject(:+) > 0
+    ref_file = [ref_file, 'crop', cropping].join('_')
+  end
+
   ref_file += '.' + format + '.tar.xz'
   
   files = get_ref do |base_uri|
