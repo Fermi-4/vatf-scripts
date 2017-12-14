@@ -35,7 +35,7 @@ def run
   @equipment['server1'].send_cmd("rm -rf #{local_test_file}",@equipment['server1'].prompt)
   response = send_adb_cmd("shell su root vpetest #{dut_src_file} #{src_video_width} #{src_video_height} #{src_format} #{dut_test_file} #{video_width} #{video_height} #{test_format} #{cropping.join(' ')} #{interlace} #{translen}")
   num_frames = response.match(/frames\s*left\s*(\d+)/im)[1].to_i + 1
-  send_adb_cmd("pull #{dut_test_file} #{local_test_file}")
+  send_adb_cmd("pull -p #{dut_test_file} #{local_test_file}")
   format_length = case(test_format.downcase())
     when 'argb32','abgr32'
       4
