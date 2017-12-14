@@ -20,13 +20,14 @@ def run
   src_video_height = video_height
   src_video_width = video_width
   scaling = @test_params.params_chan.instance_variable_defined?(:@scaling) ? @test_params.params_chan.scaling[0].to_f : 1
-  cropping = @test_params.params_chan.instance_variable_defined?(:@cropping) ? @test_params.params_chan.cropping.map(&:to_i) : [0]*4
   video_width, video_height = get_scaled_resolution(src_video_width, src_video_height, scaling) if scaling != 1
   interlace = 0
   if @test_params.params_chan.instance_variable_defined?(:@deinterlace)
     interlace = 1
     src_video_height = (src_video_height/2).to_i
   end
+  prand = Random.new(src_video_height*src_video_width*test_format.bytes.inject(:+))
+  cropping = @test_params.params_chan.instance_variable_defined?(:@cropping) ? get_crop(src_video_width, src_video_height, prand) : [0]*4
   translen = 1 + rand(3)
   dut_test_file = File.join(@linux_dst_dir,'video_test_file.yuv')
   local_test_file = File.join(@linux_temp_folder, 'video_tst_file.yuv')
@@ -87,3 +88,16 @@ def get_reference(video_url, width, height, format, interlace, cropping)
   files[0]
 end
 
+
+def get_crop(width, height, rgen)
+  crop = [rgen.rand(width-16), rgen.rand(height-16)]
+  w_c = multiples(16, width-crop[0], 16)
+  h_c = multiples(16, height-crop[1], 16)
+  crop << w_c[rgen.rand(w_c.length) - 1]
+  crop << h_c[rgen.rand(h_c.length) - 1]
+  crop.map { |x| x - x % 16 }
+end
+
+def multiples(from, to, base)
+  (from..to).select { | i | i % base == 0 }
+end
