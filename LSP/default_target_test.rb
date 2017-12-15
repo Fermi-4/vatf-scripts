@@ -48,7 +48,7 @@ module LspTargetTestScript
   # By default this function only replaces the @test_params references in the shell script template and creates test.sh  
   def run_generate_script
     puts "\n LinuxTestScript::run_generate_script"
-    FileUtils.mkdir_p @linux_temp_folder
+    FileUtils.mkdir_p @linux_temp_folder, :mode => 0777
     in_file = File.new(File.join(@test_params.view_drive, @test_params.params_control.shell_script[0]), 'r')
     raw_test_lines = in_file.readlines
     out_file = File.new(File.join(@linux_temp_folder, 'test.sh'),'w')
