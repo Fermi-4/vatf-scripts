@@ -84,7 +84,10 @@ end
 def tftp_file(memaddr, filepath_in_tftp)
   @equipment['dut1'].send_cmd("setenv serverip #{@equipment['server1'].telnet_ip}", @equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("setenv autoload no", @equipment['dut1'].boot_prompt, 5)
-  @equipment['dut1'].send_cmd("dhcp", @equipment['dut1'].boot_prompt, 30)
+  3.times {
+    @equipment['dut1'].send_cmd("dhcp", @equipment['dut1'].boot_prompt, 30)
+    break if !@equipment['dut1'].timeout?
+  }
 
   @equipment['dut1'].send_cmd("tftp #{memaddr} #{filepath_in_tftp}", @equipment['dut1'].boot_prompt, 300)
   raise "Could not tftp kernel to dut" if !@equipment['dut1'].response.match(/Bytes\s+transferred/im)
