@@ -248,7 +248,7 @@ module EvmData
     machines['am57xx-hsevm'] = {'0.0' => /Machine model: TI (AM572x EVM|AM5728 BeagleBoard-X15|AM5728 EVM)/, }
     machines['am572x-idk'] = {'0.0' => /Machine model: TI AM572x IDK/, }
     machines['am571x-idk'] = {'0.0' => /Machine model: TI (AM5718 IDK|AM571x IDK)/, }
-    machines['am574x-idk'] = {'0.0' => /Machine model: TI AM5748 IDK/, }
+    machines['am574x-idk'] = {'0.0' => /Machine model: TI (AM5748|AM574x) IDK/, }
     machines['k2hk-evm'] = {'0.0' => /Machine model:.*Keystone 2 Kepler\/Hawking EVM/, }
     machines['k2e-evm'] = {'0.0' => /Machine model:.*Keystone 2 Edison EVM/, }
     machines['k2l-evm'] = {'0.0' => /Machine model:.*Keystone 2 Lamarr EVM/, }
