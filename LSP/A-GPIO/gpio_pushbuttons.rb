@@ -57,7 +57,7 @@ def run
 end
 
 def get_keypad_event_number(dut_response)
-  event_num = dut_response.match(/\/dev\/input\/event(\d+):\s+matrix_keypad/i)[1]
+  event_num = dut_response.match(/\/dev\/input\/event(\d+):\s+(?:matrix_keypad|gpio-keys)/i)[1]
   raise "Could not find event number for keypad" if event_num == nil
   return event_num
 end
@@ -69,6 +69,8 @@ def get_pushbuttons(platform)
       buttons = ['key_back', 'key_right', 'key_down', 'key_enter', 'key_left', 'key_menu']
     when 'am43xx-gpevm'
       buttons = ['key_down', 'key_right', 'key_numeric_2', 'key_left', 'key_up', 'key_numeric_1']
+    when 'omapl138-lcdk'
+      buttons = ['btn_0', 'btn_1']
     else
       raise "Push buttons are not defined for platform #{platform}"
   end
