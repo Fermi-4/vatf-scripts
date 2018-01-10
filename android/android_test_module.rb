@@ -25,7 +25,6 @@ def setup
 end
 
 def clean
-  send_adb_cmd("kill-server")
 end
 
 def setup_host_side(params={})
