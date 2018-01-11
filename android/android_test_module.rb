@@ -38,6 +38,7 @@ def setup_host_side(params={})
   translated_boot_params = translate_boot_params(boot_params)
 
   tarballs = []
+  translated_boot_params['lxc-info'] = {'config' => {}}
   @test_params.instance_variables.each  do |i_v|
     if i_v.to_s.match(/^(?:var_|test_script_root|assign_to|@params)/)
       next
@@ -45,7 +46,11 @@ def setup_host_side(params={})
       tarballs << @test_params.instance_variable_get(i_v)
     else
       img = i_v.to_s.gsub(/^[:@]+/,'')
-      translated_boot_params[img] = @test_params.instance_variable_get(i_v)
+      if img.start_with?('var_lxc_')
+        translated_boot_params['lxc-info']['config'][img.sub(/^var_lxc_/i,'')] = @test_params.instance_variable_get(i_v)
+      else
+        translated_boot_params[img] = @test_params.instance_variable_get(i_v)
+      end
     end
   end
 
