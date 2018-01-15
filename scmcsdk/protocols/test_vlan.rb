@@ -33,8 +33,8 @@ def run
   dut2_if02, dut2_if03 = "192.168.2.20", "192.168.3.20"
   test_comment = ""
   begin
-    enable_feature(@equipment['dut1'], feature, cmd, dut1_if02, false)
-    enable_feature(@equipment['dut2'], feature, cmd, dut2_if02, false)
+    enable_feature(@equipment['dut1'], feature, cmd, dut1_if02)
+    enable_feature(@equipment['dut2'], feature, cmd, dut2_if02)
     ping_status(@equipment['dut1'], dut2_if02)
     ping_status(@equipment['dut2'], dut1_if02)
     enable_vlan(@equipment['dut1'], feature, dut1_if02, dut1_if03)

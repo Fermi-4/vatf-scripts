@@ -38,8 +38,8 @@ def run
     if switch_from == "emac"
       emac_status(dut1_eth2, dut1_eth3, dut2_eth2, dut2_eth3)
     else
-      enable_feature(@equipment['dut1'], switch_from, cmd_from, dut1_eth2, false)
-      enable_feature(@equipment['dut2'], switch_from, cmd_from, dut2_eth2, false)
+      enable_feature(@equipment['dut1'], switch_from, cmd_from, dut1_eth2)
+      enable_feature(@equipment['dut2'], switch_from, cmd_from, dut2_eth2)
       ping_status(@equipment['dut1'], dut2_eth2)
       ping_status(@equipment['dut2'], dut1_eth2)
       disable_feature(@equipment['dut1'], switch_from)
@@ -51,8 +51,8 @@ def run
       if switch_to == "emac"
         emac_status(dut1_eth2, dut1_eth3, dut2_eth2, dut2_eth3)
       else
-        enable_feature(@equipment['dut1'], switch_to, cmd_to, dut1_eth2, true)
-        enable_feature(@equipment['dut2'], switch_to, cmd_to, dut2_eth2, true)
+        enable_feature(@equipment['dut1'], switch_to, cmd_to, dut1_eth2)
+        enable_feature(@equipment['dut2'], switch_to, cmd_to, dut2_eth2)
         ping_status(@equipment['dut1'], dut2_eth2)
         ping_status(@equipment['dut2'], dut1_eth2)
         # disable eth2 to verify redundancy
@@ -79,21 +79,20 @@ def emac_status(dut1_eth2, dut1_eth3, dut2_eth2, dut2_eth3)
 end
 
 # function to enable feature(hsr/prp)
-def enable_feature(dut, feature, command, ipaddr, offload)
+def enable_feature(dut, feature, command, ipaddr)
   dut.send_cmd("export eth3_ipaddr=`cat /sys/class/net/eth3/address`", dut.prompt, 10)
   dut.send_cmd("ifconfig eth2 0.0.0.0 down", dut.prompt, 10)
   dut.send_cmd("ifconfig eth3 0.0.0.0 down", dut.prompt, 10)
   dut.send_cmd("ifconfig eth3 hw ether `cat /sys/class/net/eth2/address`", dut.prompt, 10)
-  if offload == true
-    dut.send_cmd("ethtool -K eth2 #{feature}-rx-offload on", dut.prompt, 10)
-    dut.send_cmd("ethtool -K eth3 #{feature}-rx-offload on", dut.prompt, 10)
-  end
+  dut.send_cmd("ethtool -K eth2 #{feature}-rx-offload on", dut.prompt, 10)
+  dut.send_cmd("ethtool -K eth3 #{feature}-rx-offload on", dut.prompt, 10)
+  sleep(10)
   dut.send_cmd("ifconfig eth2 up", dut.prompt, 10)
   dut.send_cmd("ifconfig eth3 up", dut.prompt, 10)
   dut.send_cmd("#{command}", dut.prompt, 10)
   dut.send_cmd("ifconfig #{feature}0 #{ipaddr} up", dut.prompt, 10)
   dut.send_cmd("ifconfig", dut.prompt, 10)
-  if !(dut.response =~ Regexp.new("(#{feature}0\s+Link\sencap:Ethernet\s+HWaddr)"))
+  if !(dut.response =~ Regexp.new("(#{feature}0\s+Link\sencap:Ethernet\s+HWaddr)")) or dut.timeout?
     raise "Failed to enable #{feature}."
   end
 end
@@ -107,7 +106,7 @@ def disable_feature(dut, feature)
   dut.send_cmd("ethtool -K eth3 #{feature}-rx-offload off", dut.prompt, 10)
   dut.send_cmd("ifconfig eth3 hw ether $eth3_ipaddr", dut.prompt, 10)
   dut.send_cmd("ifconfig", dut.prompt, 10)
-  if (dut.response =~ Regexp.new("(#{feature}0\s+Link\sencap:Ethernet\s+HWaddr)"))
+  if (dut.response =~ Regexp.new("(#{feature}0\s+Link\sencap:Ethernet\s+HWaddr)")) or dut.timeout?
     raise "Failed to disable #{feature}."
   end
 end

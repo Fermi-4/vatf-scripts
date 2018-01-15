@@ -34,7 +34,7 @@ def run
     else
       raise "Failed to connect serial at BIOS side."
     end
-    enable_feature(@equipment['dut1'], feature, cmd, dut1_if, false)
+    enable_feature(@equipment['dut1'], feature, cmd, dut1_if)
     ping_status(@equipment['dut1'], dut2_if, ping_count)
     @equipment['dut2'].send_cmd("SCN", "", 5, true, false)
     @equipment['dut1'].send_cmd("cat /sys/kernel/debug/#{feature}/node_table", @equipment['dut1'].prompt, 10)
