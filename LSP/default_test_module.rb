@@ -195,6 +195,18 @@ module LspTestScript
                              @test_params.instance_variable_defined?(:@boot_cmds) ? @test_params.boot_cmds : 
                              ''     
     # New Simulator SW assets
+    new_params['dmsc']     = new_params['dmsc'] ? new_params['dmsc'] :
+                             @test_params.instance_variable_defined?(:@dmsc) ? @test_params.dmsc :
+                             @test_params.instance_variable_defined?(:@dmsc_file) ? @test_params.dmsc_file :
+                             ''
+    new_params['dmsc_dev'] = new_params['dmsc_dev'] ? new_params['dmsc_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@dmsc_dev) ? @test_params.params_chan.dmsc_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_dmsc_dev) ? @test_params.var_dmsc_dev :
+                             new_params['dmsc'] != '' ? 'eth' : 'none'
+    new_params['dmsc_image_name'] = new_params['dmsc_image_name'] ? new_params['dmsc_image_name'] :
+                             @test_params.instance_variable_defined?(:@var_dmsc_image_name) ? @test_params.var_dmsc_image_name :
+                             new_params['dmsc'] != '' ? File.basename(new_params['dmsc']) : 'dmsc'
+
     new_params['atf']     = new_params['atf'] ? new_params['atf'] :
                              @test_params.instance_variable_defined?(:@atf) ? @test_params.atf :
                              @test_params.instance_variable_defined?(:@atf_file) ? @test_params.atf_file :
@@ -239,6 +251,18 @@ module LspTestScript
     new_params['linux_system_image_name'] = new_params['linux_system_image_name'] ? new_params['linux_system_image_name'] :
                              @test_params.instance_variable_defined?(:@var_linux_system_image_name) ? @test_params.var_linux_system_image_name :
                              new_params['linux_system'] != '' ? File.basename(new_params['linux_system']) : 'linux_system'
+    new_params['simulator_startup_files']   = new_params['simulator_startup_files'] ? new_params['simulator_startup_files'] :
+                             @test_params.instance_variable_defined?(:@simulator_startup_files) ? @test_params.simulator_startup_files :
+                             ''
+    new_params['simulator_startup_files_dev'] = new_params['simulator_startup_files_dev'] ? new_params['simulator_startup_files_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@simulator_startup_files_dev) ? @test_params.params_chan.simulator_startup_files_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_simulator_startup_files_dev) ? @test_params.var_simulator_startup_files_dev :
+                             new_params['simulator_startup_files'] != '' ? 'eth' : 'none'
+    new_params['simulator_startup_files_image_name'] = new_params['simulator_startup_files_image_name'] ? new_params['simulator_startup_files_image_name'] :
+                             @test_params.instance_variable_defined?(:@var_simulator_startup_files_image_name) ? @test_params.var_simulator_startup_files_image_name :
+                             new_params['simulator_startup_files'] != '' ? File.basename(new_params['simulator_startup_files']) : 'simulator_startup_files'
+
+
 
     new_params = add_dev_loc_to_params(new_params, 'primary_bootloader')
     new_params = add_dev_loc_to_params(new_params, 'secondary_bootloader')
@@ -320,6 +344,7 @@ module LspTestScript
     boot_params['bootargs'] = @test_params.var_bootargs if @test_params.instance_variable_defined?(:@var_bootargs)
     boot_params['var_boot_timeout']  = @test_params.var_boot_timeout  if @test_params.instance_variable_defined?(:@var_boot_timeout)
     boot_params['autologin'] = @test_params.var_autologin if @test_params.instance_variable_defined?(:@var_autologin)
+    boot_params['var_simulator_startup_script_name'] = @test_params.var_simulator_startup_script_name if @test_params.instance_variable_defined?(:@var_simulator_startup_script_name)
     boot_params
   end
   
