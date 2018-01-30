@@ -2430,11 +2430,11 @@ class PerfUtilities
     result = ""
     command = "cat /home/root/top_stats.txt"
     raw_buffer = @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "#{command}", "", @error_bit, 0)
-    #temp = raw_buffer.scan(/ [0-9]*.[0-9]*%id/)
-    temp = raw_buffer.scan(/[0-9]*.[0-9]*%id/)
+    temp = raw_buffer.scan(/\d*.\d*\S*\s*\S*id/)
     result += "\r\n CPU idle stats:\r\n"
     temp.each do |match_string|
-      idle = match_string.gsub("%id", "")
+      idle = match_string.gsub("id", "")
+      idle = match_string.gsub("%", "")
       lowest = idle if (lowest.to_f > idle.to_f)
       # average only the middle samples. The first and last sample are not averaged in.
       if count >= 1 and samples < temp.length
@@ -2754,6 +2754,13 @@ class PerfUtilities
     alpha_iface_type = find_eth_interface_by_ipaddress(@alpha_ip, ALPHA_SIDE())
     @alpha_ipv6 = get_ipv6_global_addr("#{@vatf_helper.vatf_server_ref}", alpha_iface_type)
     @beta_ipv6 = get_ipv6_global_addr(dev, iface_type)
+    # if alpha subnet and beta subnet are the same, nothing needs to be done
+    # if not, then alpha_iface_type and alpha_ip needs to be set correctly
+    if (@alpha_ip.split(".")[0...-1] != @beta_ip.split(".")[0...-1])
+        eth_interface_string = @vatf_helper.smart_send_cmd_wait(ALPHA_SIDE(), @normal_cmd, "route -n|grep #{@beta_ip.split(".")[0...-1].join(".")}", "force timeout" , @vatf_helper.DONT_SET_ERROR_BIT(), 0, 2).split.last
+        alpha_iface_type=eth_interface_string
+        @alpha_ip=get_ip_addr('server1',alpha_iface_type)
+    end
     @is_ipv4 = is_ipv4
     return @result
   end
@@ -3459,6 +3466,10 @@ class IpsecUtilitiesVatf
   end
 
   def ipsec_stop(is_alpha_side)
+    @equipment['dut1'].send_cmd("cat /proc/interrupts",@equipment['dut1'].prompt)
+    @equipment['dut1'].log_info("Final Interrupt Count")
+    @equipment['dut1'].log_info(@equipment['dut1'].response)
+
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec stop", "", @vatf_helper.DONT_SET_ERROR_BIT(), 5)
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec statusall", "", @vatf_helper.DONT_SET_ERROR_BIT(), 0)
   end
@@ -3474,7 +3485,10 @@ class IpsecUtilitiesVatf
           @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "modprobe -r #{module_name}", "", @error_bit, 2)
         else
           @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "modprobe #{module_name}", "", @error_bit, 2)
+# Increase crypto queue length to 300 for maximum buffering => throughput
           set_queue_length('dut1', 300)
+# Set software fallback threshold to 9 since this is a system use case and best performance is desired regardless of s/w or h/w support
+          set_fallback_threshold('dut1', 9)
           if !module_running?(module_name, @equipment[side_ref])
             @result_text += "Error: Unable to start module: #{module_name}"
             @result += @error_bit
@@ -3490,6 +3504,10 @@ class IpsecUtilitiesVatf
     return if (result() != 0)
     # Load crypto modules before starting IPSEC
     load_crypto_module_as_needed(is_alpha_side, crypto_mode)
+    @equipment['dut1'].send_cmd("cat /proc/interrupts",@equipment['dut1'].prompt)
+    @equipment['dut1'].log_info("Initial Interrupt Count")
+    @equipment['dut1'].log_info(@equipment['dut1'].response)
+
     return if (result() != 0)
     # Display ipsec.conf and ipsec.secrets file contests and the ipsec.conf template file name
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "cat /etc/ipsec.conf", "", @vatf_helper.DONT_SET_ERROR_BIT(), 2)
