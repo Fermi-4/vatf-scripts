@@ -158,7 +158,7 @@ end
 # Configfs Commands to be sent to the Dut
 
 def setup_configfs
-   command_array = ["mount -t configfs none /sys/kernel/config", "cd /sys/kernel/config/", "cd usb_gadget/", "mkdir j6g", "cd j6g", "echo \"0xA55A\" > idVendor", "cat idVendor", "echo \"0x0111\" > idProduct", "mkdir strings/0x409", "cd strings/", "cd 0x409/", "echo \"0123456789\" > serialnumber", "echo \"Xyz Inc.\" > manufacturer", "echo \"NCM+ACM gadget\" > product", "cd ..", "cd ..", "cd functions/", "mkdir acm.gs0", "mkdir ncm.usb0", "cd ..", "cd configs/", "mkdir c.1", "cd c.1", "mkdir strings/0x409", "cd strings/0x409/",  "echo \"ACM+NCM\" > configuration", "cd ..", "cd ..", "cd ..", "cd ..", "ln -s functions/acm.gs0 configs/c.1", "ln -s functions/ncm.usb0 configs/c.1", "echo \"48890000.usb\" > UDC"]
+   command_array = ["mount -t configfs none /sys/kernel/config", "cd /sys/kernel/config/", "cd usb_gadget/", "mkdir j6g", "cd j6g", "echo \"0xA55A\" > idVendor", "cat idVendor", "echo \"0x0111\" > idProduct", "mkdir strings/0x409", "cd strings/", "cd 0x409/", "echo \"0123456789\" > serialnumber", "echo \"Xyz Inc.\" > manufacturer", "echo \"NCM+ACM gadget\" > product", "cd ..", "cd ..", "cd functions/", "mkdir acm.gs0", "mkdir ncm.usb0", "cd ..", "cd configs/", "mkdir c.1", "cd c.1", "mkdir strings/0x409", "cd strings/0x409/",  "echo \"ACM+NCM\" > configuration", "cd ..", "cd ..", "cd ..", "cd ..", "ln -s functions/acm.gs0 configs/c.1", "ln -s functions/ncm.usb0 configs/c.1", "echo $(ls /sys/class/udc/) > UDC"]
      command_array.each { |x| @equipment['dut1'].send_cmd(x,@equipment['dut1'].prompt) }
 end
 
