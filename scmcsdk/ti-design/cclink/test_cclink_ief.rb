@@ -32,7 +32,7 @@ def run
   timeout = @test_params.params_chan.timeout[0].to_i
   adapter_num = @test_params.params_chan.adapter_num[0].to_i
   # ip addresses for dut1 and dut2
-  dut1_if02, dut2_if02 = "192.168.1.100", "192.168.1.200"
+  dut1_if02, dut2_if02 = @equipment['dut1'].params['dut1_if'], @equipment['dut2'].params['dut2_if']
   tmp_path = @test_params.staf_service_name.to_s.strip.gsub('@','_')
   git_dir = cclink_git.match(/\/([\w]+).git/)[1]
   begin

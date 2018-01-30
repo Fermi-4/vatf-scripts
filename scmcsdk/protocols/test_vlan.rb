@@ -29,8 +29,8 @@ def run
   feature = @test_params.params_chan.feature[0]
   cmd = @test_params.params_chan.cmd[0]
   # ip addresses for dut1 and dut2
-  dut1_if02, dut1_if03 = "192.168.2.10", "192.168.3.10"
-  dut2_if02, dut2_if03 = "192.168.2.20", "192.168.3.20"
+  dut1_if02, dut1_if03 = @equipment['dut1'].params['dut1_if'], @equipment['dut1'].params['dut1_if2']
+  dut2_if02, dut2_if03 = @equipment['dut2'].params['dut2_if'], @equipment['dut2'].params['dut2_if2']
   test_comment = ""
   begin
     enable_feature(@equipment['dut1'], feature, cmd, dut1_if02)

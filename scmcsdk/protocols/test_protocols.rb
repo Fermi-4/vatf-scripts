@@ -31,8 +31,8 @@ def run
   cmd_to = @test_params.params_chan.cmd_to[0]
   enable_switching = @test_params.params_chan.enable_switching[0]
   # ip addresses for dut1 and dut2
-  dut1_eth2, dut1_eth3 = "192.168.2.10", "192.168.3.10"
-  dut2_eth2, dut2_eth3 = "192.168.2.20", "192.168.3.20"
+  dut1_eth2, dut1_eth3 = @equipment['dut1'].params['dut1_if'], @equipment['dut1'].params['dut1_if2']
+  dut2_eth2, dut2_eth3 = @equipment['dut2'].params['dut2_if'], @equipment['dut2'].params['dut2_if2']
   test_comment = ""
   begin
     if switch_from == "emac"
