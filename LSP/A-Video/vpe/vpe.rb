@@ -16,32 +16,50 @@ def run
     return
   end
   vpe_dev = '/dev/' + get_type_devices('vpe')[0]
-  ref_file_url = @test_params.params_chan.instance_variable_defined?(:@ref_video_url) ? @test_params.params_chan.ref_video_url[0] : nil
-  ref_path, dut_src_file = get_file_from_url(@test_params.params_chan.video_url[0], ref_file_url)
-  src_format = @test_params.params_chan.src_format[0]
-  test_format = @test_params.params_chan.test_format[0]
-  video_width = @test_params.params_chan.video_width[0].to_i
-  video_height = @test_params.params_chan.video_height[0].to_i
-  src_video_height = video_height
-  src_video_width = video_width
-  scaling = @test_params.params_chan.instance_variable_defined?(:@scaling) ? @test_params.params_chan.scaling[0].to_f : 1
-  video_width, video_height = get_scaled_resolution(src_video_width, src_video_height, scaling) if scaling != 1
-  interlace = 0
-  if @test_params.params_chan.instance_variable_defined?(:@deinterlace)
-    interlace = 1
-    src_video_height = (src_video_height/2).to_i
+  dut_src_file = []
+  dut_test_file = []
+  local_test_file = []
+  test_format = []
+  test_cmd = ''
+  video_height = []
+  video_width = []
+  interlace = []
+  scaling = []
+  test_cmds = []
+  @test_params.params_chan.video_url.each_with_index do |video_url, i|
+    d_src_file = get_file_from_url(video_url, nil)[1]
+    dut_src_file << d_src_file
+    dut_test_file << File.join(@linux_dst_dir,"video_test_file#{i}.yuv")
+    local_test_file << File.join(@linux_temp_folder, "video_tst_file#{i}.yuv")
+    @equipment['dut1'].send_cmd("rm -rf #{dut_test_file[i]}", @equipment['dut1'].prompt)
+    @equipment['server1'].send_cmd("rm -rf #{local_test_file[i]}",@equipment['server1'].prompt)
+    test_format << @test_params.params_chan.test_format[i]
+    src_format = @test_params.params_chan.src_format[i]
+    v_width = @test_params.params_chan.video_width[i].to_i
+    v_height = @test_params.params_chan.video_height[i].to_i
+    src_video_height = v_height
+    src_video_width = v_width
+    scaling << (@test_params.params_chan.instance_variable_defined?(:@scaling) ? @test_params.params_chan.scaling[i].to_f : 1)
+    v_width, v_height = get_scaled_resolution(src_video_width, src_video_height, scaling[i]) if scaling != 1
+    video_height << v_height
+    video_width << v_width
+    ilace = 0
+    if @test_params.params_chan.instance_variable_defined?(:@deinterlace)
+      ilace = @test_params.params_chan.deinterlace[i].to_i
+      src_video_height = (src_video_height/2).to_i
+    end
+    interlace << ilace
+    translen = 1 + rand(3)
+    test_cmds << "test-v4l2-m2m #{vpe_dev} #{dut_src_file[i]} #{src_video_width} #{src_video_height} #{src_format} #{dut_test_file[i]} #{video_width[i]} #{video_height[i]} #{test_format[i]} #{interlace[i]} #{translen}"
   end
-  translen = 1 + rand(3)
-  dut_test_file = File.join(@linux_dst_dir,'video_test_file.yuv')
-  local_test_file = File.join(@linux_temp_folder, 'video_tst_file.yuv')
-  @equipment['dut1'].send_cmd("rm -rf #{dut_test_file}", @equipment['dut1'].prompt)
-  @equipment['server1'].send_cmd("rm -rf #{local_test_file}",@equipment['server1'].prompt)
-  @equipment['dut1'].send_cmd("test-v4l2-m2m #{vpe_dev} #{dut_src_file} #{src_video_width} #{src_video_height} #{src_format} #{dut_test_file} #{video_width} #{video_height} #{test_format} #{interlace} #{translen}", @equipment['dut1'].prompt, 300)
+  test_cmd = test_cmds.join(' > /dev/null & ') 
+  @equipment['dut1'].send_cmd(test_cmd, @equipment['dut1'].prompt, 300)
   num_frames = @equipment['dut1'].response.match(/frames\s*left\s*(\d+)/im)[1].to_i + 1
   dut_ip = get_ip_addr()
-  scp_pull_file(dut_ip, dut_test_file, local_test_file)
-  if @test_params.params_chan.instance_variable_defined?(:@auto)
-    format_length = case(test_format.downcase())
+  result = ''
+  test_format.each_with_index do |test_fmt, i|
+    scp_pull_file(dut_ip, dut_test_file[i], local_test_file[i])
+    format_length = case(test_fmt.downcase())
       when 'argb32','abgr32'
         4
       when 'rgb24','bgr24'
@@ -51,44 +69,26 @@ def run
       when 'nv12'
         1.5
     end
-    ref_path = get_reference(@test_params.params_chan.video_url[0],
-                              video_width,
-                              video_height,
-                              test_format,
-                              interlace)
+    ref_path = get_reference(@test_params.params_chan.video_url[i],
+                              video_width[i],
+                              video_height[i],
+                              test_fmt,
+                              interlace[i])
     trunc_local_ref = ref_path
-    if File.size(ref_path) != File.size(local_test_file)
+    if File.size(ref_path) != File.size(local_test_file[i])
       trunc_local_ref = ref_path+'.trunc'
-      frame_size = (format_length * video_height * video_width).to_i
+      frame_size = (format_length * video_height[i] * video_width[i]).to_i
       @equipment['server1'].send_cmd("dd if=#{ref_path} of=#{trunc_local_ref} bs=#{frame_size} count=#{num_frames}", @equipment['server1'].prompt,600)
     end
-    @equipment['server1'].send_cmd("md5sum #{trunc_local_ref} #{local_test_file} | grep -o '^[^ ]*'",@equipment['server1'].prompt, 600)
+    @equipment['server1'].send_cmd("md5sum #{trunc_local_ref} #{local_test_file[i]} | grep -o '^[^ ]*'",@equipment['server1'].prompt, 600)
     qual_res = @equipment['server1'].response.split()
-    if qual_res[0].strip() != qual_res[1].strip()
-      set_result(FrameworkConstants::Result[:fail], "Test Failed, converted file failed test (#{num_frames} frames), #{qual_res[0]} != #{qual_res[1]}")
-    else
-      set_result(FrameworkConstants::Result[:pass], "Test passed (#{num_frames} frames)")
-	  end
-	else
-    require File.dirname(__FILE__)+'/../../../lib/result_forms'
-	  test_result = FrameworkConstants::Result[:nry]
-	  test_string = ''
-	  while(test_result == FrameworkConstants::Result[:nry])
-	    res_win = ResultWindow.new("VPE #{video_width}x#{video_height} Test. Formats: #{src_format}->#{test_format}, Interlace #{interlace}, Tx length #{translen}")
-	    video_info = {'pix_fmt' => test_format.upcase(), 'width' => video_width,
-	                  'height' => video_height, 'file_path' => ref_path,
-	                  'sys'=> @equipment['server1']}
-	    res_win.add_buttons({'name' => 'Play Ref file', 
-                           'action' => :play_video, 
-                           'action_params' => video_info})
-      res_win.add_buttons({'name' => 'Play Test file', 
-                           'action' => :play_video, 
-                           'action_params' => video_info.merge({'file_path'=>local_test_file, 'pix_fmt' => test_format.upcase()})})
-      res_win.show()
-      test_result, test_string = res_win.get_result()
-    end
-    set_result(test_result, test_string)
-	end
+    result += ", VPE-M2M operation failed  for case #{i} (#{num_frames} frames), #{qual_res[0]} != #{qual_res[1]}" if qual_res[0].strip() != qual_res[1].strip()
+  end
+  if result != ''
+    set_result(FrameworkConstants::Result[:fail], "Test Failed, #{result}")
+  else
+    set_result(FrameworkConstants::Result[:pass], "Test passed for #{test_format.length} VPE-M2M operation(s) (#{num_frames} frames)")
+  end
   ensure
     @equipment['dut1'].send_cmd('modprobe -r ti-vpe', @equipment['dut1'].prompt, 10)
     if @equipment['dut1'].timeout?
