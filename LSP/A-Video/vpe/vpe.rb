@@ -46,7 +46,7 @@ def run
     ilace = 0
     if @test_params.params_chan.instance_variable_defined?(:@deinterlace)
       ilace = @test_params.params_chan.deinterlace[i].to_i
-      src_video_height = (src_video_height/2).to_i
+      src_video_height = (src_video_height/2).to_i if ilace != 0
     end
     interlace << ilace
     translen = 1 + rand(3)
