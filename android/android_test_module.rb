@@ -20,7 +20,7 @@ def setup
   @equipment['dut1'].set_android_tools(@android_boot_params)
   send_adb_cmd("shell mkdir #{@linux_dst_dir}")
   send_adb_cmd("shell su root svc power stayon true")
-  send_events_for('__menu__')
+  send_events_for('__home__')
   setupTest(:@test_libs,:@var_test_libs_root)
 end
 
