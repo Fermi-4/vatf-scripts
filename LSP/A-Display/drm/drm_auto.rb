@@ -167,10 +167,10 @@ def run
           break
         end
         result.each_with_index do |h, i|
-          h['psnr'].each {|comp, val| qual_res &= val >= 40
-                                      qual_string+="-Frame ##{i}: Component #{comp} failed PSNR #{val}dB\n" if val < 40}
-          h['ssim'].each {|comp, val| qual_res &= val >= 99
-                                      qual_string+="-Frame ##{i}: Component #{comp} failed SSIM #{val}%\n" if val < 99}
+          h['psnr'].each {|comp, val| qual_res &= val >= 40 || comp =='a'
+                                      qual_string+="-Frame ##{i}: Component #{comp} failed PSNR #{val}dB\n" if val < 40 && comp !='a'}
+          h['ssim'].each {|comp, val| qual_res &= val >= 99 || comp =='a'
+                                      qual_string+="-Frame ##{i}: Component #{comp} failed SSIM #{val}%\n" if val < 99 && comp !='a'}
         end
         break if qual_res
       end
