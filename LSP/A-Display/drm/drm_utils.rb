@@ -365,6 +365,8 @@ def get_entries(string)
       state_info.each_index do |i|
           entry[column_names[i]] = state_info[i]
       end
+      other_info = caps.match(/(.*?)[\r\n]+ {2}(\w+[^:] [^\r\n]+)/im)
+      entry['other_info'] = other_info.captures[1] if other_info && other_info.captures[0] == ''
       caps_info = get_sections(caps,/^ {2}\w+:/)
       if caps_info
         caps_info.each do |cap, cap_info|
