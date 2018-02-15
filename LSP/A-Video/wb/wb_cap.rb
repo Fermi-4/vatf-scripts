@@ -3,8 +3,8 @@ require File.dirname(__FILE__)+'/../../default_target_test'
 require File.dirname(__FILE__)+'/../../../lib/utils'
 require File.dirname(__FILE__)+'/../play_utils'
 require File.dirname(__FILE__)+'/../f2f_utils'
-require File.dirname(__FILE__)+'/../dev_utils'
 require File.dirname(__FILE__)+'/../../A-Display/drm/drm_utils'
+require File.dirname(__FILE__)+'/../dev_utils'
 
 include LspTargetTestScript
 
@@ -35,7 +35,6 @@ def run
   wb_devices = get_type_devices(@test_params.params_chan.ip_type[0])
   dut_test_file = File.join(@linux_dst_dir,'video_test_file.yuv')
   local_test_file = File.join(@linux_temp_folder, 'video_tst_file.yuv')
-  @equipment['server1'].send_cmd("rm -rf #{local_test_file}",@equipment['server1'].prompt)
   dut_ip = get_ip_addr()
   
   res_table = @results_html_file.add_table([["Device",{:bgcolor => "4863A0"}],
@@ -57,9 +56,9 @@ def run
   video_test_file = File.join(@linux_temp_folder, 'video_tst_file.raw')
   free_mem = 1920 * 1080 * 26 * 4
   single_disp_modes.each do |s_mode|
-      next if s_mode[0]['mode'].match(/\d+x\d+i/)
-      video_width, video_height = s_mode[0]['mode'].split('x').map(&:to_i)
+      video_width, video_height = s_mode[0]['mode'].sub(/i$/,'').split('x').map(&:to_i)
       wb_devices.each do |dev|
+        @equipment['server1'].send_cmd("rm -rf #{local_test_file} #{File.dirname(local_test_file)}/test_frame*.yuv #{File.dirname(local_test_file)}/ref_frame*.yuv",@equipment['server1'].prompt)
         device = '/dev/'+dev
         @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --list-formats", @equipment['dut1'].prompt, 10)
         pix_fmts = @equipment['dut1'].response.scan(/(?<=Pixel\sFormat:\s')\w+/im)
@@ -104,13 +103,24 @@ def run
           end
           ref_path = ref_path[0]
           trunc_local_ref = ref_path
-          if File.exists?(ref_path) && File.size(ref_path) != File.size(local_test_file)
-            trunc_local_ref = ref_path+'.trunc'
-            frame_size = (format_length * video_height * video_width).to_i
-            @equipment['server1'].send_cmd("dd if=#{ref_path} of=#{trunc_local_ref} bs=#{frame_size} count=#{num_frames}", @equipment['server1'].prompt,600)
+          frame_size = (format_length * video_height * video_width).to_i
+          if !s_mode[0]['mode'].match(/\d+x\d+i/)
+            if File.exists?(ref_path) && File.size(ref_path) != File.size(local_test_file)
+              trunc_local_ref = ref_path+'.trunc'
+              @equipment['server1'].send_cmd("dd if=#{ref_path} of=#{trunc_local_ref} bs=#{frame_size} count=#{num_frames}", @equipment['server1'].prompt,600)
+            end
+            @equipment['server1'].send_cmd("md5sum #{trunc_local_ref} #{local_test_file} | grep -o '^[^ ]*'",@equipment['server1'].prompt, 600)
+            qual_res = @equipment['server1'].response.split()
+            
+          else
+            @equipment['server1'].send_cmd("for i in `seq 0 #{num_frames - 1}`; do dd if=#{local_test_file} of=#{File.dirname(local_test_file)}/test_frame${i}.yuv count=1 bs=$((#{frame_size/2})) skip=$i ; done", @equipment['server1'].prompt, 600)
+            @equipment['server1'].send_cmd("md5sum #{File.dirname(local_test_file)}/test_frame*.yuv | grep -o '^[^ ]*' | sort -u",@equipment['server1'].prompt, 600)
+            tests_md5s = @equipment['server1'].response.strip()
+            @equipment['server1'].send_cmd("for i in `seq 0 #{num_frames - 1}`; do dd if=#{ref_path} of=#{File.dirname(local_test_file)}/ref_frame${i}.yuv count=1 bs=$((#{frame_size/2})) skip=$i ; done", @equipment['server1'].prompt, 600)
+            @equipment['server1'].send_cmd("md5sum #{File.dirname(local_test_file)}/ref_frame*.yuv | grep -o '^[^ ]*' | sort -u",@equipment['server1'].prompt, 600)
+            ref_md5s = @equipment['server1'].response.strip()
+            qual_res = [ref_md5s, tests_md5s]
           end
-          @equipment['server1'].send_cmd("md5sum #{trunc_local_ref} #{local_test_file} | grep -o '^[^ ]*'",@equipment['server1'].prompt, 600)
-          qual_res = @equipment['server1'].response.split()
           res = qual_res[0].strip() == qual_res[1].strip()
           if !res
             t_string = "failed, converted file failed test (#{num_frames} frames), #{qual_res[0]} != #{qual_res[1]}"
