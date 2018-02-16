@@ -35,12 +35,19 @@ def run
   ingress_lat = @test_params.params_chan.ingress_lat[0]
   pass_crit = @test_params.params_chan.pass_crit[0]
   timeout = @test_params.params_chan.timeout[0].to_i
+  enable_pps = @test_params.params_chan.enable_pps[0].to_i
+  pps_enable_file = @test_params.params_chan.pps_enable_file[0]
 
   test_comment = ""
   begin
+    if enable_pps == 1
+      verify_pps(@equipment['dut1'], slave_port, slave_if, pps_enable_file)
+      verify_pps(@equipment['dut2'], master_port, master_if, pps_enable_file)
+      test_comment = "1 PPS generation and "
+    end
     verify_ptp_oc(@equipment['dut1'], @equipment['dut2'], port, slave_port, slave_if,
       master_port, master_if, egress_lat, ingress_lat, pass_crit, timeout)
-    test_comment = "PTP Ordinary Clock on #{port} verified."
+    test_comment += "PTP Ordinary Clock on #{port} verified."
     set_result(FrameworkConstants::Result[:pass], "Test Passed. #{test_comment}")
   rescue Exception => e
     set_result(FrameworkConstants::Result[:fail], "Test Failed. #{e}")
@@ -59,11 +66,6 @@ def verify_ptp_oc(dut_slave, dut_master, port, slave_port, slave_if, master_port
   ping_status(dut_master, slave_if)
   gen_config_file(dut_master, master_port, egress_lat, ingress_lat)
   gen_config_file(dut_slave, slave_port, egress_lat, ingress_lat)
-  # check for PRU_ICSS and if then setup
-  if port == "PRU-ICSS"
-    setup_pru_icss(dut_master)
-    setup_pru_icss(dut_slave)
-  end
   # run ptp master and slave
   dut_master.send_cmd("ptp4l -2 -P -f oc_eth.cfg -m", "assuming the grand master role", 20)
   dut_slave.send_cmd("ptp4l -2 -P -f oc_eth.cfg -s -m & (PID=$! ; sleep #{timeout}; kill $PID)",\
@@ -74,18 +76,6 @@ def verify_ptp_oc(dut_slave, dut_master, port, slave_port, slave_if, master_port
   end
 end
 
-# function to setup pru-icss
-def setup_pru_icss(dut)
-  dut.send_cmd("ifconfig eth2 down", dut.prompt, 10)
-  dut.send_cmd("ifconfig eth3 down", dut.prompt, 10)
-  dut.send_cmd("ethtool -K eth2 hsr-rx-offload off", dut.prompt, 10)
-  dut.send_cmd("ethtool -K eth3 hsr-rx-offload off", dut.prompt, 10)
-  dut.send_cmd("ethtool -K eth2 prp-rx-offload on", dut.prompt, 10)
-  dut.send_cmd("ethtool -K eth3 prp-rx-offload on", dut.prompt, 10)
-  dut.send_cmd("ifconfig eth2 up", dut.prompt, 10)
-  dut.send_cmd("ifconfig eth3 up", dut.prompt, 10)
-end
-
 # function to generate config file
 def gen_config_file(dut, port, egress_lat, ingress_lat)
   dut.send_cmd("echo \"[global]\"$'\\n'\"tx_timestamp_timeout 10\"$'\\n'\""\
@@ -94,6 +84,24 @@ def gen_config_file(dut, port, egress_lat, ingress_lat)
                "\"$'\\n'\"egressLatency #{egress_lat}\"$'\\n'\"ingressLatency "\
                "#{ingress_lat}\" > oc_eth.cfg", dut.prompt, 10)
   dut.send_cmd("cat oc_eth.cfg", dut.prompt, 10)
+end
+
+# function to verify 1 pulse per second
+def verify_pps(dut, dut_port, dut_if, pps_enable_file)
+  dut.send_cmd("echo 1 > /sys/kernel/debug/prueth-#{dut_port}/prp_emac_mode", dut.prompt, 10)
+  dut.send_cmd("ifconfig #{dut_port} #{dut_if}", dut.prompt, 10)
+  dut.send_cmd("echo 1 > #{pps_enable_file}", dut.prompt, 10)
+  # redirect pps timestamp to file at 1 sec of interval
+  dut.send_cmd("cat /sys/class/pps/pps1/assert > pps_timestamp.txt", dut.prompt, 10)
+  for i in 0..30
+    dut.send_cmd("cat /sys/class/pps/pps1/assert >> pps_timestamp.txt", dut.prompt, 10)
+    sleep(0.9)
+  end
+  dut.send_cmd("cat pps_timestamp.txt; cat pps_timestamp.txt | tr '\\n' ' '", dut.prompt, 10)
+  if !(dut.response =~ Regexp.new("(\\d{9}1.\\d{9}.\\d+\\s\\d{9}2.\\d{9}.\\d+\\s\\d{9}3.\\d{9}.\\d+)"))\
+       or dut.timeout?
+    raise "Failed to verify 1 PPS."
+  end
 end
 
 def clean
