@@ -1,6 +1,7 @@
 # -*- coding: ISO-8859-1 -*-
 # This application can be used to test block device boot including qspi, spi, mmc, emmc, usbhost etc
 require File.dirname(__FILE__)+'/../default_test_module'
+require File.dirname(__FILE__)+'/../update_mmc'
 require File.dirname(__FILE__)+'/../../lib/utils'
    
 include LspTestScript   
@@ -18,7 +19,7 @@ def run
   set_bootloader_devs(this_params, boot_media)
   bparams = setup_host_side(this_params)
   bparams.each{|k,v| puts "#{k}:#{v}"}
-  if bparams['secondary_bootloader'].strip == '' 
+  if bparams['secondary_bootloader'].strip == '' and bparams['primary_bootloader'].strip == '' 
     raise "Bootloaders are not provided"
   end
   if blk_boot_media.include?(boot_media)
@@ -69,6 +70,14 @@ def run
           bparams['dut'].boot_to_bootloader(bparams)
         end
       else
+        if bparams['dut'].name =~ /am437x-sk|am437x-idk/ and boot_media == "qspi" 
+          # remove SD card so switch to qspi boot (MMC0->USB?->QSPI)
+          if bparams['dut'].params.has_key?("microsd_switch")
+            switch_to_host(bparams)
+          else
+            raise "Could not test qspi boot on am437x-sk or am437x-idk since there is no SDMux setup"
+          end
+        end
         bparams['dut'].boot_to_bootloader(bparams)
       end
 
@@ -120,6 +129,9 @@ def run
       bparams['dut'].reset_sysboot(bparams['dut'])
     ensure
       counter += 1
+	  if @equipment['dut1'].name =~ /am437x-sk|am437x-idk/
+	    switch_to_dut(bparams)
+	  end
     end
   end # end of while loop
 
@@ -136,6 +148,49 @@ def clean
   @equipment['dut1'].reset_sysboot(@equipment['dut1'])
 end
 
+def switch_to_dut(params)
+  return if !params['dut'].params.has_key?("microsd_switch")
+  
+  setup_ti_test_gadget(params)
+  @equipment['ti_test_gadget'].set_interfaces(params['dut'].params)
+  report_msg "Switching back to DUT..."
+  @equipment['ti_test_gadget'].switch_microsd_to_dut(params['dut'])
+end
+
+# remove sd card by switching SDmux to host side
+def switch_to_host(params)
+  return if !params['dut'].params.has_key?("microsd_switch")
+
+  setup_ti_test_gadget(params)
+  @equipment['ti_test_gadget'].set_interfaces(params['dut'].params)
+
+  #Resolve symlink and get nodes
+  host_node = params['dut'].params['microsd_host_node']
+  if File.symlink?(host_node)
+    node = "/dev/#{File.readlink(host_node)}"
+  else
+    node = host_node
+  end
+  node = node.strip.sub(/\d*$/, '') # only keep base node like sdb not sdb1.
+
+  begin
+    report_msg "Switching to host..."
+    @equipment['ti_test_gadget'].switch_microsd_to_host(params['dut'])
+    sleep 2
+    30.times {
+      params['server'].send_cmd("ls #{node}[[:digit:]]*; echo $?", /^0[\0\n\r]+/im, 2)
+      if params['server'].timeout?
+        sleep 2
+      else
+        break
+      end
+    }
+    params['server'].send_cmd("ls #{node}[[:digit:]]*; echo $?", /^0[\0\n\r]+/im, 2)
+    raise "Failed to switch to host" if params['server'].timeout?
+    report_msg "Switching to host done"
+  end
+
+end
 
 def set_bootloader_devs(params, media)
   case media.downcase

@@ -160,6 +160,8 @@ module EvmData
       return {'secondary_bootloader' => '0'}
     when /dra7|am571x-idk|am572x-idk|am574x-idk/
       return {'primary_bootloader' => '0', 'secondary_bootloader' => '0x40000', 'dtb' => '0x140000', 'kernel' => '0x1e0000'}
+    when /am437/
+      return {'primary_bootloader' => '0', 'dtb' => '0x100000', 'kernel' => '0x130000'}
     else
       raise "get_qspi_loc: No location is being specified for QSPI partitions for #{platform}"
     end
