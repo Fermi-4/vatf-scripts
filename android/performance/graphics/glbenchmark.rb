@@ -8,7 +8,9 @@ include REXML
 def run
   apk_path = File.join(@linux_temp_folder, File.basename(@test_params.params_chan.apk_url[0]))
   wget_file(@test_params.params_chan.apk_url[0], apk_path)
-  #send_adb_cmd("install -r #{apk_path}")
+  pkg = send_adb_cmd('shell pm list packages glbenchmark').strip().split(':')[1]
+  send_adb_cmd("uninstall #{pkg}")
+  send_adb_cmd("install -r #{apk_path}")
   pkg = send_adb_cmd('shell pm list packages glbenchmark').strip().split(':')[1]
   #clear the old files if any
   send_adb_cmd("shell rm /sdcard/Android/data/#{pkg}/cache/last_results_*.xml")
@@ -19,13 +21,12 @@ def run
   send_adb_cmd("logcat  -c")
   send_events_for(['__directional_pad_up__', '__enter__', '__tab__', '__tab__', '__enter__', '__tab__', '__enter__'])
   timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.instance_variable_defined?(:@timeout).to_i : 60
-  timeout.times do |i|
+  (timeout*2).times do |i|
     data = send_adb_cmd("logcat  -d")
     send_adb_cmd("logcat -c")
     break if data.match(/ActivityManager:\s*Displayed\s*com.glbenchmark.glbenchmark25\/com.glbenchmark.activities.ResultsActivity:/)
-    sleep 60
+    sleep 30
   end
-  sys_stats = stop_collecting_stats(@test_params.params_control.collect_stats) if @test_params.params_control.instance_variable_defined?(:@collect_stats)
   results_file = send_adb_cmd('shell ls /sdcard/Android/data/com.glbenchmark.glbenchmark*/cache/last_results_*.xml').strip()
   send_adb_cmd("pull -p #{results_file} #{local_res_file}")
   perf_data = []
