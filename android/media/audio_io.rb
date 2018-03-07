@@ -13,8 +13,7 @@ def run
   ref_path, dut_src_file = get_file_from_url(ref_file_url)
   apk_path = File.join(@linux_temp_folder, File.basename(@test_params.params_chan.apk_url[0]))
   wget_file(@test_params.params_chan.apk_url[0], apk_path)
-  send_adb_cmd("install -r #{apk_path}")
-  pkg = 'com.ti.test.media'
+  pkg = installPkg(apk_path, 'com.ti.test.media',true)
   audio_permissions.each{ |permission| send_adb_cmd("shell pm grant #{pkg} #{permission}") }
   dut_test_file = 'test.3gp'
   #clear the old files if any
@@ -49,4 +48,6 @@ def run
     audio = staf_req.rc == 0 ? staf_result['song_name'] : 'no match found'
     set_result(FrameworkConstants::Result[:fail], "Recorded audio did not match expected audio: expected #{audio_name}, got #{audio}")
   end
+  ensure
+    uninstallPkg(pkg) if pkg
 end

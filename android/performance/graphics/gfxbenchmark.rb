@@ -7,11 +7,7 @@ include AndroidTest
 def run
   apk_path = File.join(@linux_temp_folder, File.basename(@test_params.params_chan.apk_url[0]))
   wget_file(@test_params.params_chan.apk_url[0], apk_path)
-  pkg = send_adb_cmd('shell pm list packages kishonti.gfxbench').strip().split(':')[1]
-  send_adb_cmd("uninstall #{pkg}") if pkg
-  send_adb_cmd("install -r #{apk_path}")
-  pkg = send_adb_cmd('shell pm list packages kishonti.gfxbench').strip().split(':')[1]
-  raise "Unable to install apk" if !pkg
+  pkg = installPkg(apk_path, 'kishonti.gfxbench',true, 300)
   #clear the old files if any
   send_adb_cmd("shell rm -rf /sdcard/Android/data/#{pkg}/files/results/*")
   local_res_dir = File.join(@linux_temp_folder, 'gfxbenchmark')
@@ -21,21 +17,11 @@ def run
   send_adb_cmd("shell am start -W -n #{pkg}/net.kishonti.app.MainActivity -a android.intent.action.MAIN -c android.intent.category.LAUNCHER")
   send_adb_cmd("logcat  -c")
   send_events_for(['__tab__', '__tab__', '__tab__', '__enter__'])
-  30.times do |i|
-    data = send_adb_cmd("logcat  -d")
-    send_adb_cmd("logcat -c")
-    break if data.match(/Initialization:\s*After\s*Init\s*net.kishonti.app.MainActivity/)
-    raise "Benchmark was not able to start" if i == 29
-    sleep 30
-  end
+  data = wait_for_logcat(/Initialization:\s*After\s*Init\s*net.kishonti.app.MainActivity/, 15)
+  raise "Benchmark was not able to start" if !data.match(/Initialization:\s*After\s*Init\s*net.kishonti.app.MainActivity/)
   send_events_for(['__directional_pad_up__', '__enter__'])
   timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.instance_variable_defined?(:@timeout).to_i : 60
-  (timeout*2).times do |i|
-    data = send_adb_cmd("logcat  -d")
-    send_adb_cmd("logcat -c")
-    break if data.match(/ActivityManager:\s*START.*?act=net.kishonti.benchui.ACTION_SHOW_RESULT.*?cmp=#{pkg}\/net.kishonti.app.MainActivity/)
-    sleep 30
-  end
+  wait_for_logcat(/ActivityManager:\s*START.*?act=net.kishonti.benchui.ACTION_SHOW_RESULT.*?cmp=#{pkg}\/net.kishonti.app.MainActivity/, timeout)
   results_dir = "/sdcard/Android/data/#{pkg}/files/results/" + send_adb_cmd("shell ls /sdcard/Android/data/#{pkg}/files/results/").strip()
   send_adb_cmd("pull -p #{results_dir} #{local_res_dir}/")
   perf_data = []
@@ -56,15 +42,14 @@ def run
                       'values' => result['score']}
         if result['status'] != 'OK'
           result = FrameworkConstants::Result[:fail]
-          res_string += "Test #{test} (#{result['error_string']})failed\n"
+          res_string += "Test #{test} (#{result['error_string']}) failed\n"
         end
       end
     end
   end
   set_result(result, res_string , perf_data)
   ensure
-    pkg = send_adb_cmd('shell pm list packages kishonti.gfxbench').strip().split(':')[1]
-    send_adb_cmd("uninstall #{pkg}") if pkg
+    uninstallPkg(pkg) if pkg
 end
 
 def parse_units(units)

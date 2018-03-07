@@ -1,3 +1,4 @@
+require 'date'
 require File.dirname(__FILE__)+'/metrics'
 require File.dirname(__FILE__)+'/../lib/plot'
 require File.dirname(__FILE__)+'/keyevents_module'
@@ -165,9 +166,7 @@ module AndroidTest
     
   # Returns true if named package is installed
   def isPkgInstalled?(pkgName)
-    response = send_adb_cmd("shell pm list packages")
-    return true if pkgName && /package:#{pkgName}\s+/.match(response)
-    return false
+    send_adb_cmd("shell pm list packages #{pkgName}").strip().split(':')[1]
   end
     
   #Un-installs android package. Raise error if it can't
@@ -182,12 +181,15 @@ module AndroidTest
   #Installs android package. Raise error if it can't
   def installPkg(apk,pkgName,force=false, tout=60)
     Timeout::timeout(tout) do
-      if pkgName && force && isPkgInstalled?(pkgName)
-        uninstallPkg(pkgName)
-        send_adb_cmd("install #{apk}") 
+      pkg = isPkgInstalled?(pkgName)
+      if force && pkg
+        uninstallPkg(pkg)
+        pkg = nil
       end
-      send_adb_cmd("install #{apk}") if !isPkgInstalled?(pkgName)
-      raise "Could not install PACKAGE: #{pkgName}" if !isPkgInstalled?(pkgName)
+      send_adb_cmd("install #{apk}") if !pkg
+      pkg = isPkgInstalled?(pkgName)
+      raise "Could not install PACKAGE: #{pkgName}" if !pkg
+      return pkg
     end
     rescue Timeout::Error => e
       raise "Could not install PACKAGE: #{pkgName}\n"+e.backtrace.to_s
@@ -240,6 +242,22 @@ module AndroidTest
       send_adb_cmd "shell am start -W -n org.openqa.selenium.android.app/.MainActivity --activity-clear-top"
       sleep 5  # Wait for server to start
     end
+  end
+  
+  def wait_for_logcat(expected_regex, timeout) #timeout in mins
+    result = send_adb_cmd("logcat  -d")
+    return result if result.match(/#{expected_regex}/)
+    last_date = DateTime.strptime(result.scan(/^([\d\-]+\s+[\d\.:]+)/).flatten()[-1], '%m-%d %H:%M:%S.%L').strftime('%Q').to_i + 1
+    (timeout*2).times do |i|
+      data = send_adb_cmd("logcat  -d -T '#{DateTime.strptime("#{last_date}", '%Q').strftime('%m-%d %H:%M:%S.%L')}'")
+      if data.to_s.strip() != '' && data.match(/^[\d\-]+\s+[\d\.:]+/) 
+        result += data
+        last_date = DateTime.strptime(data.scan(/^([\d\-]+\s+[\d\.:]+)/).flatten()[-1], '%m-%d %H:%M:%S.%L').strftime('%Q').to_i + 1
+      end
+      break if data.match(/#{expected_regex}/)
+      sleep 30
+    end 
+    return result
   end
 end  # End of module
 
