@@ -1,7 +1,7 @@
 # -*- coding: ISO-8859-1 -*-
 require File.dirname(__FILE__)+'/../../LSP/A-Display/drm/capture_utils'
 require File.dirname(__FILE__)+'/../../LSP/A-Display/drm/drm_utils'
-require File.dirname(__FILE__)+'/f2f_utils'
+require File.dirname(__FILE__)+'/../f2f_utils'
 require File.dirname(__FILE__)+'/../../LSP/A-Audio/audio_utils'
 require File.dirname(__FILE__)+'/../android_test_module'
 

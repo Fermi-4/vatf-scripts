@@ -1,4 +1,4 @@
-require File.dirname(__FILE__)+'/../../LSP/A-Video/f2f_utils'
+require File.dirname(__FILE__)+'/../LSP/A-Video/f2f_utils'
 #Function to fetch the test file in the dut and host
 def get_file_from_url(url, ref_file_url=nil, dut=@equipment['dut1'], host=@equipment['server1'])
   r_file_url = ref_file_url ? ref_file_url : url

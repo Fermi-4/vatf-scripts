@@ -2,7 +2,7 @@
 require File.dirname(__FILE__)+'/../../android_test_module'
 require File.dirname(__FILE__)+'/../../../lib/utils'
 require File.dirname(__FILE__)+'/../../../LSP/A-Video/play_utils'
-require File.dirname(__FILE__)+'/../f2f_utils'
+require File.dirname(__FILE__)+'/../../f2f_utils'
 require File.dirname(__FILE__)+'/../../../LSP/A-Video/dev_utils'
   
 include AndroidTest

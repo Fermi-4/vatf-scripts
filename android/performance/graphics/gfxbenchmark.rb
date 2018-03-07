@@ -1,5 +1,5 @@
 require File.dirname(__FILE__)+'/../../android_test_module'
-require File.dirname(__FILE__)+'/../../media/f2f_utils'
+require File.dirname(__FILE__)+'/../../f2f_utils'
 require 'json'
 
 include AndroidTest
@@ -8,9 +8,10 @@ def run
   apk_path = File.join(@linux_temp_folder, File.basename(@test_params.params_chan.apk_url[0]))
   wget_file(@test_params.params_chan.apk_url[0], apk_path)
   pkg = send_adb_cmd('shell pm list packages kishonti.gfxbench').strip().split(':')[1]
-  send_adb_cmd("uninstall #{pkg}")
+  send_adb_cmd("uninstall #{pkg}") if pkg
   send_adb_cmd("install -r #{apk_path}")
   pkg = send_adb_cmd('shell pm list packages kishonti.gfxbench').strip().split(':')[1]
+  raise "Unable to install apk" if !pkg
   #clear the old files if any
   send_adb_cmd("shell rm -rf /sdcard/Android/data/#{pkg}/files/results/*")
   local_res_dir = File.join(@linux_temp_folder, 'gfxbenchmark')
@@ -61,6 +62,9 @@ def run
     end
   end
   set_result(result, res_string , perf_data)
+  ensure
+    pkg = send_adb_cmd('shell pm list packages kishonti.gfxbench').strip().split(':')[1]
+    send_adb_cmd("uninstall #{pkg}") if pkg
 end
 
 def parse_units(units)

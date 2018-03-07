@@ -1,5 +1,5 @@
 require File.dirname(__FILE__)+'/../../android_test_module'
-require File.dirname(__FILE__)+'/../../media/f2f_utils'
+require File.dirname(__FILE__)+'/../../f2f_utils'
 require 'rexml/document'
 
 include AndroidTest
@@ -9,9 +9,10 @@ def run
   apk_path = File.join(@linux_temp_folder, File.basename(@test_params.params_chan.apk_url[0]))
   wget_file(@test_params.params_chan.apk_url[0], apk_path)
   pkg = send_adb_cmd('shell pm list packages glbenchmark').strip().split(':')[1]
-  send_adb_cmd("uninstall #{pkg}")
+  send_adb_cmd("uninstall #{pkg}") if pkg
   send_adb_cmd("install -r #{apk_path}")
   pkg = send_adb_cmd('shell pm list packages glbenchmark').strip().split(':')[1]
+  raise "Unable to install apk" if !pkg
   #clear the old files if any
   send_adb_cmd("shell rm /sdcard/Android/data/#{pkg}/cache/last_results_*.xml")
   local_res_file = File.join(@linux_temp_folder, 'glbenchmark_results.xml')
@@ -24,7 +25,7 @@ def run
   (timeout*2).times do |i|
     data = send_adb_cmd("logcat  -d")
     send_adb_cmd("logcat -c")
-    break if data.match(/ActivityManager:\s*Displayed\s*com.glbenchmark.glbenchmark25\/com.glbenchmark.activities.ResultsActivity:/)
+    break if data.match(/ActivityManager:\s*Displayed\s*#{pkg}\/com.glbenchmark.activities.ResultsActivity:/)
     sleep 30
   end
   results_file = send_adb_cmd('shell ls /sdcard/Android/data/com.glbenchmark.glbenchmark*/cache/last_results_*.xml').strip()
@@ -60,6 +61,9 @@ def run
     end
   end
   set_result(result, res_string , perf_data)
+  ensure
+    pkg = send_adb_cmd('shell pm list packages glbenchmark').strip().split(':')[1]
+    send_adb_cmd("uninstall #{pkg}") if pkg
 end
 
 def parse_units(units)
