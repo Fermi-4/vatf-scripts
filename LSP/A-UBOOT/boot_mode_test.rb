@@ -42,8 +42,8 @@ def run
   case boot_media
   when "usbeth"
     staf_mutex("usbeth_setup", 60000) do
-      setup_host_for_usbeth_boot(bparams)
       setup_usbeth_images(bparams)
+      setup_host_for_usbeth_boot(bparams)
     end
   when "eth"
     staf_mutex("ethboot_setup", 60000) do
@@ -244,6 +244,14 @@ def setup_ethboot_images(params)
       copy_with_path(srcfile, dstfile)
       srcfile = File.join(params['server'].tftp_path, params['secondary_bootloader_image_name'] )
       dstfile = File.join(params['server'].tftp_path, "emac_boot/u-boot-am437x-hs-evm\.img")
+      copy_with_path(srcfile, dstfile)
+
+    when /beaglebone/
+      srcfile = File.join(params['server'].tftp_path, params['primary_bootloader_image_name'] )
+      dstfile = File.join(params['server'].tftp_path, "emac_boot/u-boot-spl.bin-bbb")
+      copy_with_path(srcfile, dstfile)
+      srcfile = File.join(params['server'].tftp_path, params['secondary_bootloader_image_name'] )
+      dstfile = File.join(params['server'].tftp_path, "emac_boot/u-boot-bbb\.img")
       copy_with_path(srcfile, dstfile)
 
     when /k2g-evm/
