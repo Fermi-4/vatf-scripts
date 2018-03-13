@@ -104,10 +104,18 @@ def set_plane(params, expected_re=/testing.*?overlay/im, dut=@equipment['dut1'],
   end
 end
 
+def get_version(dut=@equipment['dut1'])
+ return @libdrm_tests_version if @libdrm_tests_version
+ dut.send_cmd("\n\n",dut.prompt, 30)
+ ver_string = dut.send_cmd('opkg list | grep -i libdrm-tests',dut.prompt, 30)
+ @libdrm_tests_version = ver_string.match(/.*?- ([\d\.]+)-/).captures[0]
+end
+
 #Function to create the string for plane related tests, takes the
 #same params value as required by set_plane
 def get_plane_string(params)
   p_string = ' -d -P '
+  p_string += params['id']+'@' if get_version() >= '2.4.83'
   p_string += params['crtc_id']
   p_string += ':'+ params['width'].to_s + 'x' + params['height'].to_s
   p_string += '+'+ params['xyoffset'].join('+') if params['xyoffset']
@@ -534,6 +542,7 @@ def get_test_modes(drm_info, formats, conn=nil, p_formats=nil)
             cm.each { |a_cm| chk_conn |= a_cm['connectors_names'].join(',').match(/#{conn}/i) }
             m.each { |a_m| chk_conn |= a_m['connectors_names'].join(',').match(/#{conn}/i) }
           end
+          next if cm[0]['plane'] && m[0]['plane'] && cm[0]['plane']['id'] == m[0]['plane']['id']
           multi_disp_modes << m + cm if chk_conn
         end
       end

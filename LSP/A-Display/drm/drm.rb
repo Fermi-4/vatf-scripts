@@ -7,7 +7,7 @@ require File.dirname(__FILE__)+'/drm_base'
 #the test passed (true) or failed (false); and the res_string is an informational
 #string regarding the result of the test 
 def get_drm_test_result(test_string)
-  sleep(5) #Run for at least 5 secs
+  sleep(8) #Run for at least 8 secs
   return [FrameworkConstants::Result[:pass], ''] if @test_params.params_chan.instance_variable_defined?(:@auto)
   res_win = ResultWindow.new(test_string)
   res_win.show()
