@@ -93,35 +93,38 @@ def run
           s_mode[0]['plane']['format']].join('_') if s_mode[0]['plane']
           ref_file = "ref_capture_#{disp_captured}_#{s_mode[0]['mode']}#{p_info}.#{tst_format}.tar.xz"
 
-          ref_path = get_ref do |base_uri|
+          refs = get_ref do |base_uri|
              base_uri + '/host-utils/wb/ref-media/' + ref_file 
           end
-          if !ref_path
+          if !refs
             puts "No reference #{ref_file} file found"
             add_result_row(res_table, device, tst_format, s_mode, true,  "No reference #{ref_file} file found", plane_info_str)
             next
           end
-          ref_path = ref_path[0]
-          trunc_local_ref = ref_path
-          frame_size = (format_length * video_height * video_width).to_i
-          if !s_mode[0]['mode'].match(/\d+x\d+i/)
-            if File.exists?(ref_path) && File.size(ref_path) != File.size(local_test_file)
-              trunc_local_ref = ref_path+'.trunc'
-              @equipment['server1'].send_cmd("dd if=#{ref_path} of=#{trunc_local_ref} bs=#{frame_size} count=#{num_frames}", @equipment['server1'].prompt,600)
+          res = false
+          refs.each do |ref_path|
+            trunc_local_ref = ref_path
+            frame_size = (format_length * video_height * video_width).to_i
+            if !s_mode[0]['mode'].match(/\d+x\d+i/)
+              if File.exists?(ref_path) && File.size(ref_path) != File.size(local_test_file)
+                trunc_local_ref = ref_path+'.trunc'
+                @equipment['server1'].send_cmd("dd if=#{ref_path} of=#{trunc_local_ref} bs=#{frame_size} count=#{num_frames}", @equipment['server1'].prompt,600)
+              end
+              @equipment['server1'].send_cmd("md5sum #{trunc_local_ref} #{local_test_file} | grep -o '^[^ ]*'",@equipment['server1'].prompt, 600)
+              qual_res = @equipment['server1'].response.split()
+              
+            else
+              @equipment['server1'].send_cmd("for i in `seq 0 #{num_frames - 1}`; do dd if=#{local_test_file} of=#{File.dirname(local_test_file)}/test_frame${i}.yuv count=1 bs=$((#{frame_size/2})) skip=$i ; done", @equipment['server1'].prompt, 600)
+              @equipment['server1'].send_cmd("md5sum #{File.dirname(local_test_file)}/test_frame*.yuv | grep -o '^[^ ]*' | sort -u",@equipment['server1'].prompt, 600)
+              tests_md5s = @equipment['server1'].response.strip()
+              @equipment['server1'].send_cmd("for i in `seq 0 #{num_frames - 1}`; do dd if=#{ref_path} of=#{File.dirname(local_test_file)}/ref_frame${i}.yuv count=1 bs=$((#{frame_size/2})) skip=$i ; done", @equipment['server1'].prompt, 600)
+              @equipment['server1'].send_cmd("md5sum #{File.dirname(local_test_file)}/ref_frame*.yuv | grep -o '^[^ ]*' | sort -u",@equipment['server1'].prompt, 600)
+              ref_md5s = @equipment['server1'].response.strip()
+              qual_res = [ref_md5s, tests_md5s]
             end
-            @equipment['server1'].send_cmd("md5sum #{trunc_local_ref} #{local_test_file} | grep -o '^[^ ]*'",@equipment['server1'].prompt, 600)
-            qual_res = @equipment['server1'].response.split()
-            
-          else
-            @equipment['server1'].send_cmd("for i in `seq 0 #{num_frames - 1}`; do dd if=#{local_test_file} of=#{File.dirname(local_test_file)}/test_frame${i}.yuv count=1 bs=$((#{frame_size/2})) skip=$i ; done", @equipment['server1'].prompt, 600)
-            @equipment['server1'].send_cmd("md5sum #{File.dirname(local_test_file)}/test_frame*.yuv | grep -o '^[^ ]*' | sort -u",@equipment['server1'].prompt, 600)
-            tests_md5s = @equipment['server1'].response.strip()
-            @equipment['server1'].send_cmd("for i in `seq 0 #{num_frames - 1}`; do dd if=#{ref_path} of=#{File.dirname(local_test_file)}/ref_frame${i}.yuv count=1 bs=$((#{frame_size/2})) skip=$i ; done", @equipment['server1'].prompt, 600)
-            @equipment['server1'].send_cmd("md5sum #{File.dirname(local_test_file)}/ref_frame*.yuv | grep -o '^[^ ]*' | sort -u",@equipment['server1'].prompt, 600)
-            ref_md5s = @equipment['server1'].response.strip()
-            qual_res = [ref_md5s, tests_md5s]
+            res = qual_res[0].strip() == qual_res[1].strip()
+            break if res
           end
-          res = qual_res[0].strip() == qual_res[1].strip()
           if !res
             t_string = "failed, converted file failed test (#{num_frames} frames), #{qual_res[0]} != #{qual_res[1]}"
           else
