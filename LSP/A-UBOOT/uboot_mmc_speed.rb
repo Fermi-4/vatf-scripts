@@ -30,18 +30,18 @@ def run
   when "mmc"
     @equipment['dut1'].send_cmd("mmc dev 0; mmc info", @equipment['dut1'].boot_prompt, 5)
     mmc_op_mode = @test_params.params_chan.mmc_op_mode[0].downcase
-    expected_speed = get_expected_speed_sd(platform, mmc_op_mode)
+    expected_speed = get_expected_busspeed_sd(platform, mmc_op_mode)
     raise "expected speed for SD card can not be empty" if expected_speed == nil
-    if ! @equipment['dut1'].response.match(/Tran\s+Speed\s*:\s+#{expected_speed}/i)
+    if ! @equipment['dut1'].response.match(/Bus\s+Speed\s*:\s+#{expected_speed}/i)
       result += 1
       result_msg = result_msg + "SD card is not working at expected speed: #{mmc_op_mode}::#{expected_speed} ; "
     end
   
   when 'emmc'
     @equipment['dut1'].send_cmd("mmc dev 1; mmc info", @equipment['dut1'].boot_prompt, 5)
-    expected_speed = get_expected_speed_emmc(platform)
+    expected_speed = get_expected_busspeed_emmc(platform)
     raise "expected speed for eMMC can not be empty" if expected_speed == nil
-    if ! @equipment['dut1'].response.match(/Tran\s+Speed\s*:\s+#{expected_speed}/i)
+    if ! @equipment['dut1'].response.match(/Bus\s+Speed\s*:\s+#{expected_speed}/i)
       result += 1
       result_msg = result_msg + "EMMC is not working at expected speed: #{mmc_op_mode}::#{expected_speed} ; "
     end
@@ -66,10 +66,21 @@ def get_expected_speed_sd(platform, sd_mode)
   return expected_speed_sd[platform][sd_mode]
 end
 
+def get_expected_busspeed_sd(platform, sd_mode)
+  expected_speed_sd = Hash.new({ 'sdr104' => '192000000', 'ddr50' => '96000000', })
+  expected_speed_sd['am57xx-evm'] = { 'sdr104' => '48000000', 'ddr50' => '48000000', }
+  return expected_speed_sd[platform][sd_mode]
+end
 
 def get_expected_speed_emmc(platform)
   expected_speed_emmc = Hash.new('200000000') 
   expected_speed_emmc['am57xx-evm'] = '52000000'
+  return expected_speed_emmc[platform]
+end
+
+def get_expected_busspeed_emmc(platform)
+  expected_speed_emmc = Hash.new('192000000')
+  expected_speed_emmc['am57xx-evm'] = '48000000'
   return expected_speed_emmc[platform]
 end
 
