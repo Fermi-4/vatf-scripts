@@ -13,3 +13,14 @@ def get_extra_params(testcase)
   }
   return nil
 end
+
+def get_test_script_file(testcase)
+	case testcase
+	when /UART_.+_HWFLOW/
+		return 'LSP/A-UART/uart_hwflow.rb'
+	when /_PERF_/
+		return 'LSP/TARGET/dev_test_perf_gov.rb'
+	else
+		return 'LSP/TARGET/dev_test2.rb'
+	end
+end

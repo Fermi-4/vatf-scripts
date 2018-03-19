@@ -143,11 +143,7 @@ class TestImporter
         CData.new( t['desc'], true, summary )
         cfs = tc.add_element "custom_fields"
         add_custom_field(cfs, "tee", "vatf")
-        if t['name'].match(/_PERF_/)
-          add_custom_field(cfs, "scripts", $PERF_SCRIPT)
-        else
-          add_custom_field(cfs, "scripts", "LSP/TARGET/dev_test2.rb")
-        end
+        add_custom_field(cfs, "scripts", get_test_script_file(t['name']))
         dut_caps = t.has_key?('hw_caps') ? "linux_#{t['hw_caps']}" : 'linux'
         add_custom_field(cfs, "hw_assets_config", "dut1=[\"<platform>\",#{dut_caps}];server1=[\"linux_server\"]")
         extra_params = get_extra_params(t['name'])
