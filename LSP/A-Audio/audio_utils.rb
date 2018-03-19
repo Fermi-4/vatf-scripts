@@ -478,9 +478,15 @@ end
 #  s_rate, int indicating the sample rate of the source audio
 #  channels, int indicating the number of audio channels in the audio
 #  add_wav, boolean indicating if a wav header should be added to processed audio
-#  skip, number of seconds to skip before processing
+#  sk, number of seconds to skip before processing
 #  is_wav, boolean indicating if the source file is wav container file
-def remove_offset(in_file, out_file=nil, fmt_bytes=2, s_rate=44100, channels=2, skip=3, add_wav=true, is_wav=false)
+def remove_offset(in_file, out_file=nil, fmt_bytes=2, s_rate=44100, channels=2, sk=3, add_wav=true, is_wav=false)
+  skip = sk
+  if s_rate*skip*channels*fmt_bytes >= File.size?(in_file)/3.0
+    puts "Skip value #{sk} is greater than 1/3 of the capture limiting to 1/3"  
+    skip = (sk/3.0).ceil
+  end
+
   data = separate_audio_chans(in_file, fmt_bytes, channels, (s_rate*skip/(channels*fmt_bytes)).to_i * channels * fmt_bytes , is_wav)
   d_means = []
   n_arrs = []
