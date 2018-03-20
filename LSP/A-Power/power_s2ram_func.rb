@@ -19,6 +19,7 @@ def run
   @global_stop = false
   @start_suspend_loop = false
   @queue = Queue.new
+  enable_pm_debug_messages()
   query_pm_stats
   test_thr = start_target_tests
   test_thr.priority = 1  # Increase its priority compared to suspend/resume thread

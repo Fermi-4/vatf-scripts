@@ -89,6 +89,13 @@ module PowerFunctions
     raise msg
   end
 
+
+  def enable_pm_debug_messages(e='dut1')
+    @equipment[e].send_cmd("grep '1' /sys/power/pm_debug_messages || echo 1 > /sys/power/pm_debug_messages", @equipment[e].prompt, 5)
+    @equipment[e].send_cmd("grep '^8' /proc/sys/kernel/printk || echo 8 > /proc/sys/kernel/printk", @equipment[e].prompt, 5)
+  end
+
+
   def power_wakeup_configuration(wakeup_domain, power_state, e='dut1')
     # set uart to gpio in standby_gpio_pad_conf so that uart can wakeup from standby
     if power_state == 'standby' && wakeup_domain == 'uart'

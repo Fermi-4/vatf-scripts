@@ -33,6 +33,8 @@ def run
     return
   end
 
+  enable_pm_debug_messages()
+
   i = 0
   test_failed = false
   err_msg = ''

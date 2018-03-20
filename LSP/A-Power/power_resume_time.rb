@@ -25,6 +25,8 @@ def run
   test_loop = @test_params.params_control.test_loop[0].to_i
   resume_time = []
 
+  enable_pm_debug_messages()
+
   i = 0
   while i < test_loop do
     power_wakeup_configuration(wakeup_domain, power_state)

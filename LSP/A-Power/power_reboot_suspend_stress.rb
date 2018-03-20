@@ -10,6 +10,7 @@ end
 
 def run_suspend_resume(wakeup_domain, power_state, max_suspend_time, max_resume_time)
   power_wakeup_configuration(wakeup_domain, power_state)
+  enable_pm_debug_messages()
   @test_params.params_control.suspend_loop_count[0].to_i.times do
       suspend(wakeup_domain, power_state, max_suspend_time)
       resume(wakeup_domain, max_resume_time)

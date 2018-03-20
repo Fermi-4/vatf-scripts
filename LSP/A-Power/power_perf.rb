@@ -74,6 +74,8 @@ def run
   
   @equipment['multimeter1'].configure_multimeter(get_power_domain_data(@equipment['dut1'].name).merge({'dut_type'=>@equipment['dut1'].name}))
   
+  enable_pm_debug_messages()
+
   configure_dut
 
   start_app
