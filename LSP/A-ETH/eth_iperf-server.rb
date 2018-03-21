@@ -13,6 +13,8 @@ def setup
 end
 
 def run  
+  process_name='iperf'
+  iperf_version=get_iperf_version
 
   staf_mutex("iperf", 240000) do
     test_type = @test_params.params_control.type[0]
@@ -24,7 +26,7 @@ def run
     end
 
   
-    kill_process('iperf')
+    pkill_process(process_name)
     if (interface_num.to_i > 1)
       array_of_interfaces = get_eth_interfaces
     else
@@ -36,14 +38,18 @@ def run
             run_down_up_udhcpc('dut1', dut_eth)
          end
          ip_addr=get_ip_addr('dut1', dut_eth)
-         test_cmd = test_type.match(/udp/i) ? "iperf -s -B #{ip_addr} -u -w 128k &": "iperf -s -B #{ip_addr} &"
-         @equipment['dut1'].send_cmd(test_cmd, /Server\s+listening.*?#{test_type}\sport.*?/i, 10)
+         if (iperf_version==3)
+            test_cmd = "iperf3 -s -B #{ip_addr} -i 0 &"
+         else
+            test_cmd = test_type.match(/udp/i) ? "iperf -s -B #{ip_addr} -u -w 128k &": "iperf -s -B #{ip_addr} &"
+         end
+         @equipment['dut1'].send_cmd(test_cmd, /Server\s+listening\s*\w*/i, 10)
          @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10)
          if !is_iperf_running?(test_type)
              raise "iperf can not be started. Please make sure iperf is installed in the DUT"    
          end
         }
-    kill_process('iperf', :this_equipment => @equipment['server1'], :use_sudo => true)
+    pkill_process(process_name, :this_equipment => @equipment['server1'], :use_sudo => true)
     if @test_params.params_control.type.length > 1
       test_vars = @test_params.params_control.type[1]
     else
@@ -58,12 +64,20 @@ def run
     array_of_interfaces.each{|dut_eth|
         dut_ip=get_ip_addr('dut1', dut_eth)
         if (test_type.match(/udp/i))
-            @equipment['server1'].send_cmd("iperf -c #{dut_ip} -l #{@test_params.params_control.packet_size[0]} -f M -u -t #{@test_params.params_control.time[0]} -b #{@test_params.params_control.bandwidth[0]} -w 128k &", 
+           if (iperf_version==3)
+              @equipment['server1'].send_cmd("iperf3 -c #{dut_ip} -l #{@test_params.params_control.packet_size[0]} -f M -u -t #{@test_params.params_control.time[0]} -b #{@test_params.params_control.bandwidth[0]} -w 128k -i 0 &", @equipment['server1'].prompt, @test_params.params_control.timeout[0].to_i)
+           else
+              @equipment['server1'].send_cmd("iperf -c #{dut_ip} -l #{@test_params.params_control.packet_size[0]} -f M -u -t #{@test_params.params_control.time[0]} -b #{@test_params.params_control.bandwidth[0]} -w 128k &", 
                                  @equipment['server1'].prompt,
                                  @test_params.params_control.timeout[0].to_i)
+           end
         elsif (test_type.match(/tcp/i))
-            direction = @test_params.params_control.direction[0].match(/bi/i)? '-d':''
-            @equipment['server1'].send_cmd("iperf -c #{dut_ip} -m -M  #{@test_params.params_control.packet_size[0]} -f M #{direction} -t #{@test_params.params_control.time[0]} -w  #{@test_params.params_control.window[0]} &",@equipment['server1'].prompt,@test_params.params_control.timeout[0].to_i)
+           if (iperf_version==3)
+             @equipment['server1'].send_cmd("iperf3 -c #{dut_ip} -M #{@test_params.params_control.packet_size[0]} -f M -t #{@test_params.params_control.time[0]} -w  #{@test_params.params_control.window[0]} -i 0 &",@equipment['server1'].prompt,@test_params.params_control.timeout[0].to_i)
+           else
+             direction = @test_params.params_control.direction[0].match(/bi/i)? '-d':''
+             @equipment['server1'].send_cmd("iperf -c #{dut_ip} -m -M  #{@test_params.params_control.packet_size[0]} -f M #{direction} -t #{@test_params.params_control.time[0]} -w  #{@test_params.params_control.window[0]} &",@equipment['server1'].prompt,@test_params.params_control.timeout[0].to_i)
+           end
         end
      
        }
@@ -110,12 +124,15 @@ def get_perf_metrics
 end
 
 def is_iperf_running?(type)
-  is_iperf_detected = false
-  test_regex = /iperf/
+  is_iperf_detected = false 
+  #iperf_version=get_iperf_version
+  #test_regex = iperf_version==3? \iperf3\:\iperf\
+  test_regex =  /iperf\d*\s*\w*/i
   @equipment['dut1'].send_cmd("ps", @equipment['dut1'].prompt, 10)
   is_iperf_detected = true if (@equipment['dut1'].response.match(test_regex))
   return is_iperf_detected
 end
+
 
 def start_genload()
   @equipment['dut1'].send_cmd("/opt/ltp/testcases/bin/genload -m 4 &", /genload: info:/i, 10)

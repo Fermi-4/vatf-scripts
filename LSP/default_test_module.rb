@@ -812,6 +812,17 @@ module LspTestScript
       end  
    end
 
+  def pkill_process(process,opts={},device_object=@equipment['dut1'])
+    this_equipment = opts[:this_equipment] || device_object
+    use_sudo = opts[:use_sudo] || false
+      if (use_sudo)
+        this_equipment.send_sudo_cmd("pkill -f #{process}", this_equipment.prompt, 10)
+      else
+        this_equipment.send_cmd("pkill -f #{process}", this_equipment.prompt, 10)
+      end
+   end
+
+
   # Preserve current governor
   def create_save_cpufreq_governors(device_object=@equipment['dut1'])
     device_object.send_cmd("cpus=$(ls /sys/devices/system/cpu | grep \"cpu[0-9].*\"); for cpu in $cpus; do cat /sys/devices/system/cpu/$cpu/cpufreq/scaling_governor; done",

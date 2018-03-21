@@ -4,9 +4,11 @@ require File.dirname(__FILE__)+'/../../lib/utils'
 
 
 def run
+  process_name='iperf'
+  iperf_version=get_iperf_version
   staf_mutex("iperf", 120*60*1000) do
-    kill_process('iperf')
-    kill_process('iperf', :this_equipment => @equipment['server1'], :use_sudo => true)
+    pkill_process(process_name)
+    pkill_process(process_name, :this_equipment => @equipment['server1'], :use_sudo => true)
     test_type = @test_params.params_control.type[0]
     interface_num = @test_params.params_control.instance_variable_defined?(:@interface_num) ? @test_params.params_control.interface_num[0] : 1
     array_of_interfaces = Array.new 
@@ -25,15 +27,22 @@ def run
            run_down_up_udhcpc('dut1', dut_eth)
            serverip=get_eth_server(dut_eth, 'dut1', 'server1')
            @equipment['dut1'].send_cmd("export IPERF#{dut_eth}HOST=#{serverip}", @equipment['dut1'].prompt)
-
-           test_cmd = test_type.match(/udp/i) ? "iperf -s -B #{serverip} -u -w 128k &": "iperf -s -B #{serverip} &"
+           if (iperf_version==3)
+              test_cmd = "iperf3 -s -B #{serverip}  &"
+           else
+              test_cmd = test_type.match(/udp/i) ? "iperf -s -B #{serverip} -u -w 128k &": "iperf -s -B #{serverip} &"
+           end
            @equipment['server1'].send_cmd(test_cmd, /Server\s+listening.*?#{test_type}\sport.*?/i, 10)
 
           }
      return
 # end of multi-interface throughput logic
     else
-      test_cmd = test_type.match(/udp/i) ? "iperf -s -u -w 128k &" : "iperf -s &"
+      if (iperf_version==3)
+         test_cmd = "iperf3 -s  &" 
+      else
+         test_cmd = test_type.match(/udp/i) ? "iperf -s -u -w 128k &" : "iperf -s &"
+      end
       if !is_iperf_running?(test_type)
         @equipment['server1'].send_cmd_nonblock(test_cmd, /Server\s+listening.*?#{test_type}\sport.*?/i, 10)
       end
@@ -51,7 +60,8 @@ def setup
 end
 
 def is_iperf_running?(type)
-  test_regex = type.match(/udp/i) ? /iperf\s+\-s\s+\-u/i : /iperf\s+\-s\s*$/i
+  #test_regex = type.match(/udp/i) ? /iperf\s+\-s\s+\-u/i : /iperf\s+\-s\s*$/i
+  test_regex =  /iperf\d*\s*\w*\s+-s/i
   @equipment['server1'].send_cmd("ps ax", @equipment['server1'].prompt, 10)
   if !(@equipment['server1'].response.match(test_regex))
     return false
