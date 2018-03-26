@@ -102,6 +102,7 @@ def run
             next
           end
           res = false
+          qual_res = [1,2]
           refs.each do |ref_path|
             trunc_local_ref = ref_path
             frame_size = (format_length * video_height * video_width).to_i
