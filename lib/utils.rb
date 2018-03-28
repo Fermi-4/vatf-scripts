@@ -152,7 +152,7 @@ end
 # Returns 3 if iperf3 else returns 2
 def get_iperf_version
   response=@equipment['dut1'].send_cmd("iperf -v", @equipment['dut1'].prompt)
-  if (response.match(/iperf\s*2/))
+  if (response =~ /iperf.*2/)
     iperf_version=2
   else
     iperf_version=3
