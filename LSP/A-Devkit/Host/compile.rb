@@ -20,16 +20,24 @@ def run_and_check_cmd(cmd, equip, response, timeout=60)
   end
 end
 
+
+def determine_latest_dir(base_url)
+  dirs = `rm index.html; wget #{base_url}/; cat index.html`
+  return dirs.scan(/<a href="(\d{4})\/">/)[-1][0]
+end
+
+
 def run
   equip = @equipment['server1']
   toolchains_url = 'http://lcpd.gt.design.ti.com/toolchains'
+  latest_dir = determine_latest_dir(toolchains_url)
   arch = @test_params.params_control.arch[0]
-  download_cmd =  "cd ~ && wget -A xz -m -p -E -k -K -np #{toolchains_url}/#{arch}/ && echo 'DOWNLOADPASSED'"
+  download_cmd =  "cd ~ && wget -A xz -m -p -E -k -K -np #{toolchains_url}/#{latest_dir}/#{arch}/ && echo 'DOWNLOADPASSED'"
   return if run_and_check_cmd(download_cmd, equip, /DOWNLOADPASSED/)
-  toolchain_filename = Dir.entries("#{Dir.home()}/#{toolchains_url.sub('http://','')}/#{arch}")[-1]
+  toolchain_filename = Dir.entries("#{Dir.home()}/#{toolchains_url.sub('http://','')}/#{latest_dir}/#{arch}")[-1]
   toolchain_dirname = File.basename(toolchain_filename, ".tar.xz")
   if !Dir.exists?("/opt/#{toolchain_dirname}/bin")
-    if equip.send_sudo_cmd(["tar xvf ~/#{toolchains_url.sub('http://','')}/#{arch}/#{toolchain_filename} -C /opt", "echo 'INSTALLATIONPASSED'"], /INSTALLATIONPASSED/, 120)
+    if equip.send_sudo_cmd(["tar xvf ~/#{toolchains_url.sub('http://','')}/#{latest_dir}/#{arch}/#{toolchain_filename} -C /opt", "echo 'INSTALLATIONPASSED'"], /INSTALLATIONPASSED/, 120)
       set_result(FrameworkConstants::Result[:fail], "Error trying to install toolchain")
       return
     end
