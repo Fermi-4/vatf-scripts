@@ -46,13 +46,15 @@ tar xf gst-plugins-good-1.2.0.tar.xz  || exit 1
 cd gst-plugins-good-1.2.0/ || exit 1
 ./configure --host=i686 --disable-deinterlace --disable-goom  || exit 1
 make  || exit 1
+make clean || exit 1
 
 # Test cmake compilation
 cd $cmake_app_path || exit 1
-cmake . || exit 1
+mkdir build && cd build
+cmake .. || exit 1
 make || exit 1
 file Tutorial | grep ARM || exit 1
-
+cd .. && rm -rf ./build
 
 echo "All host-side devkit checks passed"
 exit 0
