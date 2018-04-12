@@ -144,12 +144,26 @@ module AndroidTest
       when /^am57xx-/i
         "am57xx-evm-reva3.dtb"
     end
+    boot = case new_params['dut'].name
+      when /^dra71x-/i
+         "dra71-evm.itb"
+      when /^am57xx-/i
+         "am57xx-evm.itb"
+      else
+         nil
+    end
     new_params['server'].send_cmd("ls #{dest}/#{loaders[0]}")
     new_params['primary_bootloader'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
     new_params['server'].send_cmd("ls #{dest}/#{loaders[1]}")
     new_params['secondary_bootloader'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
-    new_params['server'].send_cmd("ls #{dest}/#{dtb}")
-    new_params['dtb'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
+    if boot
+      new_params['server'].send_cmd("ls #{dest}/#{boot}")
+      new_params['boot'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
+      new_params['dtb'] = nil
+    else
+      new_params['server'].send_cmd("ls #{dest}/#{dtb}")
+      new_params['dtb'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
+    end
     new_params
   end
 
