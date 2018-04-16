@@ -70,6 +70,9 @@ end
 #  password, (Optional) string containing the password associated with user 
 #            username, defaults to ''
 def scp_push_file(ip_addr, local_path, rem_path, username='root', password='', paranoid=false) 
+  puts "scp_push_file:" + "ip_addr:" + ip_addr
+  puts "local_path:" + local_path
+  puts "rem_path: " + rem_path
   Net::SSH.start(ip_addr, username, :password => password, :paranoid => paranoid) do |ssh|
     ssh.scp.upload!(local_path, rem_path)
   end
