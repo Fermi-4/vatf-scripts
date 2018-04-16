@@ -46,7 +46,7 @@ def run
     add_equipment('hdmi_sw', hdmi_out_info, true) do |e_class, log_path|
       e_class.new(hdmi_out_info, log_path)
     end
-    @equipment['hdmi_sw'].disconnect_video_audio()
+    @equipment['hdmi_sw'].disconnect_video_audio(@equipment['dut1'].video_io_info.hdmi_outputs.values[0])
     sleep 1
     @equipment['hdmi_sw'].connect_video_audio(@equipment['dut1'].video_io_info.hdmi_outputs.values[0], @equipment['server1'].video_io_info.hdmi_inputs.values[0])
     sleep 5
@@ -66,7 +66,7 @@ def run
       end
 
       video_capture = MediaCapture.new(@equipment['server1'])
-      @equipment['hdmi_sw'].disconnect_video_audio()
+      @equipment['hdmi_sw'].disconnect_video_audio(@equipment['dut1'].video_io_info.hdmi_outputs.values[0])
       sleep 1
       @equipment['hdmi_sw'].connect_video_audio(@equipment['dut1'].video_io_info.hdmi_outputs.values[0], @equipment['server1'].video_io_info.hdmi_inputs.values[0])
       sleep 5
