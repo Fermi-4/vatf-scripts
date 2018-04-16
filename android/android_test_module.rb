@@ -157,9 +157,9 @@ module AndroidTest
     new_params['primary_bootloader'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
     new_params['server'].send_cmd("ls #{dest}/#{loaders[1]}")
     new_params['secondary_bootloader'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
-    if boot
-      new_params['server'].send_cmd("ls #{dest}/#{boot}")
-      new_params['boot'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
+    new_params['server'].send_cmd("ls #{dest}/#{boot}")
+    if boot && !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
+      new_params['boot'] = params['server'].response.strip
       new_params['dtb'] = nil
     else
       new_params['server'].send_cmd("ls #{dest}/#{dtb}")
