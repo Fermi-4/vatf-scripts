@@ -17,6 +17,7 @@ def setup
   @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s, 'android')
   FileUtils.mkdir_p @linux_temp_folder
   self.as(LspTestScript).setup
+  sleep 40
   @android_boot_params['server'].send_sudo_cmd("rm #{@linux_temp_folder}/*", @android_boot_params['server'].prompt, 120) #Cleanup for next test
   @equipment['dut1'].set_android_tools(@android_boot_params)
   send_adb_cmd("shell mkdir #{@linux_dst_dir}")
