@@ -26,6 +26,7 @@ def clean
 end
 
 def build_iot_gw(pass_crit,fail_crit)
+  @equipment['dut1'].send_cmd(Time.now.strftime("date -s %Y.%m.%d-%H:%M\n"), @equipment['dut1'].prompt, 30)
   @equipment['dut1'].send_cmd("rm -rf tidep0084/", @equipment['dut1'].prompt, 300)
   @equipment['dut1'].send_cmd("tar xzvf tidep0084.tar.gz", @equipment['dut1'].prompt, 300)
   @equipment['dut1'].send_cmd("mv tidep0084/hosts /etc/hosts", @equipment['dut1'].prompt, 30)
@@ -38,7 +39,6 @@ def build_iot_gw(pass_crit,fail_crit)
   @equipment['dut1'].send_cmd("npm config set proxy http://wwwgate.ti.com:80", @equipment['dut1'].prompt, 120)
   @equipment['dut1'].send_cmd("npm config set https-proxy http://wwwgate.ti.com:80", @equipment['dut1'].prompt, 120)
   @equipment['dut1'].send_cmd("npm install", @equipment['dut1'].prompt, 900)
-  @equipment['dut1'].send_cmd("date -s 2017.11.22-10:53", @equipment['dut1'].prompt, 30)
   @equipment['dut1'].send_cmd("bash run_gateway.sh aws > log.txt", @equipment['dut1'].prompt, 300)
   @equipment['dut1'].send_cmd("sleep 30", @equipment['dut1'].prompt, 60)
   @equipment['dut1'].send_cmd("cat log.txt", @equipment['dut1'].prompt, 60)
