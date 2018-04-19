@@ -18,7 +18,8 @@ def run
   scp_push_file(get_ip_addr, @test_params.primary_bootloader, "/MLO")
   @equipment['dut1'].send_cmd("mount", @equipment['dut1'].prompt, 20)
   mount = 0
-  if @equipment['dut1'].response.match(/mmcblk0p1/i)
+  response = @equipment['dut1'].response
+  if response.match(/mmcblk0p1/i)
       mount += 1
       @equipment['dut1'].send_cmd("cp /run/media/mmcblk0p1/MLO /run/media/mmcblk0p1/MLO-old", @equipment['dut1'].prompt, 20)
       @equipment['dut1'].send_cmd("rm /run/media/mmcblk0p1/MLO", @equipment['dut1'].prompt, 20)
@@ -26,14 +27,14 @@ def run
       @equipment['dut1'].send_cmd("cp /MLO /run/media/mmcblk0p1/MLO", @equipment['dut1'].prompt, 20)
   end
     
-  if @equipment['dut1'].response.match(/mmcblk1p1/i)
+  if response.match(/mmcblk1p1/i)
       mount += 1
       @equipment['dut1'].send_cmd("cp /run/media/mmcblk1p1/MLO /run/media/mmcblk0p1/MLO-old", @equipment['dut1'].prompt, 20)
       @equipment['dut1'].send_cmd("rm /run/media/mmcblk1p1/MLO", @equipment['dut1'].prompt, 20)
       @equipment['dut1'].send_cmd("rm /run/media/mmcblk1p1/MLO", @equipment['dut1'].prompt, 20)
       @equipment['dut1'].send_cmd("cp /MLO /run/media/mmcblk1p1/MLO", @equipment['dut1'].prompt, 20)
   end
-  if @equipment['dut1'].response.match(/mmcblk2p1/i)
+  if response.match(/mmcblk2p1/i)
       mount += 1
       @equipment['dut1'].send_cmd("cp /run/media/mmcblk2p1/MLO /run/media/mmcblk0p1/MLO-old", @equipment['dut1'].prompt, 20)
       @equipment['dut1'].send_cmd("rm /run/media/mmcblk2p1/MLO", @equipment['dut1'].prompt, 20)
