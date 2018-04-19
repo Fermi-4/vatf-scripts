@@ -1,6 +1,6 @@
 # -*- coding: ISO-8859-1 -*-
 require File.dirname(__FILE__)+'/default_test_module'
-require File.dirname(__FILE__)+'/../../lib/utils'
+require File.dirname(__FILE__)+'/../lib/utils'
 
 # Default Server-Side Test script implementation for LSP releases
    
