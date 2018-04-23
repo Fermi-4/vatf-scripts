@@ -62,11 +62,16 @@ def run
       @equipment['dut1'].system_loader.run translated_boot_params
       #@equipment['dut1'].send_cmd("boot", /Starting\s+kernel/i, 20)
       #if ! @equipment['dut1'].response.match(/error\s+interrupted/im)
-      if ! @equipment['dut1'].boot_log.match(/error\s+interrupted/im)
-        set_result(FrameworkConstants::Result[:fail], "No interrupt from kernel when #{err_cnt}-bit ecc is introduced.")
+#      if ! @equipment['dut1'].boot_log.match(/error\s+interrupted/im)
+#        set_result(FrameworkConstants::Result[:fail], "No interrupt from kernel when #{err_cnt}-bit ecc is introduced.")
+#        return
+#      end
+      sleep 1 
+      @equipment['dut1'].send_cmd("modprobe ti_edac", @equipment['dut1'].prompt, 30)
+      if ! @equipment['dut1'].response.match(/EDAC\s+MC0:\s+1\s+UE\s+ti/m)
+        set_result(FrameworkConstants::Result[:fail], "No ECC interrupt from kernel when #{err_cnt}-bit ecc is introduced.")
         return
       end
-
     end
     
   end 
