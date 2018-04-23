@@ -117,6 +117,7 @@ module AndroidKeyEvents
 	      'z' => 54,
 	      '-' => 69,
 	      ' ' => 62,
+             '__sysrq__' => 120,
       }
 
       worker_arr.each do |current_string|
