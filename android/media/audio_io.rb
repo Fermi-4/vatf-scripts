@@ -20,7 +20,7 @@ def run
   send_adb_cmd("shell rm /sdcard/#{dut_test_file}")
   local_test_file = File.join(@linux_temp_folder, dut_test_file)
   data = send_adb_cmd("logcat  -d -c")
-  send_adb_cmd("shell am start -W -n #{pkg}/.MediaIO -a android.intent.action.MAIN -c android.intent.category.LAUNCHER --es play_file #{File.basename(dut_src_file)} --es rec_file #{dut_test_file}")
+  send_adb_cmd("shell am start -W -n #{pkg}/.MediaIO -a android.intent.action.MAIN -c android.intent.category.LAUNCHER --es play_file test/#{File.basename(dut_src_file)} --es rec_file #{dut_test_file}")
   send_events_for(['__tab__','__tab__','__enter__'])
   if @test_params.params_control.instance_variable_defined?(:@collect_stats)
     start_collecting_stats(@test_params.params_control.collect_stats,2){|cmd, stat| 
