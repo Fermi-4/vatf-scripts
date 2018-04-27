@@ -30,6 +30,9 @@ def run
   cmd_from = @test_params.params_chan.cmd_from[0]
   cmd_to = @test_params.params_chan.cmd_to[0]
   enable_switching = @test_params.params_chan.enable_switching[0]
+  payloads = @test_params.params_chan.instance_variable_defined?(:@payloads) ? @test_params.params_chan.payloads : [""]
+  default_ping_count = 10
+
   # ip addresses for dut1 and dut2
   dut1_eth2, dut1_eth3 = @equipment['dut1'].params['dut1_if'], @equipment['dut1'].params['dut1_if2']
   dut2_eth2, dut2_eth3 = @equipment['dut2'].params['dut2_if'], @equipment['dut2'].params['dut2_if2']
@@ -40,8 +43,8 @@ def run
     else
       enable_feature(@equipment['dut1'], switch_from, cmd_from, dut1_eth2)
       enable_feature(@equipment['dut2'], switch_from, cmd_from, dut2_eth2)
-      ping_status(@equipment['dut1'], dut2_eth2)
-      ping_status(@equipment['dut2'], dut1_eth2)
+      ping_status(@equipment['dut1'], dut2_eth2, default_ping_count, payloads)
+      ping_status(@equipment['dut2'], dut1_eth2, default_ping_count, payloads)
       disable_feature(@equipment['dut1'], switch_from)
       disable_feature(@equipment['dut2'], switch_from)
     end
@@ -119,10 +122,18 @@ def setup_eth2_eth3(dut, eth2_ip, eth3_ip)
 end
 
 # function to verify ping
-def ping_status(dut, ipaddr, count=10)
+def ping_status(dut, ipaddr, count=10, payloads=[""])
   dut.send_cmd("ping -c #{count} #{ipaddr}", dut.prompt, count)
   if dut.timeout? or !(dut.response =~ Regexp.new("(\s0%\spacket\sloss)"))
     raise "Ping failed to IP Address: #{ipaddr}."
+  end
+  if payloads.length != 1
+    for psize in payloads
+      dut.send_cmd("ping #{ipaddr} -c #{count} -s #{psize}", dut.prompt, count)
+      if dut.timeout? or !(dut.response =~ Regexp.new("(\s0%\spacket\sloss)"))
+        raise "Ping failed to IP Address: #{ipaddr} at payload size: #{psize}."
+      end
+    end
   end
 end
 
