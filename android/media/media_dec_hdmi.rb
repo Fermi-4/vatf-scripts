@@ -92,18 +92,18 @@ def run
       res_string = ''
       num_comp = -1
       mode_info = width = height = nil
+      drm_info = get_properties()
+      hdmi = drm_info['Connectors:'].select{ |x| x['name'].match(/HDMI/)}[0]
+      hdmi_enc = drm_info['Encoders:'].select{ |x| x['id'] == hdmi['encoder'] }[0]
+      hdmi_crtc = drm_info['CRTCs:'].select{ |x| x['id'] == hdmi_enc['crtc'] }[0]
+      mode_info = hdmi_crtc['other_info'].split(/\s+/)
+      width, height = mode_info[0].split('x')
+      interlace = height.include?('i') ? 'i' : 'p'
+      height = height.gsub('i','').to_i
+      frame_rate = mode_info[1]
       data = play_media(s_file) do
         begin
-          sleep 5
-          drm_info = get_properties()
-          hdmi = drm_info['Connectors:'].select{ |x| x['name'].match(/HDMI/)}[0]
-          hdmi_enc = drm_info['Encoders:'].select{ |x| x['id'] == hdmi['encoder'] }[0]
-          hdmi_crtc = drm_info['CRTCs:'].select{ |x| x['id'] == hdmi_enc['crtc'] }[0]
-          mode_info = hdmi_crtc['other_info'].split(/\s+/)
-          width, height = mode_info[0].split('x')
-          interlace = height.include?('i') ? 'i' : 'p'
-          height = height.gsub('i','').to_i
-          frame_rate = mode_info[1]
+          sleep 12
           num_comp = video_capture.capture_media(video_test_file, audio_test_file, width, height, frame_rate, interlace)
         rescue Exception => e
           res_string += "\n#{e.to_s}"
@@ -114,7 +114,7 @@ def run
         conv_file = change_uyvy_to_rgb(video_test_file, width, height) 
       end
 
-      video_ref_files = get_ref_file(s_file, mode_info[0], mode_info[1])
+      video_ref_files = get_ref_file(s_file, mode_info[0], mode_info[1], interlace)
       if video_ref_files.empty?
         total += 1
         add_result_row(res_table, s_file, "#{mode_info[0]}@#{mode_info[1]}", false, "Unable to get ref file for mode")
@@ -134,10 +134,8 @@ def run
           break
         end
         result.each_with_index do |h, i|
-          h['psnr'].each {|comp, val| qual_res &= val >= 40 || comp == 'a'
-                                      qual_string+="-Frame ##{i}: Component #{comp} failed PSNR #{val}dB\n" if val < 40 && comp != 'a'}
-          h['ssim'].each {|comp, val| qual_res &= val >= 99 || comp == 'a'
-                                      qual_string+="-Frame ##{i}: Component #{comp} failed SSIM #{val}%\n" if val < 99 && comp != 'a'}
+          h['ssim'].each {|comp, val| qual_res &= val >= 98 || comp == 'a'
+                                      qual_string+="-Frame ##{i}: Component #{comp} failed SSIM #{val}%\n" if val < 98 && comp != 'a'}
         end
         break if qual_res
       end
@@ -206,18 +204,21 @@ def play_media(dut_src_file)
   send_adb_cmd("logcat  -d")
 end
 
-def get_ref_file(ref_file, mode, fps, cap_sys=@equipment['server1'])
+def get_ref_file(ref_file, mode, fps, interlace, cap_sys=@equipment['server1'])
   cap_sys.send_cmd("mkdir #{@linux_temp_folder}", cap_sys.prompt) if !File.exists?(@linux_temp_folder)
   cap_sys.send_cmd("rm #{@linux_temp_folder}/ref_*.rgb*", cap_sys.prompt)
   result = []
-  f_name = [File.basename(ref_file,'.*'), mode,fps+'fps.argb'].join('_')
-  f_base_name = 'ref_' + f_name + '.tar.xz'
-  remote_url = "#{HOST_UTILS_URL}/android/ref-media/#{f_base_name}"
-  local_file = File.join(@linux_temp_folder, f_base_name)
-  wget_file(remote_url, local_file)
-  cap_sys.send_cmd("tar -C #{@linux_temp_folder} -Jxvf #{local_file} || rm #{local_file}",
-                  cap_sys.prompt,
-                  600)
-  result << File.join(@linux_temp_folder, f_name) if !cap_sys.response.match(/Error/i)
+  r_files = [['ref', File.basename(ref_file,'.*'), mode,fps+'fps.argb'].join('_')]
+  r_files << ['ref', File.basename(ref_file,'.*'), mode,fps+'fps_f2.argb'].join('_') if interlace == 'i'
+  r_files.each do |f_name|
+    f_base_name = f_name + '.tar.xz'
+    remote_url = "#{HOST_UTILS_URL}/android/ref-media/#{f_base_name}"
+    local_file = File.join(@linux_temp_folder, f_base_name)
+    wget_file(remote_url, local_file)
+    cap_sys.send_cmd("tar -C #{@linux_temp_folder} -Jxvf #{local_file} || rm #{local_file}",
+                    cap_sys.prompt,
+                    600)
+    result << File.join(@linux_temp_folder, f_name) if !cap_sys.response.match(/Error/i)
+  end
   result
 end
