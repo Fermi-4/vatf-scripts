@@ -47,6 +47,7 @@ def run
       return
     end 
     translated_boot_params['bootargs'] = @equipment['dut1'].boot_args
+    @equipment['dut1'].send_cmd("version", @equipment['dut1'].boot_prompt, 5)
     @equipment['dut1'].system_loader.run translated_boot_params
     #@equipment['dut1'].send_cmd("boot", /Starting\s+kernel.*Booting\s+Linux\s+on/im, 30)
     sleep 1  # to collect more booting log
