@@ -214,8 +214,8 @@ end
 
 # copy the boot images into tftpboot and rename to the expected names
 def setup_usbeth_images(params)
+  soc_name = get_soc_name_for_platform(@test_params.platform.downcase)
   if params['primary_bootloader'] != ''
-    soc_name = get_soc_name_for_platform(@test_params.platform.downcase)
     srcfile = File.join(params['server'].tftp_path, params['primary_bootloader_image_name'] )
     dstfile = File.join(params['server'].tftp_path, "usbspl/u-boot-spl\.bin\.#{soc_name}")
     copy_with_path(srcfile, dstfile)
