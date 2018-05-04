@@ -1,14 +1,14 @@
 require File.dirname(__FILE__)+'/../../../lib/utils'
 
 MODETEST_PIX_FMTS = ['UYVY', 'VYUY', 'YUYV', 'YVYU', 'NV12', 'NV21', 'NV16', 'NV61', 'YU12', 'YV12', 'AR12', 'XR12', 'AB12', 'XB12', 'RA12', 'RX12', 'BA12', 'BX12', 'AR15', 'XR15', 'AB15', 'XB15', 'RA15', 'RX15', 'BA15', 'BX15', 'RG16', 'BG16', 'BG24', 'RG24','AR24', 'XR24', 'AB24', 'XB24', 'RA24', 'RX24', 'BA24', 'BX24', 'AR30', 'XR30', 'AB30', 'XB30', 'RA30', 'RX30', 'BA30', 'BX30']
-UNSUPPORTED_FMT_ERR = [/unsupported\s*pixel\s*format/,
-                       /invalid\s*pixel\s*format/,
-                       /invalid\s*argument/,
-                       /segmentation\s*fault/,
-                       /invalid\s*pitch/,
-                       /Function\s*not\s*implemented/,
-                       /Cannot\s*allocate\s*memory/,
-                       /no\s*unused\s*plane\s*available\s*for'/]
+UNSUPPORTED_FMT_ERR = [/unsupported\s*pixel\s*format/im,
+                       /invalid\s*pixel\s*format/im,
+                       /invalid\s*argument/im,
+                       /segmentation\s*fault/im,
+                       /invalid\s*pitch/im,
+                       /Function\s*not\s*implemented/im,
+                       /Cannot\s*allocate\s*memory/im,
+                       /no\s*unused\s*plane\s*available\s*for'/im]
 #Function to run the modetest command on the dut, takes:
 #  command, string containing the modetest command to run
 #  timeout, time in sec to wait for the command to finish
@@ -433,7 +433,7 @@ def get_supported_fmts(connectors, dut=@equipment['dut1'])
       m_params['format'] = current_fmt
       mode_str = set_mode([m_params],/setting\s*mode.*?#{dut.prompt}/){sleep 2}
       pix_fmts[c_info['id']] << current_fmt if UNSUPPORTED_FMT_ERR.inject(true) do |t, str| 
-                                                    t &&= !mode_str.match(/#{str}/im)
+                                                    t &&= !mode_str.match(str)
                                                end
     end
   end
