@@ -9,13 +9,29 @@ def run
   file_size = @test_params.params_control.file_size[0]
   iterations = @test_params.params_control.iterations[0].to_i
   
-  send_host_cmd "dd if=/dev/urandom of=./adb_test_file bs=1M count=#{file_size}"
+  host_path = File.join(@linux_temp_folder, 'adb_test_file')
+  rx_host_path = File.join(@linux_temp_folder, 'adb_test_file-rx')
+  dut_path = File.join(@linux_dst_dir, 'adb_test_file')
+  send_host_cmd "dd if=/dev/urandom of=#{host_path} bs=1M count=#{file_size}"
   iterations.times do
-    data = send_adb_cmd "push ./adb_test_file /mnt/sdcard/"
-    tx_bw << /^(\d+)\s+KB\/s\s+/m.match(data).captures[0].to_i
-    puts data
-    data = send_adb_cmd "pull /mnt/sdcard/adb_test_file ./adb_test_file-rx"
-    rx_bw << /^(\d+)\s+KB\/s\s+/.match(data).captures[0].to_i
+    data = send_adb_cmd "push #{host_path} #{dut_path}"
+    tx, unit = /([\d\.]+)\s+(.)B\/s\s+/m.match(data).captures
+    case unit
+      when /g/i
+        tx = tx.to_f*1024
+      when /k/i
+        tx = tx.to_f/1024.0
+    end
+    tx_bw << tx
+    data = send_adb_cmd "pull #{dut_path} #{rx_host_path}"
+    rx, unit = /([\d\.]+)\s+(.)B\/s\s+/.match(data).captures
+    case unit
+      when /g/i
+        rx = rx.to_f*1024
+      when /k/i
+        rx = rx.to_f/1024
+    end
+    rx_bw << rx
     puts data
     i = i+1
   end
@@ -25,26 +41,9 @@ def run
       set_result(FrameworkConstants::Result[:fail], 'ADB performance data could not be calculated, make sure the target is available')
       puts 'Test failed: ADB performance data could not be calculated, make sure the target is available'
     else
-      min_bw = @test_params.params_control.min_bw[0].to_f
-      perfdata = [{'name'=> "TX_Throughput", 'value' => tx_bw.map{|a| a.to_f}, 'units' => "KB/s"},
-                  {'name'=> "RX_Throughput", 'value' => rx_bw.map{|a| a.to_f}, 'units' => "KB/s"}]
-      if mean(tx_bw) > min_bw && mean(rx_bw) > min_bw
-        set_result(FrameworkConstants::Result[:pass], "Mean-TX=#{mean(tx_bw)} Mean-RX=#{mean(rx_bw)}", perfdata)
-        puts "Test Passed: Mean-TX=#{mean(tx_bw)} Mean-RX=#{mean(rx_bw)}"
-      else
-        set_result(FrameworkConstants::Result[:fail], "Performance is less than #{min_bw} KB/s. Mean-TX=#{mean(tx_bw)} Mean-RX=#{mean(rx_bw)}", perfdata)
-        puts "Test Failed: Performance is less than #{min_bw} KB/s. Mean-TX=#{mean(tx_bw)} Mean-RX=#{mean(rx_bw)}"
-      end
+      perfdata = [{'name'=> "TX_Throughput", 'value' => tx_bw.map{|a| a.to_f}, 'units' => "MB/s"},
+                  {'name'=> "RX_Throughput", 'value' => rx_bw.map{|a| a.to_f}, 'units' => "MB/s"}]
+      set_result(FrameworkConstants::Result[:pass], 'Passed, performance data collected.', perfdata)
     end
-end
-
-def clean
-  send_host_cmd "rm adb_test_file"
-  send_host_cmd "rm adb_test_file-rx"
-end
-
-private 
-def mean(a)
- a.sum.to_f / a.size
 end
 
