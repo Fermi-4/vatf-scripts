@@ -57,7 +57,7 @@ end
 
 def check_sata_detection()
   result = 0
-  @equipment['dut1'].send_cmd("scsi info",@equipment['dut1'].boot_prompt, 10)
+  @equipment['dut1'].send_cmd("scsi scan; scsi info",@equipment['dut1'].boot_prompt, 10)
   if ! @equipment['dut1'].response.match(/Vendor:\s+ATA\s+Prod/i)
     result = 1
     msg = "No SATA device being detected and found"
