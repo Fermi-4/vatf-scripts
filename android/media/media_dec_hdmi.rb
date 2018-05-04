@@ -193,7 +193,7 @@ def play_media(dut_src_file)
   send_adb_cmd("logcat -c")
   comp = CmdTranslator.get_android_cmd({'cmd'=>'gallery_movie_cmp', 'version'=>@equipment['dut1'].get_android_version })
   t1 = Thread.new do
-    send_adb_cmd("shell am start -W -n #{comp} -a action.intent.anction.VIEW -d file://#{File.join(@linux_dst_dir, File.basename(dut_src_file))}")
+    send_adb_cmd("shell am start -W -n #{comp} -a action.intent.action.VIEW -d file://#{File.join(@linux_dst_dir, File.basename(dut_src_file))}")
   end
   if block_given?
     yield
