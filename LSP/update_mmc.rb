@@ -219,7 +219,11 @@ module UpdateMMC
 
     params['server'].send_cmd("mkdir -p #{mnt_point}", params['server'].prompt, 10)
     params['server'].send_sudo_cmd("mount -t #{type} #{partition} #{mnt_point}", params['server'].prompt, 90)
-    raise "Could not mount #{partition} on host PC" if ! system "mount | grep #{mnt_point}"
+    if ! system "mount | grep #{mnt_point}"
+      params['server'].send_sudo_cmd("mkfs.#{type} #{partition}", params['server'].prompt, 120)
+      params['server'].send_sudo_cmd("mount -t #{type} #{partition} #{mnt_point}", params['server'].prompt, 90)
+      raise "Could not mount #{partition} on host PC" if ! system "mount | grep #{mnt_point}"
+    end
   end
 
   def unmount_partition(partition, params)
