@@ -127,7 +127,7 @@ def load_images_to_media_via_dfu(params, boot_media)
   # since typically eMMC doesn't have partitions, so if setting dfu-alt_info to dfu_alt_info_emmc which has "boot part 1 1;rootfs part 1 2", 
   # there would cause 'dfu configuration fail'. So set it to only contain raw info
   if boot_media.match(/raw-emmc/i)
-    dfu_alt_info_rawemmc = "\"MLO.raw raw 0x100 0x100;u-boot.img.raw raw 0x300 0x1000;u-env.raw raw 0x1300 0x200;spl-os-args.raw raw 0x1500 0x200;spl-os-image.raw raw 0x1700 0x6900\""
+    dfu_alt_info_rawemmc = "\"MLO.raw raw 0x100 0x200;u-boot.img.raw raw 0x300 0x1000;u-env.raw raw 0x1300 0x200;spl-os-args.raw raw 0x1500 0x200;spl-os-image.raw raw 0x1700 0x6900\""
     params['dut'].send_cmd("setenv dfu_alt_info #{dfu_alt_info_rawemmc}", params['dut'].boot_prompt, 5) 
   end
   params['dut'].send_cmd("setenv dfu_alt_info ${dfu_alt_info_qspi}", params['dut'].boot_prompt, 5) if boot_media.match(/qspi/i)
