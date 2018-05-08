@@ -49,6 +49,7 @@ def run
       disable_feature(@equipment['dut2'], switch_from)
     end
     test_comment = "Feature #{switch_from} verified."
+    test_comment += " Ping successful at payloads: #{payloads}." if payloads.length > 1
     # switch to protocol and verify
     if enable_switching == "yes"
       if switch_to == "emac"
