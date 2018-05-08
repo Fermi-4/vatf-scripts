@@ -67,7 +67,7 @@ def run
   expected_regulators_enabled = get_regulators_remain_on()
   test_failed = false
   err_msg = ''
-  MIN_REGULATOR_VOLT = 0.5
+  min_regulator_volt = 0.5
   measurement_time = get_power_domain_data(@equipment['dut1'].name)['power_domains'].size # approx 1 sec per channel to get 3 measurements
   rtc_only_extra_time = (wakeup_domain == 'rtc_only' ? 15 : 0)
   min_sleep_time   = 30 + rtc_only_extra_time # to guarantee that RTC alarm does not fire prior to board reaching suspend state
@@ -91,9 +91,9 @@ def run
         }
         expected_regulators_enabled.each {|domain|
           min_measured_volt = new_volt_readings["domain_" + domain  + "_volt_readings"].min
-          if  min_measured_volt < MIN_REGULATOR_VOLT
+          if  min_measured_volt < min_regulator_volt
             test_failed = true
-            err_msg += "On iteration #{iter}, Measured voltage #{min_measured_volt} for #{domain} domain is lower than expected #{MIN_REGULATOR_VOLT}"
+            err_msg += "On iteration #{iter}, Measured voltage #{min_measured_volt} for #{domain} domain is lower than expected #{min_regulator_volt}"
           end
         }
 
