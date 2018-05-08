@@ -64,6 +64,10 @@ def run
   end
   
   volt_readings={}
+  expected_regulators_enabled = get_regulators_remain_on()
+  test_failed = false
+  err_msg = ''
+  MIN_REGULATOR_VOLT = 0.5
   measurement_time = get_power_domain_data(@equipment['dut1'].name)['power_domains'].size # approx 1 sec per channel to get 3 measurements
   rtc_only_extra_time = (wakeup_domain == 'rtc_only' ? 15 : 0)
   min_sleep_time   = 30 + rtc_only_extra_time # to guarantee that RTC alarm does not fire prior to board reaching suspend state
@@ -71,7 +75,7 @@ def run
   rtc_suspend_time = [measurement_time, min_sleep_time].max
   suspend_time = (wakeup_domain == 'rtc'  or wakeup_domain == 'rtc_only') ? rtc_suspend_time : max_suspend_time
   if @test_params.params_chan.instance_variable_defined?(:@suspend) && @test_params.params_chan.suspend[0] == '1'
-    @test_params.params_control.loop_count[0].to_i.times do
+    @test_params.params_control.loop_count[0].to_i.times do |iter|
       power_wakeup_configuration(wakeup_domain, power_state)
       # Suspend
       start_time = Time.now
@@ -85,6 +89,14 @@ def run
           volt_readings[k] << new_volt_readings[k]
           puts "#{k} have #{volt_readings[k].size} samples"
         }
+        expected_regulators_enabled.each {|domain|
+          min_measured_volt = new_volt_readings["domain_" + domain  + "_volt_readings"].min
+          if  min_measured_volt < MIN_REGULATOR_VOLT
+            test_failed = true
+            err_msg += "On iteration #{iter}, Measured voltage #{min_measured_volt} for #{domain} domain is lower than expected #{MIN_REGULATOR_VOLT}"
+          end
+        }
+
       else
         volt_readings = @equipment['multimeter1'].get_multimeter_output(3, @test_params.params_equip.timeout[0].to_i)
         puts "volt_readings.size = #{volt_readings.size}"
@@ -114,7 +126,11 @@ def run
   report_power_stats
 ensure
   if perf.size > 0
-    set_result(FrameworkConstants::Result[:pass], "Power Performance data collected",perf)
+    if test_failed
+      set_result(FrameworkConstants::Result[:fail], err_msg)
+    else
+      set_result(FrameworkConstants::Result[:pass], "Power Performance data collected",perf)
+    end
   else
     errMessage = "Could not get Power Performance data" if !errMessage
     set_result(FrameworkConstants::Result[:fail], errMessage)

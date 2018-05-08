@@ -319,6 +319,16 @@ module EvmData
     get_cmd(params)
   end
 
+  def get_regulators_remain_on(params=nil)
+    machines = {}
+    params = get_default_params if !params
+    data = get_power_domain_data(params['platform'])['power_domains']
+    data.select! {|name| name.match /(CORE|MPU|DSP|IVA|GPU)/}
+    machines[params['platform']]  = {'0.0' => data}
+    params.merge!({'dict' => machines})
+    get_cmd(params)
+  end
+
   def get_cmd(params)
     raise "'platform' and 'version' are both mandatory params" if !params.key?('platform') or !params.key?('version')
     platform = params['platform'] 
