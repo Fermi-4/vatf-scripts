@@ -9,10 +9,12 @@ def setup
 end
 
 def run
+  timeout = @test_params.params_chan.instance_variable_defined?(:@timeout) ? @test_params.params_chan.timeout[0].to_i : 2500
   setup_wpantund(@test_params.params_chan.wpantund_git[0])
   @equipment['dut1'].send_cmd("rm -r wpantund*", @equipment['dut1'].prompt, 20)
   transfer_to_dut("wpantund.tar.gz", @equipment['server1'].telnet_ip)
-  result = build_wpantund(@test_params.params_chan.constraints[0], @test_params.params_chan.constraints[1])
+  result = build_wpantund(@test_params.params_chan.constraints[0], @test_params.params_chan.constraints[1], \
+                          timeout)
   if result == 0
     set_result(FrameworkConstants::Result[:pass], "Test Passed. WPANTUND build successfully on target")
   else
@@ -25,18 +27,16 @@ def clean
   self.as(LspTestScript).clean
 end
 
-def build_wpantund(pass_crit,fail_crit)
+def build_wpantund(pass_crit,fail_crit,timeout)
   @equipment['dut1'].send_cmd("tar xzvf wpantund.tar.gz", @equipment['dut1'].prompt, 300)
   @equipment['dut1'].send_cmd("cd wpantund", @equipment['dut1'].prompt, 10)
   @equipment['dut1'].send_cmd("date -s '#{Time.now.getutc.strftime("%Y-%m-%d %H:%M:%S")}'", \
                                @equipment['dut1'].prompt, 10)
   @equipment['dut1'].send_cmd("find . -exec touch {} \\;", @equipment['dut1'].prompt, 30)
-  @equipment['dut1'].send_cmd("./configure", @equipment['dut1'].prompt, 300)
+  @equipment['dut1'].send_cmd("echo \"Running ./configure\" && ./configure && echo \"Running make\" \
+                               && make && echo \"Running make install\" && make install",@equipment['dut1'].prompt, \
+                               timeout)
   dut_log = @equipment['dut1'].response
-  @equipment['dut1'].send_cmd("make", @equipment['dut1'].prompt, 1500)
-  dut_log += @equipment['dut1'].response
-  @equipment['dut1'].send_cmd("make install", @equipment['dut1'].prompt, 300)
-  dut_log += @equipment['dut1'].response
   if @equipment['dut1'].timeout? or !(dut_log =~ /(#{pass_crit})/) or (dut_log =~ /(#{fail_crit})/)
     return 1
   else
