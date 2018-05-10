@@ -123,7 +123,7 @@ module AndroidTest
     loaders = case new_params['dut'].name
       when /-hsevm$/i
         ["u-boot-spl_HS_X-LOADER","HS_u-boot.img"]
-      when /-evm$/i
+      else
         ["MLO","u-boot.img"]
     end
     dtb = case new_params['dut'].name
