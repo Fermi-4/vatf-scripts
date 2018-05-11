@@ -178,6 +178,7 @@ def calculate_perf(response, test_size)
   sec = time_captures[1]
   time_taken = 60*min.to_i + sec.to_f 
   perf = (test_size.to_i(16).to_f / time_taken.to_f) /1024
+  report_msg "perf is: " + perf.to_s
   return perf.to_f.round(2)
 end
 
