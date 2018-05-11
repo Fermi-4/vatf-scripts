@@ -29,6 +29,7 @@ def run
   case device
   when "mmc"
     @equipment['dut1'].send_cmd("mmc dev 0; mmc info", @equipment['dut1'].boot_prompt, 5)
+    raise "MMC bus width is not 4-bit" if !@equipment['dut1'].response.match(/Bus\s+Width\s*:\s+4-bit/i)
     mmc_op_mode = @test_params.params_chan.mmc_op_mode[0].downcase
     expected_speed = get_expected_busspeed_sd(platform, mmc_op_mode)
     raise "expected speed for SD card can not be empty" if expected_speed == nil
@@ -39,6 +40,7 @@ def run
   
   when 'emmc'
     @equipment['dut1'].send_cmd("mmc dev 1; mmc info", @equipment['dut1'].boot_prompt, 5)
+    raise "eMMC bus width is not 8-bit" if !@equipment['dut1'].response.match(/Bus\s+Width\s*:\s+8-bit/i)
     expected_speed = get_expected_busspeed_emmc(platform)
     raise "expected speed for eMMC can not be empty" if expected_speed == nil
     if ! @equipment['dut1'].response.match(/Bus\s+Speed\s*:\s+#{expected_speed}/i)
@@ -67,8 +69,8 @@ def get_expected_speed_sd(platform, sd_mode)
 end
 
 def get_expected_busspeed_sd(platform, sd_mode)
-  expected_speed_sd = Hash.new({ 'sdr104' => '192000000', 'ddr50' => '96000000', })
-  expected_speed_sd['am57xx-evm'] = { 'sdr104' => '48000000', 'ddr50' => '48000000', }
+  expected_speed_sd = Hash.new({ 'sdr104' => '192000000', 'ddr50' => '96000000', 'hs' => '48000000'})
+  #expected_speed_sd['am57xx-evm'] = { 'sdr104' => '48000000', 'ddr50' => '48000000', }
   return expected_speed_sd[platform][sd_mode]
 end
 
