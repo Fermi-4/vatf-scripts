@@ -24,7 +24,7 @@ def run
   media = @test_params.params_chan.instance_variable_defined?(:@media) ? @test_params.params_chan.media[0].downcase : 'fat-sata'
 
   @equipment['dut1'].send_cmd("scsi scan", @equipment['dut1'].boot_prompt, 5)
-  raise "No SATA device being detected" if ! @equipment['dut1'].response.match(/Found\s+\d+\s+device/i)
+  raise "No SATA device being detected" if ! @equipment['dut1'].response.match(/Vendor:\s+ATA\s+Prod/i)
   @equipment['dut1'].send_cmd("scsi info", @equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("scsi dev", @equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("scsi part", @equipment['dut1'].boot_prompt, 5)
