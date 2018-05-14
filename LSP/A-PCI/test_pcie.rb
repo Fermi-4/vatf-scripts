@@ -34,9 +34,9 @@ def run
 
   if Gem::Version.new(linux_version) >= Gem::Version.new("4.12")
     func_driver_name = @equipment['dut1'].name.match(/k2g/i) ? "pci_epf_test_k2g" : "pci_epf_test"
-    @equipment['dut1'].send_cmd("mkdir functions/${func_driver_name}/func1", @equipment['dut1'].prompt, 20)
-    @equipment['dut1'].send_cmd("ls functions/${func_driver_name}/func1", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("cd functions/${func_driver_name}/func1", @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("mkdir functions/#{func_driver_name}/func1", @equipment['dut1'].prompt, 20)
+    @equipment['dut1'].send_cmd("ls functions/#{func_driver_name}/func1", @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("cd functions/#{func_driver_name}/func1", @equipment['dut1'].prompt, 10)
   elsif Gem::Version.new(linux_version) >= Gem::Version.new("4.9")
     @equipment['dut1'].send_cmd("fun_driver_name=`ls /sys/bus/pci-epf/drivers`", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("fun_driver_name=${fun_driver_name}_k2g", @equipment['dut1'].prompt, 10) if @equipment['dut1'].name.match(/k2g/i)
@@ -60,7 +60,7 @@ def run
     func_driver_name = @equipment['dut1'].name.match(/k2g/i) ? "pci_epf_test_k2g" : "pci_epf_test"
     @equipment['dut1'].send_cmd("cd /sys/kernel/config/pci_ep", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("ctrl_driver_name=`ls /sys/class/pci_epc`", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("ln -s functions/${func_driver_name}/func1 controllers/${ctrl_driver_name}", @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("ln -s functions/#{func_driver_name}/func1 controllers/${ctrl_driver_name}", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("echo 1 > controllers/${ctrl_driver_name}/start", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("cat controllers/${ctrl_driver_name}/start", @equipment['dut1'].prompt, 10)
     if ! @equipment['dut1'].response.match(/^1/i) 
