@@ -320,9 +320,9 @@ module EvmData
   end
 
   def get_regulators_remain_on(params=nil)
-    return [] if not params['platform'].match(/(^am5|^dra7)/)
     machines = {}
     params = get_default_params if !params
+    return [] if not params['platform'].match(/(^am5|^dra7)/)
     data = get_power_domain_data(params['platform'])['power_domains']
     data.select! {|name| name.match /(CORE|MPU|DSP|IVA|GPU)/}
     machines[params['platform']]  = {'0.0' => data}
