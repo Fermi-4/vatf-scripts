@@ -320,6 +320,7 @@ module EvmData
   end
 
   def get_regulators_remain_on(params=nil)
+    return [] if not params['platform'].match(/(^am5|^dra7)/)
     machines = {}
     params = get_default_params if !params
     data = get_power_domain_data(params['platform'])['power_domains']
