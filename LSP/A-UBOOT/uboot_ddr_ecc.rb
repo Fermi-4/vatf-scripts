@@ -37,7 +37,8 @@ def run
   if ecc_test == '1'
     @equipment['dut1'].send_cmd("setenv ecc_test 1 ", @equipment['dut1'].boot_prompt, 5)
   end
-  @equipment['dut1'].send_cmd("ddr ecc_err ${loadaddr} #{err_pattern}", @equipment['dut1'].boot_prompt, 10)
+  err_loadaddr = (get_loadaddr().to_i(16) + "0x400000".to_i(16)).to_s(16)
+  @equipment['dut1'].send_cmd("ddr ecc_err 0x#{err_loadaddr} #{err_pattern}", @equipment['dut1'].boot_prompt, 10)
 
   if err_cnt.to_i == 1
     orig_data = @equipment['dut1'].response.match(/Disabling\s+DDR\s+ECC\s+\.\.\..*,\s+read\s+data\s+0x(\h+),/im).captures[0]
@@ -80,6 +81,13 @@ def run
 
   set_result(FrameworkConstants::Result[:pass], "Test pass")
 
+end
+
+def get_loadaddr()
+  @equipment['dut1'].send_cmd("pri loadaddr", @equipment['dut1'].boot_prompt, 10)
+  ldaddr = @equipment['dut1'].response.match(/loadaddr\s*=\s*(\h+)/im).captures[0]
+  raise "Could not get default loadaddr" if ldaddr == ""
+  return ldaddr
 end
 
 def clean
