@@ -85,7 +85,7 @@ end
 
 def get_loadaddr()
   @equipment['dut1'].send_cmd("pri loadaddr", @equipment['dut1'].boot_prompt, 10)
-  ldaddr = @equipment['dut1'].response.match(/loadaddr\s*=\s*(\h+)/im).captures[0]
+  ldaddr = @equipment['dut1'].response.match(/loadaddr\s*=\s*0x(\h+)/im).captures[0]
   raise "Could not get default loadaddr" if ldaddr == ""
   return ldaddr
 end
