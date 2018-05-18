@@ -47,20 +47,30 @@ end
 
 def check_usbhost_detection()
   result = 0
-  @equipment['dut1'].send_cmd("usb start",@equipment['dut1'].boot_prompt, 10)
-  if ! @equipment['dut1'].response.match(/[1-9]+\s+Storage\s+Device.*found/i)
-    result = 1
-    msg = "No usbmsc device being detected and found"
+  i = 0
+  test_loop = 5
+  while i < test_loop
+    @equipment['dut1'].send_cmd("usb reset",@equipment['dut1'].boot_prompt, 20)
+    if ! @equipment['dut1'].response.match(/[1-9]+\s+Storage\s+Device.*found/i)
+      result += 1
+      msg += "No usbmsc device being detected and found in iteration #{i.to_s};"
+    end
+    i += 1
   end
   [result, msg]
 end
 
 def check_sata_detection()
   result = 0
-  @equipment['dut1'].send_cmd("scsi scan; scsi info",@equipment['dut1'].boot_prompt, 10)
-  if ! @equipment['dut1'].response.match(/Vendor:\s+ATA\s+Prod/i)
-    result = 1
-    msg = "No SATA device being detected and found"
+  i = 0
+  test_loop = 2
+  while i < test_loop
+    @equipment['dut1'].send_cmd("scsi scan; scsi info",@equipment['dut1'].boot_prompt, 10)
+    if ! @equipment['dut1'].response.match(/Vendor:\s+ATA\s+Prod/i)
+      result += 1
+      msg += "No SATA device being detected and found in iteration #{i.to_s};"
+    end
+    i += 1
   end
   [result, msg]
 end
