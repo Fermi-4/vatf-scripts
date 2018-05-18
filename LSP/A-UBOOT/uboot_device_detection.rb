@@ -51,6 +51,7 @@ def check_usbhost_detection()
   i = 0
   test_loop = 5
   while i < test_loop
+    report_msg "Iteration #{i.to_s} ..."
     @equipment['dut1'].send_cmd("usb reset",@equipment['dut1'].boot_prompt, 20)
     if ! @equipment['dut1'].response.match(/[1-9]+\s+Storage\s+Device.*found/i)
       result += 1
@@ -67,6 +68,7 @@ def check_sata_detection()
   i = 0
   test_loop = 2
   while i < test_loop
+    report_msg "Iteration #{i.to_s} ..."
     @equipment['dut1'].send_cmd("scsi scan; scsi info",@equipment['dut1'].boot_prompt, 10)
     if ! @equipment['dut1'].response.match(/Vendor:\s+ATA\s+Prod/i)
       result += 1
