@@ -17,6 +17,8 @@ end
 
 def get_test_script_file(testcase)
 	case testcase
+  when /SATA_/
+		return 'LSP/TARGET/dev_test_with_delay.rb'
 	when /UART_.+_HWFLOW/
 		return 'LSP/A-UART/uart_hwflow.rb'
 	when /_PERF_/
