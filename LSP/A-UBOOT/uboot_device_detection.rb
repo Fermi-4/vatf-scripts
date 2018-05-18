@@ -47,6 +47,7 @@ end
 
 def check_usbhost_detection()
   result = 0
+  msg = ''
   i = 0
   test_loop = 5
   while i < test_loop
@@ -62,6 +63,7 @@ end
 
 def check_sata_detection()
   result = 0
+  msg = ''
   i = 0
   test_loop = 2
   while i < test_loop
