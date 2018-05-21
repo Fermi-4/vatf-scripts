@@ -2,6 +2,7 @@
 require File.dirname(__FILE__)+'/../../LSP/default_test_module'
 require File.dirname(__FILE__)+'/../../LSP/A-PCI/test_pcie'
 require File.dirname(__FILE__)+'/test_protocols'
+require File.dirname(__FILE__)+'/../common_utils/common_functions'
 
 include LspTestScript
 def setup
@@ -28,32 +29,68 @@ def run
   # get dut params
   feature = @test_params.params_chan.feature[0]
   cmd = @test_params.params_chan.cmd[0]
-  # ip addresses for dut1 and dut2
+
+  # get ip addresses for dut1 and dut2 from bench file
   dut1_if02, dut1_if03 = @equipment['dut1'].params['dut1_if'], @equipment['dut1'].params['dut1_if2']
-  dut2_if02, dut2_if03 = @equipment['dut2'].params['dut2_if'], @equipment['dut2'].params['dut2_if2']
+  dut2_if02, dut2_if03, dut2_if05 = @equipment['dut2'].params['dut2_if'], @equipment['dut2'].params['dut2_if2'],\
+ @equipment['dut2'].params['dut2_if5']
+
+  # get pru port information
+  pru_port1, pru_port2 =  @equipment['dut1'].params["#{feature}_port1"], @equipment['dut1'].params["#{feature}_port2"]
+
+  vlan_filter = @test_params.params_chan.instance_variable_defined?(:@vlan_filter) ? @test_params.params_chan.vlan_filter[0].to_i : 0
+  mc_filter = @test_params.params_chan.instance_variable_defined?(:@mc_filter) ? @test_params.params_chan.mc_filter[0].to_i : 0
+  mc_cli_ser_bins = @test_params.params_chan.instance_variable_defined?(:@mc_cli_ser_bins) ? @test_params.params_chan.mc_filter[0] : ""
+
   test_comment = ""
   begin
     enable_feature(@equipment['dut1'], feature, cmd, dut1_if02)
     enable_feature(@equipment['dut2'], feature, cmd, dut2_if02)
     ping_status(@equipment['dut1'], dut2_if02)
-    ping_status(@equipment['dut2'], dut1_if02)
     enable_vlan(@equipment['dut1'], feature, dut1_if02, dut1_if03)
-    enable_vlan(@equipment['dut2'], feature, dut2_if02, dut2_if03)
+    enable_vlan(@equipment['dut2'], feature, dut2_if02, dut2_if03, dut2_if05, mc_filter)
     ping_status(@equipment['dut1'], dut2_if02)
-    ping_status(@equipment['dut2'], dut1_if02)
-    ping_status(@equipment['dut1'], dut2_if03)
     ping_status(@equipment['dut2'], dut1_if03)
     verify_packets(@equipment['dut1'], feature)
     verify_packets(@equipment['dut2'], feature)
     test_comment += "VLAN over #{feature} verified."
+
+    # verify vlan filtering if vlan_filter set to 1
+    if vlan_filter == 1
+      is_vlan_filter_enabled(@equipment['dut1'], feature)
+      is_vlan_filter_enabled(@equipment['dut2'], feature)
+      verify_vlan_filtering(@equipment['dut1'], @equipment['dut2'], dut1_if02, pru_port1)
+      # passing invalid vlan ip and  dropped as true to verify dropped count
+      verify_vlan_filtering(@equipment['dut1'], @equipment['dut2'], dut2_if05, pru_port1, true)
+      test_comment += " Verified VLAN filtering support."
+    end
+    # verify multicast filtering if mc_filter set to 1
+    if mc_filter == 1 and mc_cli_ser_bins != ""
+      setup_mc_cli_ser(@equipment['dut1'], @equipment['dut2'], mc_cli_ser_bins)
+      is_mc_filter_enabled(@equipment['dut1'], feature)
+      is_mc_filter_enabled(@equipment['dut2'], feature)
+      # passing invalid vlan ip and dropped as true to verify dropped count
+      verify_mc_filtering(@equipment['dut1'], @equipment['dut2'], dut1_if02, dut2_if05, feature, pru_port1, true)
+      verify_mc_filtering(@equipment['dut1'], @equipment['dut2'], dut1_if02, dut2_if02, feature, pru_port1)
+      test_comment += " Verified Multicast filtering support."
+    end
+    # disable vlan and feature
+    disable_vlan(@equipment['dut1'], feature)
+    disable_vlan(@equipment['dut2'], feature)
+    disable_feature(@equipment['dut1'], feature)
+    disable_feature(@equipment['dut2'], feature)
+
     set_result(FrameworkConstants::Result[:pass], "Test Passed. #{test_comment}")
   rescue Exception => e
     set_result(FrameworkConstants::Result[:fail], "Test Failed. #{e}")
   end
 end
 
-# function to enable vlan
-def enable_vlan(dut, feature, dut_if02, dut_if03)
+# function to enable vlan, this function enables vlan links over hsr/prp
+# it creates prp/hsr0.2, prp/hsr0.3 and prp/hsr0.5 using id 2, 3, and 5 resp.
+# these hard coded values are used for demo purpose, it can be replaced with
+# other values too
+def enable_vlan(dut, feature, dut_if02, dut_if03, dut_if05 = "", mc_filter = 0)
   dut.send_cmd("ifconfig #{feature}0 0.0.0.0", dut.prompt, 10)
   dut.send_cmd("ip link add link #{feature}0 name #{feature}0.2 type vlan id 2", dut.prompt, 10)
   dut.send_cmd("ip link add link #{feature}0 name #{feature}0.3 type vlan id 3", dut.prompt, 10)
@@ -61,6 +98,11 @@ def enable_vlan(dut, feature, dut_if02, dut_if03)
   dut.send_cmd("ifconfig #{feature}0.3 #{dut_if03}", dut.prompt, 10)
   dut.send_cmd("ip link set #{feature}0.2 type vlan egress 0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0", dut.prompt, 10)
   dut.send_cmd("ip link set #{feature}0.3 type vlan egress 0:7 1:7 2:7 3:7 4:7 5:7 6:7 7:7", dut.prompt, 10)
+  if mc_filter == 1
+    # create extra link with id 0.5(id can be anything ex. 0.x) to verify dropped count
+    dut.send_cmd("ip link add link #{feature}0 name #{feature}0.5 type vlan id 5", dut.prompt, 10)
+    dut.send_cmd("ifconfig #{feature}0.5 #{dut_if05}", dut.prompt, 10)
+  end
   dut.send_cmd("ifconfig", dut.prompt, 10)
   if !(dut.response =~ Regexp.new("(#{feature}0.[2-3]\s+Link\sencap:Ethernet\s+HWaddr)"))
     raise "Failed to enable VLAN over #{feature}."
@@ -76,6 +118,89 @@ def verify_packets(dut, feature)
   dut.send_cmd("cat /proc/net/vlan/#{feature}0.3", dut.prompt, 10)
   if !(dut.response =~ Regexp.new("(total\sframes\sreceived\s+[1-9]\\d+)"))
     raise "Failed to receive packets."
+  end
+end
+
+# function to disable vlan interfaces
+def disable_vlan(dut, feature)
+  dut.send_cmd("ip link delete #{feature}0.2", dut.prompt, 10)
+  dut.send_cmd("ip link delete #{feature}0.3", dut.prompt, 10)
+  dut.send_cmd("ip link delete #{feature}0.5", dut.prompt, 10)
+  dut.send_cmd("lsmod", dut.prompt, 10)
+  dut.send_cmd("rmmod 8021q", dut.prompt, 10)
+  dut.send_cmd("ifconfig", dut.prompt, 10)
+end
+
+# function to check vlan filter enabled or not
+def is_vlan_filter_enabled(dut, feature)
+  dut.send_cmd("cat /sys/kernel/debug/prueth-#{feature}/vlan_filter ", dut.prompt, 10)
+  if !( dut.response =~ /VLAN\sFilter\s:\senabled[\n\s]*0:\s+0011/ )
+    raise "Failed to enable vlan filter."
+  end
+end
+
+# function to check multicast filter enabled or not
+def is_mc_filter_enabled(dut, feature)
+  dut.send_cmd("cat /sys/kernel/debug/prueth-#{feature}/mc_filter", dut.prompt, 10)
+  if !( dut.response =~ /MC\sFilter\s:\senabled/ )
+    raise "Failed to enable multicast filter."
+  end
+end
+
+# function to verify vlan filtering, this function pings to invalid vlan
+# interface(0.5) and verifies vlan dropped count using ethtool utility.
+def verify_vlan_filtering(dut, dut_sec, ipaddr, pru_port, dropped = false)
+  dut.send_cmd("ethtool -S #{pru_port}", dut.prompt, 10)
+  lrevlandropped = dut.response[/(lreVlanDropped:\s*\d*)/]
+  dut_sec.send_cmd("ping -c 20 #{ipaddr}", dut_sec.prompt, 30)
+  sleep(5)
+  dut.send_cmd("ethtool -S #{pru_port}", dut.prompt, 10)
+  lrevlandropped_n = dut.response[/(lreVlanDropped:\s*\d*)/]
+  dut_sec.send_cmd("cat /sys/kernel/debug/prueth-#{pru_port}/stats", dut_sec.prompt, 10)
+  if dropped == true and lrevlandropped == lrevlandropped_n
+    raise "Failed to verify dropped count for vlan."
+  end
+end
+
+# function to setup multicast client server
+def setup_mc_cli_ser(dut_client, dut_server, bins_path)
+  download_package("#{bins_path}/mc_client", '/tftpboot/mc_bins/')
+  download_package("#{bins_path}/mc_server", '/tftpboot/mc_bins/')
+  transfer_to_dut("mc_bins/mc_client", @equipment['server1'].telnet_ip, dut_client)
+  transfer_to_dut("mc_bins/mc_server", @equipment['server1'].telnet_ip, dut_server)
+  dut_client.send_cmd("chmod +x mc_client; ls -l", dut_client.prompt, 10)
+  dut_server.send_cmd("chmod +x mc_server; ls -l", dut_server.prompt, 10)
+end
+
+# function to verify multicast filtering, this function runs multicast
+# server for invalid vlan interface(0.5) and client application and verifies
+# vlan dropped and multicast dropped count using ethtool utility.
+def verify_mc_filtering(dut_client, dut_server, cli_ipaddr, ser_ipaddr, feature, pru_port, dropped = false)
+  dut_client.send_cmd("ethtool -S #{pru_port}", dut_client.prompt, 10)
+  # get mc and vlan dropped count to compare further
+  lremcdropped = dut_client.response[/(lreMulticastDropped:\s*\d*)/]
+  lrevlandropped = dut_client.response[/(lreVlanDropped:\s*\d*)/]
+  dut_client.send_cmd("./mc_client 224.1.1.5 #{cli_ipaddr} > mc_client.log 2>&1 &", dut_client.prompt, 10) if not dropped
+  dut_server.send_cmd("./mc_server 224.1.1.5 #{ser_ipaddr}", dut_server.prompt, 10)
+  dut_server.send_cmd("./mc_server 224.1.1.5 #{ser_ipaddr}", dut_server.prompt, 10)
+  dut_server.send_cmd("./mc_server 224.1.1.5 #{ser_ipaddr}", dut_server.prompt, 10)
+  dut_server.send_cmd("./mc_server 224.1.1.5 #{ser_ipaddr}", dut_server.prompt, 10)
+  dut_server.send_cmd("./mc_server 224.1.1.5 #{ser_ipaddr}", dut_server.prompt, 10)
+  dut_client.send_cmd("cat mc_client.log", dut_client.prompt, 10) if not dropped
+  if dropped == false
+    if !( dut_client.response =~ /Multicast\stest\smessage\slol!/ )
+      raise "Failed to verify multicast filtering."
+    end
+  end
+  # print pru stats
+  dut_server.send_cmd("cat /sys/kernel/debug/prueth-#{pru_port}/stats", dut_server.prompt, 10)
+  sleep(5)
+  dut_client.send_cmd("ethtool -S #{pru_port}", dut_client.prompt, 10)
+  # get updated mc and vlan dropped count
+  lremcdropped_n = dut_client.response[/(lreMulticastDropped:\s*\d*)/]
+  lrevlandropped_n = dut_client.response[/(lreVlanDropped:\s*\d*)/]
+  if dropped == true and (lremcdropped == lremcdropped_n or lrevlandropped == lrevlandropped_n)
+    raise "Failed to verify dropped count for multicast or vlan."
   end
 end
 

@@ -55,8 +55,11 @@ def run
       if switch_to == "emac"
         emac_status(dut1_eth2, dut1_eth3, dut2_eth2, dut2_eth3)
       else
-        enable_feature(@equipment['dut1'], switch_to, cmd_to, dut1_eth2)
-        enable_feature(@equipment['dut2'], switch_to, cmd_to, dut2_eth2)
+        # setting offload to true as switching of feature need to
+        # be done by offloading feature using ethtool utility
+        offload = true
+        enable_feature(@equipment['dut1'], switch_to, cmd_to, dut1_eth2, offload)
+        enable_feature(@equipment['dut2'], switch_to, cmd_to, dut2_eth2, offload)
         ping_status(@equipment['dut1'], dut2_eth2)
         ping_status(@equipment['dut2'], dut1_eth2)
         # disable eth2 to verify redundancy
@@ -83,13 +86,16 @@ def emac_status(dut1_eth2, dut1_eth3, dut2_eth2, dut2_eth3)
 end
 
 # function to enable feature(hsr/prp)
-def enable_feature(dut, feature, command, ipaddr)
+def enable_feature(dut, feature, command, ipaddr, offload = false)
   dut.send_cmd("export eth3_ipaddr=`cat /sys/class/net/eth3/address`", dut.prompt, 10)
   dut.send_cmd("ifconfig eth2 0.0.0.0 down", dut.prompt, 10)
   dut.send_cmd("ifconfig eth3 0.0.0.0 down", dut.prompt, 10)
   dut.send_cmd("ifconfig eth3 hw ether `cat /sys/class/net/eth2/address`", dut.prompt, 10)
-  dut.send_cmd("ethtool -K eth2 #{feature}-rx-offload on", dut.prompt, 10)
-  dut.send_cmd("ethtool -K eth3 #{feature}-rx-offload on", dut.prompt, 10)
+  # check if offload is true, if yes offload feature using ethtool
+  if offload == true
+    dut.send_cmd("ethtool -K eth2 #{feature}-rx-offload on", dut.prompt, 10)
+    dut.send_cmd("ethtool -K eth3 #{feature}-rx-offload on", dut.prompt, 10)
+  end
   sleep(10)
   dut.send_cmd("ifconfig eth2 up", dut.prompt, 10)
   dut.send_cmd("ifconfig eth3 up", dut.prompt, 10)
