@@ -54,9 +54,6 @@ def run
     sleep 5
   end
 
-  perf_data = []
-
-
   video_test_file = File.join(@linux_temp_folder, 'video_tst_file.raw')
   audio_test_file = File.join(@linux_temp_folder, 'audio_tst_file.pcm')
   media_srcs.each do |src|
@@ -91,7 +88,6 @@ def run
       end
 
       res = true
-      res_string = ''
       num_comp = -1
       mode_info = width = height = nil
       drm_info = get_properties()
@@ -109,6 +105,7 @@ def run
       to_vals = [0.33, 0.5, 0.66]
       t = 0.1
       exec_video_op('seek', t)
+      send_events_for(['__enter__', '__enter__'])
       @test_params.params_chan.video_ops.each do |op|
         to = case op
           when /seek/i
@@ -126,22 +123,24 @@ def run
             nil
         end
         exec_video_op(op, to)
-        if op == 'pause'
-          exec_video_op('seek', t)
-        else
-          sleep 2 if ['play', 'resume'].include(op.downcase) || video_state == 'playing'
+        if ['pause', 'play', 'resume'].include?(op.downcase)
+            exec_video_op('seek', t)
+        end
+        if ['play', 'resume'].include?(op.downcase) || (video_state == 'playing' && op != 'pause') 
+          sleep 1.5
         end
         begin
           num_comp = video_capture.capture_media(video_test_file, audio_test_file, width, height, frame_rate, interlace, 2)
         rescue Exception => e
-          res_string += "\n#{e.to_s}"
+          add_result_row(res_table, s_file, "#{mode_info[0]}@#{mode_info[1]}", false, "\n#{e.to_s}")
+          next
         end
         conv_file = video_test_file
         if num_comp == 3
           conv_file = change_uyvy_to_rgb(video_test_file, width, height) 
         end
 
-        video_ref_files = get_ref_file(s_file, video_state, op, to, mode_info[0], mode_info[1], interlace)
+        video_ref_files = get_ref_file(s_file, video_state, op, t, mode_info[0], mode_info[1], interlace)
         if video_ref_files.empty?
           total += 1
           add_result_row(res_table, s_file, "#{mode_info[0]}@#{mode_info[1]}", false, "Unable to get ref file for mode")
@@ -167,19 +166,20 @@ def run
           break if qual_res
         end
         res &= qual_res
-        res_string += qual_string
         if res
-          res_string += "-Video Result: #{result.length} video frames passed\n"
+          num_passed += 1
+          qual_string += "-Video Result: #{result.length} video frames passed\n"          
         end
-      
+        
+        add_result_row(res_table, s_file, op, "#{mode_info[0]}@#{mode_info[1]}", res, qual_string)
+        
         #exit if !res #Uncomment this line if you want to stop on a display failure
 
-        num_passed += 1 if res
         total += 1
-        add_result_row(res_table, s_file, op, "#{mode_info[0]}@#{mode_info[1]}", res && audio_res, res_string)
+        
         if op.downcase == 'pause'
           video_state = 'paused'
-        elsif ['play', 'resume'].include(op.downcase)
+        elsif ['play', 'resume'].include?(op.downcase)
           video_state = 'playing'
         end
       end
@@ -187,7 +187,7 @@ def run
   end
 
   set_result(num_passed != total || total == 0 ? FrameworkConstants::Result[:fail] : FrameworkConstants::Result[:pass],
-             "#{num_passed}/#{total} passed ", perf_data)
+             "#{num_passed}/#{total} ops passed ")
 
 end
 
@@ -214,7 +214,7 @@ def get_ref_file(ref_file, video_state, op, to, mode, fps, interlace, cap_sys=@e
   r_files << ['ref', File.basename(ref_file,'.*'), video_state, op, to, mode,fps+'fps_f2.argb'].join('_') if interlace == 'i'
   r_files.each do |f_name|
     f_base_name = f_name + '.tar.xz'
-    remote_url = "#{HOST_UTILS_URL}/android/ref-media/#{f_base_name}"
+    remote_url = "http://gtopentest-server.gt.design.ti.com/anonymous/common/android/ref-files/video-ops/#{f_base_name}"
     local_file = File.join(@linux_temp_folder, f_base_name)
     wget_file(remote_url, local_file)
     cap_sys.send_cmd("tar -C #{@linux_temp_folder} -Jxvf #{local_file} || rm #{local_file}",
