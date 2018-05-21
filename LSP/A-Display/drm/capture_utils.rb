@@ -157,6 +157,7 @@ module CaptureUtils
       else
         return -1
       end
+      num_frames = [1, num_frames].max
       @sample_size = a_bits.to_i/8
       @audio_channels = a_chans.to_i
       @sys.send_cmd("#{@capture_bin} -v #{v_name} -d 0 -m #{mode} -p #{pixel} -a #{a_name} -c #{a_chans} -n #{num_frames} -s #{a_bits} -x 1", @sys.prompt, 10 + (num_frames*n_w*n_h).to_f/15552000) 
