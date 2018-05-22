@@ -21,9 +21,10 @@ def setup
   @android_boot_params['server'].send_sudo_cmd("rm #{@linux_temp_folder}/*", @android_boot_params['server'].prompt, 120) #Cleanup for next test
   @equipment['dut1'].set_android_tools(@android_boot_params)
   send_adb_cmd("shell mkdir #{@linux_dst_dir}")
+  send_events_for('__menu__')
+  send_events_for('__home__')
   send_adb_cmd("shell su root svc power stayon true")
   send_adb_cmd("shell su root setprop debug.hwc.showfps 1")
-  send_events_for('__home__')
   setupTest(:@test_libs,:@var_test_libs_root)
 end
 
