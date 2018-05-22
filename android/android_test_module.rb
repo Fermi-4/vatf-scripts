@@ -174,7 +174,9 @@ module AndroidTest
     
   # Returns true if named package is installed
   def isPkgInstalled?(pkgName)
-    send_adb_cmd("shell pm list packages #{pkgName}").strip().split(':')[1]
+    pkg = send_adb_cmd("shell pm list packages #{pkgName}").strip().split(':')[-1]
+    pkg = nil if !pkg.match(/#{pkgName}/i) 
+    pkg
   end
     
   #Un-installs android package. Raise error if it can't
