@@ -21,8 +21,9 @@ def run
    time1 = Time.now
    @equipment['dut1'].send_cmd('boot', /.*/)
    res = ''
-   while !res.match(/^\d+$/) && boot_timeout > 0
+   while !res.match(/^\d+$/) && !res.match(/.*?password\s+for\s+[^:]+:\s*\d+$/i) && boot_timeout > 0
       sleep 1
+      @equipment['dut1'].add_adb_device()
       res = @equipment['dut1'].send_adb_cmd('shell getprop sys.boot_completed').strip()
       boot_timeout -= 1
    end
