@@ -87,7 +87,6 @@ def run
         next
       end
 
-      res = true
       num_comp = -1
       mode_info = width = height = nil
       drm_info = get_properties()
@@ -165,15 +164,15 @@ def run
           end
           break if qual_res
         end
-        res &= qual_res
-        if res
+
+        if qual_res
           num_passed += 1
           qual_string += "-Video Result: #{result.length} video frames passed\n"          
         end
         
-        add_result_row(res_table, s_file, op, "#{mode_info[0]}@#{mode_info[1]}", res, qual_string)
+        add_result_row(res_table, s_file, op, "#{mode_info[0]}@#{mode_info[1]}", qual_res, qual_string)
         
-        #exit if !res #Uncomment this line if you want to stop on a display failure
+        #exit if !qual_res #Uncomment this line if you want to stop on a display failure
 
         total += 1
         
