@@ -2198,6 +2198,8 @@ class PerfUtilities
       @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "#{command}", "Mbits/sec", @error_bit, 0, monitor_secs)
     }
     @vatf_helper.log_info(is_alpha_side, "\r\n Iperf server thread is running.\r\n")
+    # Allow time for the Iperf server to fully come up before continuing
+    sleep(5)
     return server_thread
   end
 
