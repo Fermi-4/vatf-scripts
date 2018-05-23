@@ -23,6 +23,7 @@ def run
     
     # root the device
     send_adb_cmd("root")
+    @equipment['dut1'].add_adb_device()
     send_adb_cmd("wait-for-device")
     send_adb_cmd("remount")
 
