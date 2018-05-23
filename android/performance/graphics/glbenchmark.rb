@@ -19,7 +19,7 @@ def run
   send_events_for(['__directional_pad_up__', '__enter__', '__tab__', '__tab__', '__enter__', '__tab__', '__enter__'])
   timeout = @test_params.params_control.instance_variable_defined?(:@timeout) ? @test_params.params_control.instance_variable_defined?(:@timeout).to_i : 60
   wait_for_logcat(/ActivityManager:\s*Displayed\s*#{pkg}\/com.glbenchmark.activities.ResultsActivity:/, timeout)
-  results_file = send_adb_cmd('shell ls /sdcard/Android/data/com.glbenchmark.glbenchmark*/cache/last_results_*.xml').strip()
+  results_file = send_adb_cmd('shell ls /sdcard/Android/data/com.glbenchmark.glbenchmark*/cache/last_results_*.xml').strip().match(/(\/sdcard\/Android\/.*?\.xml)/i).captures[0]
   send_adb_cmd("pull -p #{results_file} #{local_res_file}")
   perf_data = []
   res_string = ''
