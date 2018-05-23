@@ -126,8 +126,9 @@ def run
             exec_video_op('seek', t)
         end
         if ['play', 'resume'].include?(op.downcase) || (video_state == 'playing' && op != 'pause') 
-          sleep 1.5
+          sleep 1
         end
+        sleep 0.5
         begin
           num_comp = video_capture.capture_media(video_test_file, audio_test_file, width, height, frame_rate, interlace, 2)
         rescue Exception => e
