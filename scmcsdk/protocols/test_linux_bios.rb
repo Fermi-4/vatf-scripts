@@ -22,6 +22,10 @@ def run
   # ip addresses for dut1 and dut2
   dut1_if = @equipment['dut1'].params['dut1_if']
   dut2_if = @equipment['dut2'].params['dut2_if']
+
+  # get pruicss port information
+  pruicss_ports = [@equipment['dut1'].params["#{feature}_port1"], @equipment['dut1'].params["#{feature}_port2"]]
+
   test_comment = ""
   begin
     @power_handler.switch_off(@equipment['dut2'].power_port)
@@ -34,7 +38,7 @@ def run
     else
       raise "Failed to connect serial at BIOS side."
     end
-    enable_feature(@equipment['dut1'], feature, cmd, dut1_if)
+    enable_feature(@equipment['dut1'], feature, cmd, dut1_if, pruicss_ports)
     ping_status(@equipment['dut1'], dut2_if, ping_count)
     @equipment['dut2'].send_cmd("SCN", "", 5, true, false)
     @equipment['dut1'].send_cmd("cat /sys/kernel/debug/#{feature}/node_table", @equipment['dut1'].prompt, 10)

@@ -16,9 +16,13 @@ def run
   pcap_loc = @test_params.params_chan.pcap_loc[0]
   # get ip address
   dut_if = @equipment['dut1'].params['dut1_if']
+
+  # get prucss port information
+  pruicss_ports = [@equipment['dut1'].params["#{feature}_port1"], @equipment['dut1'].params["#{feature}_port2"]]
+
   test_comment = ""
   begin
-    enable_feature(@equipment['dut1'], feature, cmd, dut_if)
+    enable_feature(@equipment['dut1'], feature, cmd, dut_if, pruicss_ports)
     download_package(pcap_loc,'/tftpboot/')
     verify_node_table(@equipment['dut1'], feature, dut_if, constraint)
     test_comment += "Support of 256 node table entries for #{feature} verified."

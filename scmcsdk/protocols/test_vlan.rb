@@ -35,8 +35,8 @@ def run
   dut2_if02, dut2_if03, dut2_if05 = @equipment['dut2'].params['dut2_if'], @equipment['dut2'].params['dut2_if2'],\
  @equipment['dut2'].params['dut2_if5']
 
-  # get pru port information
-  pru_port1, pru_port2 =  @equipment['dut1'].params["#{feature}_port1"], @equipment['dut1'].params["#{feature}_port2"]
+  # get pruicss port information
+  pruicss_ports = [@equipment['dut1'].params["#{feature}_port1"], @equipment['dut1'].params["#{feature}_port2"]]
 
   vlan_filter = @test_params.params_chan.instance_variable_defined?(:@vlan_filter) ? @test_params.params_chan.vlan_filter[0].to_i : 0
   mc_filter = @test_params.params_chan.instance_variable_defined?(:@mc_filter) ? @test_params.params_chan.mc_filter[0].to_i : 0
@@ -44,8 +44,8 @@ def run
 
   test_comment = ""
   begin
-    enable_feature(@equipment['dut1'], feature, cmd, dut1_if02)
-    enable_feature(@equipment['dut2'], feature, cmd, dut2_if02)
+    enable_feature(@equipment['dut1'], feature, cmd, dut1_if02, pruicss_ports)
+    enable_feature(@equipment['dut2'], feature, cmd, dut2_if02, pruicss_ports)
     ping_status(@equipment['dut1'], dut2_if02)
     enable_vlan(@equipment['dut1'], feature, dut1_if02, dut1_if03)
     enable_vlan(@equipment['dut2'], feature, dut2_if02, dut2_if03, dut2_if05, mc_filter)
@@ -59,9 +59,9 @@ def run
     if vlan_filter == 1
       is_vlan_filter_enabled(@equipment['dut1'], feature)
       is_vlan_filter_enabled(@equipment['dut2'], feature)
-      verify_vlan_filtering(@equipment['dut1'], @equipment['dut2'], dut1_if02, pru_port1)
+      verify_vlan_filtering(@equipment['dut1'], @equipment['dut2'], dut1_if02, pruicss_ports[0])
       # passing invalid vlan ip and  dropped as true to verify dropped count
-      verify_vlan_filtering(@equipment['dut1'], @equipment['dut2'], dut2_if05, pru_port1, true)
+      verify_vlan_filtering(@equipment['dut1'], @equipment['dut2'], dut2_if05, pruicss_ports[0], true)
       test_comment += " Verified VLAN filtering support."
     end
     # verify multicast filtering if mc_filter set to 1
@@ -70,15 +70,15 @@ def run
       is_mc_filter_enabled(@equipment['dut1'], feature)
       is_mc_filter_enabled(@equipment['dut2'], feature)
       # passing invalid vlan ip and dropped as true to verify dropped count
-      verify_mc_filtering(@equipment['dut1'], @equipment['dut2'], dut1_if02, dut2_if05, feature, pru_port1, true)
-      verify_mc_filtering(@equipment['dut1'], @equipment['dut2'], dut1_if02, dut2_if02, feature, pru_port1)
+      verify_mc_filtering(@equipment['dut1'], @equipment['dut2'], dut1_if02, dut2_if05, feature, pruicss_ports[0], true)
+      verify_mc_filtering(@equipment['dut1'], @equipment['dut2'], dut1_if02, dut2_if02, feature, pruicss_ports[0])
       test_comment += " Verified Multicast filtering support."
     end
     # disable vlan and feature
     disable_vlan(@equipment['dut1'], feature)
     disable_vlan(@equipment['dut2'], feature)
-    disable_feature(@equipment['dut1'], feature)
-    disable_feature(@equipment['dut2'], feature)
+    disable_feature(@equipment['dut1'], feature, pruicss_ports)
+    disable_feature(@equipment['dut2'], feature, pruicss_ports)
 
     set_result(FrameworkConstants::Result[:pass], "Test Passed. #{test_comment}")
   rescue Exception => e
@@ -149,14 +149,14 @@ end
 
 # function to verify vlan filtering, this function pings to invalid vlan
 # interface(0.5) and verifies vlan dropped count using ethtool utility.
-def verify_vlan_filtering(dut, dut_sec, ipaddr, pru_port, dropped = false)
-  dut.send_cmd("ethtool -S #{pru_port}", dut.prompt, 10)
+def verify_vlan_filtering(dut, dut_sec, ipaddr, pruicss_port, dropped = false)
+  dut.send_cmd("ethtool -S #{pruicss_port}", dut.prompt, 10)
   lrevlandropped = dut.response[/(lreVlanDropped:\s*\d*)/]
   dut_sec.send_cmd("ping -c 20 #{ipaddr}", dut_sec.prompt, 30)
   sleep(5)
-  dut.send_cmd("ethtool -S #{pru_port}", dut.prompt, 10)
+  dut.send_cmd("ethtool -S #{pruicss_port}", dut.prompt, 10)
   lrevlandropped_n = dut.response[/(lreVlanDropped:\s*\d*)/]
-  dut_sec.send_cmd("cat /sys/kernel/debug/prueth-#{pru_port}/stats", dut_sec.prompt, 10)
+  dut_sec.send_cmd("cat /sys/kernel/debug/prueth-#{pruicss_port}/stats", dut_sec.prompt, 10)
   if dropped == true and lrevlandropped == lrevlandropped_n
     raise "Failed to verify dropped count for vlan."
   end
@@ -175,8 +175,8 @@ end
 # function to verify multicast filtering, this function runs multicast
 # server for invalid vlan interface(0.5) and client application and verifies
 # vlan dropped and multicast dropped count using ethtool utility.
-def verify_mc_filtering(dut_client, dut_server, cli_ipaddr, ser_ipaddr, feature, pru_port, dropped = false)
-  dut_client.send_cmd("ethtool -S #{pru_port}", dut_client.prompt, 10)
+def verify_mc_filtering(dut_client, dut_server, cli_ipaddr, ser_ipaddr, feature, pruicss_port, dropped = false)
+  dut_client.send_cmd("ethtool -S #{pruicss_port}", dut_client.prompt, 10)
   # get mc and vlan dropped count to compare further
   lremcdropped = dut_client.response[/(lreMulticastDropped:\s*\d*)/]
   lrevlandropped = dut_client.response[/(lreVlanDropped:\s*\d*)/]
@@ -193,9 +193,9 @@ def verify_mc_filtering(dut_client, dut_server, cli_ipaddr, ser_ipaddr, feature,
     end
   end
   # print pru stats
-  dut_server.send_cmd("cat /sys/kernel/debug/prueth-#{pru_port}/stats", dut_server.prompt, 10)
+  dut_server.send_cmd("cat /sys/kernel/debug/prueth-#{pruicss_port}/stats", dut_server.prompt, 10)
   sleep(5)
-  dut_client.send_cmd("ethtool -S #{pru_port}", dut_client.prompt, 10)
+  dut_client.send_cmd("ethtool -S #{pruicss_port}", dut_client.prompt, 10)
   # get updated mc and vlan dropped count
   lremcdropped_n = dut_client.response[/(lreMulticastDropped:\s*\d*)/]
   lrevlandropped_n = dut_client.response[/(lreVlanDropped:\s*\d*)/]
