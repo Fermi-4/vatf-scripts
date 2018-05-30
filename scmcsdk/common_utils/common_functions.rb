@@ -10,3 +10,12 @@ def transfer_to_dut(file_name, server_ip, dut = @equipment['dut1'])
   dut.send_cmd("tftp -g -r #{file_name} #{server_ip}", dut.prompt, 10)
   dut.send_cmd("ls -l", dut.prompt, 10)
 end
+
+# function to get EVM ip address
+def get_dut_ip(interface = "eth0", dut = @equipment['dut1'])
+  dut.send_cmd("ifconfig #{interface} | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'", \
+                dut.prompt, 10)
+  dut_ip = /([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/.match(dut.response)
+  return dut_ip
+end
+
