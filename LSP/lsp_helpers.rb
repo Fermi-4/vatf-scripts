@@ -64,6 +64,36 @@ module LspHelpers
     params['nfs_path'] = nfs_root_path_temp
   end
       
+  def set_dtb_file_to_nfs_path_if_specified(params)
+    # Only set dtb file to an NFS path when nfs_dtb_filter, nfs_dtb_filter_prefix or nfs_dtb_filter_suffix parameters are present in the test case
+    if @test_params.params_chan.instance_variable_defined?(:@nfs_dtb_filter) or @test_params.params_chan.instance_variable_defined?(:@nfs_dtb_filter_prefix) or @test_params.params_chan.instance_variable_defined?(:@nfs_dtb_filter_suffix)
+      params['dut'].log_info("Setting dtb file to an NFS directory path...")
+      # Set default parameter values so that in most cases only the dtb filter suffix need be specified
+      nfs_dtb_subdirectory = "boot"
+      nfs_dtb_filter_prefix = "zImage"
+      nfs_dtb_filter_suffix = ""
+      dtb_platform = @test_params.platform.downcase.split(",")[0]
+      # Set parameters from test case, if present
+      nfs_dtb_subdirectory = @test_params.params_chan.nfs_dtb_subdirectory[0] if @test_params.params_chan.instance_variable_defined?(:@nfs_dtb_subdirectory)
+      nfs_dtb_filter_prefix = @test_params.params_chan.nfs_dtb_filter_prefix[0] if @test_params.params_chan.instance_variable_defined?(:@nfs_dtb_filter_prefix)
+      nfs_dtb_filter_suffix = @test_params.params_chan.nfs_dtb_filter_suffix[0] if @test_params.params_chan.instance_variable_defined?(:@nfs_dtb_filter_suffix)
+      # Set nfs_dtb_filter based on pre and post filters and automatically add the platform to filter specification
+      nfs_dtb_filter = /.*#{nfs_dtb_filter_prefix}.*#{dtb_platform}.*#{nfs_dtb_filter_suffix}\.dtb$/i
+      # Use directly specified nfs_dtb_filter, if present
+      nfs_dtb_filter = @test_params.params_chan.nfs_dtb_filter[0] if @test_params.params_chan.instance_variable_defined?(:@nfs_dtb_filter)
+      # Set dtb search path based on NFS root path
+      nfs_root_dir = params['nfs_path'].split(":")[1]
+      dtb_search_path = File.join(nfs_root_dir, nfs_dtb_subdirectory)
+      params['dut'].log_info(" NFS search path: #{dtb_search_path}")
+      # Find the dtb file within the NFS directory
+      nfs_dtb = Find.find(dtb_search_path).select { |p| nfs_dtb_filter =~ p }[0]
+      raise "NFS dtb file does not exist for file filter: #{nfs_dtb_filter}. Please check your test case parameters" if !nfs_dtb
+      # Set dtb file path to the dtb file within the NFS directory
+      params['dtb'] = nfs_dtb
+      params['dut'].log_info(" dtb's NFS path : #{params['dtb']}")
+    end
+  end
+
   def find_nfsroot
     @equipment['dut1'].send_cmd("cat /proc/cmdline")
     nfsroot = /nfsroot=([\d\.:\/\w_-]+)/im.match(@equipment['dut1'].response).captures[0]

@@ -361,6 +361,7 @@ module LspTestScript
     translated_boot_params = translate_boot_params(boot_params)
 
     setup_nfs translated_boot_params
+    set_dtb_file_to_nfs_path_if_specified translated_boot_params
     copy_sw_assets_to_tftproot translated_boot_params
 
     return translated_boot_params
