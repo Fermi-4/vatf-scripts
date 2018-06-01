@@ -27,6 +27,8 @@ def run
   case device.downcase
   when 'usbhost'
     result,result_msg = check_usbhost_detection()
+  when 'usbhost3'
+    result,result_msg = check_usbhost_detection('usbhost3')
   when 'sata'
     result,result_msg = check_sata_detection()
   else
@@ -45,7 +47,7 @@ def clean
   puts "device_detection:: clean"
 end
 
-def check_usbhost_detection()
+def check_usbhost_detection(type=nil)
   result = 0
   msg = ''
   i = 0
@@ -58,6 +60,14 @@ def check_usbhost_detection()
       msg += "No usbmsc device being detected and found in iteration #{i.to_s};"
     end
     i += 1
+  end
+  # check speed
+  @equipment['dut1'].send_cmd("usb tree",@equipment['dut1'].boot_prompt, 20)
+  if type == 'usbhost3'
+    if ! @equipment['dut1'].response.match(/Mass\s+Storage\s+\(\s*5\s*[GM]b\/s.*3\.0/im)
+      result += 1
+      msg += "Did not detect super speed usb storage device"
+    end
   end
   [result, msg]
 end
