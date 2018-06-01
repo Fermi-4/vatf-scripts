@@ -28,7 +28,7 @@ def run
     raise " 'time' command needs to be enabled in uboot. Please enable CONFIG_CMD_TIME. "
   end
 
-  # valid device names: 'spi', 'qspi', 'raw-mmc', 'raw-emmc', 'fat-mmc', 'fat-emmc'
+  # valid device names: 'spi', 'qspi', 'raw-mmc', 'raw-emmc', 'fat-mmc', 'fat-emmc', 'fat-usb'
   # since we don't want to corrupt the SD card if there is partition there, we only
   # do read when device is 'raw-mmc'
   device = @test_params.params_chan.device[0]
@@ -149,9 +149,48 @@ def run
         result_msg = result_msg + "#{device}: cmp failed for size 0x#{testsize_hex}; "
         set_result(FrameworkConstants::Result[:fail], result_msg)
       end
-      @equipment['dut1'].send_cmd("test ", @equipment['dut1'].boot_prompt, 300)
+      @equipment['dut1'].send_cmd("test ", @equipment['dut1'].boot_prompt, 30)
     end
     @equipment['dut1'].send_cmd("time fatwrite mmc 0 ${loadaddr} test 0 ", @equipment['dut1'].boot_prompt, 10)
+
+  when /fat-usb/
+    #testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000", "0x4000000"] # [4M, 8M, 16M, 32M, 64M]
+    testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000"] # [4M, 8M, 16M, 32M, 64M]
+    @equipment['dut1'].send_cmd("usb start", @equipment['dut1'].boot_prompt, 10)
+    if ! @equipment['dut1'].response.match(/[1-9]+\s+Storage\s+Device.*found/i)
+      raise "No usb storage device being detected"
+    end
+    @equipment['dut1'].send_cmd("usb storage", @equipment['dut1'].boot_prompt, 10)
+    @equipment['dut1'].send_cmd("usb tree", @equipment['dut1'].boot_prompt, 10)
+    @equipment['dut1'].send_cmd("usb info", @equipment['dut1'].boot_prompt, 10)
+    @equipment['dut1'].send_cmd("ls usb 0", @equipment['dut1'].boot_prompt, 10)
+
+    testsizes.each do |testsize_hex|
+      loadaddr, loadaddr2 = get_loadaddres(testsize_hex)
+      report_msg "===Testing size #{testsize_hex.to_i(16).to_s} ..."
+      # write 'test' file to mmc fat partition from loadaddr
+      @equipment['dut1'].send_cmd("time fatwrite usb 0 ${loadaddr} test #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
+      if @equipment['dut1'].response.match(/overflow/i)
+        report_msg "USB first fat partition do not have enough space for the #{testsize_hex.to_i(16)} file, so skip it."
+        next
+      end
+      this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
+      perfs << {'name' => "#{device.upcase} Write 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+
+      # read back 'test' file from mmc to loadaddr2
+      @equipment['dut1'].send_cmd("time fatload usb 0 #{loadaddr2} test ", @equipment['dut1'].boot_prompt, 300)
+      this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
+      perfs << {'name' => "#{device.upcase} Read 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      
+      @equipment['dut1'].send_cmd("cmp.b #{loadaddr} #{loadaddr2} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
+      if @equipment['dut1'].response.match(/!=/i)
+        result_msg = result_msg + "#{device}: cmp failed for size 0x#{testsize_hex}; "
+        set_result(FrameworkConstants::Result[:fail], result_msg)
+      end
+      @equipment['dut1'].send_cmd("test ", @equipment['dut1'].boot_prompt, 30)
+    end
+    @equipment['dut1'].send_cmd("time fatwrite usb 0 ${loadaddr} test 0 ", @equipment['dut1'].boot_prompt, 10)
+    @equipment['dut1'].send_cmd("usb stop; usb stop", @equipment['dut1'].boot_prompt, 10)
   else
     raise "Measuring RW performance for device #{device} is not supported"
   end
@@ -178,7 +217,7 @@ def calculate_perf(response, test_size)
   sec = time_captures[1]
   time_taken = 60*min.to_i + sec.to_f 
   perf = (test_size.to_i(16).to_f / time_taken.to_f) /1024
-  report_msg "perf is: " + perf.to_s
+  report_msg "===Perf for #{test_size.to_s} is: " + perf.to_s + "KB/S"
   return perf.to_f.round(2)
 end
 
