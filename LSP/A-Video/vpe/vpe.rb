@@ -46,7 +46,7 @@ def run
     ilace = 0
     if @test_params.params_chan.instance_variable_defined?(:@deinterlace)
       ilace = @test_params.params_chan.deinterlace[i].to_i
-      src_video_height = (src_video_height/2).to_i if ilace != 0
+      src_video_height = (src_video_height/2).to_i if ilace == 1
     end
     interlace << ilace
     translen = 1 + rand(3)
@@ -74,13 +74,16 @@ def run
                               video_height[i],
                               test_fmt,
                               interlace[i])
+    frame_size = (format_length * video_height[i] * video_width[i]).to_i
+    num_frames -=3
+    current_test_file = local_test_file[i] + '.trunc'
+    @equipment['server1'].send_cmd("dd if=#{local_test_file[i]} of=#{current_test_file} bs=#{frame_size} count=#{num_frames} skip=3", @equipment['server1'].prompt,600)
     trunc_local_ref = ref_path
-    if File.size(ref_path) != File.size(local_test_file[i])
+    if File.size(ref_path) != File.size(current_test_file)
       trunc_local_ref = ref_path+'.trunc'
-      frame_size = (format_length * video_height[i] * video_width[i]).to_i
-      @equipment['server1'].send_cmd("dd if=#{ref_path} of=#{trunc_local_ref} bs=#{frame_size} count=#{num_frames}", @equipment['server1'].prompt,600)
+      @equipment['server1'].send_cmd("dd if=#{ref_path} of=#{trunc_local_ref} bs=#{frame_size} count=#{num_frames} skip=3", @equipment['server1'].prompt,600)
     end
-    @equipment['server1'].send_cmd("md5sum #{trunc_local_ref} #{local_test_file[i]} | grep -o '^[^ ]*'",@equipment['server1'].prompt, 600)
+    @equipment['server1'].send_cmd("md5sum #{trunc_local_ref} #{current_test_file} | grep -o '^[^ ]*'",@equipment['server1'].prompt, 600)
     qual_res = @equipment['server1'].response.split()
     result += ", VPE-M2M operation failed  for case #{i} (#{num_frames} frames), #{qual_res[0]} != #{qual_res[1]}" if qual_res[0].strip() != qual_res[1].strip()
   end
@@ -107,7 +110,7 @@ def get_reference(video_url, width, height, format, interlace)
   ref_file += '.' + format + '.tar.xz'
   
   files = get_ref do |base_uri|
-    base_uri + '/host-utils/vpe/ref-media/' + ref_file 
+    base_uri + '/host-utils/vpe/ref-media/' + ref_file.gsub(/_seq_tb|_seq_bt/i,'') 
   end
   files[0]
 end
