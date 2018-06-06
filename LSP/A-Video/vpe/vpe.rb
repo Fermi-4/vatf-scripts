@@ -24,6 +24,7 @@ def run
   video_height = []
   video_width = []
   interlace = []
+  cropping = []
   scaling = []
   test_cmds = []
   @test_params.params_chan.video_url.each_with_index do |video_url, i|
@@ -48,9 +49,17 @@ def run
       ilace = @test_params.params_chan.deinterlace[i].to_i
       src_video_height = (src_video_height/2).to_i if ilace == 1
     end
+    crop = ''
+    crop_arr = [0]*4
+    if @test_params.params_chan.instance_variable_defined?(:@cropping) && @test_params.params_chan.cropping[i].to_i != 0
+      prand = Random.new(src_video_height*src_video_width*test_format[i].bytes.inject(:+))
+      crop_arr = get_crop(src_video_width, src_video_height, prand)
+      crop = "crop=#{crop_arr[0]}x#{crop_arr[1]}@#{crop_arr[2]},#{crop_arr[3]}"
+    end
+    cropping << crop_arr
     interlace << ilace
     translen = 1 + rand(3)
-    test_cmds << "test-v4l2-m2m #{vpe_dev} #{dut_src_file[i]} #{src_video_width} #{src_video_height} #{src_format} #{dut_test_file[i]} #{video_width[i]} #{video_height[i]} #{test_format[i]} #{interlace[i]} #{translen}"
+    test_cmds << "test-v4l2-m2m #{vpe_dev} #{dut_src_file[i]} #{src_video_width} #{src_video_height} #{src_format} #{dut_test_file[i]} #{video_width[i]} #{video_height[i]} #{test_format[i]} #{interlace[i]} #{translen} #{crop}"
   end
   test_cmd = test_cmds.join(' > /dev/null & ') 
   @equipment['dut1'].send_cmd(test_cmd, @equipment['dut1'].prompt, 300)
@@ -73,7 +82,8 @@ def run
                               video_width[i],
                               video_height[i],
                               test_fmt,
-                              interlace[i])
+                              interlace[i],
+                              cropping[i])
     frame_size = (format_length * video_height[i] * video_width[i]).to_i
     num_frames -=3
     current_test_file = local_test_file[i] + '.trunc'
@@ -100,18 +110,36 @@ def run
 end
 
 
-def get_reference(video_url, width, height, format, interlace)
+def get_reference(video_url, width, height, format, interlace, cropping)
   ref_file = ['ref',
               File.basename(video_url), 
               'to',
               "#{width}x#{height}",
               format,
-              interlace == 0 ? 'nodeinter' : 'deinter'].join('_') 
+              interlace == 0 ? 'nodeinter' : 'deinter'].join('_')
+
+  if cropping.inject(:+) > 0
+    ref_file = [ref_file, 'crop', cropping].join('_')
+  end
+
   ref_file += '.' + format + '.tar.xz'
   
   files = get_ref do |base_uri|
-    base_uri + '/host-utils/vpe/ref-media/' + ref_file.gsub(/_seq_tb|_seq_bt/i,'') 
+    base_uri + 'host-utils/vpe/ref-media/' + ref_file.gsub(/_seq_tb/i,'')
   end
   files[0]
+end
+
+def get_crop(width, height, rgen)
+  crop = [rgen.rand(width-16), rgen.rand(height-16)]
+  w_c = multiples(16, width-crop[0], 16)
+  h_c = multiples(16, height-crop[1], 16)
+  crop << w_c[rgen.rand(w_c.length) - 1]
+  crop << h_c[rgen.rand(h_c.length) - 1]
+  crop.map { |x| x - x % 16 }
+end
+
+def multiples(from, to, base)
+  (from..to).select { | i | i % base == 0 }
 end
 
