@@ -64,7 +64,7 @@ def check_usbhost_detection(type=nil)
   # check speed
   @equipment['dut1'].send_cmd("usb tree",@equipment['dut1'].boot_prompt, 20)
   if type == 'usbhost3'
-    if ! @equipment['dut1'].response.match(/Mass\s+Storage\s+\(\s*5\s*[GM]b\/s.*3\.0/im)
+    if ! @equipment['dut1'].response.match(/Mass\s+Storage\s+\(\s*5\s*[GM]b\/s,/im)
       result += 1
       msg += "Did not detect super speed usb storage device"
     end
