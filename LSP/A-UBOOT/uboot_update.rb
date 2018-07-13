@@ -42,7 +42,8 @@ def run
     puts "=============boot params============="
     boot_params.each{|k,v| puts "#{k}:#{v}"}
 
-    boot_params['mmcdev'] = boot_params['primary_bootloader_dev'] == 'mmc'? '0' : '1'
+    mmcdev_nums = get_uboot_mmcdev_mapping()
+    boot_params['mmcdev'] = boot_params['primary_bootloader_dev'] == 'mmc'? "#{mmcdev_nums['mmc']" : "#{mmcdev_nums['emmc']"
     boot_params['dut'].set_systemloader(boot_params.merge({'systemloader_class' => SystemLoader::UbootFlashBootloaderSystemLoader}))
     boot_params['dut'].system_loader.run(boot_params)
   

@@ -26,9 +26,10 @@ def run
   puts "platform: "+platform
 
   device = @test_params.params_chan.device[0].downcase
+  mmcdev_nums = get_uboot_mmcdev_mapping()
   case device
   when "mmc"
-    @equipment['dut1'].send_cmd("mmc dev 0; mmc info", @equipment['dut1'].boot_prompt, 5)
+    @equipment['dut1'].send_cmd("mmc dev #{mmcdev_nums['mmc']}; mmc info", @equipment['dut1'].boot_prompt, 5)
     raise "MMC bus width is not 4-bit" if !@equipment['dut1'].response.match(/Bus\s+Width\s*:\s+4-bit/i)
     mmc_op_mode = @test_params.params_chan.mmc_op_mode[0].downcase
     expected_speed = get_expected_busspeed_sd(platform, mmc_op_mode)
@@ -39,7 +40,7 @@ def run
     end
   
   when 'emmc'
-    @equipment['dut1'].send_cmd("mmc dev 1; mmc info", @equipment['dut1'].boot_prompt, 5)
+    @equipment['dut1'].send_cmd("mmc dev #{mmcdev_nums['emmc']}; mmc info", @equipment['dut1'].boot_prompt, 5)
     raise "eMMC bus width is not 8-bit" if !@equipment['dut1'].response.match(/Bus\s+Width\s*:\s+8-bit/i)
     expected_speed = get_expected_busspeed_emmc(platform)
     raise "expected speed for eMMC can not be empty" if expected_speed == nil

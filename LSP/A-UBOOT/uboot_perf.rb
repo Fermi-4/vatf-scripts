@@ -32,8 +32,9 @@ def run
   # since we don't want to corrupt the SD card if there is partition there, we only
   # do read when device is 'raw-mmc'
   device = @test_params.params_chan.device[0]
-  mmcdev = 1 if device == "raw-emmc" || device == "fat-emmc"
-  mmcdev = 0 if device == "raw-mmc" || device == "fat-mmc"
+  mmcdev_nums = get_uboot_mmcdev_mapping()
+  mmcdev = mmcdev_nums['emmc'] if device == "raw-emmc" || device == "fat-emmc"
+  mmcdev = mmcdev_nums['mmc'] if device == "raw-mmc" || device == "fat-mmc"
 
   case device.downcase
   when /spi/
@@ -131,7 +132,7 @@ def run
       loadaddr, loadaddr2 = get_loadaddres(testsize_hex)
       report_msg "===Testing size #{testsize_hex.to_i(16).to_s} ..."
       # write 'test' file to mmc fat partition from loadaddr
-      @equipment['dut1'].send_cmd("time fatwrite mmc 0 ${loadaddr} test #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
+      @equipment['dut1'].send_cmd("time fatwrite mmc #{mmcdev_nums['mmc']} ${loadaddr} test #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
       if @equipment['dut1'].response.match(/overflow/i)
         report_msg "MMCSD first fat partition do not have enough space for the #{testsize_hex.to_i(16)} file, so skip it."
         next
@@ -140,7 +141,7 @@ def run
       perfs << {'name' => "#{device.upcase} Write 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
 
       # read back 'test' file from mmc to loadaddr2
-      @equipment['dut1'].send_cmd("time fatload mmc 0 #{loadaddr2} test ", @equipment['dut1'].boot_prompt, 300)
+      @equipment['dut1'].send_cmd("time fatload mmc #{mmcdev_nums['mmc']} #{loadaddr2} test ", @equipment['dut1'].boot_prompt, 300)
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
       perfs << {'name' => "#{device.upcase} Read 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
       
@@ -151,7 +152,7 @@ def run
       end
       @equipment['dut1'].send_cmd("test ", @equipment['dut1'].boot_prompt, 30)
     end
-    @equipment['dut1'].send_cmd("time fatwrite mmc 0 ${loadaddr} test 0 ", @equipment['dut1'].boot_prompt, 10)
+    @equipment['dut1'].send_cmd("time fatwrite mmc #{mmcdev_nums['mmc']} ${loadaddr} test 0 ", @equipment['dut1'].boot_prompt, 10)
 
   when /fat-usb/
     #testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000", "0x4000000"] # [4M, 8M, 16M, 32M, 64M]

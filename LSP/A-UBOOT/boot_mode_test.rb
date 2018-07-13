@@ -94,7 +94,8 @@ def run
           result_msg = result_msg + "saveenv failed when booting from #{boot_media}; "
         end
 
-        bparams['dut'].send_cmd("mmc rescan; mmc dev 0", bparams['dut'].boot_prompt, 10)
+        mmcdev_nums = get_uboot_mmcdev_mapping()
+        bparams['dut'].send_cmd("mmc rescan; mmc dev #{mmcdev_nums['mmc']}", bparams['dut'].boot_prompt, 10)
         if bparams['dut'].response.match(/Card\s+did\s+not\s+respond\s+to\s+voltage\s+select!/i)
           result += 1 
           result_msg = result_msg + "mmc card could not be detected when booting from #{boot_media}; "
