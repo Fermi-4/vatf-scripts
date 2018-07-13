@@ -55,6 +55,7 @@ def run
   @equipment['dut1'].send_cmd("nand dump #{nand_test_addr} page",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("nand read.raw #{ramaddress} #{nand_test_addr} 1",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("md.b #{ramaddress} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
+  sleep 5
 
   # modify the data
   # assume nand page size is multiple of 512 which is chunk size
@@ -79,10 +80,12 @@ def run
   # show modified data
   @equipment['dut1'].send_cmd("nand read.raw #{ramaddress_2} #{nand_test_addr} 1",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("md.b #{ramaddress_2} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 5)
+  sleep 5
 
   # show corrected data
   @equipment['dut1'].send_cmd("nand read #{ramaddress_3} #{nand_test_addr} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 10)
   @equipment['dut1'].send_cmd("md.b #{ramaddress_3} #{nand_pagesize}",@equipment['dut1'].boot_prompt, 10)
+  sleep 5
 
   # compare orig with the corrected data below
   cnt = nand_pagesize.to_i(16) / chunk_size.to_i 
@@ -126,6 +129,7 @@ end
 # get the byte from memeory
 def retrieve_byte(ramaddr)
   @equipment['dut1'].send_cmd("md.b #{ramaddr} 1", @equipment['dut1'].boot_prompt, 5)
+  sleep 5
   md_response = @equipment['dut1'].response if !@equipment['dut1'].timeout?
   this_byte = /\d+\s*:\s*([0-9A-Fa-f]+)/m.match(md_response).captures[0]
   return this_byte
