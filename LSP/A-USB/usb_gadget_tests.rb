@@ -23,6 +23,7 @@ def run
   test_type = @test_params.params_control.instance_variable_defined?(:@test_type) ? @test_params.params_control.test_type[0] : 'insert_remove'
   iterations = @test_params.params_control.instance_variable_defined?(:@iterations) ? @test_params.params_control.iterations[0].to_i : 5 
   duration = @test_params.params_control.instance_variable_defined?(:@duration) ? @test_params.params_control.duration[0].to_i : 60 
+  speed = @test_params.params_control.instance_variable_defined?(:@speed) ? @test_params.params_control.duration[0] : 'none' 
 
   mutex_timeout = iterations*60000
   staf_mutex("usbdevice", mutex_timeout) do
@@ -78,7 +79,7 @@ def run_performance
      @equipment['dut1'].send_cmd(command,@equipment['dut1'].prompt)
      gadget_types=["ncm","acm"]
      if !check_enum_on_host(gadget_types)
-        set_result(FrameworkConstants::Result[:fail], "#{gadget_types} gadget not detected on host.")
+        set_result(FrameworkConstants::Result[:fail], "#{gadget_types} gadget not detected on host or not enumerated at expected speed.")
         return
      end
      host_ncm_name = host_response.match(/usb\d: register 'cdc_ncm'/)[0]
@@ -278,6 +279,7 @@ def check_enum_on_host(gadget_types)
   host_gadget_string = Hash.new
   host_gadget_string = {'mass_storage'=>'usb-storage','ether'=>'cdc_ether',
                        'serial'=>'cdc_acm', 'acm'=>'cdc_acm', 'ncm' => 'cdc_ncm'}
+  speed = @test_params.params_control.instance_variable_defined?(:@speed) ? @test_params.params_control.duration[0] : 'none' 
   system("sleep 10")
   @equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
   host_response = @equipment['server1'].response
@@ -286,7 +288,12 @@ def check_enum_on_host(gadget_types)
   gadget_types.each do |gadget|
        if host_response.match(host_gadget_string[gadget])
             @equipment['server1'].log_info("FOUND in host #{host_gadget_string[gadget]}")
-            gadget_found = true
+            if host_response.match(speed)
+                gadget_found = true
+
+            else
+                gadget_found = false
+            end
        else
             @equipment['server1'].log_info("NOT FOUND in host #{host_gadget_string[gadget]}")
             gadget_found = false
