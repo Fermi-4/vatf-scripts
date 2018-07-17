@@ -40,12 +40,17 @@ def run
      @test_params.params_control.iterations[0].to_i.times do
         sleep @test_params.params_control.wait_after_disconnect[0].to_i
         num_usb_dev_before=`lsusb | wc -l`
+        @equipment['server1'].send_sudo_cmd("dmesg -c", @equipment['server1'].prompt, 5)
+
         session_data_pointer = @equipment['dut1'].update_response.length
        # Connect
         @usb_switch_handler.select_input(@equipment['dut1'].params['usb_otg_port'])
         sleep @test_params.params_control.wait_after_connect[0].to_i
         num_usb_dev_after=`lsusb | wc -l`
-        usb_dev_after=`lsusb`
+        @equipment['server1'].send_sudo_cmd("dmesg", @equipment['server1'].prompt, 5)
+
+        #usb_dev_after=`lsusb`
+        usb_dev_after= @equipment['server1'].response
 
        # Check device is enumerated
         ses_data = @equipment['dut1'].update_response
@@ -73,12 +78,15 @@ private
 
 def verify_dut_detection_msg(data)
   return 1 if data.match(/\s*Linux\s*\S* Storage\s*/i)
+  return 1 if data.match(/\s*Mass\s*Storage\s*Gadget/i)
   @equipment['dut1'].log_info("'Storage Gadget' message was NOT detected")
   return 0
 end
 
 def verify_host_detection_msg(num_before, num_after, data)
+  puts "DATA is #{data}"
   return 1 if num_after.to_i > num_before.to_i && data.match(/\s*Linux.*Gadget/i) 
+  return 1 if num_after.to_i > num_before.to_i && data.match(/\s*Mass.*Storage.*Gadget/i) 
   @equipment['server1'].log_info("'Storage Gadget' message was NOT detected")
   return 0
 end
