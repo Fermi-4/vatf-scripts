@@ -21,7 +21,14 @@ def run
     cpu_mode_match = @equipment['dut1'].boot_log.match(/CPU: All CPU.*? started in (\w+) mode/)
     initial_cpu_mode = cpu_mode_match.captures[0] if cpu_mode_match
 
-    kexec_image = @test_params.instance_variable_defined?(:@var_kexec_image) ? @test_params.var_kexec_image : '/boot/zImage'
+    @equipment['dut1'].send_cmd("uname -a", @equipment['dut1'].prompt)
+    if @equipment['dut1'].response.match(/aarch64/)
+      kexec_image =  '/boot/Image'
+    else
+      kexec_image = '/boot/zImage'
+    end
+    kexec_image = @test_params.var_kexec_image if @test_params.instance_variable_defined?(:@var_kexec_image)
+
     @equipment['dut1'].send_cmd("kexec -d -l #{kexec_image}", @equipment['dut1'].prompt)
 
     boot_timeout = @test_params.instance_variable_defined?(:@var_boot_timeout) ? @test_params.var_boot_timeout.to_i : 210
