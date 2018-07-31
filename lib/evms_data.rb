@@ -545,6 +545,8 @@ module EvmData
     case platform.downcase
     when /^k2.{0,2}-(hs){0,1}evm/
       return :LOAD_FROM_SERIAL_UBOOT
+    when /^am65.+/
+      return :LOAD_FROM_SERIAL_TI_BOOT3
     else
       return :LOAD_FROM_SERIAL
     end
