@@ -158,7 +158,14 @@ module LspTestScript
 
     new_params['dtb_image_name'] = new_params['dtb_image_name'] ? new_params['dtb_image_name'] : 
                              @test_params.instance_variable_defined?(:@var_dtb_image_name) ? @test_params.var_dtb_image_name : 
-                             File.basename(new_params['dtb'])                          
+                             File.basename(new_params['dtb'])
+    @test_params.instance_variables.each{|k|
+        if k.to_s.match(/dtbo_\d+/)
+            key_name = k.to_s.gsub(/[@:]/,'')
+            new_params[key_name] = @test_params.instance_variable_get(k)
+            new_params[key_name+'_dev'] = 'eth'
+        end
+    }
     new_params['fs']         = new_params['fs'] ? new_params['fs'] : 
                              @test_params.instance_variable_defined?(:@fs) ? @test_params.fs : 
                              @test_params.instance_variable_defined?(:@nfs) ? @test_params.nfs : 
