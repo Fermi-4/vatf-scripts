@@ -42,6 +42,9 @@ module LspTestScript
     new_params = params.clone
     new_params['dut']        = @equipment['dut1']     if !new_params['dut'] 
     new_params['server']     = @equipment['server1']  if !new_params['server']
+    new_params['initial_bootloader'] = new_params['initial_bootloader'] ? new_params['initial_bootloader'] :
+                             @test_params.instance_variable_defined?(:@initial_bootloader) ? @test_params.initial_bootloader :
+                             ''
     new_params['primary_bootloader'] = new_params['primary_bootloader'] ? new_params['primary_bootloader'] : 
                              @test_params.instance_variable_defined?(:@primary_bootloader) ? @test_params.primary_bootloader : 
                              ''                                
