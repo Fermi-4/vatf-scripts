@@ -51,12 +51,19 @@ module LspTestScript
     new_params['secondary_bootloader'] = new_params['secondary_bootloader'] ? new_params['secondary_bootloader'] : 
                              @test_params.instance_variable_defined?(:@secondary_bootloader) ? @test_params.secondary_bootloader : 
                              ''
+    new_params['initial_bootloader_dev']   = new_params['initial_bootloader_dev'] ? new_params['initial_bootloader_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@initial_bootloader_dev) ? @test_params.params_chan.initial_bootloader_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_initial_bootloader_dev) ? @test_params.var_initial_bootloader_dev : "mmc"
     new_params['primary_bootloader_dev']   = new_params['primary_bootloader_dev'] ? new_params['primary_bootloader_dev'] :
                              @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_dev) ? @test_params.params_chan.primary_bootloader_dev[0] :
                              @test_params.instance_variable_defined?(:@var_primary_bootloader_dev) ? @test_params.var_primary_bootloader_dev : "mmc"
     new_params['secondary_bootloader_dev']   = new_params['secondary_bootloader_dev'] ? new_params['secondary_bootloader_dev'] : 
                              @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_dev) ? @test_params.params_chan.secondary_bootloader_dev[0] : 
                              @test_params.instance_variable_defined?(:@var_secondary_bootloader_dev) ? @test_params.var_secondary_bootloader_dev : "mmc"
+    new_params['initial_bootloader_src_dev']   = new_params['initial_bootloader_src_dev'] ? new_params['initial_bootloader_src_dev'] : 
+                             @test_params.params_chan.instance_variable_defined?(:@initial_bootloader_src_dev) ? @test_params.params_chan.initial_bootloader_src_dev[0] : 
+                             @test_params.instance_variable_defined?(:@var_initial_bootloader_src_dev) ? @test_params.var_initial_bootloader_src_dev : 
+                             new_params['initial_bootloader'] != '' ? 'uart' : 'none'  
     new_params['primary_bootloader_src_dev']   = new_params['primary_bootloader_src_dev'] ? new_params['primary_bootloader_src_dev'] : 
                              @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_src_dev) ? @test_params.params_chan.primary_bootloader_src_dev[0] : 
                              @test_params.instance_variable_defined?(:@var_primary_bootloader_src_dev) ? @test_params.var_primary_bootloader_src_dev : 
