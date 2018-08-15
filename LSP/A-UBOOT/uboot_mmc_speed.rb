@@ -43,10 +43,16 @@ def run
     @equipment['dut1'].send_cmd("mmc dev #{mmcdev_nums['emmc']}; mmc info", @equipment['dut1'].boot_prompt, 5)
     raise "eMMC bus width is not 8-bit" if !@equipment['dut1'].response.match(/Bus\s+Width\s*:\s+8-bit/i)
     expected_speed = get_expected_busspeed_emmc(platform)
+    expected_mode = get_expected_mode_emmc(platform)
     raise "expected speed for eMMC can not be empty" if expected_speed == nil
+    raise "expected mode for eMMC can not be empty" if expected_mode == nil
     if ! @equipment['dut1'].response.match(/Bus\s+Speed\s*:\s+#{expected_speed}/i)
       result += 1
-      result_msg = result_msg + "EMMC is not working at expected speed: #{mmc_op_mode}::#{expected_speed} ; "
+      result_msg = result_msg + "EMMC is not working at expected speed: #{expected_speed} ; "
+    end
+    if ! @equipment['dut1'].response.match(/Mode\s*:\s+#{expected_mode}/i)
+      result += 1
+      result_msg = result_msg + "EMMC is not working at expected mode: #{expected_mode} ; "
     end
   end
 
@@ -84,6 +90,15 @@ end
 def get_expected_busspeed_emmc(platform)
   expected_speed_emmc = Hash.new('192000000')
   expected_speed_emmc['am57xx-evm'] = '48000000'
+  expected_speed_emmc['am654x-evm'] = '200000000'
+  expected_speed_emmc['am654x-idk'] = '200000000'
   return expected_speed_emmc[platform]
 end
 
+def get_expected_mode_emmc(platform)
+  expected_mode_emmc = Hash.new('HS200')
+  expected_mode_emmc['am57xx-evm'] = 'DDR52'
+  expected_mode_emmc['am654x-evm'] = 'HS400'
+  expected_mode_emmc['am654x-idk'] = 'HS400'
+  return expected_mode_emmc[platform]
+end
