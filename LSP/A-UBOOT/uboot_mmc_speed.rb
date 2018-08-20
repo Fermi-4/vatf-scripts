@@ -69,27 +69,17 @@ def clean
     puts "clean..."
 end
 
-def get_expected_speed_sd(platform, sd_mode)
-  expected_speed_sd = Hash.new({ 'sdr104' => '208000000', 'ddr50' => '50000000', })
-  expected_speed_sd['am57xx-evm'] = { 'sdr104' => '50000000', 'ddr50' => '50000000', }
-  return expected_speed_sd[platform][sd_mode]
-end
-
 def get_expected_busspeed_sd(platform, sd_mode)
   expected_speed_sd = Hash.new({ 'sdr104' => '192000000', 'ddr50' => '96000000', 'hs' => '48000000'})
-  #expected_speed_sd['am57xx-evm'] = { 'sdr104' => '48000000', 'ddr50' => '48000000', }
+  expected_speed_sd['am57xx-evm'] = { 'sdr104' => '48000000', 'ddr50' => '48000000', }
+  expected_speed_sd['am574x-idk'] = { 'sdr104' => '48000000', 'ddr50' => '48000000', }
   return expected_speed_sd[platform][sd_mode]
-end
-
-def get_expected_speed_emmc(platform)
-  expected_speed_emmc = Hash.new('200000000') 
-  expected_speed_emmc['am57xx-evm'] = '52000000'
-  return expected_speed_emmc[platform]
 end
 
 def get_expected_busspeed_emmc(platform)
   expected_speed_emmc = Hash.new('192000000')
   expected_speed_emmc['am57xx-evm'] = '48000000'
+  expected_speed_emmc['am574x-idk'] = '48000000'
   expected_speed_emmc['am654x-evm'] = '200000000'
   expected_speed_emmc['am654x-idk'] = '200000000'
   return expected_speed_emmc[platform]
@@ -98,6 +88,7 @@ end
 def get_expected_mode_emmc(platform)
   expected_mode_emmc = Hash.new('HS200')
   expected_mode_emmc['am57xx-evm'] = 'DDR52'
+  expected_mode_emmc['am574x-idk'] = 'DDR52'
   expected_mode_emmc['am654x-evm'] = 'HS400'
   expected_mode_emmc['am654x-idk'] = 'HS400'
   return expected_mode_emmc[platform]
