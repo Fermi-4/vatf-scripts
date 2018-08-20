@@ -5,6 +5,7 @@ require 'json'
 include AndroidTest
 
 def run
+  send_adb_cmd("shell su root setprop debug.hwc.showfps 0") 
   apk_path = File.join(@linux_temp_folder, File.basename(@test_params.params_chan.apk_url[0]))
   wget_file(@test_params.params_chan.apk_url[0], apk_path)
   pkg = installPkg(apk_path, 'kishonti.gfxbench',true, 300)
