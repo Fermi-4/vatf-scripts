@@ -1,6 +1,7 @@
 # -*- coding: ISO-8859-1 -*-
 require File.dirname(__FILE__)+'/../../LSP/default_test_module'
 require File.dirname(__FILE__)+'/../../LSP/A-PCI/test_pcie'
+require File.dirname(__FILE__)+'/test_vlan'
 
 include LspTestScript
 def setup
@@ -30,6 +31,8 @@ def run
   cmd_from = @test_params.params_chan.cmd_from[0]                 # command to enable feature link
   cmd_to = @test_params.params_chan.cmd_to[0]                     # command to enable feature link
   enable_switching = @test_params.params_chan.enable_switching[0] # set 'yes' to verify runtime configurability
+  mc_filter = @test_params.params_chan.instance_variable_defined?(:@mc_filter) ? @test_params.params_chan.mc_filter[0].to_i : 0
+  mc_cli_ser_bins = @test_params.params_chan.instance_variable_defined?(:@mc_cli_ser_bins) ? @test_params.params_chan.mc_cli_ser_bins[0] : ""
   # specify payloads in case of ping required at various payload sizes
   payloads = @test_params.params_chan.instance_variable_defined?(:@payloads) ? @test_params.params_chan.payloads : [""]
 
@@ -58,6 +61,13 @@ def run
       enable_feature(dan_X_1, switch_from, cmd_from, dan_X_1_ips[0], pruicss_ports)
       enable_feature(dan_X_2, switch_from, cmd_from, dan_X_2_ips[0], pruicss_ports)
       ping_status(dan_X_1, dan_X_2_ips[0], default_ping_count, payloads)
+      # verify multicast filtering
+      if mc_filter == 1 and mc_cli_ser_bins != ""
+        setup_mc_cli_ser(dan_X_1, dan_X_2, mc_cli_ser_bins)
+        is_mc_filter_enabled(dan_X_1, switch_from)
+        is_mc_filter_enabled(dan_X_2, switch_from)
+        verify_mcast_filtering(dan_X_1, dan_X_2, dan_X_1_ips[0], dan_X_2_ips[0], switch_from, pruicss_ports[0])
+      end
       # disable any one pruicss_port and verify redundancy
       verify_redundancy(dan_X_1, dan_X_2, pruicss_ports[0], dan_X_2_ips[0])
       # disable feature
@@ -66,6 +76,7 @@ def run
     end
     test_comment = "Feature #{switch_from} verified over interface: #{pruicss_ports}."
     test_comment += " Ping successful at payloads: #{payloads}." if payloads.length > 1
+    test_comment += " Verified Multicast filtering support." if mc_filter == 1
     # switch to protocol and verify
     if enable_switching == "yes"
       if switch_to == "emac"
@@ -171,6 +182,40 @@ def verify_redundancy(dan_X_1, dan_X_2, pruicss_port, ipaddr)
   dan_X_1.send_cmd("ifconfig #{pruicss_port} down", dan_X_1.prompt, 10)
   dan_X_2.send_cmd("ifconfig #{pruicss_port} down", dan_X_2.prompt, 10)
   ping_status(dan_X_1, ipaddr)
+end
+
+# function to verify multicast filtering, this function runs multicast
+# server for invalid multicast address and client application and verifies
+# multicast dropped count using ethtool utility.
+def verify_mcast_filtering(dut_client, dut_server, cli_ipaddr, ser_ipaddr, feature, pruicss_port)
+  dut_client.send_cmd("ethtool -S #{pruicss_port}", dut_client.prompt, 10)
+  # get mcast dropped count to compare further
+  lremcdropped = dut_client.response[/(lreMulticastDropped:\s*\d*)/]
+  dut_client.send_cmd("./mc_client 224.1.1.4 #{cli_ipaddr} > mc_client.log 2>&1 &", dut_client.prompt, 10)
+  dut_server.send_cmd("./mc_server 224.1.1.4 #{ser_ipaddr}", dut_server.prompt, 10)
+  dut_client.send_cmd("cat mc_client.log", dut_client.prompt, 10)
+  if !( dut_client.response =~ /Multicast\stest\smessage\slol!/ )
+    raise "Failed to verify multicast filtering."
+  end
+  dut_client.send_cmd("./mc_client 224.1.1.4 #{cli_ipaddr} > mc_client.log 2>&1 &", dut_client.prompt, 10)
+  # run mc server with invalid arguments to verify dropped mc packet
+  dut_server.send_cmd("./mc_server 224.10.1.4 #{ser_ipaddr}", dut_server.prompt, 10)
+  dut_server.send_cmd("./mc_server 224.10.1.5 #{ser_ipaddr}", dut_server.prompt, 10)
+  dut_server.send_cmd("./mc_server 224.1.1.5 #{ser_ipaddr}", dut_server.prompt, 10)
+  dut_server.send_cmd("./mc_server 224.1.1.4 #{ser_ipaddr}", dut_server.prompt, 10)
+  dut_client.send_cmd("cat mc_client.log", dut_client.prompt, 10)
+  if !( dut_client.response =~ /Multicast\stest\smessage\slol!/ )
+    raise "Failed to verify multicast filtering."
+  end
+  # print pru stats
+  dut_server.send_cmd("cat /sys/kernel/debug/prueth-#{pruicss_port}/stats", dut_server.prompt, 10)
+  sleep(5)
+  dut_client.send_cmd("ethtool -S #{pruicss_port}", dut_client.prompt, 10)
+  # get updated mc dropped count
+  lremcdropped_n = dut_client.response[/(lreMulticastDropped:\s*\d*)/]
+  if (lremcdropped == lremcdropped_n)
+    raise "Failed to verify dropped count for multicast filtering."
+  end
 end
 
 def clean
