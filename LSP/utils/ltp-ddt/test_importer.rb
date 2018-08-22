@@ -10,6 +10,7 @@ class TestImporter
   def initialize
     @time = Time.new
     @pURL = "http://arago-project.org/git/projects/test-automation/ltp-ddt.git"
+    #@pURL = "ssh://git@bitbucket.itg.ti.com/ltpddt/ltp-ddt.git"
     @rootDir
   end
   
