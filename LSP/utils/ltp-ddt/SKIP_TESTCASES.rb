@@ -7,4 +7,5 @@ $FILTER_TAGS = [
 /ETH_IPERF/,
 /WIFI_IPERF/,
 /WDT_/,
+/MMC_[XSML]_MODULAR/,
 ]
