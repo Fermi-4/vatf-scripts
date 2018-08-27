@@ -20,6 +20,7 @@ def setup
   sleep 40
   @android_boot_params['server'].send_sudo_cmd("rm #{@linux_temp_folder}/*", @android_boot_params['server'].prompt, 120) #Cleanup for next test
   @equipment['dut1'].set_android_tools(@android_boot_params)
+  @equipment['dut1'].send_cmd("export PATH=$PATH:/data/nativetest/modetest", @equipment['dut1'].prompt, 10)
   send_adb_cmd("shell mkdir #{@linux_dst_dir}")
   send_events_for('__menu__')
   send_events_for('__home__')
