@@ -19,8 +19,14 @@ def modetest(command, dut, timeout=5, expected=nil)
   regex = expected ? expected : /trying\s*to\s*open\s*device.*?#{dut.prompt}/im
   response = ''
   dut.send_cmd("", dut.prompt)
+  driver_hint = case(dut.name)
+                  when /am6.*/i
+                    '-M tidss'
+                  else
+                    ''
+                end
   t1 = Thread.new do
-    dut.send_cmd("modetest #{command}", /#{regex}|(?:Killed\s*modetest|modetest:\s*no\s*process\s*killed).*?#{dut.prompt}/im, timeout)
+    dut.send_cmd("modetest #{driver_hint} #{command}", /#{regex}|(?:Killed\s*modetest|modetest:\s*no\s*process\s*killed).*?#{dut.prompt}/im, timeout)
     response = dut.response
   end
   if block_given?
