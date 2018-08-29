@@ -32,6 +32,7 @@ def run
     bparams['dut'].boot_loader.run(bparams)
 
     set_bootloader_devs(bparams, boot_media)
+    set_mmcdev(bparams, boot_media)
     puts "=============boot params for systemloader============="
     bparams.each{|k,v| puts "#{k}:#{v}"}
     bparams['dut'].set_systemloader(bparams.merge({'systemloader_class' => SystemLoader::UbootFlashBootloaderSystemLoader}))
@@ -109,6 +110,7 @@ def run
         # load kernel from the boot_media
         # flash kernel/dtb to boot_media if it is storage type
         set_bootloader_devs(bparams, boot_media)
+        set_mmcdev(bparams, boot_media)
         puts "=============boot params for systemloader============="
         bparams.each{|k,v| puts "#{k}:#{v}"}
         if blk_boot_media.include?(boot_media)
@@ -193,14 +195,26 @@ def switch_to_host(params)
 
 end
 
+def set_mmcdev(params, media)
+  return if ! media.downcase.include?("mmc")
+
+  mmcdev_nums = get_uboot_mmcdev_mapping()
+  case media.downcase
+  when "rawmmc-emmc"
+    params['mmcdev'] = mmcdev_nums['emmc']
+    #mmc_dev = 1
+  when "mmc"
+    params['mmcdev'] = mmcdev_nums['mmc']
+    #mmc_dev = 0
+  end
+end
+
 def set_bootloader_devs(params, media)
   case media.downcase
   when "rawmmc-emmc"
     bootloader_dev = 'rawmmc-emmc'
-    mmc_dev = 1
   when "mmc"
     bootloader_dev = 'mmc'
-    mmc_dev = 0
   when "eth"
     bootloader_dev = "eth"
   else
@@ -210,7 +224,7 @@ def set_bootloader_devs(params, media)
   params['secondary_bootloader_dev'] = bootloader_dev
   params['kernel_dev'] = bootloader_dev
   params['dtb_dev'] = bootloader_dev
-  params['mmcdev'] = mmc_dev if defined?(mmc_dev)
+
 end
 
 # copy the boot images into tftpboot and rename to the expected names
