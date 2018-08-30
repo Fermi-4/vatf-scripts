@@ -12,7 +12,7 @@ end
 
 def run
   result = 0
-  blk_boot_media = ['qspi', 'spi', 'mmc', 'emmc', 'rawmmc-emmc', 'nand', 'usbmsc']
+  blk_boot_media = ['qspi', 'spi', 'mmc', 'emmc', 'rawmmc-emmc', 'rawmmc-emmc-bootpart', 'nand', 'usbmsc']
   boot_media = @test_params.params_chan.boot_media[0].downcase
   
   this_params = {}
@@ -37,6 +37,8 @@ def run
     bparams.each{|k,v| puts "#{k}:#{v}"}
     bparams['dut'].set_systemloader(bparams.merge({'systemloader_class' => SystemLoader::UbootFlashBootloaderSystemLoader}))
     bparams['dut'].system_loader.run(bparams)
+
+    configure_emmc(bparams) if boot_media == 'rawmmc-emmc-bootpart'
     #bparams['dut'].update_bootloader(bparams)
   end    
 
@@ -195,6 +197,15 @@ def switch_to_host(params)
 
 end
 
+def configure_emmc(params)
+  partition_config = CmdTranslator::get_uboot_cmd({'cmd'=>'emmc_partition_config', 'version'=>"0.0", 'platform'=>params['dut'].name})
+  boot_bus_width = CmdTranslator::get_uboot_cmd({'cmd'=>'emmc_boot_bus_width', 'version'=>"0.0", 'platform'=>params['dut'].name})
+  rst_n_function = CmdTranslator::get_uboot_cmd({'cmd'=>'emmc_rst_n_function', 'version'=>"0.0", 'platform'=>params['dut'].name})
+  params['dut'].send_cmd("mmc partconf #{partition_config}", params['dut'].boot_prompt, 5) if partition_config != ''
+  params['dut'].send_cmd("mmc bootbus #{boot_bus_width}", params['dut'].boot_prompt, 5) if boot_bus_width != ''
+  params['dut'].send_cmd("mmc rst-function #{rst_n_function}", params['dut'].boot_prompt, 5) if rst_n_function != ''
+end
+
 def set_mmcdev(params, media)
   return if ! media.downcase.include?("mmc")
 
@@ -203,6 +214,9 @@ def set_mmcdev(params, media)
   when "rawmmc-emmc"
     params['mmcdev'] = mmcdev_nums['emmc']
     #mmc_dev = 1
+  when "rawmmc-emmc-bootpart"
+    params['mmcdev'] = mmcdev_nums['emmc']
+    params['bootpart'] = 1 
   when "mmc"
     params['mmcdev'] = mmcdev_nums['mmc']
     #mmc_dev = 0
@@ -213,6 +227,8 @@ def set_bootloader_devs(params, media)
   case media.downcase
   when "rawmmc-emmc"
     bootloader_dev = 'rawmmc-emmc'
+  when "rawmmc-emmc-bootpart"
+    bootloader_dev = 'rawmmc-emmc-bootpart'
   when "mmc"
     bootloader_dev = 'mmc'
   when "eth"
