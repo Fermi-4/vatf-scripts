@@ -6,8 +6,8 @@ def download_package(package,dest_dir)
 end
 
 # Transfers files from host to dut
-def transfer_to_dut(file_name,server_ip)
-  @equipment['dut1'].send_cmd("tftp -g -r #{file_name} #{server_ip}", @equipment['dut1'].prompt,10)
+def transfer_to_dut(file_name,server_ip,timeout=10)
+  @equipment['dut1'].send_cmd("tftp -g -r #{file_name} #{server_ip}", @equipment['dut1'].prompt,timeout)
   @equipment['dut1'].send_cmd("ls -l", @equipment['dut1'].prompt,10)
 end
 
