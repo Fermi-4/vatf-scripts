@@ -193,7 +193,7 @@ def run
 end
 
 def get_msi_int(response)
-  rtn = response.match(/:\s+(\d+)\s+PCI-MSI.*pci-endpoint-test/).captures[0]
+  rtn = response.match(/:\s+(\d+).*PCI-MSI.*pci-endpoint-test/).captures[0]
   return rtn
 end
 
