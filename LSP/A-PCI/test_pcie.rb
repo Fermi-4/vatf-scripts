@@ -104,6 +104,8 @@ def run
   @equipment['dut2'].send_cmd("rmmod pci_endpoint_test", @equipment['dut2'].prompt, 60)
   if msi_int.to_i >= 1
     @equipment['dut2'].send_cmd("modprobe pci_endpoint_test", @equipment['dut2'].prompt, 30)
+    @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
+    msi_int_before = get_msi_int(@equipment['dut2'].response)
   else
     @equipment['dut2'].send_cmd("modprobe pci_endpoint_test no_msi=1", @equipment['dut2'].prompt, 30)
   end
@@ -173,12 +175,26 @@ def run
 
   @equipment['dut1'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut1'].prompt, 5) 
   @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
+  if msi_int.to_i >= 1
+    @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
+    msi_int_after = get_msi_int(@equipment['dut2'].response)
+    if msi_int_after.to_i <= msi_int_before.to_i
+      result += 1
+      report_msg "MSI interrupt was not increased"
+    end
+  end
+
   if result == 0 
     set_result(FrameworkConstants::Result[:pass], "Test Pass")
   else
     set_result(FrameworkConstants::Result[:fail], "Test Failed")
   end
 
+end
+
+def get_msi_int(response)
+  rtn = response.match(/:\s+(\d+)\s+PCI-MSI.*pci-endpoint-test/).captures[0]
+  return rtn
 end
 
 def translate_params2(params)
