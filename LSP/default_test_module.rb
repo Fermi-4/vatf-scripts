@@ -169,8 +169,8 @@ module LspTestScript
     @test_params.instance_variables.each{|k|
         if k.to_s.match(/dtbo_\d+/)
             key_name = k.to_s.gsub(/[@:]/,'')
-            new_params[key_name] = @test_params.instance_variable_get(k)
-            new_params[key_name+'_dev'] = 'eth'
+            new_params[key_name] = @test_params.instance_variable_get(k) if !new_params[key_name]
+            new_params[key_name+'_dev'] = 'eth' if !new_params[key_name+'_dev']
         end
     }
     new_params['fs']         = new_params['fs'] ? new_params['fs'] : 

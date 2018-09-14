@@ -525,6 +525,8 @@ module EvmData
     case platform.downcase
       when /k2g/
         return "0xb00b"
+      when /am654x/
+        return "0xb00c"
       when /dra7xx/i
         return "0xb500"
       when /dra71x|dra72x/i

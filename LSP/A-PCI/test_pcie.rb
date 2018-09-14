@@ -33,7 +33,7 @@ def run
   @equipment['dut1'].send_cmd("cd /sys/kernel/config/pci_ep", @equipment['dut1'].prompt, 10)
 
   if Gem::Version.new(linux_version) >= Gem::Version.new("4.12")
-    func_driver_name = @equipment['dut1'].name.match(/k2g/i) ? "pci_epf_test_k2g" : "pci_epf_test"
+    func_driver_name = get_func_driver_name(@equipment['dut1'].name) 
     @equipment['dut1'].send_cmd("mkdir functions/#{func_driver_name}/func1", @equipment['dut1'].prompt, 20)
     @equipment['dut1'].send_cmd("ls functions/#{func_driver_name}/func1", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("cd functions/#{func_driver_name}/func1", @equipment['dut1'].prompt, 10)
@@ -57,7 +57,6 @@ def run
   @equipment['dut1'].send_cmd("echo #{msi_int} > msi_interrupts", @equipment['dut1'].prompt, 10)
 
   if Gem::Version.new(linux_version) >= Gem::Version.new("4.12")
-    func_driver_name = @equipment['dut1'].name.match(/k2g/i) ? "pci_epf_test_k2g" : "pci_epf_test"
     @equipment['dut1'].send_cmd("cd /sys/kernel/config/pci_ep", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("ctrl_driver_name=`ls /sys/class/pci_epc`", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("ln -s functions/#{func_driver_name}/func1 controllers/${ctrl_driver_name}", @equipment['dut1'].prompt, 10)
@@ -118,6 +117,7 @@ def run
 
   i = 0
   i = 1 if @equipment['dut1'].name.match(/k2g/i)
+  i = 2 if @equipment['dut1'].name.match(/am654x/i)
   while i < num_bars.to_i do
     @equipment['dut2'].send_cmd("pcitest -b #{i}", @equipment['dut2'].prompt, 10)
     if !@equipment['dut2'].response.match(/bar\d+:\s+okay/i)
@@ -192,8 +192,19 @@ def run
 
 end
 
+def get_func_driver_name(platform)
+  case platform
+    when /k2g/
+      rtn = 'pci_epf_test_k2g'
+    when /am654x/
+      rtn = 'pci_epf_test_am6'
+    else
+      rtn = 'pci_epf_test'
+  end
+end
+
 def get_msi_int(response)
-  rtn = response.match(/:\s+(\d+).*PCI-MSI.*pci-endpoint-test/).captures[0]
+  rtn = response.match(/:\s+(\d+).*(?:PCI-MSI|ITS-MSI).*pci-endpoint-test/).captures[0]
   return rtn
 end
 
@@ -235,6 +246,15 @@ def translate_params2(params)
     new_params['dtb_image_name'] = new_params['dtb2_image_name'] ? new_params['dtb2_image_name'] :
                              @test_params.instance_variable_defined?(:@var_dtb2_image_name) ? @test_params.var_dtb2_image_name :
                              File.basename(new_params['dtb'])
+
+    @test_params.instance_variables.each{|k|
+        if k.to_s.match(/dtbo2_\d+/)
+            key_name = k.to_s.gsub(/[@:]/,'').gsub(/dtbo2_/,'dtbo_')
+            new_params[key_name] = @test_params.instance_variable_get(k)
+            new_params[key_name+'_dev'] = 'eth'
+            new_params[key_name+'_src_dev'] = 'eth'
+        end
+    }
 
     new_params['fs']         = new_params['fs2'] ? new_params['fs2'] :
                              @test_params.instance_variable_defined?(:@fs2) ? @test_params.fs2 :
