@@ -71,6 +71,8 @@ def get_pushbuttons(platform)
       buttons = ['key_down', 'key_right', 'key_numeric_2', 'key_left', 'key_up', 'key_numeric_1']
     when 'omapl138-lcdk'
       buttons = ['btn_0', 'btn_1']
+    when 'am654x-evm'
+      buttons = ['btn_1']
     else
       raise "Push buttons are not defined for platform #{platform}"
   end
