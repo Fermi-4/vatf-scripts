@@ -45,6 +45,9 @@ module LspTestScript
     new_params['initial_bootloader'] = new_params['initial_bootloader'] ? new_params['initial_bootloader'] :
                              @test_params.instance_variable_defined?(:@initial_bootloader) ? @test_params.initial_bootloader :
                              ''
+    new_params['sysfw']      = new_params['sysfw'] ? new_params['sysfw'] :
+                             @test_params.instance_variable_defined?(:@sysfw) ? @test_params.sysfw :
+                             ''
     new_params['primary_bootloader'] = new_params['primary_bootloader'] ? new_params['primary_bootloader'] : 
                              @test_params.instance_variable_defined?(:@primary_bootloader) ? @test_params.primary_bootloader : 
                              ''                                
@@ -54,6 +57,9 @@ module LspTestScript
     new_params['initial_bootloader_dev']   = new_params['initial_bootloader_dev'] ? new_params['initial_bootloader_dev'] :
                              @test_params.params_chan.instance_variable_defined?(:@initial_bootloader_dev) ? @test_params.params_chan.initial_bootloader_dev[0] :
                              @test_params.instance_variable_defined?(:@var_initial_bootloader_dev) ? @test_params.var_initial_bootloader_dev : "mmc"
+    new_params['sysfw_dev']   = new_params['sysfw_dev'] ? new_params['sysfw_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@sysfw_dev) ? @test_params.params_chan.sysfw_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_sysfw_dev) ? @test_params.var_sysfw_dev : "mmc"
     new_params['primary_bootloader_dev']   = new_params['primary_bootloader_dev'] ? new_params['primary_bootloader_dev'] :
                              @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_dev) ? @test_params.params_chan.primary_bootloader_dev[0] :
                              @test_params.instance_variable_defined?(:@var_primary_bootloader_dev) ? @test_params.var_primary_bootloader_dev : "mmc"
@@ -64,6 +70,10 @@ module LspTestScript
                              @test_params.params_chan.instance_variable_defined?(:@initial_bootloader_src_dev) ? @test_params.params_chan.initial_bootloader_src_dev[0] : 
                              @test_params.instance_variable_defined?(:@var_initial_bootloader_src_dev) ? @test_params.var_initial_bootloader_src_dev : 
                              new_params['initial_bootloader'] != '' ? 'uart' : 'none'  
+    new_params['sysfw_src_dev']   = new_params['sysfw_src_dev'] ? new_params['sysfw_src_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@sysfw_src_dev) ? @test_params.params_chan.sysfw_src_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_sysfw_src_dev) ? @test_params.var_sysfw_src_dev :
+                             new_params['sysfw'] != '' ? 'uart' : 'none'
     new_params['primary_bootloader_src_dev']   = new_params['primary_bootloader_src_dev'] ? new_params['primary_bootloader_src_dev'] : 
                              @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_src_dev) ? @test_params.params_chan.primary_bootloader_src_dev[0] : 
                              @test_params.instance_variable_defined?(:@var_primary_bootloader_src_dev) ? @test_params.var_primary_bootloader_src_dev : 
