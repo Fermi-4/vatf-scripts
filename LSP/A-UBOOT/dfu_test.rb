@@ -17,6 +17,10 @@ end
 def run
   result = 0
   params = {}
+  params['initial_bootloader'] = @test_params.instance_variable_defined?(:@initial_bootloader) ? @test_params.initial_bootloader : ''
+  params['initial_bootloader_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@initial_bootloader_src_dev) ? @test_params.params_chan.initial_bootloader_src_dev[0] : 'eth'
+  params['sysfw'] = @test_params.instance_variable_defined?(:@sysfw) ? @test_params.sysfw : ''
+  params['sysfw_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@sysfw_src_dev) ? @test_params.params_chan.sysfw_src_dev[0] : 'eth'
   params['primary_bootloader'] = @test_params.instance_variable_defined?(:@primary_bootloader) ? @test_params.primary_bootloader : ''
   params['primary_bootloader_src_dev'] = @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_src_dev) ? @test_params.params_chan.primary_bootloader_src_dev[0] : 'eth'
   params['secondary_bootloader'] = @test_params.instance_variable_defined?(:@secondary_bootloader) ? @test_params.secondary_bootloader : ''
@@ -32,26 +36,60 @@ def run
 
   # media options: fat-mmc, raw-mmc, fat-emmc, raw-emmc, nand, qspi etc
   media = @test_params.params_chan.instance_variable_defined?(:@media) ? @test_params.params_chan.media[0].downcase : 'fat-mmc'
-  
+  use_uboot_env = @test_params.params_chan.instance_variable_defined?(:@use_uboot_env) ? @test_params.params_chan.usb_uboot_env[0].downcase : 'yes' 
   case media
   when /mmc/
-    alt_name_mlo_fat = "MLO"
-    alt_name_uboot_fat = "u-boot.img"
-    alt_name_mlo_raw = "MLO.raw"
-    alt_name_uboot_raw = "uboot.img.raw"
-    dfu_alt_info_fat_mmc = "\"#{alt_name_mlo_fat} fat 0 1;#{alt_name_uboot_fat} fat 0 1\""
-    case @test_params.platform 
-      when /am43xx/
-        dfu_alt_info_raw_mmc = "\"#{alt_name_mlo_raw} raw 0x0 0x200;#{alt_name_uboot_raw} raw 0x300 0x1000\" "
-      else
-        dfu_alt_info_raw_mmc = "\"#{alt_name_mlo_raw} raw 0x100 0x200;#{alt_name_uboot_raw} raw 0x300 0x1000\" "
+    if @test_params.platform =~ /am654x/
+      #dfu_alt_info_emmc=rawemmc raw 0 0x1000000 mmcpart 1;rootfs part 0 1 mmcpart 0;tiboot3.bin.raw raw 0x0 0x400 mmcpart 1;tispl.bin.raw raw 0x400 0x1000 mmcpart 1;u-boot.img.raw raw 0x1400 0x2800 mmcpart 1;u-env.raw raw 0x3c00 0x100 mmcpart 1;sysfw.itb.raw raw 0x3d00 0x300 mmcpart 1
+      #dfu_alt_info_mmc=boot part 1 1;rootfs part 1 2;tiboot3.bin fat 1 1;tispl.bin fat 1 1;u-boot.img fat 1 1;uEnv.txt fat 1 1;sysfw.itb fat 1 1
+      alt_name_sysfw_fat = "sysfw.itb"
+      alt_name_initial_bootloader_fat = "tiboot3.bin"
+      alt_name_primary_bootloader_fat = "tispl.bin"
+      alt_name_secondary_bootloader_fat = "u-boot.img"
+      alt_name_sysfw_raw = "sysfw.itb.raw"
+      alt_name_initial_bootloader_raw = "tiboot3.bin.raw"
+      alt_name_primary_bootloader_raw = "tispl.bin.raw"
+      alt_name_secondary_bootloader_raw = "u-boot.img.raw"
+      dfu_alt_info_fat_mmc = "\"#{alt_name_initial_bootloader_fat} fat 1 1;#{alt_name_sysfw_fat} fat 1 1;#{alt_name_primary_bootloader_fat} fat 1 1;#{alt_name_secondary_bootloader_fat} fat 1 1\""
+      dfu_alt_info_raw_mmc = "\"#{alt_name_initial_bootloader_raw} raw 0x0 0x400 mmcpart 1;#{alt_name_primary_bootloader_raw} raw 0x400 0x1000 mmcpart 1;#{alt_name_secondary_bootloader_raw} raw 0x1400 0x2800 mmcpart 1;#{alt_name_sysfw_raw} raw 0x3d00 0x300 mmcpart 1\" "
+
+      if use_uboot_env == 'yes'
+        dfu_alt_info_fat_mmc = "\"${dfu_alt_info_mmc}\" "
+        dfu_alt_info_raw_mmc = "\"${dfu_alt_info_emmc}\" "
+      end
+    else
+      alt_name_primary_bootloader_fat = "MLO"
+      alt_name_secondary_bootloader_fat = "u-boot.img"
+      alt_name_primary_bootloader_raw = "MLO.raw"
+      alt_name_secondary_bootloader_raw = "uboot.img.raw"
+      dfu_alt_info_fat_mmc = "\"#{alt_name_primary_bootloader_fat} fat 0 1;#{alt_name_secondary_bootloader_fat} fat 0 1\""
+      case @test_params.platform 
+        when /am43xx/
+          dfu_alt_info_raw_mmc = "\"#{alt_name_primary_bootloader_raw} raw 0x0 0x200;#{alt_name_secondary_bootloader_raw} raw 0x300 0x1000\" "
+        else
+          dfu_alt_info_raw_mmc = "\"#{alt_name_primary_bootloader_raw} raw 0x100 0x200;#{alt_name_secondary_bootloader_raw} raw 0x300 0x1000\" "
+      end
     end
+
   when /spi/
-    alt_name_mlo_raw = "MLO"
-    alt_name_uboot_raw = "uboot.img"
+    if @test_params.platform =~ /am654x/
+      #dfu_alt_info_ospi=tiboot3.bin raw 0x0 0x080000;tispl.bin raw 0x080000 0x200000;u-boot.img raw 0x280000 0x500000;u-boot-env raw 0x780000 0x020000;sysfw.itb raw 0x7a0000 0x060000;rootfs raw 0x800000 0x3800000
+      alt_name_sysfw_raw = "sysfw.itb"
+      alt_name_initial_bootloader_raw = "tiboot3.bin"
+      alt_name_primary_bootloader_raw = "tispl.bin"
+      alt_name_secondary_bootloader_raw = "u-boot.img"
+    else
+      alt_name_primary_bootloader_raw = "MLO"
+      alt_name_secondary_bootloader_raw = "u-boot.img"
+    end
     case @test_params.platform 
       when /dra7/
-        dfu_alt_info_raw_spi = "\"#{alt_name_mlo_raw} raw 0x0 0x20000;#{alt_name_uboot_raw} raw 0x40000 0x100000\" "
+        dfu_alt_info_raw_spi = "\"#{alt_name_primary_bootloader_raw} raw 0x0 0x20000;#{alt_name_secondary_bootloader_raw} raw 0x40000 0x100000\" "
+      when /am654/
+        dfu_alt_info_raw_spi = "\"#{alt_name_sysfw_raw} raw 0x7a0000 0x60000;#{alt_name_initial_bootloader_raw} raw 0x0 0x80000;#{alt_name_primary_bootloader_raw} raw 0x80000 0x200000;#{alt_name_secondary_bootloader_raw} raw 0x280000 0x500000\" "
+        dfu_alt_info_raw_spi = " \"${dfu_alt_info_ospi}\" " if use_uboot_env == 'yes'
+      else
+        raise "No dfu_alt_info being defined for SPI for #{@test_params.platform}"
     end
   when /ram/
     # generate testfile in host
@@ -70,10 +108,18 @@ puts "filesize:"+filesize
   case media
   when /-mmc/
     interface = 'mmc'
-    dev = 0
+    if @equipment['dut1'].name =~ /am654x/
+      dev = 1
+    else
+      dev = 0
+    end
   when /-emmc/
     interface = 'mmc'
-    dev = 1
+    if @equipment['dut1'].name =~ /am654x/
+      dev = 0
+    else
+      dev = 1
+    end
   when /qspi/
     interface = 'sf 0:0'
   when /ram/
@@ -85,16 +131,22 @@ puts "filesize:"+filesize
   end
   if media == "raw-mmc" || media == "raw-emmc"
     dfu_alt_info = dfu_alt_info_raw_mmc
-    alt_name_mlo = alt_name_mlo_raw
-    alt_name_uboot = alt_name_uboot_raw
+    alt_name_sysfw = alt_name_sysfw_raw if alt_name_sysfw_raw
+    alt_name_initial_bootloader = alt_name_initial_bootloader_raw if alt_name_initial_bootloader_raw
+    alt_name_primary_bootloader = alt_name_primary_bootloader_raw
+    alt_name_secondary_bootloader = alt_name_secondary_bootloader_raw
   elsif media == "fat-mmc" || media == "fat-emmc"
     dfu_alt_info = dfu_alt_info_fat_mmc
-    alt_name_mlo = alt_name_mlo_fat
-    alt_name_uboot = alt_name_uboot_fat
+    alt_name_sysfw = alt_name_sysfw_fat if alt_name_sysfw_fat
+    alt_name_initial_bootloader = alt_name_initial_bootloader_fat if alt_name_initial_bootloader_fat
+    alt_name_primary_bootloader = alt_name_primary_bootloader_fat
+    alt_name_secondary_bootloader = alt_name_secondary_bootloader_fat
   elsif media == "qspi"
     dfu_alt_info = dfu_alt_info_raw_spi
-    alt_name_mlo = alt_name_mlo_raw
-    alt_name_uboot = alt_name_uboot_raw
+    alt_name_sysfw = alt_name_sysfw_raw if alt_name_sysfw_raw
+    alt_name_initial_bootloader = alt_name_initial_bootloader_raw if alt_name_initial_bootloader_raw
+    alt_name_primary_bootloader = alt_name_primary_bootloader_raw
+    alt_name_secondary_bootloader = alt_name_secondary_bootloader_raw
   elsif media == "ram"
     dfu_alt_info = dfu_alt_info_ram
   else
@@ -116,7 +168,7 @@ puts "filesize:"+filesize
 
   if media == "ram"
    
-    # download mlo
+    # download primary_bootloader
     start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
       host_dfu_download_image("#{filename_ram}", "ram_testimage")
     end
@@ -135,17 +187,35 @@ puts "filesize:"+filesize
     end
     
   else
-    # download mlo
+    if @test_params.platform =~ /am654x/
+      # download sysfw
+      start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
+        host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['sysfw_image_name'])}", alt_name_sysfw)
+      end
+      # send ctrl+c to back to uboot prompt
+      @equipment['dut1'].send_cmd("\x3", @equipment['dut1'].boot_prompt, 5)
+
+      sleep 1
+      # download initial_bootloader
+      start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
+        host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['initial_bootloader_image_name'])}", alt_name_initial_bootloader)
+      end
+      # send ctrl+c to back to uboot prompt
+      @equipment['dut1'].send_cmd("\x3", @equipment['dut1'].boot_prompt, 5)
+    end
+
+    sleep 1
+    # download primary_bootloader
     start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
-      host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['primary_bootloader_image_name'])}", alt_name_mlo)
+      host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['primary_bootloader_image_name'])}", alt_name_primary_bootloader)
     end
     # send ctrl+c to back to uboot prompt
     @equipment['dut1'].send_cmd("\x3", @equipment['dut1'].boot_prompt, 5)
 
     sleep 1
-    # download u-boot.img
+    # download secondary_bootloader
     start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
-      host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['secondary_bootloader_image_name'])}", alt_name_uboot)
+      host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['secondary_bootloader_image_name'])}", alt_name_secondary_bootloader)
     end
     # send ctrl+c to back to uboot prompt
     @equipment['dut1'].send_cmd("\x3", @equipment['dut1'].boot_prompt, 5)
