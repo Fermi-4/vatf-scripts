@@ -89,7 +89,7 @@ def get_expected_mode_emmc(platform)
   expected_mode_emmc = Hash.new('HS200')
   expected_mode_emmc['am57xx-evm'] = 'MMC DDR52'
   expected_mode_emmc['am574x-idk'] = 'MMC DDR52'
-  expected_mode_emmc['am654x-evm'] = 'HS400'
-  expected_mode_emmc['am654x-idk'] = 'HS400'
+  expected_mode_emmc['am654x-evm'] = 'HS200'
+  expected_mode_emmc['am654x-idk'] = 'HS200'
   return expected_mode_emmc[platform]
 end
