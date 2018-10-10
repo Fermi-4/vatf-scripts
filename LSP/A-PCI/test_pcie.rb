@@ -94,6 +94,8 @@ def run
   @equipment['dut2'].send_cmd("lspci", @equipment['dut2'].prompt, 10)
   raise "Endpoint is not showing in RC using lspci" if !@equipment['dut2'].response.match(/^01:00\.0/i)
   @equipment['dut2'].send_cmd("lspci -vv", @equipment['dut2'].prompt, 10)
+  res = check_pcie_speed(@equipment['dut2'].response)
+  result += res
   @equipment['dut2'].send_cmd("pcitest -h", @equipment['dut2'].prompt, 10)
   raise "pcitest app is missing from filesystem" if @equipment['dut2'].response.match(/command\s+not\s+found/i)
 
@@ -190,6 +192,18 @@ def run
     set_result(FrameworkConstants::Result[:fail], "Test Failed")
   end
 
+end
+
+def check_pcie_speed(log, platform)
+  rtn = 0
+  case platform
+    when /am654/
+      expected_speed = "8GT/s"
+    else
+      expected_speed = "5GT/s"
+  end
+  rtn = 1 if ! log.match(/LnkSta:\s+Speed\s+#{expected_speed},/i)
+  return rtn
 end
 
 def get_func_driver_name(platform)
