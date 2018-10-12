@@ -21,7 +21,7 @@ end
 
 def get_regex(iomode, block, count, key)
   if key == 'throughput'
-    regex = /\|PERFDATA\|block:\s*#{block}|count:\s*#{count}\|\|iomode:\s*#{iomode}\|throughput:\s*([\d\.]+)\s*MB\/S\|/ 
+    regex = /\|PERFDATA\|block:\s*#{block}\|count:\s*#{count}\|iomode:\s*#{iomode}\|throughput:\s*([\d\.]+)\s*MB\/S\|/ 
   end
   return regex
 end
