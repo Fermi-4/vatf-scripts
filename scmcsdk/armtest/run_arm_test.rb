@@ -487,7 +487,7 @@ def prepare_for_test(test_folder_location, commands)
     soft_reboot()
   end
   ##Set up files (from archive) to /usr/bin/
-  build_files(test_folder_location)
+  #build_files(test_folder_location)
 
   ##Parse commands for files needed
   files_result = good_files_specified?(commands)
@@ -634,29 +634,5 @@ def clone_user_git_repo(git_repo)
 end
 
 def clean
-  ##return to home directory
-  @equipment['dut1'].send_cmd("cd", @equipment['dut1'].prompt, 10)
-
-  ##close rmServer if up
-  if rmServer_up?
-    pid_info = @equipment['dut1'].response.to_s[/[0-9]+/].to_i  #find pid here
-    @equipment['dut1'].send_cmd("kill -9 #{pid_info}",
-      @equipment['dut1'].prompt, 10) if pid_info != 0
-    if !@equipment['dut1'].timeout?
-      puts "Successfully closed rmServer. "
-    end
-  end
   @equipment['dut1'].send_cmd("echo", @equipment['dut1'].prompt, 10)
-
-  ##close rmDspClient if up
-  if rmDspClient_up?
-    pid_info = @equipment['dut1'].response.to_s[/[0-9]+/].to_i  #find pid here
-    @equipment['dut1'].send_cmd("kill -9 #{pid_info}",
-      @equipment['dut1'].prompt, 10) if pid_info != 0
-    if !@equipment['dut1'].timeout?
-      puts "Successfully closed rmDspClient. "
-    end
-  end
-  @equipment['dut1'].send_cmd("echo", @equipment['dut1'].prompt, 10)
-
 end
