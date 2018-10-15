@@ -57,6 +57,7 @@ def run
     bparams['dut'].system_loader.run(bparams)
   end
 
+  bparams['dut'].send_cmd("mmc partconf 1 1 7 0", bparams['dut'].boot_prompt, 5) if boot_media == 'raw-emmc'
   bparams['dut'].send_cmd("setenv boot_os 1", bparams['dut'].boot_prompt, 5)
   bparams['dut'].send_cmd("saveenv", bparams['dut'].boot_prompt, 5)
   #By now, all images should be flashed into qspi. 
