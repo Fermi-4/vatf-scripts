@@ -9,6 +9,11 @@ def get_platform()
   end
 end
 
+def get_host_ubuntu_version()
+  @equipment['server1'].send_cmd("lsb_release -r")
+  @equipment['server1'].response.strip!.split('Release')[1].split(':')[1].strip!
+end
+
 def is_crypto_omap()
   if dut_dir_exist?("/opt/ltp")
     dut_orig_path = save_dut_orig_path()
@@ -3527,8 +3532,11 @@ class IpsecUtilitiesVatf
     return if (is_failed(is_alpha_side, function_name, " IPSEC: did not start properly.\r\n"))
     @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec listcerts", "authkey", @error_bit, 0)
     return if (is_failed(is_alpha_side, function_name, " IPSEC: listcerts response not correct.\r\n"))
-    @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec listcacerts", "authkey", @error_bit, 0)
-    return if (is_failed(is_alpha_side, function_name, " IPSEC: listcacerts response not correct.\r\n"))
+    if  (get_host_ubuntu_version.to_f <= 12.04)
+    # listcacerts command works fine in older ubuntu versions so use it
+       @vatf_helper.smart_send_cmd(is_alpha_side, @sudo_cmd, "ipsec listcacerts", "authkey", @error_bit, 0)
+       return if (is_failed(is_alpha_side, function_name, " IPSEC: listcacerts response not correct.\r\n"))
+    end
   end
 
   def bring_ipsec_tunnel_up(is_alpha_side, is_ipv4, is_pass_through)
