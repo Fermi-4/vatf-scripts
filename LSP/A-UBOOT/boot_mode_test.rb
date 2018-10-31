@@ -236,6 +236,8 @@ def set_bootloader_devs(params, media)
   else
     bootloader_dev = media 
   end
+  params['sysfw_dev'] = bootloader_dev
+  params['initial_bootloader_dev'] = bootloader_dev
   params['primary_bootloader_dev'] = bootloader_dev
   params['secondary_bootloader_dev'] = bootloader_dev
   params['kernel_dev'] = bootloader_dev

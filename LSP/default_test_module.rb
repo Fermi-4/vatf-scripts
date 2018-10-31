@@ -291,6 +291,8 @@ module LspTestScript
 
 
 
+    new_params = add_dev_loc_to_params(new_params, 'sysfw')
+    new_params = add_dev_loc_to_params(new_params, 'initial_bootloader')
     new_params = add_dev_loc_to_params(new_params, 'primary_bootloader')
     new_params = add_dev_loc_to_params(new_params, 'secondary_bootloader')
     new_params = add_dev_loc_to_params(new_params, 'kernel')
