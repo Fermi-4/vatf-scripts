@@ -165,7 +165,7 @@ module EvmData
     when /am437/
       return {'primary_bootloader' => '0', 'dtb' => '0x100000', 'kernel' => '0x130000'}
     when /am654x/
-      return {'initial_bootloader' => '0', 'primary_bootloader' => '0x80000', 'secondary_bootloader' => '0x280000'}
+      return {'initial_bootloader' => '0', 'primary_bootloader' => '0x80000', 'secondary_bootloader' => '0x280000', 'sysfw'=>'0x6c0000'}
     else
       raise "get_qspi_loc: No location is being specified for QSPI partitions for #{platform}"
     end
@@ -173,6 +173,9 @@ module EvmData
 
   def get_rawmmc_loc(platform)
     case platform
+    when /am654x/
+      # if there is difference from the default, add value here
+      return {'initial_bootloader'=> '0x0', 'primary_bootloader' => '0x400', 'secondary_bootloader' => '0x1400', 'sysfw'=>'0x3600'}
     when "am335x-evm"
       # if there is difference from the default, add value here
       return {'primary_bootloader' => '0x0', 'secondary_bootloader' => '0x300', 'kernel' => '0x3000', 'dtb' => '0x2000', 'fs' => '0x8000'}
