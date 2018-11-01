@@ -12,7 +12,7 @@ end
 
 def run
   result = 0
-  blk_boot_media = ['qspi', 'spi', 'mmc', 'emmc', 'rawmmc-emmc', 'rawmmc-emmc-bootpart', 'nand', 'usbmsc']
+  blk_boot_media = ['ospi','qspi', 'spi', 'mmc', 'emmc', 'rawmmc-emmc', 'rawmmc-emmc-bootpart', 'nand', 'usbmsc']
   boot_media = @test_params.params_chan.boot_media[0].downcase
   
   this_params = {}

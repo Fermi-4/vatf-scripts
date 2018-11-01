@@ -319,6 +319,9 @@ module LspTestScript
     when 'qspi'
       spi_loc = get_qspi_loc(params['dut'].name)
       new_params["spi_#{part}_loc"] = spi_loc["#{part}"]
+    when 'ospi'
+      spi_loc = get_ospi_loc(params['dut'].name)
+      new_params["spi_#{part}_loc"] = spi_loc["#{part}"]
     when /rawmmc/
       rawmmc_loc = get_rawmmc_loc(params['dut'].name)
       new_params["rawmmc_#{part}_loc"] = rawmmc_loc["#{part}"]

@@ -156,6 +156,15 @@ module EvmData
     end
   end
 
+  def get_ospi_loc(platform)
+    case platform
+    when /am654x/
+      return {'initial_bootloader' => '0', 'primary_bootloader' => '0x80000', 'secondary_bootloader' => '0x280000', 'sysfw'=>'0x6c0000'}
+    else
+      raise "get_ospi_loc: No location is being specified for OSPI partitions for #{platform}"
+    end
+  end
+
   def get_qspi_loc(platform)
     case platform
     when /^k2.{0,2}-(hs){0,1}evm/
@@ -164,8 +173,6 @@ module EvmData
       return {'primary_bootloader' => '0', 'secondary_bootloader' => '0x40000', 'dtb' => '0x140000', 'kernel' => '0x1e0000'}
     when /am437/
       return {'primary_bootloader' => '0', 'dtb' => '0x100000', 'kernel' => '0x130000'}
-    when /am654x/
-      return {'initial_bootloader' => '0', 'primary_bootloader' => '0x80000', 'secondary_bootloader' => '0x280000', 'sysfw'=>'0x6c0000'}
     else
       raise "get_qspi_loc: No location is being specified for QSPI partitions for #{platform}"
     end
