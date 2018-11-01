@@ -84,6 +84,7 @@ module AndroidTest
   #       params, Hash where the values of the assets found will be stored
   def setup_tarballs(tbs, dest, params)
     new_params = params.clone
+    new_params['fastboot_path'] = dest
     if tbs.length < 1
       new_params['fastboot'] = 'fastboot' if !new_params['fastboot']
       new_params['make_ext4fs'] = 'make_ext4fs' if !new_params['make_ext4fs']
@@ -100,6 +101,7 @@ module AndroidTest
     new_params['server'].send_cmd("md5sum  #{tbs.join(' ')} |  cut -d' ' -f 1 | sort &> #{tb_check}")
     new_params['server'].send_cmd("diff #{tb_check} #{installed_check} 2>&1")
     if  new_params['server'].response != ''
+      new_params['run_fastboot.sh'] = true
       new_params['server'].send_cmd("rm -rf #{dest}/*")
       tbs.each do |path|
         tar_opts = get_tar_options(path,params)
@@ -109,6 +111,8 @@ module AndroidTest
       end
       new_params['server'].send_cmd("md5sum  #{tbs.join(' ')} |  cut -d' ' -f 1 | sort > #{installed_check}")
     end
+    new_params['server'].send_cmd("cat #{installed_check}")
+    new_params['tarball_md5'] = new_params['server'].response
 
     ['fastboot', 'make_ext4fs', 'simg2img', 'adb'].each do |a_u|
       if !new_params[a_u]
@@ -122,6 +126,7 @@ module AndroidTest
       img_name =File.basename(img,'.img').gsub('-','_')
       new_params[img_name] = img if !new_params[img_name]
     end
+    return new_params if new_params['dut'].name.match(/am65.*/i) # AM65x uses fastboot.sh to flash images
     loaders = case new_params['dut'].name
       when /-hsevm$/i
         ["u-boot-spl_HS_X-LOADER","HS_u-boot.img"]
