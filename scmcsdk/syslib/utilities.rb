@@ -14,23 +14,29 @@ def get_host_ubuntu_version()
   @equipment['server1'].response.strip!.split('Release')[1].split(':')[1].strip!
 end
 
-def is_crypto_omap()
+def is_crypto_type()
   if dut_dir_exist?("/opt/ltp")
     dut_orig_path = save_dut_orig_path()
     export_ltppath()
     @equipment['dut1'].send_cmd("get_modular_name.sh crypto",@equipment['dut1'])
     response = @equipment['dut1'].response
     restore_dut_path(dut_orig_path)
-    return response.include? "omap"
-  else
-    return false
-  end
+    if response.include? "omap"
+      return "omap"
+    elsif response.include? "sa2ul"
+      return "sa2ul"
+    else
+      return false
+    end
+ end
 end
 
 def get_crypto_modules()
   module_list = Array.new
-  if (is_crypto_omap)
+  if (is_crypto_type == "omap")
     module_list = ["omap_aes_driver", "omap_des", "omap_sham"]
+  elsif (is_crypto_type == "sa2ul")
+    module_list = ["sa2ul"]
   else
     module_list = ["ipsecmgr_mod"]
   end
@@ -2404,7 +2410,7 @@ class PerfUtilities
     stat_commands = Array.new
     stat_commands.push("cat /proc/net/snmp")
     stat_commands.push("ip -s xfrm state")
-    if (is_crypto_omap)
+    if (is_crypto_type == "omap")
       stat_commands.push("cat /proc/interrupts |grep edma")
       stat_commands.push("cat /proc/interrupts |grep sham")
     else
