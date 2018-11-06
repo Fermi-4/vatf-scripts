@@ -292,6 +292,10 @@ def translate_params2(params)
                              @test_params.instance_variable_defined?(:@var_fs2_image_name) ? @test_params.var_fs2_image_name :
                              new_params['fs_type'] != 'nfs' ? File.basename(new_params['fs']) : ''
      
+    new_params['kernel_modules'] = new_params['kernel_modules2'] ? new_params['kernel_modules2'] :
+                             @test_params.instance_variable_defined?(:@kernel_modules2) ? @test_params.kernel_modules2 :
+                             ''
+
     new_params 
 end
 
