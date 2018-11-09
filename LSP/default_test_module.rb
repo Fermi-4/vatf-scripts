@@ -490,6 +490,7 @@ module LspTestScript
   end
 
   def setup
+    load_known_setup_issues_dictionary(KNOWN_SETUP_PROBLEMS)
     @equipment.select{|k| k.match(/dut/i)}.keys.each {|device|
       setup_boards(device, {})
     }

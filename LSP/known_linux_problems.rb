@@ -28,4 +28,19 @@ module  KnownLinuxProblems
     return ''
   end
 
+  # Define known setup problems to help identify false failures
+  # Syntax: {/DEVICE TYPE/ => [/REGEX_KEY/,'ERROR DESCRIPTION']}
+  KNOWN_SETUP_PROBLEMS = {
+    /dut/    => [
+      [/nfs: server [\d\.]+ not responding/,'NFS Server failure'],
+      [/input overrun\(s\)/, 'Serial port overruns'],
+      [/BOOTP broadcast \d+.+Retry (count|time) exceeded/m, 'Error executing dhcp']
+    ],
+
+    /server/ => [
+      [/incorrect password attempts/, 'Wrong password']
+    ]
+  }
+
+
 end
