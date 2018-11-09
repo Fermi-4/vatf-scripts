@@ -107,9 +107,11 @@ def save_firmware(e=@equipment['dut1'])
 end
 
 def restore_firmware(e=@equipment['dut1'])
-  @firmware_links.each {|k,v|
-    e.send_cmd("ln -sf #{k.strip} #{v.strip}")
-  }
+  if @firmware_links
+    @firmware_links.each {|k,v|
+      e.send_cmd("ln -sf #{k.strip} #{v.strip}")
+    }
+  end
   check_firmware_links(e, 'RESTORE')
 end
 
