@@ -91,6 +91,8 @@ def run
   setup_boards('dut2', boot_params2)
 
   # Run pcie ep tests
+  @equipment['dut2'].send_cmd("echo 1 > /sys/bus/pci/rescan", @equipment['dut2'].prompt, 10)
+  sleep 1
   @equipment['dut2'].send_cmd("lspci", @equipment['dut2'].prompt, 10)
   raise "Endpoint is not showing in RC using lspci" if !@equipment['dut2'].response.match(/^01:00\.0/i)
   @equipment['dut2'].send_cmd("lspci -vv", @equipment['dut2'].prompt, 10)
