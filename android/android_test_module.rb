@@ -127,6 +127,7 @@ module AndroidTest
       new_params[img_name] = img if !new_params[img_name]
     end
     return new_params if new_params['dut'].name.match(/am65.*/i) # AM65x uses fastboot.sh to flash images
+    new_params['run_fastboot.sh'] = false # Not fasboot.sh based so set flag to false
     loaders = case new_params['dut'].name
       when /-hsevm$/i
         ["u-boot-spl_HS_X-LOADER","HS_u-boot.img"]
