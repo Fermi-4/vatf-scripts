@@ -608,6 +608,19 @@ module EvmData
     end
   end
 
-
+  #function to get pru port information per platform
+  def get_default_eth_ports(platform)
+    pru_data = {
+                'am335x-ice' => {'eth0' => 'cpsw', 'eth1' => 'cpsw'},
+                'am437x-idk' => {'eth0' => 'cpsw', 'eth1' => 'PRUSS', 'eth2' => 'PRUSS'},
+                'am571x-idk' => {'eth0' => 'cpsw', 'eth1' => 'cpsw', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS', 'eth4' => 'PRUSS', 'eth5' => 'PRUSS'},
+                'am572x-idk' => {'eth0' => 'cpsw', 'eth1' => 'cpsw', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS'},
+                'am574x-idk' => {'eth0' => 'cpsw', 'eth1' => 'cpsw', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS'},
+                'k2g-ice'    => {'eth0' => 'cpsw', 'eth1' => 'PRUSS', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS', 'eth4' => 'PRUSS'},
+                'am654x-idk' => {'eth0' => 'cpsw', 'eth1' => 'PRUSS', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS', 'eth4' => 'PRUSS', 'eth5' => 'PRUSS', 'eth6' => 'PRUSS'},
+                'am654x-evm' => {'eth0' => 'cpsw', 'eth1' => 'PRUSS', 'eth2' => 'PRUSS'}
+	       }
+     return  pru_data["#{platform}"]
+  end
   
 end
