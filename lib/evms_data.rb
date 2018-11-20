@@ -616,7 +616,7 @@ module EvmData
                 'am571x-idk' => {'eth0' => 'cpsw', 'eth1' => 'cpsw', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS', 'eth4' => 'PRUSS', 'eth5' => 'PRUSS'},
                 'am572x-idk' => {'eth0' => 'cpsw', 'eth1' => 'cpsw', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS'},
                 'am574x-idk' => {'eth0' => 'cpsw', 'eth1' => 'cpsw', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS'},
-                'k2g-ice'    => {'eth0' => 'cpsw', 'eth1' => 'PRUSS', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS', 'eth4' => 'PRUSS'},
+                'k2g-ice'    => {'eth0' => 'TI KeyStone', 'eth1' => 'PRUSS', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS', 'eth4' => 'PRUSS'},
                 'am654x-idk' => {'eth0' => 'cpsw', 'eth1' => 'PRUSS', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS', 'eth4' => 'PRUSS', 'eth5' => 'PRUSS', 'eth6' => 'PRUSS'},
                 'am654x-evm' => {'eth0' => 'cpsw', 'eth1' => 'PRUSS', 'eth2' => 'PRUSS'}
 	       }
