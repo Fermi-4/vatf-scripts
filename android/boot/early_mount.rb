@@ -7,7 +7,7 @@ include AndroidTest
 
 def run
    mount_count = @equipment['dut1'].send_adb_cmd("shell 'dmesg | grep -i __mount | grep -i -e system -e vendor'").scan(/Success/i).length()
-   ls_count = @equipment['dut1'].send_adb_cmd("shell 'ls / | grep -e system -e vendor | wc -l'").to_i
+   ls_count = @equipment['dut1'].send_adb_cmd("shell 'ls / | grep -e system -e vendor | wc -l'").match(/[^:]+$/)[0].to_i
    if mount_count == 2 && ls_count == 2 && @equipment['dut1'].at_prompt?({'prompt' => @equipment['dut1'].prompt})
      set_result(FrameworkConstants::Result[:pass], "Test case passed (#{mount_count}/2)")
    else
