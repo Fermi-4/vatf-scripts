@@ -617,8 +617,8 @@ module EvmData
                 'am572x-idk' => {'eth0' => 'cpsw', 'eth1' => 'cpsw', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS'},
                 'am574x-idk' => {'eth0' => 'cpsw', 'eth1' => 'cpsw', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS'},
                 'k2g-ice'    => {'eth0' => 'TI KeyStone', 'eth1' => 'PRUSS', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS', 'eth4' => 'PRUSS'},
-                'am654x-idk' => {'eth0' => 'cpsw', 'eth1' => 'PRUSS', 'eth2' => 'PRUSS', 'eth3' => 'PRUSS', 'eth4' => 'PRUSS', 'eth5' => 'PRUSS', 'eth6' => 'PRUSS'},
-                'am654x-evm' => {'eth0' => 'cpsw', 'eth1' => 'PRUSS', 'eth2' => 'PRUSS'}
+                'am654x-idk' => {'eth0' => 'am65-cpsw-nuss', 'eth1' => 'icssg-prueth', 'eth2' => 'icssg-prueth', 'eth3' => 'icssg-prueth', 'eth4' => 'icssg-prueth', 'eth5' => 'icssg-prueth', 'eth6' => 'icssg-prueth'},
+                'am654x-evm' => {'eth0' => 'am65-cpsw-nuss', 'eth1' => 'icssg-prueth', 'eth2' => 'icssg-prueth'}
 	       }
      return  pru_data["#{platform}"]
   end
