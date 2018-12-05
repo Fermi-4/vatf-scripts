@@ -169,7 +169,7 @@ def run
     testsizes.each do |testsize_hex|
       loadaddr, loadaddr2 = get_loadaddres(testsize_hex)
       report_msg "===Testing size #{testsize_hex.to_i(16).to_s} ..."
-      # write 'test' file to mmc fat partition from loadaddr
+      # write 'test' file to usb fat partition from loadaddr
       @equipment['dut1'].send_cmd("time fatwrite usb 0 ${loadaddr} test #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
       if @equipment['dut1'].response.match(/overflow/i)
         report_msg "USB first fat partition do not have enough space for the #{testsize_hex.to_i(16)} file, so skip it."
@@ -192,6 +192,45 @@ def run
     end
     @equipment['dut1'].send_cmd("time fatwrite usb 0 ${loadaddr} test 0 ", @equipment['dut1'].boot_prompt, 10)
     @equipment['dut1'].send_cmd("usb stop; usb stop", @equipment['dut1'].boot_prompt, 10)
+
+  when /nand/
+    testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000", "0x4000000"] # [4M, 8M, 16M, 32M, 64M]
+    @equipment['dut1'].send_cmd("help nand", @equipment['dut1'].boot_prompt, 10)
+    @equipment['dut1'].send_cmd("nand info", @equipment['dut1'].boot_prompt, 10)
+
+    nand_test_addr = PlatformSpecificVarNames.translate_var_name(@equipment['dut1'].name,'nand_test_addr')
+
+    testsizes.each do |testsize_hex|
+      loadaddr, loadaddr2 = get_loadaddres(testsize_hex)
+      report_msg "===Testing size #{testsize_hex.to_i(16).to_s} ..."
+      # read the data from Nand
+      @equipment['dut1'].send_cmd("time nand read ${loadaddr} #{nand_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      if @equipment['dut1'].response.match(/error|fail/i)
+        report_msg "Nand read failed with size #{testsize_hex.to_i(16)};"
+        next
+      end
+      # write the data just read back to Nand
+      @equipment['dut1'].send_cmd("time nand write ${loadaddr} #{nand_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      if @equipment['dut1'].response.match(/error|fail/i)
+        report_msg "Nand write failed with size #{testsize_hex.to_i(16)};"
+        next
+      end
+      this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
+      perfs << {'name' => "#{device.upcase} Write 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+
+      # read back from Nand to loadaddr2
+      @equipment['dut1'].send_cmd("time nand read #{loadaddr2} #{nand_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
+      perfs << {'name' => "#{device.upcase} Read 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      
+      @equipment['dut1'].send_cmd("cmp.b #{loadaddr} #{loadaddr2} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
+      if @equipment['dut1'].response.match(/!=/i)
+        result_msg = result_msg + "#{device}: cmp failed for size 0x#{testsize_hex}; "
+        set_result(FrameworkConstants::Result[:fail], result_msg)
+      end
+    end
+    @equipment['dut1'].send_cmd("nand info ", @equipment['dut1'].boot_prompt, 10)
+
   else
     raise "Measuring RW performance for device #{device} is not supported"
   end
