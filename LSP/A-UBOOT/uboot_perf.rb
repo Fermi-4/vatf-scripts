@@ -209,6 +209,11 @@ def run
         report_msg "Nand read failed with size #{testsize_hex.to_i(16)};"
         next
       end
+      @equipment['dut1'].send_cmd("time nand erase #{nand_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      if @equipment['dut1'].response.match(/error|fail/i)
+        report_msg "Nand erase failed with size #{testsize_hex.to_i(16)};"
+        next
+      end
       # write the data just read back to Nand
       @equipment['dut1'].send_cmd("time nand write ${loadaddr} #{nand_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
       if @equipment['dut1'].response.match(/error|fail/i)
