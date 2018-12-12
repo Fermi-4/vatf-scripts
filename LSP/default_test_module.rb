@@ -578,17 +578,21 @@ module LspTestScript
     def clean_boards(device_name='dut1')
       puts "\nLspTestScript::clean"
       device_object = @equipment[device_name]
-      if @test_result.result == FrameworkConstants::Result[:fail] or @test_result.result == FrameworkConstants::Result[:nry]
-        query_debug_data device_object
-      end
-      kernel_modules = @test_params.kernel_modules   if @test_params.instance_variable_defined?(:@kernel_modules)
-      if kernel_modules
-        if @test_params.params_chan.instance_variable_defined?(:@kernel_modules_list)
-          @test_params.params_chan.kernel_modules_list.each {|mod|
-            mod_name = KernelModuleNames::translate_mod_name(@test_params.platform, mod.strip)
-            device_object.send_cmd("rmmod #{mod_name}", /#{device_object.prompt}/, 30)  
-          }
-        end
+      begin
+          if @test_result.result == FrameworkConstants::Result[:fail] or @test_result.result == FrameworkConstants::Result[:nry]
+            query_debug_data device_object
+          end
+          kernel_modules = @test_params.kernel_modules   if @test_params.instance_variable_defined?(:@kernel_modules)
+          if kernel_modules
+            if @test_params.params_chan.instance_variable_defined?(:@kernel_modules_list)
+              @test_params.params_chan.kernel_modules_list.each {|mod|
+                mod_name = KernelModuleNames::translate_mod_name(@test_params.platform, mod.strip)
+                device_object.send_cmd("rmmod #{mod_name}", /#{device_object.prompt}/, 30)
+              }
+            end
+          end
+      rescue Exception => e
+          report_msg "WARNING: Ignoring exception while running clean_boards"
       end
       device_object.reset_sysboot(device_object)
     end

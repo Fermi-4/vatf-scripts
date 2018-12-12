@@ -35,7 +35,11 @@ module LspTargetTestScript
   # Do nothing by default.  Overwrite implementation in test script if required
   def clean
     puts "\n LspTargetTestScript::clean"
-    clean_delete_binary_files
+    begin
+      clean_delete_binary_files
+    rescue Exception => e
+      puts "\n Ignoring exception while deleting binary files"
+    end
     super
   end
   
