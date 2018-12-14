@@ -563,6 +563,8 @@ module EvmData
       return :LOAD_FROM_SERIAL_UBOOT
     when /^am65.+/
       return :LOAD_FROM_SERIAL_TI_BOOT3
+    when /^am57.+/
+      return :LOAD_FROM_SERIAL_TI_OMAP
     else
       return :LOAD_FROM_SERIAL
     end
