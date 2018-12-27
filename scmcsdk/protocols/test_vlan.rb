@@ -122,8 +122,8 @@ def enable_vlan(dut, feature, dut_if02, dut_if03, dut_if05 = "", mc_filter = 0)
   dut.send_cmd("ip link add link #{feature}0 name #{feature}0.3 type vlan id 3", dut.prompt, 10)
   dut.send_cmd("ifconfig #{feature}0.2 #{dut_if02}", dut.prompt, 10)
   dut.send_cmd("ifconfig #{feature}0.3 #{dut_if03}", dut.prompt, 10)
-  dut.send_cmd("ip link set #{feature}0.2 type vlan egress 0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0", dut.prompt, 10)
-  dut.send_cmd("ip link set #{feature}0.3 type vlan egress 0:7 1:7 2:7 3:7 4:7 5:7 6:7 7:7", dut.prompt, 10)
+  dut.send_cmd("ip link set #{feature}0.2 type vlan egress 0:0", dut.prompt, 10)
+  dut.send_cmd("ip link set #{feature}0.3 type vlan egress 0:7", dut.prompt, 10)
   if mc_filter == 1
     # create extra link with id 0.5(id can be anything ex. 0.x) to verify dropped count
     dut.send_cmd("ip link add link #{feature}0 name #{feature}0.5 type vlan id 5", dut.prompt, 10)
@@ -159,15 +159,17 @@ end
 
 # function to check vlan filter enabled or not
 def is_vlan_filter_enabled(dut, feature)
-  dut.send_cmd("cat /sys/kernel/debug/prueth-#{feature}/vlan_filter ", dut.prompt, 10)
-  if !( dut.response =~ /VLAN\sFilter\s:\senabled[\n\s]*0:\s+0011/ )
+  dut.send_cmd("ls /sys/kernel/debug/", dut.prompt, 10)
+  dut.send_cmd("cat /sys/kernel/debug/prueth-#{feature}-*/vlan_filter ", dut.prompt, 10)
+  if !( dut.response =~ /VLAN\sFilter\s:\senabled[\n\s\S]*0:\s+0011/ )
     raise "Failed to enable vlan filter."
   end
 end
 
 # function to check multicast filter enabled or not
 def is_mc_filter_enabled(dut, feature)
-  dut.send_cmd("cat /sys/kernel/debug/prueth-#{feature}/mc_filter", dut.prompt, 10)
+  dut.send_cmd("ls /sys/kernel/debug/", dut.prompt, 10)
+  dut.send_cmd("cat /sys/kernel/debug/prueth-#{feature}-*/mc_filter", dut.prompt, 10)
   if !( dut.response =~ /MC\sFilter\s:\senabled/ )
     raise "Failed to enable multicast filter."
   end
