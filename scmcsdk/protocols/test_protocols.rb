@@ -162,14 +162,14 @@ end
 # function to verify ping, this function pings and verifies 0% loss
 # it also has capability to ping at various payload sizes if specified
 def ping_status(dan_X_n, ipaddr, count=10, payloads=[""])
-  dan_X_n.send_cmd("ping -c #{count} #{ipaddr}", dan_X_n.prompt, count)
+  dan_X_n.send_cmd("ping -c #{count} #{ipaddr}", dan_X_n.prompt, count+10)
   if dan_X_n.timeout? or !(dan_X_n.response =~ Regexp.new("(\s0%\spacket\sloss)"))
     raise "Ping failed to IP Address: #{ipaddr}."
   end
   # verify ping at various payload sizes, if specified
   if payloads.length != 1
     for psize in payloads
-      dan_X_n.send_cmd("ping #{ipaddr} -c #{count} -s #{psize}", dan_X_n.prompt, count)
+      dan_X_n.send_cmd("ping #{ipaddr} -c #{count} -s #{psize}", dan_X_n.prompt, count+10)
       if dan_X_n.timeout? or !(dan_X_n.response =~ Regexp.new("(\s0%\spacket\sloss)"))
         raise "Ping failed to IP Address: #{ipaddr} at payload size: #{psize}."
       end
