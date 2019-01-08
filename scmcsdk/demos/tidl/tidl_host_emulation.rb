@@ -26,8 +26,8 @@ def tidl_host_emulation(tidl_model_git,pass_crit,fail_crit)
   binary_path = "#{nfs_root_path}/usr/share/ti/tidl/examples/test/"
   download_copy_tidl_binaries(tidl_model_git,binary_path)
   @equipment['server1'].send_cmd("cd #{binary_path} && touch sim.txt", @equipment['server1'].prompt, 15)
-  @equipment['server1'].send_cmd("echo \"1 ./testvecs/config/infer/tidl_config_j11_v2.txt\n0 > \
-                                #{binary_path}sim.txt\"", @equipment['server1'].prompt, 15)
+  @equipment['server1'].send_cmd("echo \"1 ./testvecs/config/infer/tidl_config_j11_v2.txt\n0\" > \
+                                #{binary_path}sim.txt", @equipment['server1'].prompt, 15)
   @equipment['server1'].send_cmd("cd #{binary_path} && ./eve_test_dl_algo.out sim.txt",\
                                 @equipment['server1'].prompt, 15)
   server_log = @equipment['server1'].response
