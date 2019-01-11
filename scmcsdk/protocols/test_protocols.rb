@@ -69,7 +69,7 @@ def run
         verify_mcast_filtering(dan_X_1, dan_X_2, dan_X_1_ips[0], dan_X_2_ips[0], switch_from, pruicss_ports[0])
       end
       # disable any one pruicss_port and verify redundancy
-      verify_redundancy(dan_X_1, dan_X_2, pruicss_ports[0], dan_X_2_ips[0])
+      verify_redundancy(dan_X_1, dan_X_2, pruicss_ports[1], dan_X_2_ips[0])
       # disable feature
       disable_feature(dan_X_1, switch_from, pruicss_ports)
       disable_feature(dan_X_2, switch_from, pruicss_ports)
@@ -83,6 +83,8 @@ def run
         emac_status(dan_X_1, dan_X_2, pruicss_ports, dan_X_1_ips, dan_X_2_ips)
       else
         pruicss_ports = [dan_X_1.params["#{switch_to}_port1"], dan_X_1.params["#{switch_to}_port2"]]
+        disable_feature(dan_X_1, switch_from, pruicss_ports)
+        disable_feature(dan_X_2, switch_from, pruicss_ports)
         # setting offload to true as switching of feature need to
         # be done by offloading feature using ethtool utility
         offload = true
@@ -90,7 +92,7 @@ def run
         enable_feature(dan_X_2, switch_to, cmd_to, dan_X_2_ips[0], pruicss_ports, offload)
         ping_status(dan_X_1, dan_X_2_ips[0])
         # disable any one pruicss_port and verify redundancy
-        verify_redundancy(dan_X_1, dan_X_2, pruicss_ports[0], dan_X_2_ips[0])
+        verify_redundancy(dan_X_1, dan_X_2, pruicss_ports[1], dan_X_2_ips[0])
         # disable feature
         disable_feature(dan_X_1, switch_to, pruicss_ports)
         disable_feature(dan_X_2, switch_to, pruicss_ports)
@@ -109,14 +111,13 @@ def emac_status(dan_X_1, dan_X_2, pruicss_ports, dan_X_1_ips, dan_X_2_ips)
   setup_pruicss_ports(dan_X_1, pruicss_ports, dan_X_1_ips)
   setup_pruicss_ports(dan_X_2, pruicss_ports, dan_X_2_ips)
   ping_status(dan_X_1, dan_X_2_ips[0])
-  ping_status(dan_X_2, dan_X_1_ips[1])
 end
 
 # function to enable feature(hsr/prp), this function creates
 # feature(hsr/prp). The optional paramater offload can be used to
 # offload feature without setting at u-boot but at the time of
 # linux kernel up by using ethtool utility
-def enable_feature(dan_X_n, feature, command, ipaddr, pruicss_ports, offload = false)
+def enable_feature(dan_X_n, feature, command, ipaddr, pruicss_ports, offload = false, id = 0)
   dan_X_n.send_cmd("export #{pruicss_ports[1]}_ipaddr=`cat /sys/class/net/#{pruicss_ports[1]}/address`", dan_X_n.prompt, 10)
   dan_X_n.send_cmd("ifconfig #{pruicss_ports[0]} 0.0.0.0 down", dan_X_n.prompt, 10)
   dan_X_n.send_cmd("ifconfig #{pruicss_ports[1]} 0.0.0.0 down", dan_X_n.prompt, 10)
@@ -130,9 +131,9 @@ def enable_feature(dan_X_n, feature, command, ipaddr, pruicss_ports, offload = f
   dan_X_n.send_cmd("ifconfig #{pruicss_ports[0]} up", dan_X_n.prompt, 10)
   dan_X_n.send_cmd("ifconfig #{pruicss_ports[1]} up", dan_X_n.prompt, 10)
   dan_X_n.send_cmd("#{command}", dan_X_n.prompt, 10)
-  dan_X_n.send_cmd("ifconfig #{feature}0 #{ipaddr} up", dan_X_n.prompt, 10)
+  dan_X_n.send_cmd("ifconfig #{feature}#{id} #{ipaddr} up", dan_X_n.prompt, 10)
   dan_X_n.send_cmd("ifconfig", dan_X_n.prompt, 10)
-  if !(dan_X_n.response =~ Regexp.new("(#{feature}0\s+Link\sencap:Ethernet\s+HWaddr)")) or dan_X_n.timeout?
+  if !(dan_X_n.response =~ Regexp.new("(#{feature}#{id}\s+Link\sencap:Ethernet\s+HWaddr)")) or dan_X_n.timeout?
     raise "Failed to enable #{feature}."
   end
 end
@@ -180,7 +181,6 @@ end
 # function to disable any one pruicss_port for redundancy check
 def verify_redundancy(dan_X_1, dan_X_2, pruicss_port, ipaddr)
   dan_X_1.send_cmd("ifconfig #{pruicss_port} down", dan_X_1.prompt, 10)
-  dan_X_2.send_cmd("ifconfig #{pruicss_port} down", dan_X_2.prompt, 10)
   ping_status(dan_X_1, ipaddr)
 end
 
