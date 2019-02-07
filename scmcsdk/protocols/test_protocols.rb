@@ -28,8 +28,7 @@ def run
   # get dut params
   switch_from = @test_params.params_chan.switch_from[0]           # feature to load initially
   switch_to = @test_params.params_chan.switch_to[0]               # feature to switch to
-  cmd_from = @test_params.params_chan.cmd_from[0]                 # command to enable feature link
-  cmd_to = @test_params.params_chan.cmd_to[0]                     # command to enable feature link
+
   enable_switching = @test_params.params_chan.enable_switching[0] # set 'yes' to verify runtime configurability
   mc_filter = @test_params.params_chan.instance_variable_defined?(:@mc_filter) ? @test_params.params_chan.mc_filter[0].to_i : 0
   mc_cli_ser_bins = @test_params.params_chan.instance_variable_defined?(:@mc_cli_ser_bins) ? @test_params.params_chan.mc_cli_ser_bins[0] : ""
@@ -53,49 +52,56 @@ def run
   begin
     if switch_from == "emac"
       # get pruicss port information
-      pruicss_ports = [dan_X_1.params["#{switch_to}_port1"], dan_X_1.params["#{switch_to}_port2"]]
-      emac_status(dan_X_1, dan_X_2, pruicss_ports, dan_X_1_ips, dan_X_2_ips)
+      dan_X_1_pruicss_ports = [dan_X_1.params["#{switch_to}_port1"], dan_X_1.params["#{switch_to}_port2"]]
+      dan_X_2_pruicss_ports = [dan_X_2.params["#{switch_from}_port1"], dan_X_2.params["#{switch_from}_port2"]]
+      emac_status(dan_X_1, dan_X_2, dan_X_1_pruicss_ports, dan_X_2_pruicss_ports, dan_X_1_ips, dan_X_2_ips)
     else
       # get pruicss port information
-      pruicss_ports = [dan_X_1.params["#{switch_from}_port1"], dan_X_1.params["#{switch_from}_port2"]]
-      enable_feature(dan_X_1, switch_from, cmd_from, dan_X_1_ips[0], pruicss_ports)
-      enable_feature(dan_X_2, switch_from, cmd_from, dan_X_2_ips[0], pruicss_ports)
+      dan_X_1_pruicss_ports = [dan_X_1.params["#{switch_from}_port1"], dan_X_1.params["#{switch_from}_port2"]]
+      cmd = get_cmd(switch_from, dan_X_1_pruicss_ports)
+      enable_feature(dan_X_1, switch_from, cmd, dan_X_1_ips[0], dan_X_1_pruicss_ports)
+      dan_X_2_pruicss_ports = [dan_X_2.params["#{switch_from}_port1"], dan_X_2.params["#{switch_from}_port2"]]
+      cmd = get_cmd(switch_from, dan_X_2_pruicss_ports)
+      enable_feature(dan_X_2, switch_from, cmd, dan_X_2_ips[0], dan_X_2_pruicss_ports)
       ping_status(dan_X_1, dan_X_2_ips[0], default_ping_count, payloads)
       # verify multicast filtering
       if mc_filter == 1 and mc_cli_ser_bins != ""
         setup_mc_cli_ser(dan_X_1, dan_X_2, mc_cli_ser_bins)
         is_mc_filter_enabled(dan_X_1, switch_from)
         is_mc_filter_enabled(dan_X_2, switch_from)
-        verify_mcast_filtering(dan_X_1, dan_X_2, dan_X_1_ips[0], dan_X_2_ips[0], switch_from, pruicss_ports[0])
+        verify_mcast_filtering(dan_X_1, dan_X_2, dan_X_1_ips[0], dan_X_2_ips[0], switch_from, dan_X_1_pruicss_ports[0])
       end
       # disable any one pruicss_port and verify redundancy
-      verify_redundancy(dan_X_1, dan_X_2, pruicss_ports[1], dan_X_2_ips[0])
+      verify_redundancy(dan_X_1, dan_X_2, dan_X_1_pruicss_ports[1], dan_X_2_ips[0])
       # disable feature
-      disable_feature(dan_X_1, switch_from, pruicss_ports)
-      disable_feature(dan_X_2, switch_from, pruicss_ports)
+      disable_feature(dan_X_1, switch_from, dan_X_1_pruicss_ports)
+      disable_feature(dan_X_2, switch_from, dan_X_2_pruicss_ports)
     end
-    test_comment = "Feature #{switch_from} verified over interface: #{pruicss_ports}."
+    test_comment = "Feature #{switch_from} verified over interface: #{dan_X_1_pruicss_ports}/#{dan_X_2_pruicss_ports}."
     test_comment += " Ping successful at payloads: #{payloads}." if payloads.length > 1
     test_comment += " Verified Multicast filtering support." if mc_filter == 1
     # switch to protocol and verify
     if enable_switching == "yes"
       if switch_to == "emac"
-        emac_status(dan_X_1, dan_X_2, pruicss_ports, dan_X_1_ips, dan_X_2_ips)
+        emac_status(dan_X_1, dan_X_2, dan_X_1_pruicss_ports, dan_X_2_pruicss_ports, dan_X_1_ips, dan_X_2_ips)
       else
-        pruicss_ports = [dan_X_1.params["#{switch_to}_port1"], dan_X_1.params["#{switch_to}_port2"]]
+        dan_X_1_pruicss_ports = [dan_X_1.params["#{switch_to}_port1"], dan_X_1.params["#{switch_to}_port2"]]
+        dan_X_2_pruicss_ports = [dan_X_2.params["#{switch_to}_port1"], dan_X_2.params["#{switch_to}_port2"]]
         disable_feature(dan_X_1, switch_from, pruicss_ports)
         disable_feature(dan_X_2, switch_from, pruicss_ports)
         # setting offload to true as switching of feature need to
         # be done by offloading feature using ethtool utility
         offload = true
-        enable_feature(dan_X_1, switch_to, cmd_to, dan_X_1_ips[0], pruicss_ports, offload)
-        enable_feature(dan_X_2, switch_to, cmd_to, dan_X_2_ips[0], pruicss_ports, offload)
+        cmd = get_cmd(switch_to, dan_X_1_pruicss_ports)
+        enable_feature(dan_X_1, switch_to, cmd, dan_X_1_ips[0], dan_X_1_pruicss_ports, offload)
+        cmd = get_cmd(switch_to, dan_X_2_pruicss_ports)
+        enable_feature(dan_X_2, switch_to, cmd, dan_X_2_ips[0], dan_X_2_pruicss_ports, offload)
         ping_status(dan_X_1, dan_X_2_ips[0])
         # disable any one pruicss_port and verify redundancy
-        verify_redundancy(dan_X_1, dan_X_2, pruicss_ports[1], dan_X_2_ips[0])
+        verify_redundancy(dan_X_1, dan_X_2, dan_X_1_pruicss_ports[1], dan_X_2_ips[0])
         # disable feature
-        disable_feature(dan_X_1, switch_to, pruicss_ports)
-        disable_feature(dan_X_2, switch_to, pruicss_ports)
+        disable_feature(dan_X_1, switch_to, dan_X_1_pruicss_ports)
+        disable_feature(dan_X_2, switch_to, dan_X_2_pruicss_ports)
       end
       test_comment = "Runtime configurabilty from #{switch_from} to #{switch_to} verified."
     end
@@ -105,11 +111,19 @@ def run
   end
 end
 
+# function to generate and return ip link command
+def get_cmd(feature, pruicss_ports, id = "0")
+  cmd = "ip link add name #{feature}#{id} type #{feature} slave1 #{pruicss_ports[0]} slave2 #{pruicss_ports[1]} supervision 45"
+  cmd += " version 1" if feature == "hsr"
+  return cmd
+end
+
 # function to verify emac, this function enables
 # interfaces in emac mode and verifies using ping
-def emac_status(dan_X_1, dan_X_2, pruicss_ports, dan_X_1_ips, dan_X_2_ips)
-  setup_pruicss_ports(dan_X_1, pruicss_ports, dan_X_1_ips)
-  setup_pruicss_ports(dan_X_2, pruicss_ports, dan_X_2_ips)
+def emac_status(dan_X_1, dan_X_2, dan_X_1_pruicss_ports, dan_X_2_pruicss_ports, dan_X_1_ips, dan_X_2_ips)
+  setup_pruicss_ports(dan_X_1, dan_X_1_pruicss_ports, dan_X_1_ips)
+  setup_pruicss_ports(dan_X_2, dan_X_2_pruicss_ports, dan_X_2_ips)
+  sleep(10) # give time to initialize ports
   ping_status(dan_X_1, dan_X_2_ips[0])
 end
 
@@ -132,6 +146,7 @@ def enable_feature(dan_X_n, feature, command, ipaddr, pruicss_ports, offload = f
   dan_X_n.send_cmd("ifconfig #{pruicss_ports[1]} up", dan_X_n.prompt, 10)
   dan_X_n.send_cmd("#{command}", dan_X_n.prompt, 10)
   dan_X_n.send_cmd("ifconfig #{feature}#{id} #{ipaddr} up", dan_X_n.prompt, 10)
+  sleep(10) # give time to initialize link
   dan_X_n.send_cmd("ifconfig", dan_X_n.prompt, 10)
   if !(dan_X_n.response =~ Regexp.new("(#{feature}#{id}\s+Link\sencap:Ethernet\s+HWaddr)")) or dan_X_n.timeout?
     raise "Failed to enable #{feature}."

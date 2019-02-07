@@ -28,16 +28,17 @@ end
 def run
   # get dut params
   feature = @test_params.params_chan.feature[0]
-  cmd = @test_params.params_chan.instance_variable_defined?(:@cmd) ? @test_params.params_chan.cmd[0] : ""
+
+  # consider dut1 as DAN-X-1 and dut2 as DAN-X-2,
+  # X can be P->PRP or H->HSR, Example: DAN-H-1
+  dan_X_1 = @equipment['dut1']
+  dan_X_2 = @equipment['dut2']
 
   # get ip addresses for dut1 and dut2 from bench file
-  dut1_if02, dut1_if03 = @equipment['dut1'].params['dut1_if'], @equipment['dut1'].params['dut1_if2']
-  dut1_if04, dut1_if05 = @equipment['dut1'].params['dut1_if4'], @equipment['dut1'].params['dut1_if5']
-  dut2_if02, dut2_if03 = @equipment['dut2'].params['dut2_if'], @equipment['dut2'].params['dut2_if2']
-  dut2_if04, dut2_if05 = @equipment['dut2'].params['dut2_if4'], @equipment['dut2'].params['dut2_if5']
-
-  # get pruicss port information
-  pruicss_ports = [@equipment['dut1'].params["#{feature}_port1"], @equipment['dut1'].params["#{feature}_port2"]]
+  dan_X_1_ips = [dan_X_1.params['dut1_if'], dan_X_1.params['dut1_if2'],
+                 dan_X_1.params['dut1_if4'], dan_X_1.params['dut1_if5']]
+  dan_X_2_ips = [dan_X_2.params['dut2_if'], dan_X_2.params['dut2_if2'],
+                 dan_X_2.params['dut2_if4'], dan_X_2.params['dut2_if5']]
 
   vlan_filter = @test_params.params_chan.instance_variable_defined?(:@vlan_filter) ? @test_params.params_chan.vlan_filter[0].to_i : 0
   mc_filter = @test_params.params_chan.instance_variable_defined?(:@mc_filter) ? @test_params.params_chan.mc_filter[0].to_i : 0
@@ -46,64 +47,70 @@ def run
 
   test_comment = ""
   begin
+    # get pruicss port information
+    dan_X_1_pruicss_ports = [dan_X_1.params["#{feature}_port1"], dan_X_1.params["#{feature}_port2"]]
+    dan_X_2_pruicss_ports = [dan_X_2.params["#{feature}_port1"], dan_X_2.params["#{feature}_port2"]]
     if feature == "emac"
-      enable_vlan_over_emac(@equipment['dut1'], pruicss_ports[0], dut1_if02, dut1_if03, 2 , 3)
-      enable_vlan_over_emac(@equipment['dut1'], pruicss_ports[1], dut1_if04, dut1_if05, 4 , 5)
-      enable_vlan_over_emac(@equipment['dut2'], pruicss_ports[0], dut2_if02, dut2_if03, 2 , 3)
-      enable_vlan_over_emac(@equipment['dut2'], pruicss_ports[1], dut2_if04, dut2_if05, 4 , 5)
-      ping_status(@equipment['dut1'], dut2_if02)
-      ping_status(@equipment['dut1'], dut2_if03)
-      ping_status(@equipment['dut2'], dut1_if04)
-      ping_status(@equipment['dut2'], dut1_if05)
+      enable_vlan_over_emac(dan_X_1, dan_X_1_pruicss_ports[0], dan_X_1_ips[0], dan_X_1_ips[1], 2 , 3)
+      enable_vlan_over_emac(dan_X_1, dan_X_1_pruicss_ports[1], dan_X_1_ips[2], dan_X_1_ips[3], 4 , 5)
+      enable_vlan_over_emac(dan_X_2, dan_X_2_pruicss_ports[0], dan_X_2_ips[0], dan_X_2_ips[1], 2 , 3)
+      enable_vlan_over_emac(dan_X_2, dan_X_2_pruicss_ports[1], dan_X_2_ips[2], dan_X_2_ips[3], 4 , 5)
+      ping_status(dan_X_1, dan_X_2_ips[0])
+      ping_status(dan_X_1, dan_X_2_ips[1])
+      ping_status(dan_X_2, dan_X_1_ips[2])
+      ping_status(dan_X_2, dan_X_1_ips[3])
     else
-      enable_feature(@equipment['dut1'], feature, cmd, dut1_if02, pruicss_ports)
-      enable_feature(@equipment['dut2'], feature, cmd, dut2_if02, pruicss_ports)
-      ping_status(@equipment['dut1'], dut2_if02)
-      enable_vlan(@equipment['dut1'], feature, dut1_if02, dut1_if03)
-      enable_vlan(@equipment['dut2'], feature, dut2_if02, dut2_if03, dut2_if05, mc_filter)
-      ping_status(@equipment['dut1'], dut2_if02)
-      ping_status(@equipment['dut2'], dut1_if03)
-      verify_packets(@equipment['dut1'], feature)
-      verify_packets(@equipment['dut2'], feature)
+      cmd = get_cmd(feature, dan_X_1_pruicss_ports)
+      enable_feature(dan_X_1, feature, cmd, dan_X_1_ips[0], dan_X_1_pruicss_ports)
+      cmd = get_cmd(feature, dan_X_2_pruicss_ports)
+      enable_feature(dan_X_2, feature, cmd, dan_X_2_ips[0], dan_X_2_pruicss_ports)
+
+      ping_status(dan_X_1, dan_X_2_ips[0])
+      enable_vlan(dan_X_1, feature, dan_X_1_ips[0], dan_X_1_ips[1])
+      enable_vlan(dan_X_2, feature, dan_X_2_ips[0], dan_X_2_ips[1], dan_X_2_ips[3], mc_filter)
+      ping_status(dan_X_1, dan_X_2_ips[0])
+      ping_status(dan_X_2, dan_X_1_ips[1])
+      verify_packets(dan_X_1, feature)
+      verify_packets(dan_X_2, feature)
     end
     test_comment += "VLAN over #{feature} verified."
 
     if vlan_tag == 1
-      verify_vlan_tag(@equipment['dut1'], @equipment['dut2'], pruicss_ports[0], dut1_if02)
-      verify_vlan_tag(@equipment['dut1'], @equipment['dut2'], pruicss_ports[1], dut1_if05) if feature == "emac"
+      verify_vlan_tag(dan_X_1, dan_X_2, dan_X_1_pruicss_ports[0], dan_X_1_ips[0])
+      verify_vlan_tag(dan_X_1, dan_X_2, dan_X_1_pruicss_ports[1], dan_X_1_ips[3]) if feature == "emac"
       test_comment += " Verified the frames are VLAN tagged."
     end
 
     # verify vlan filtering if vlan_filter set to 1
     if vlan_filter == 1
-      is_vlan_filter_enabled(@equipment['dut1'], feature)
-      is_vlan_filter_enabled(@equipment['dut2'], feature)
-      verify_vlan_filtering(@equipment['dut1'], @equipment['dut2'], dut1_if02, pruicss_ports[0])
+      is_vlan_filter_enabled(dan_X_1, feature)
+      is_vlan_filter_enabled(dan_X_2, feature)
+      verify_vlan_filtering(dan_X_1, dan_X_2, dan_X_1_ips[0], dan_X_1_pruicss_ports[0], dan_X_2_pruicss_ports[0])
       # passing invalid vlan ip and  dropped as true to verify dropped count
-      verify_vlan_filtering(@equipment['dut1'], @equipment['dut2'], dut2_if05, pruicss_ports[0], true)
+      verify_vlan_filtering(dan_X_1, dan_X_2, dan_X_2_ips[3], dan_X_1_pruicss_ports[0], dan_X_2_pruicss_ports[0], true)
       test_comment += " Verified VLAN filtering support."
     end
     # verify multicast filtering if mc_filter set to 1
     if mc_filter == 1 and mc_cli_ser_bins != ""
-      setup_mc_cli_ser(@equipment['dut1'], @equipment['dut2'], mc_cli_ser_bins)
-      is_mc_filter_enabled(@equipment['dut1'], feature)
-      is_mc_filter_enabled(@equipment['dut2'], feature)
+      setup_mc_cli_ser(dan_X_1, dan_X_2, mc_cli_ser_bins)
+      is_mc_filter_enabled(dan_X_1, feature)
+      is_mc_filter_enabled(dan_X_2, feature)
       # passing invalid vlan ip and dropped as true to verify dropped count
-      verify_mc_filtering(@equipment['dut1'], @equipment['dut2'], dut1_if02, dut2_if05, feature, pruicss_ports[0], true)
-      verify_mc_filtering(@equipment['dut1'], @equipment['dut2'], dut1_if02, dut2_if02, feature, pruicss_ports[0])
+      verify_mc_filtering(dan_X_1, dan_X_2, dan_X_1_ips[0], dan_X_2_ips[3], feature, dan_X_1_pruicss_ports[0], true)
+      verify_mc_filtering(dan_X_1, dan_X_2, dan_X_1_ips[0], dan_X_2_ips[0], feature, dan_X_1_pruicss_ports[0])
       test_comment += " Verified Multicast filtering support."
     end
     # disable vlan and feature
     if feature == "emac"
-      disable_vlan_over_emac(@equipment['dut1'], pruicss_ports[0], 2, 3)
-      disable_vlan_over_emac(@equipment['dut1'], pruicss_ports[1], 4, 5)
-      disable_vlan_over_emac(@equipment['dut2'], pruicss_ports[0], 2, 3)
-      disable_vlan_over_emac(@equipment['dut2'], pruicss_ports[1], 4, 5)
+      disable_vlan_over_emac(dan_X_1, dan_X_1_pruicss_ports[0], 2, 3)
+      disable_vlan_over_emac(dan_X_1, dan_X_1_pruicss_ports[1], 4, 5)
+      disable_vlan_over_emac(dan_X_2, dan_X_2_pruicss_ports[0], 2, 3)
+      disable_vlan_over_emac(dan_X_2, dan_X_2_pruicss_ports[1], 4, 5)
     else
-      disable_vlan(@equipment['dut1'], feature)
-      disable_vlan(@equipment['dut2'], feature)
-      disable_feature(@equipment['dut1'], feature, pruicss_ports)
-      disable_feature(@equipment['dut2'], feature, pruicss_ports)
+      disable_vlan(dan_X_1, feature)
+      disable_vlan(dan_X_2, feature)
+      disable_feature(dan_X_1, feature, dan_X_1_pruicss_ports)
+      disable_feature(dan_X_2, feature, dan_X_2_pruicss_ports)
     end
 
     set_result(FrameworkConstants::Result[:pass], "Test Passed. #{test_comment}")
@@ -177,14 +184,14 @@ end
 
 # function to verify vlan filtering, this function pings to invalid vlan
 # interface(0.5) and verifies vlan dropped count using ethtool utility.
-def verify_vlan_filtering(dut, dut_sec, ipaddr, pruicss_port, dropped = false)
-  dut.send_cmd("ethtool -S #{pruicss_port}", dut.prompt, 10)
+def verify_vlan_filtering(dut, dut_sec, ipaddr, dan_X_1_pruicss_port, dan_X_2_pruicss_port, dropped = false)
+  dut.send_cmd("ethtool -S #{dan_X_1_pruicss_port}", dut.prompt, 10)
   lrevlandropped = dut.response[/(lreVlanDropped:\s*\d*)/]
   dut_sec.send_cmd("ping -c 20 #{ipaddr}", dut_sec.prompt, 30)
   sleep(5)
-  dut.send_cmd("ethtool -S #{pruicss_port}", dut.prompt, 10)
+  dut.send_cmd("ethtool -S #{dan_X_1_pruicss_port}", dut.prompt, 10)
   lrevlandropped_n = dut.response[/(lreVlanDropped:\s*\d*)/]
-  dut_sec.send_cmd("cat /sys/kernel/debug/prueth-#{pruicss_port}/stats", dut_sec.prompt, 10)
+  dut_sec.send_cmd("cat /sys/kernel/debug/prueth-#{dan_X_2_pruicss_port}/stats", dut_sec.prompt, 10)
   if dropped == true and lrevlandropped == lrevlandropped_n
     raise "Failed to verify dropped count for vlan."
   end

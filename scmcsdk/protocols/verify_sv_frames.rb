@@ -10,7 +10,7 @@ end
 def run
   # get dut params
   feature = @test_params.params_chan.feature[0]           # feature to load initially
-  cmd = @test_params.params_chan.cmd[0]                   # command to enable feature link
+  cmd_options = @test_params.params_chan.instance_variable_defined?(:@cmd_options) ? @test_params.params_chan.cmd_options[0] : ""
 
   # get bandwidth, time, rx_usecs and adaptive_rx
   vlan = @test_params.params_chan.instance_variable_defined?(:@vlan) ? @test_params.params_chan.vlan[0] : "no"
@@ -28,17 +28,21 @@ def run
   test_comment = ""
   begin
     # get pruicss port information
-    pruicss_ports = [dan_X_1.params["#{feature}_port1"], dan_X_1.params["#{feature}_port2"]]
-    enable_feature(dan_X_1, feature, cmd, dan_X_1_ip, pruicss_ports)
-    enable_feature(dan_X_2, feature, cmd, dan_X_2_ip, pruicss_ports)
+    dan_X_1_pruicss_ports = [dan_X_1.params["#{feature}_port1"], dan_X_1.params["#{feature}_port2"]]
+    cmd = (get_cmd(feature, dan_X_1_pruicss_ports) + " #{cmd_options}").gsub("supervision 45", "supervision 0")
+    enable_feature(dan_X_1, feature, cmd, dan_X_1_ip, dan_X_1_pruicss_ports)
+    dan_X_2_pruicss_ports = [dan_X_2.params["#{feature}_port1"], dan_X_2.params["#{feature}_port2"]]
+    cmd = (get_cmd(feature, dan_X_2_pruicss_ports) + " #{cmd_options}").gsub("supervision 45", "supervision 0")
+    enable_feature(dan_X_2, feature, cmd, dan_X_2_ip, dan_X_2_pruicss_ports)
+
     ping_status(dan_X_1, dan_X_2_ip)
 
-    display_stats(dan_X_1, dan_X_2, feature, pruicss_ports[0], vlan, id)
-    verify_sv_frames(dan_X_2, pruicss_ports[0], vlan)
+    display_stats(dan_X_1, dan_X_2, feature, dan_X_2_pruicss_ports[0], vlan, id)
+    verify_sv_frames(dan_X_2, dan_X_2_pruicss_ports[0], vlan)
 
     # disable feature
-    disable_feature(dan_X_1, feature, pruicss_ports)
-    disable_feature(dan_X_2, feature, pruicss_ports)
+    disable_feature(dan_X_1, feature, dan_X_1_pruicss_ports)
+    disable_feature(dan_X_2, feature, dan_X_2_pruicss_ports)
 
     test_comment = "#{feature.upcase}: Verified SV frames are transmitted and received using VLAN=#{vlan}"
     set_result(FrameworkConstants::Result[:pass], "Test Passed. #{test_comment}.")

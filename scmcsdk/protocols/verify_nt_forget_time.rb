@@ -10,7 +10,6 @@ end
 def run
   # get dut params
   feature = @test_params.params_chan.feature[0]               # feature to load initially
-  cmd = @test_params.params_chan.cmd[0]                       # command to enable feature link
   forget_time = @test_params.params_chan.forget_time[0].to_i  # node table forget time in seconds
 
   # consider dut1 as DAN-X-1 and dut2 as DAN-X-2,
@@ -25,14 +24,17 @@ def run
   test_comment = ""
   begin
     # get pruicss port information
-    pruicss_ports = [dan_X_1.params["#{feature}_port1"], dan_X_1.params["#{feature}_port2"]]
-    enable_feature(dan_X_1, feature, cmd, dan_X_1_ip, pruicss_ports)
-    enable_feature(dan_X_2, feature, cmd, dan_X_2_ip, pruicss_ports)
+    dan_X_1_pruicss_ports = [dan_X_1.params["#{feature}_port1"], dan_X_1.params["#{feature}_port2"]]
+    cmd = get_cmd(feature, dan_X_1_pruicss_ports)
+    enable_feature(dan_X_1, feature, cmd, dan_X_1_ip, dan_X_1_pruicss_ports)
+    dan_X_2_pruicss_ports = [dan_X_2.params["#{feature}_port1"], dan_X_2.params["#{feature}_port2"]]
+    cmd = get_cmd(feature, dan_X_2_pruicss_ports)
+    enable_feature(dan_X_2, feature, cmd, dan_X_2_ip, dan_X_2_pruicss_ports)
 
-    verify_nt_forget_time(dan_X_1, dan_X_2, feature, pruicss_ports[0], dan_X_2_ip, forget_time)
+    verify_nt_forget_time(dan_X_1, dan_X_2, feature, dan_X_1_pruicss_ports[0], dan_X_2_ip, forget_time)
 
-    disable_feature(dan_X_1, feature, pruicss_ports)
-    disable_feature(dan_X_2, feature, pruicss_ports)
+    disable_feature(dan_X_1, feature, dan_X_1_pruicss_ports)
+    disable_feature(dan_X_2, feature, dan_X_2_pruicss_ports)
 
     test_comment = "Verified node table forget time in #{feature.upcase} mode"
     set_result(FrameworkConstants::Result[:pass], "Test Passed. #{test_comment}.")
@@ -43,14 +45,14 @@ end
 
 # function to verify node table forget time
 def verify_nt_forget_time(dan_X_1, dan_X_2, feature, pruicss_port, dan_X_2_ip, forget_time)
-  dan_X_1.send_cmd("cat /sys/kernel/debug/prueth-#{feature}-2/node_table", dan_X_1.prompt, 10)
-  dan_X_2.send_cmd("cat /sys/kernel/debug/prueth-#{feature}-2/node_table", dan_X_2.prompt, 10)
+  dan_X_1.send_cmd("cat /sys/kernel/debug/prueth-#{feature}-*/node_table", dan_X_1.prompt, 10)
+  dan_X_2.send_cmd("cat /sys/kernel/debug/prueth-#{feature}-*/node_table", dan_X_2.prompt, 10)
   dan_X_1.send_cmd("cat /sys/class/net/#{pruicss_port}/address", dan_X_1.prompt, 10)
   # get dan X 1 mac address
   dan_X_1_mac_addr = dan_X_1.response[/\w+:\w+:\w+:\w+:\w+:\w+/]
   ping_status(dan_X_1, dan_X_2_ip)
-  dan_X_1.send_cmd("cat /sys/kernel/debug/prueth-#{feature}-2/node_table", dan_X_1.prompt, 10)
-  dan_X_2.send_cmd("cat /sys/kernel/debug/prueth-#{feature}-2/node_table", dan_X_2.prompt, 10)
+  dan_X_1.send_cmd("cat /sys/kernel/debug/prueth-#{feature}-*/node_table", dan_X_1.prompt, 10)
+  dan_X_2.send_cmd("cat /sys/kernel/debug/prueth-#{feature}-*/node_table", dan_X_2.prompt, 10)
   if !( dan_X_2.response =~ /#{dan_X_1_mac_addr}/ )
     raise "Node table entry not found."
   end
