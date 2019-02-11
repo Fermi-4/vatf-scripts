@@ -165,7 +165,7 @@ def run_openssl_performance(log)
              block_size=$2
              number_of_blocks=$3
              time_taken=$4
-             throughput=number_of_blocks.to_f*block_size.to_f/((time_taken.to_f)*1000)
+             throughput=number_of_blocks.to_f*block_size.to_f/((time_test.to_f)*1000)
              perf_data << {'name' => "#{algo_name}_throughput_#{block_size}_bytes", 'value' => throughput, 'units' => "KBytes/s"}
              next
           end
