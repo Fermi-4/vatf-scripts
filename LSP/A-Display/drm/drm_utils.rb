@@ -579,3 +579,30 @@ def get_format_length(format)
              4
            end
 end
+
+#Function to obtain the index of the first mode that matches the
+#properties given mode in param mode, takes
+#  mode, hash containing the mode information, must contain at least
+#        one of the "key" => <value> pair presentd in the following example:
+#        {"name"=>"1920x1080",
+#         "refresh (Hz)"=>"53",
+#         "hdisp"=>"1920",
+#         "hss"=>"2008",
+#         "hse"=>"2096",
+#         "htot"=>"2360",
+#         "vdisp"=>"1080",
+#         "vss"=>"1084",
+#         "vse"=>"1089",
+#         "vtot)"=>"1125",
+#         nil=>"139930",
+#         "flags:"=>" phsync, pvsync;",
+#         "type:"=>" preferred, driver\r"}
+# modes, a list of modes (hashes) to search
+#Returns the index of the first element in modes that matches the data
+#given in mode. If no mode is found return -1
+def get_mode_idx(mode, modes)
+  modes.each_with_index do |m, i|
+	return i if mode.all? {|k,v| m[k] == v}
+  end
+  -1
+end

@@ -50,6 +50,10 @@ def run
     sleep 1
     @equipment['hdmi_sw'].connect_video_audio(@equipment['dut1'].video_io_info.hdmi_outputs.values[0], @equipment['server1'].video_io_info.hdmi_inputs.values[0])
     sleep 5
+    drm_info = get_properties()
+    hdmi_info = drm_info['Connectors:'].select{ |x| x['name'].match(/HDMI/) }
+    mode_idx = get_mode_idx({"name"=>"1280x720", "refresh (Hz)"=>"60"}, hdmi_info[0]["modes:"])
+    @equipment['dut1'].send_cmd("su root setprop ro.hwc.hdmiedid #{mode_idx}")
   end
 
   perf_data = []
