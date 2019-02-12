@@ -301,6 +301,8 @@ module LspTestScript
 
     new_params['dut'].prompt =  /#{@test_params.var_fs_prompt}/ if @test_params.instance_variable_defined?(:@var_fs_prompt)
 
+    new_params['start_remoteproc_cmd'] = @test_params.instance_variable_defined?(:@var_start_remoteproc_cmd) ? @test_params.var_start_remoteproc_cmd : ''
+
     new_params
   end
 
