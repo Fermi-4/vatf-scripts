@@ -770,6 +770,28 @@ module LspTestScript
         end
     end
 
+    # Choose interface via relay 
+    # Ex bench:dut.params = {'iface_selection'=> {'pru' => [{'rly16.192.168.0.20' => 1}, {'rly16.192.168.0.20' => 2}] } }
+    if params['dut'].params.has_key?('iface_selection')
+      # reset to default interface selection
+      portss = params['dut'].params['iface_selection'].values
+      portss.each {|ports|
+        @power_handler.load_power_ports(ports)
+        @power_handler.switch_on(ports)
+      } 
+
+      if @test_params.params_control.instance_variable_defined?(:@iface_type)
+        # set to the desired interface
+        iface_type = @test_params.params_control.iface_type[0] 
+        if params['dut'].params['iface_selection'].has_key?("#{iface_type}")
+          ports = params['dut'].params['iface_selection']["#{iface_type}"] 
+          @power_handler.load_power_ports(ports)
+          @power_handler.switch_off(ports)
+        end
+      end
+
+    end
+
     boot_dut(translated_boot_params)
 
     connect_to_equipment(device_name)
