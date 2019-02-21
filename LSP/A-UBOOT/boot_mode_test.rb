@@ -90,7 +90,7 @@ def run
 
       test_uboot = @test_params.params_chan.instance_variable_defined?(:@test_uboot) ? @test_params.params_chan.test_uboot[0].downcase : "no"
       if test_uboot != 'no'
-        bparams['dut'].send_cmd("saveenv", /done|Writing\s+to\s+NAND.*OK/i, 10)
+        bparams['dut'].send_cmd("saveenv", /done|\.\.\s*ok|Writing\s+to\s+NAND.*OK/i, 10)
         
         if bparams['dut'].timeout? 
           result += 1 
