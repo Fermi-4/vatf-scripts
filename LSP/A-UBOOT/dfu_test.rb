@@ -52,11 +52,6 @@ def run
       alt_name_secondary_bootloader_raw = "u-boot.img.raw"
       dfu_alt_info_fat_mmc = "\"#{alt_name_initial_bootloader_fat} fat 1 1;#{alt_name_sysfw_fat} fat 1 1;#{alt_name_primary_bootloader_fat} fat 1 1;#{alt_name_secondary_bootloader_fat} fat 1 1\""
       dfu_alt_info_raw_mmc = "\"#{alt_name_initial_bootloader_raw} raw 0x0 0x400 mmcpart 1;#{alt_name_primary_bootloader_raw} raw 0x400 0x1000 mmcpart 1;#{alt_name_secondary_bootloader_raw} raw 0x1400 0x2800 mmcpart 1;#{alt_name_sysfw_raw} raw 0x3d00 0x300 mmcpart 1\" "
-
-      if use_uboot_env == 'yes'
-        dfu_alt_info_fat_mmc = "\"${dfu_alt_info_mmc}\" "
-        dfu_alt_info_raw_mmc = "\"${dfu_alt_info_emmc}\" "
-      end
     else
       alt_name_primary_bootloader_fat = "MLO"
       alt_name_secondary_bootloader_fat = "u-boot.img"
@@ -69,6 +64,11 @@ def run
         else
           dfu_alt_info_raw_mmc = "\"#{alt_name_primary_bootloader_raw} raw 0x100 0x200;#{alt_name_secondary_bootloader_raw} raw 0x300 0x1000\" "
       end
+    end
+
+    if use_uboot_env == 'yes'
+      dfu_alt_info_fat_mmc = "\"${dfu_alt_info_mmc}\" "
+      dfu_alt_info_raw_mmc = "\"${dfu_alt_info_emmc}\" "
     end
 
   when /spi/
@@ -85,6 +85,7 @@ def run
     case @test_params.platform 
       when /dra7/
         dfu_alt_info_raw_spi = "\"#{alt_name_primary_bootloader_raw} raw 0x0 0x20000;#{alt_name_secondary_bootloader_raw} raw 0x40000 0x100000\" "
+        dfu_alt_info_raw_spi = " \"${dfu_alt_info_qspi}\" " if use_uboot_env == 'yes'
       when /am654/
         dfu_alt_info_raw_spi = "\"#{alt_name_sysfw_raw} raw 0x7a0000 0x60000;#{alt_name_initial_bootloader_raw} raw 0x0 0x80000;#{alt_name_primary_bootloader_raw} raw 0x80000 0x200000;#{alt_name_secondary_bootloader_raw} raw 0x280000 0x500000\" "
         dfu_alt_info_raw_spi = " \"${dfu_alt_info_ospi}\" " if use_uboot_env == 'yes'
@@ -94,7 +95,6 @@ def run
   when /ram/
     # generate testfile in host
     filesize = @test_params.params_chan.filesize[0]  # filesize in decimal
-puts "filesize:"+filesize
     filesize_hex = filesize.to_i.to_s(16)
     size_in_k = (filesize.to_i / 1024).to_s
     filename_ram = "#{@equipment['server1'].tftp_path}/dfu_ram_testfile"

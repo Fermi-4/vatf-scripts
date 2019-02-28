@@ -16,7 +16,7 @@ def run
 
   test_mode = @test_params.params_control.instance_variable_defined?(:@test_mode) ? @test_params.params_control.test_mode[0].to_s : 'promisc'
   eth_params['iface'] = @test_params.params_control.instance_variable_defined?(:@iface) ? @test_params.params_control.iface[0].to_s : 'eth0'
-  # get target dut ip
+  @equipment['dut1'].send_cmd("ethtool -i #{eth_params['iface']}", @equipment['dut1'].prompt, 10, false)
   eth_params['dut_ip'] = get_ip_address_by_interface('dut1',eth_params['iface'])
   eth_params['dut_mac'] = get_mac_addr('dut1', eth_params['iface'])
 
