@@ -36,7 +36,7 @@ def run
 
   # media options: fat-mmc, raw-mmc, fat-emmc, raw-emmc, nand, qspi etc
   media = @test_params.params_chan.instance_variable_defined?(:@media) ? @test_params.params_chan.media[0].downcase : 'fat-mmc'
-  use_uboot_env = @test_params.params_chan.instance_variable_defined?(:@use_uboot_env) ? @test_params.params_chan.usb_uboot_env[0].downcase : 'yes' 
+  use_uboot_env = @test_params.params_chan.instance_variable_defined?(:@use_uboot_env) ? @test_params.params_chan.use_uboot_env[0].downcase : 'yes' 
   case media
   when /mmc/
     if @test_params.platform =~ /am654x/
