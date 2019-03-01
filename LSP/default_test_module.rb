@@ -772,7 +772,7 @@ module LspTestScript
 
     # Choose interface via relay 
     # Ex bench:dut.params = {'iface_selection'=> {'pru' => [{'rly16.192.168.0.20' => 1}, {'rly16.192.168.0.20' => 2}] } }
-    if params['dut'].params.has_key?('iface_selection')
+    if params['dut'].instance_variable_defined?(:@params) and params['dut'].params.has_key?('iface_selection')
       # reset to default interface selection
       portss = params['dut'].params['iface_selection'].values
       portss.each {|ports|
