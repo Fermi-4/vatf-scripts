@@ -44,9 +44,9 @@ def run
   # Test parameters to enable PPS offset
   enable_pps_offset = @test_params.params_chan.instance_variable_defined?(:@enable_pps_offset)? @test_params.params_chan.enable_pps_offset[0].to_i: 0
   pps_offset_file = @test_params.params_chan.instance_variable_defined?(:@pps_offset_file)? @test_params.params_chan.pps_offset_file[0].to_s : ""
-  # Value needs to be converted to ns for calculations.
+  # pps_offset_value needs to be converted to ns for calculations.
   pps_offset_value = @test_params.params_chan.instance_variable_defined?(:@pps_offset_value)? @test_params.params_chan.pps_offset_value[0].to_i: 0
-  # Test parameters to set RX/TX configurable latency. Value needs to be converted to ns for calculations.
+  # Test parameters to set RX/TX configurable latency. rx_tx_delay value needs to be converted to ns for calculations.
   rx_tx_delay = @test_params.params_chan.instance_variable_defined?(:@rx_tx_delay)? @test_params.params_chan.rx_tx_delay[0].to_i: 0
   # Test parameter timeout is for number of times the oscope measurement should be made.
   timeout = @test_params.params_chan.timeout[0].to_i
@@ -70,6 +70,10 @@ def run
   begin
     if (enable_pps == 1)
       # Enable 1PPS output and perform SW checks for master (reference) and slave.
+      @results_html_file.add_paragraph "============================================"
+      @results_html_file.add_paragraph("1PPS Setup Information (Oscilloscope):\nPTP MASTER Board: Oscilloscope ch#{ref_ch}; master_port = #{master_port}; master_if = #{master_if}\nPTP SLAVE Board: Oscilloscope ch#{slave_ch}; slave_port=#{slave_port}; slave_if = #{slave_if}\npps_offset_value= #{pps_offset_value}ns\n rx_tx_delay = #{rx_tx_delay}ns")
+      @results_html_file.add_paragraph "============================================"
+      @results_html_file.add_paragraph("Result Key: P = Pass, F = Fail, X = Busy\n")
       verify_pps(@equipment['dut1'], slave_port, slave_if, pps_enable_file)
       verify_pps(@equipment['dut2'], master_port, master_if, pps_enable_file)
       if (enable_oscope_measurements == 1)
@@ -79,23 +83,25 @@ def run
         if (osc_config_success == 1)
           # Verify 1PPS time period via oscilloscope for master and slave/reference channels.
           if (enable_pps_offset == 1)
-            set_pps_offset(@equipment['dut2'], pps_offset_value, pps_offset_file)
+            set_pps_offset(@equipment['dut1'], slave_if, pps_offset_value, pps_offset_file)
           end
           verify_hw_1pps(slave_ch,timeout)
           verify_hw_1pps(ref_ch,timeout)
           test_comment = "1 PPS generation verified (via both sw and oscilloscope) and "
           # Verify OC via SW and HW (oscilloscope) measurements per jitter spec and
           # input channels defined in bench file
-          verify_ptp_oc(@equipment['dut1'], @equipment['dut2'], port, slave_port, slave_if,
+          if (jitter_spec != 0)
+            verify_ptp_oc(@equipment['dut1'], @equipment['dut2'], port, slave_port, slave_if,
                         master_port, master_if, egress_lat, ingress_lat, pass_crit, timeout,
                         enable_oscope_measurements, jitter_spec, ref_ch, slave_ch, pps_offset_value,
                         rx_tx_delay)
-          test_comment += "PTP Ordinary Clock on #{port} verified (via both sw and oscilloscope)."
+            test_comment += "PTP Ordinary Clock on #{port} verified (via both sw and oscilloscope)."
+          end
         else
          raise "Oscilloscope configuration failed."
         end
       else
-        test_comment = "1 PPS generation and "
+        test_comment = "1 PPS generation verified. "
       end
     else
       verify_ptp_oc(@equipment['dut1'], @equipment['dut2'], port, slave_port, slave_if,
@@ -119,50 +125,79 @@ def verify_jitter(cha=1, chb=2, jitter_spec=50e-9, jitter_delay=0, timeout=5)
   current_jitter = 0
   # Convert to nanoseconds
   jitter_delay = jitter_delay*1e-9
-  # Oscope Resolution is 5ns
-  oscope_resolution = 5e-9
+  # Oscope Resolution is 5ns, Worst case resolution for CPTS clock is 10ns
+  clock_resolution = 10e-9
+  test_comment = ""
+  # Here an error margin is needed. Reasons:
+  # 1. CPTS Clock resolution is 10ns and IEP clock resolution is 5ns. This
+  # causes an inherent inacurracy when no delay is applied. This needs to be accounted.
+  # 2. For PPS offset delay, the delay should match more closely.
+  # 3. For configurable RX/TX latency checking, the number setup in config file
+  # is compensated in the algorithm but may not result in abslute programmed
+  # delay. Further, the customer is advised to use the recommended values from
+  # ti.com for the config file. Still, value of testing is twofold:
+  #  a. As the algortihm changes over time, the published number may need to be
+  # updated. This would get flagged in the nightly regression.
+  #  b. We are testing that the value is configurable i.e. can be changed via
+  # config file.
+  # For the above reasons, an assumption is made that the average delay should
+  # be +-20% i.e. at least 0.8x of the programmed delay.
+  # Skipping check for the the upper bound, i.e. 1.2x. This upper bound is
+  # already being checked by the jitter spec check e.g. +-50ns for OC.
+  delay_error_margin = 0.8
+
   # Reset oscilloscope and take oscilloscope measurements
   @equipment['oscope1'].reset_oscope()
   @results_html_file.add_paragraph "============================================"
-  @results_html_file.add_paragraph("Measuring jitter between reference = ch#{cha} and slave = ch#{chb} for #{timeout} seconds.",nil,nil,nil)
-  @results_html_file.add_paragraph "============================================"
+  @results_html_file.add_paragraph("Measuring jitter between reference = ch#{cha} and slave = ch#{chb} for #{timeout} seconds.")
   jitter_measurement, oscope_screenshot_file = @equipment['oscope1'].measure_jitter(cha, chb, timeout)
   oscope_screenshot_info = upload_file("#{oscope_screenshot_file}")
-  @results_html_file.add_paragraph("JITTER PLOT:",nil,nil,nil)
+  @results_html_file.add_paragraph("JITTER MEASUREMENTS:")
   @results_html_file.add_paragraph("jitter_measurement.png",nil,nil,oscope_screenshot_info[1]) if oscope_screenshot_info
-  @results_html_file.add_paragraph("JITTER MEASUREMENTS:",nil,nil,nil)
 
   # Verify that jitter measurements match specification.
   jitter_measurement.each_with_index do |element, time|
 
     # Find minimum jitter value given configurable delay values (pps_offset and RX/TX latency)
     current_jitter = element[0].abs
-    if ((current_jitter <= min_jitter) && (current_jitter > oscope_resolution))
-      min_jitter = current_jitter
-    end
-    if ((current_jitter > max_jitter) && (current_jitter > oscope_resolution))
-      max_jitter = current_jitter
+    # Ignore busy values
+    if (current_jitter != 9.9e+37)
+      # calculate minimum jitter
+      if ((current_jitter <= min_jitter) && (current_jitter > clock_resolution))
+        min_jitter = current_jitter
+      end
+      # calculate maximum jitter
+      if ((current_jitter > max_jitter) && (current_jitter > clock_resolution))
+        max_jitter = current_jitter
+      end
     end
 
-    # Compare with Jitter Spec
+    # Compare each jitter value with Jitter Spec
     if (element[0].abs <= (jitter_spec+jitter_delay))
-      @results_html_file.add_paragraph("Jitter #{element[0]}s at #{element[1]}s meets spec #{jitter_spec}s.",nil,nil,nil)
+      @equipment['server1'].send_cmd("#Jitter #{element[0]}s at #{element[1]}s meets spec #{jitter_spec}s + jitter_delay=#{jitter_delay}.")
+      test_comment += "P "
     # 9.9e+37 is the oscilloscope specific busy value
     elsif (element[0] == 9.9e+37)
-      @results_html_file.add_paragraph("Jitter #{element[0]}s at #{element[1]}s ignored (oscilloscope busy).",nil,nil,nil)
+      @equipment['server1'].send_cmd("#Jitter #{element[0]}s at #{element[1]}s ignored (oscilloscope busy).")
+      test_comment += "X "
     else
-      @results_html_file.add_paragraph("Jitter #{element[0]}s at #{element[1]}s exceeds spec #{jitter_spec}s. Test failed",nil,nil,nil)
-      raise "Failed to match criteria: Jitter #{element}s exceeds spec #{jitter_spec}s."
+      @equipment['server1'].send_cmd("#Jitter #{element[0]}s at #{element[1]}s exceeds spec #{jitter_spec}s + jitter_delay= #{jitter_delay}. Test failed.")
+      test_comment += "F "
+      @results_html_file.add_paragraph("Results: [#{test_comment}]")
+      raise "Failed to match criteria: Jitter #{element[0]}s exceeds spec #{jitter_spec}s + jitter_delay= #{jitter_delay}."
     end
   end
+  @results_html_file.add_paragraph("Jitter Results: [#{test_comment}]")
 
+  # Assuming jitter is symmetric and centered around 0ns or programmed RX/TX Latency delay or PPS Offset delay.
   avg_jitter = 0.5 * (max_jitter + min_jitter)
-  # Compare to clock delay (RX/TX and PPS offset)
-  # Multiplied by factor of 0.7 error margin
-  if (avg_jitter >= jitter_delay)
-    @results_html_file.add_paragraph("Delay condition satisfied. Average Jitter=#{avg_jitter} > jitter_delay #{jitter_delay}.",nil,nil,nil)
+  # Compare average jitter to RX/TX and PPS offset
+  # Multiply clock delay by factor of 0.8 (error margin as well as compensation for negative jitter)
+  # Check: Average delay should be +-20% i.e. at least 0.8x of the programmed delay.
+  if (avg_jitter >= (jitter_delay*delay_error_margin))
+    @results_html_file.add_paragraph("Delay condition satisfied. Min Jitter = #{min_jitter}; Max Jitter = #{max_jitter}; \nAverage Jitter=#{avg_jitter} > #{(jitter_delay*delay_error_margin)} Jitter Delay with 80% Error Margin.")
   else
-    @results_html_file.add_paragraph("Delay condition not satisfied. Average Jitter=#{avg_jitter} < jitter_delay #{jitter_delay}.",nil,nil,nil)
+    @results_html_file.add_paragraph("Delay condition not satisfied. Min Jitter = #{min_jitter}; Max Jitter = #{max_jitter}; \nAverage Jitter=#{avg_jitter} < #{(jitter_delay*delay_error_margin)} Jitter Delay with 80% Error Margin.")
     raise "Failed to match criteria: Programmed delay (e.g. RX/TX or PPS Offset) not met."
   end
 end
@@ -176,30 +211,33 @@ def verify_hw_1pps(ch, timeout=5)
   # Variable error_margin is to account for minor setup (oscope/wires/EVM) variations.
   # Multiplying with period_spec to make it relative.
   error_margin = 1e-2 * period_spec
+  test_comment = ""
 
   # Reset oscilloscope and take oscilloscope measurements
   @equipment['oscope1'].reset_oscope()
   @results_html_file.add_paragraph "============================================"
 
-  @results_html_file.add_paragraph("Measuring 1PPS for channel=ch#{ch} for #{timeout} seconds.",nil,nil,nil)
-  @results_html_file.add_paragraph "============================================"
-
+  @results_html_file.add_paragraph("Measuring 1PPS for channel=ch#{ch} for #{timeout} seconds.")
   period_measurement, oscope_screenshot_file = @equipment['oscope1'].measure_time_period(ch, timeout)
   oscope_screenshot_info = upload_file("#{oscope_screenshot_file}")
-  @results_html_file.add_paragraph("1PPS TIME PERIOD PLOT FOR CH#{ch}:",nil,nil,nil)
+  @results_html_file.add_paragraph("1PPS TIME PERIOD MEASUREMENTS FOR CH#{ch}:")
   @results_html_file.add_paragraph("period_measurement_ch#{ch}.png",nil,nil,oscope_screenshot_info[1]) if oscope_screenshot_info
-  @results_html_file.add_paragraph("1PPS TIME PERIOD MEASUREMENTS FOR CH#{ch}:",nil,nil,nil)
   # Verify that jitter measurements match specification.
   period_measurement.each_with_index do |element, time|
     if (((element[0]) >= (period_spec - error_margin)) and ((element[0]) <= (period_spec + error_margin)))
-      @results_html_file.add_paragraph("Period #{element[0]}s at #{element[1]}s meets spec #{period_spec}s.",nil,nil,nil)
+      @equipment['server1'].send_cmd("#Period #{element[0]}s at #{element[1]}s meets spec #{period_spec}s.")
+      test_comment += "P "
     elsif (element[0] == 9.9e+37)
-      @results_html_file.add_paragraph("Period #{element[0]}s at #{element[1]}s ignored (oscilloscope busy).",nil,nil,nil)
+      @equipment['server1'].send_cmd("#Period #{element[0]}s at #{element[1]}s ignored (oscilloscope busy).")
+      test_comment += "X "
     else
-      @results_html_file.add_paragraph("Period #{element[0]}s at #{element[1]}s exceeds spec #{period_spec}s. Test failed",nil,nil,nil)
-      raise "Failed to match criteria: Period #{element}s exceeds spec #{period_spec}s."
+      @equipment['server1'].send_cmd("#Period #{element[0]}s at #{element[1]}s does not meet spec #{period_spec}s. Test failed")
+      test_comment += "F "
+      @results_html_file.add_paragraph("Current Results: [#{test_comment}]")
+      raise "Failed to match criteria: Period #{element[0]}s exceeds spec #{period_spec}s."
     end
   end
+  @results_html_file.add_paragraph("Results: [#{test_comment}]")
 end
 
 # function to verify PTP OC
@@ -215,7 +253,7 @@ def verify_ptp_oc(dut_slave, dut_master, port, slave_port, slave_if, master_port
   sleep(10)
   ping_status(dut_slave, master_if)
   ping_status(dut_master, slave_if)
-  #VK Debug: RX TX Latency Issue needs to be fixed.
+
   gen_config_file(dut_master, master_port, egress_lat, ingress_lat)
   # Configurable round trip (2x) RX/TX delay via config file i.e. rx_tx_delay
   gen_config_file(dut_slave, slave_port, egress_lat, ingress_lat+(2*rx_tx_delay))
@@ -223,11 +261,9 @@ def verify_ptp_oc(dut_slave, dut_master, port, slave_port, slave_if, master_port
   dut_master.send_cmd("ptp4l -2 -P -f oc_eth.cfg -m", "assuming the grand master role", 20)
   if (enable_oscope_measurements==1)
     jitter_delay = pps_offset_value.to_i + rx_tx_delay.to_i
-    @results_html_file.add_paragraph "============================================"
-    @results_html_file.add_paragraph("Jitter Setup Information (Oscilloscope): \n master_if = #{master_if} ; master_channel = #{ref_ch} \n slave_if = #{slave_if}; slave_channel = #{slave_ch} \n pps_offset_value= #{pps_offset_value} \n rx_tx_delay = #{rx_tx_delay} \n total jitter_delay = #{jitter_delay}.",nil,nil,nil)
-    @results_html_file.add_paragraph "============================================"
     # If oscilloscope measurements are enabled, launch 2 threads, first for triggering PTP algorithm
     # and second for oscilloscope measurements.
+    Thread.abort_on_exception = true
     threads = []
     threads << Thread.new { dut_slave.send_cmd("ptp4l -2 -P -f oc_eth.cfg -s -m & (PID=$! ;sleep #{timeout+20}; kill $PID)", dut_slave.prompt, timeout+30)}
     threads << Thread.new { @equipment['oscope1'].reset_oscope();verify_jitter(ref_ch,slave_ch,jitter_spec,jitter_delay,timeout)}
@@ -258,10 +294,9 @@ def verify_pps(dut, dut_port, dut_if, pps_enable_file)
   dut.send_cmd("ifconfig #{dut_port} #{dut_if}", dut.prompt, 10)
   dut.send_cmd("echo 1 > #{pps_enable_file}", dut.prompt, 10)
   # redirect pps timestamp to file at 1 sec of interval
-  # File assert does not exist for GMAC port: eth1, eth0.
-  # Only eth1 excluded here since eth0 is used for NFS boot
-  # and will not be used for PTP connections.
-  if (dut_port != "eth1")
+  # File "assert" does not exist for GMAC port: eth1, eth0.
+  # Typically eth0 is used for NFS boot and will not be used for PTP connections.
+  if ((dut_port != "eth1") && (dut_port != "eth0"))
     dut.send_cmd("cat /sys/class/pps/pps1/assert > pps_timestamp.txt", dut.prompt, 10)
     for i in 0..30
       dut.send_cmd("cat /sys/class/pps/pps1/assert >> pps_timestamp.txt", dut.prompt, 10)
@@ -273,15 +308,15 @@ def verify_pps(dut, dut_port, dut_if, pps_enable_file)
         or dut.timeout?)
       raise "Failed to verify 1 PPS."
     end
-  elsif (dut_port == "eth1")
-    @results_html_file.add_paragraph("Skipping 1PPS SW Check for GMAC port on #{dut_if}.",nil,nil,nil)
+  elsif ((dut_port == "eth1")||(dut_port == "eth0"))
+    @results_html_file.add_paragraph("Skipping 1PPS SW Check for GMAC port on #{dut_if}.")
   end
 end
 
 # Function to set pps offset
-def set_pps_offset(dut, pps_offset_value, pps_offset_file)
+def set_pps_offset(dut, dut_if, pps_offset_value, pps_offset_file)
   dut.send_cmd("echo #{pps_offset_value} > #{pps_offset_file}", dut.prompt, 10)
-  @results_html_file.add_paragraph("Command sent to set PPS offset = #{pps_offset_value} to file #{pps_offset_file} for #{dut}.",nil,nil,nil)
+  @results_html_file.add_paragraph("PPS Offset delay Command sent. Set Slave PPS offset = #{pps_offset_value} to file #{pps_offset_file} for #{dut_if}.")
 end
 
 def clean
