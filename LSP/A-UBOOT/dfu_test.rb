@@ -160,6 +160,7 @@ def run
 
   # set dfu env 
   @equipment['dut1'].send_cmd("version", @equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("gpt write mmc #{dev} ${partitions}", @equipment['dut1'].boot_prompt, 10) if media == "raw-emmc"
   @equipment['dut1'].send_cmd("setenv dfu_alt_info #{dfu_alt_info}", @equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("print dfu_alt_info", @equipment['dut1'].boot_prompt, 5)
 
