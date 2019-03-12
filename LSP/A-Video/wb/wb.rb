@@ -33,7 +33,7 @@ def run
   wb_devices.each do |dev|
     device = '/dev/'+dev
     @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --list-formats", @equipment['dut1'].prompt, 10)
-    pix_fmts = @equipment['dut1'].response.scan(/(?<=Pixel\sFormat:\s')\w+/im)
+    pix_fmts = @equipment['dut1'].response.scan(/(?<=Pixel\sFormat:\s')\w+|(?<=\d\]:\s')[A-Z\d]+/m)
     prand = Random.new(src_video_height*src_video_width*pix_fmts.join('').bytes.inject(:+))
     test_formats = @test_params.params_chan.instance_variable_defined?(:@test_formats) ? @test_params.params_chan.test_formats : pix_fmts
     num_frames = 70

@@ -61,7 +61,7 @@ def run
         @equipment['server1'].send_cmd("rm -rf #{local_test_file} #{File.dirname(local_test_file)}/test_frame*.yuv #{File.dirname(local_test_file)}/ref_frame*.yuv",@equipment['server1'].prompt)
         device = '/dev/'+dev
         @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --list-formats", @equipment['dut1'].prompt, 10)
-        pix_fmts = @equipment['dut1'].response.scan(/(?<=Pixel\sFormat:\s')\w+/im)
+        pix_fmts = @equipment['dut1'].response.scan(/(?<=Pixel\sFormat:\s')\w+|(?<=\d\]:\s')[A-Z\d]+/m)
         test_formats = @test_params.params_chan.instance_variable_defined?(:@test_formats) ? @test_params.params_chan.test_formats : pix_fmts
         num_frames = 10
         plane_info_str = "Scale: #{s_mode[0]['plane']['scale']}, pix_fmt: #{s_mode[0]['plane']['format']}" if s_mode[0]['plane']
