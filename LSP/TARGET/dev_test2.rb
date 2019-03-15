@@ -17,6 +17,15 @@ def get_perf_metrics
     return nil
   end
 end
+
+def get_detailed_info
+  log_file_name = File.join(@linux_temp_folder, 'test.log')
+  all_lines = ''
+  File.open(log_file_name, 'r').each {|line|
+    all_lines += line.gsub(/<\/*(STD|ERR)_OUTPUT>/,'') if line[/(fatal|\|error\||unable)/i]
+  }
+  return all_lines
+end
                                          
 # Determine test result outcome and save performance data
 def run_determine_test_outcome(return_non_zero)
@@ -26,11 +35,11 @@ def run_determine_test_outcome(return_non_zero)
 
   if return_non_zero
     return [FrameworkConstants::Result[:fail], 
-            "Application exited with non-zero value. \n",
+            "Application exited with non-zero value. \n" + get_detailed_info,
             get_performance_data(File.join(@linux_temp_folder,'test.log'), get_perf_metrics)]
   elsif failtest_check
     return [FrameworkConstants::Result[:fail],
-            "failtest() function was called. \n",
+            "failtest() function was called. \n" + get_detailed_info,
             get_performance_data(File.join(@linux_temp_folder,'test.log'), get_perf_metrics)]
   else
     if get_test_output.match(/^\|WARNING\|.+SKIPPING TEST:/)
