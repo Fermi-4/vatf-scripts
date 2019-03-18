@@ -55,7 +55,6 @@ def run_determine_test_outcome(return_non_zero)
 end
 
 def run
-  save_firmware
   self.as(LspTargetTestScript).run
 end
 
@@ -99,15 +98,6 @@ end
     add_log_to_html(log_file_name)
   end
 
-
-def clean
-  super
-  if !is_uut_up?(@equipment['dut1'])
-    @test_params.var_boot_attempts = 3
-    self.as(LspTestScript).setup
-  end
-  restore_firmware
-end
 
 def save_firmware(e=@equipment['dut1'])
   check_firmware_links(e)
