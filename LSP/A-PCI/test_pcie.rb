@@ -97,7 +97,10 @@ def run
   raise "Endpoint is not showing in RC using lspci" if !@equipment['dut2'].response.match(/^01:00\.0/i)
   @equipment['dut2'].send_cmd("lspci -vv", @equipment['dut2'].prompt, 10)
   res = check_pcie_speed(@equipment['dut2'].response, @equipment['dut2'].name)
-  result += res
+  if res != 0
+    report_msg "LnkSta is not at expected speed" 
+    result += res
+  end
   @equipment['dut2'].send_cmd("pcitest -h", @equipment['dut2'].prompt, 10)
   raise "pcitest app is missing from filesystem" if @equipment['dut2'].response.match(/command\s+not\s+found/i)
 
@@ -204,7 +207,7 @@ def check_pcie_speed(log, platform)
     else
       expected_speed = "5GT/s"
   end
-  rtn = 1 if ! log.match(/LnkSta:\s+Speed\s+#{expected_speed},/i)
+  rtn = 1 if ! log.match(/LnkSta:\s+Speed\s+#{expected_speed}/i)
   return rtn
 end
 
