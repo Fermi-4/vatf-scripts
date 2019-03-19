@@ -81,7 +81,7 @@ def run
 
           next if @test_params.params_chan.instance_variable_defined?(:@negative_test) || v4l2_log.match(/drm.*?\*ERROR\*|Atomic\s*test\s*failed/im)
 
-          disp_captured = v4l2_log.match(/^Video\s*input\s*set\s*to\s*\d+.*?-\s*(.*?):\s*ok/i)[1].gsub(/[\/\\]+/,'-')
+          disp_captured = v4l2_log.match(/^Video\s*input\s*set\s*to\s*\d+.*?-\s*(.*?):.*?ok/i)[1].gsub(/[\/\\]+/,'-')
 
           scp_pull_file(dut_ip, dut_test_file, local_test_file)
 
