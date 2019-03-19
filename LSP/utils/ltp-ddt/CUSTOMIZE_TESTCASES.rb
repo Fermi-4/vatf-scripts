@@ -4,6 +4,7 @@ $PERF_SCRIPT = 'LSP/TARGET/dev_test_perf_gov.rb'
 # Append extra parameters to params_control
 $EXTRA_PARAMS_TESTS = {
   /^SPI_/      => {'extra_params' => ['bootargs_append=spi']},
+  /^QSPI_/      => {'extra_params' => ['bootargs_append=qspi']},
   /^NAND_/      => {'extra_params' => ['bootargs_append=nand']},
   /^REALTIME_.+ISOLCPUS/      => {'extra_params' => ['bootargs_append=isolcpus\=0']},
   /REALTIME_[XSLM]{1,3}_PERF/ => {'extra_params' => ['perf_metrics_file=LSP/A-Realtime/cyclic_parser.rb'] },
