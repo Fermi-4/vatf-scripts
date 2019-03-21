@@ -125,7 +125,7 @@ def get_reference(video_url, width, height, format, interlace, cropping)
   ref_file += '.' + format + '.tar.xz'
   
   files = get_ref do |base_uri|
-    base_uri + 'host-utils/vpe/ref-media/' + ref_file.gsub(/_seq_tb/i,'')
+    base_uri + 'host-utils/vpe/ref-media/' + ref_file.gsub(/_seq_tb|_seq_bt/i,'')
   end
   files[0]
 end
