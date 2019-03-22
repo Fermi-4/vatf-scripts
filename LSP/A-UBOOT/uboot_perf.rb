@@ -165,6 +165,7 @@ def run
     @equipment['dut1'].send_cmd("usb tree", @equipment['dut1'].boot_prompt, 10)
     @equipment['dut1'].send_cmd("usb info", @equipment['dut1'].boot_prompt, 10)
     @equipment['dut1'].send_cmd("ls usb 0", @equipment['dut1'].boot_prompt, 10)
+    raise "Unrecognized filesystem type in usb" if @equipment['dut1'].response.match(/Unrecognized\s+filesystem/i)
 
     testsizes.each do |testsize_hex|
       loadaddr, loadaddr2 = get_loadaddres(testsize_hex)
