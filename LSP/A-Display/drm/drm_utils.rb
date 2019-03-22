@@ -20,7 +20,7 @@ def modetest(command, dut, timeout=5, expected=nil)
   response = ''
   dut.send_cmd("", dut.prompt)
   driver_hint = case(dut.name)
-                  when /am6.*/i
+                  when /am6.*/i, /k2g.*/i
                     '-M tidss'
                   else
                     ''
