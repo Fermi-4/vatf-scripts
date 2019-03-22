@@ -23,18 +23,22 @@ def run
   #self.as(LspTestScript).run
   result = 0
   result_msg = ''
-  msi_int = @test_params.params_chan.instance_variable_defined?(:@msi_interrupts) ? @test_params.params_chan.msi_interrupts[0] : '0'
+  msi_int = @test_params.params_chan.instance_variable_defined?(:@msi_interrupts) ? @test_params.params_chan.msi_interrupts[0] : '16'
   num_bars = @test_params.params_chan.instance_variable_defined?(:@num_bars) ? @test_params.params_chan.num_bars[0] : '6'   
   rw_sizes = @test_params.params_chan.instance_variable_defined?(:@rw_sizes) ? @test_params.params_chan.rw_sizes[0] : '1 1024'   
   test_duration = @test_params.params_chan.instance_variable_defined?(:@test_duration) ? @test_params.params_chan.test_duration[0] : '60'   
   linux_version = @equipment['dut1'].get_linux_version
+  # option: 'legacy, msi, msix'
+  int_mode = @test_params.params_chan.instance_variable_defined?(:@int_mode) ? @test_params.params_chan.int_mode[0] : 'msi'
+  msi_map = {"legacy"=>"0", "msi"=>"1", "msix"=>"2"}
 
   # Config EP
   @equipment['dut1'].send_cmd("cd /sys/kernel/config/pci_ep", @equipment['dut1'].prompt, 10)
 
   if Gem::Version.new(linux_version) >= Gem::Version.new("4.12")
-    func_driver_name = get_func_driver_name(@equipment['dut1'].name) 
+    func_driver_name = get_func_driver_name(@equipment['dut1'].name, linux_version) 
     @equipment['dut1'].send_cmd("mkdir functions/#{func_driver_name}/func1", @equipment['dut1'].prompt, 20)
+    raise "Failed to create pci-epf-test device!" if @equipment['dut1'].response.match(/can't\s+create\s+directory/i)
     @equipment['dut1'].send_cmd("ls functions/#{func_driver_name}/func1", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("cd functions/#{func_driver_name}/func1", @equipment['dut1'].prompt, 10)
   elsif Gem::Version.new(linux_version) >= Gem::Version.new("4.9")
@@ -54,12 +58,19 @@ def run
   @equipment['dut1'].send_cmd("cat interrupt_pin", @equipment['dut1'].prompt, 10)
   @equipment['dut1'].send_cmd("echo 0x104c > vendorid", @equipment['dut1'].prompt, 10)
   @equipment['dut1'].send_cmd("echo #{deviceid} > deviceid", @equipment['dut1'].prompt, 10)
-  @equipment['dut1'].send_cmd("echo #{msi_int} > msi_interrupts", @equipment['dut1'].prompt, 10)
+  if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
+    msi_int = '16' if int_mode == 'legacy' #This number no use in this case; but can not be 0
+    @equipment['dut1'].send_cmd("echo #{msi_int} > msi_interrupts", @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("echo #{msi_int} > msix_interrupts", @equipment['dut1'].prompt, 10)
+  else
+    @equipment['dut1'].send_cmd("echo #{msi_int} > msi_interrupts", @equipment['dut1'].prompt, 10)
+  end
 
   if Gem::Version.new(linux_version) >= Gem::Version.new("4.12")
     @equipment['dut1'].send_cmd("cd /sys/kernel/config/pci_ep", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("ctrl_driver_name=`ls /sys/class/pci_epc`", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("ln -s functions/#{func_driver_name}/func1 controllers/${ctrl_driver_name}", @equipment['dut1'].prompt, 10)
+    raise "Failed to bind pci-epf-test device to EP controller!" if @equipment['dut1'].response.match(/failed|invalid/i)
     @equipment['dut1'].send_cmd("echo 1 > controllers/${ctrl_driver_name}/start", @equipment['dut1'].prompt, 10)
     @equipment['dut1'].send_cmd("cat controllers/${ctrl_driver_name}/start", @equipment['dut1'].prompt, 10)
     if ! @equipment['dut1'].response.match(/^1/i) 
@@ -108,12 +119,16 @@ def run
   @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
 
   @equipment['dut2'].send_cmd("rmmod pci_endpoint_test", @equipment['dut2'].prompt, 60)
-  if msi_int.to_i >= 1
+  if int_mode == "msi" or int_mode == "msix"
     @equipment['dut2'].send_cmd("modprobe pci_endpoint_test", @equipment['dut2'].prompt, 30)
     @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
     msi_int_before = get_msi_int(@equipment['dut2'].response)
   else
-    @equipment['dut2'].send_cmd("modprobe pci_endpoint_test no_msi=1", @equipment['dut2'].prompt, 30)
+    if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
+      @equipment['dut2'].send_cmd("modprobe pci_endpoint_test ", @equipment['dut2'].prompt, 30)
+    else
+      @equipment['dut2'].send_cmd("modprobe pci_endpoint_test no_msi=1", @equipment['dut2'].prompt, 30)
+    end
   end
   @equipment['dut1'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut1'].prompt, 5) 
   @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
@@ -121,6 +136,12 @@ def run
   @equipment['dut2'].send_cmd("lspci -vv", @equipment['dut2'].prompt, 30)
   @equipment['dut2'].send_cmd("ls /dev/pci-endpoint-test*", @equipment['dut2'].prompt, 10)
   raise "pci-endpoint-test driver devnode is missing!" if @equipment['dut2'].response.match(/No\s+such\s+file\s+or\s+directory/i)
+
+  # Enable different interrupt
+  if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
+    mode = msi_map[int_mode]
+    @equipment['dut2'].send_cmd("pcitest -i #{mode}", @equipment['dut2'].prompt, 10)
+  end
 
   i = 0
   i = 1 if @equipment['dut1'].name.match(/k2g/i)
@@ -211,14 +232,18 @@ def check_pcie_speed(log, platform)
   return rtn
 end
 
-def get_func_driver_name(platform)
-  case platform
-    when /k2g/
-      rtn = 'pci_epf_test_k2g'
-    when /am654x/
-      rtn = 'pci_epf_test_am6'
-    else
-      rtn = 'pci_epf_test'
+def get_func_driver_name(platform, linux_version)
+  if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
+    rtn = 'pci_epf_test'
+  else
+    case platform
+      when /k2g/
+        rtn = 'pci_epf_test_k2g'
+      when /am654x/
+        rtn = 'pci_epf_test_am6'
+      else
+        rtn = 'pci_epf_test'
+    end
   end
 end
 
