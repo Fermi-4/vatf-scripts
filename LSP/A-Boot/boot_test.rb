@@ -21,8 +21,9 @@ def run
     @equipment['dut1'].boot_to_bootloader(translated_boot_params)
     connect_to_equipment('dut1','serial')
     @equipment['dut1'].send_cmd("#-----------------counter=#{counter}-----------------", @equipment['dut1'].boot_prompt, 2)
-    @equipment['dut1'].send_cmd('printenv', @equipment['dut1'].boot_prompt, 10)
+    @equipment['dut1'].send_cmd('version', @equipment['dut1'].boot_prompt, 10)
     if @equipment['dut1'].timeout?
+      report_msg "Dut seems hang at iteration #{counter.to_s} "
       result += 1
       #break
     else
@@ -31,6 +32,7 @@ def run
         @equipment['dut1'].send_cmd('setenv autoload no', @equipment['dut1'].boot_prompt, 3)
         @equipment['dut1'].send_cmd('dhcp', /DHCP client bound to address.*#{@equipment['dut1'].boot_prompt}/im, 60)
         if @equipment['dut1'].timeout?
+          report_msg "DHCP failed at iteration #{counter.to_s} "
           result_dhcp += 1
         end
       end
@@ -43,7 +45,8 @@ def run
     set_result(FrameworkConstants::Result[:pass], "Boot test passed.")
   else
     msg = "Boot failed to boot to uboot prompt #{result.to_s} times out of #{loop_count.to_s}; " if result != 0
-    msg = msg + "DHCP failed #{result_dhcp.to_s} times out of #{loop_count.to_s}; " if result_dhcp != 0
+    msg += "DHCP failed #{result_dhcp} times out of #{loop_count.to_s}; " if result_dhcp != 0
+
     set_result(FrameworkConstants::Result[:fail], "boot test failed! "+msg)
   end
 end
