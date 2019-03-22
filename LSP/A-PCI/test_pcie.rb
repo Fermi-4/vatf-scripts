@@ -155,12 +155,22 @@ def run
     i += 1
   end
 
-  if msi_int.to_i >= 1
+  if int_mode == 'msi'
     i = 1
     while i <= msi_int.to_i do
       @equipment['dut2'].send_cmd("pcitest -m #{i}", @equipment['dut2'].prompt, 10)
       if !@equipment['dut2'].response.match(/msi\d+:\s+okay/i)
         report_msg "MSI Interrupt #{i} test failed" 
+        result += 1
+      end
+      i += 1
+    end
+  elsif int_mode == 'msix'
+    i = 1
+    while i <= msi_int.to_i do
+      @equipment['dut2'].send_cmd("pcitest -x #{i}", @equipment['dut2'].prompt, 10)
+      if !@equipment['dut2'].response.match(/msix\d+:\s+okay/i)
+        report_msg "MSI-X Interrupt #{i} test failed" 
         result += 1
       end
       i += 1
