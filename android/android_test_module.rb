@@ -101,7 +101,6 @@ module AndroidTest
     new_params['server'].send_cmd("md5sum  #{tbs.join(' ')} |  cut -d' ' -f 1 | sort &> #{tb_check}")
     new_params['server'].send_cmd("diff #{tb_check} #{installed_check} 2>&1")
     if  new_params['server'].response != ''
-      new_params['run_fastboot.sh'] = true
       new_params['server'].send_cmd("rm -rf #{dest}/*")
       tbs.each do |path|
         tar_opts = get_tar_options(path,params)
@@ -126,9 +125,10 @@ module AndroidTest
       img_name =File.basename(img,'.img').gsub('-','_')
       new_params[img_name] = img if !new_params[img_name]
     end
-    return new_params if new_params['dut'].name.match(/am65.*/i) # AM65x uses fastboot.sh to flash images
-    new_params['run_fastboot.sh'] = false # Not fasboot.sh based so set flag to false
+    new_params['run_fastboot.sh'] = new_params['dut'].name.match(/am65.*/i) != nil # Not fasboot.sh based so set flag to false
     loaders = case new_params['dut'].name
+      when /am65.*/
+        ['tispl.bin', 'u-boot.img']
       when /-hsevm$/i
         ["u-boot-spl_HS_X-LOADER","HS_u-boot.img"]
       else
@@ -158,6 +158,10 @@ module AndroidTest
     new_params['primary_bootloader'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
     new_params['server'].send_cmd("ls #{dest}/#{loaders[1]}")
     new_params['secondary_bootloader'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
+    new_params['server'].send_cmd("ls #{dest}/tiboot3.bin")
+    new_params['initial_bootloader'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
+    new_params['server'].send_cmd("ls #{dest}/sysfw.itb")
+    new_params['sysfw'] = params['server'].response.strip if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
     new_params['server'].send_cmd("ls #{dest}/boot_fit.img")
     if !new_params['server'].response.match(/No\s*such\s*file\s*or\s*directory/im)
       new_params['boot'] = params['server'].response.strip
