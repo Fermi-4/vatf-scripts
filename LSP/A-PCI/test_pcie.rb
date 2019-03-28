@@ -125,6 +125,10 @@ def run
     @equipment['dut2'].send_cmd("modprobe pci_endpoint_test", @equipment['dut2'].prompt, 30)
     @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
     msi_int_before = get_msi_int(@equipment['dut2'].response)
+    if msi_int_before == "FAIL"
+      report_msg "Could not find MSI interrupt number!" 
+      result += 1 
+    end
   else
     if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
       @equipment['dut2'].send_cmd("modprobe pci_endpoint_test ", @equipment['dut2'].prompt, 30)
@@ -135,7 +139,6 @@ def run
   @equipment['dut1'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut1'].prompt, 5) 
   @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
 
-  @equipment['dut2'].send_cmd("lspci -vv", @equipment['dut2'].prompt, 30)
   @equipment['dut2'].send_cmd("ls /dev/pci-endpoint-test*", @equipment['dut2'].prompt, 10)
   raise "pci-endpoint-test driver devnode is missing!" if @equipment['dut2'].response.match(/No\s+such\s+file\s+or\s+directory/i)
 
@@ -144,6 +147,8 @@ def run
     mode = msi_map[int_mode]
     @equipment['dut2'].send_cmd("pcitest -i #{mode}", @equipment['dut2'].prompt, 10)
   end
+
+  @equipment['dut2'].send_cmd("lspci -vv", @equipment['dut2'].prompt, 30)
 
   i = 0
   i = 1 if @equipment['dut1'].name.match(/k2g/i)
@@ -171,7 +176,7 @@ def run
     i = 1
     while i <= msi_int.to_i do
       @equipment['dut2'].send_cmd("pcitest -x #{i}", @equipment['dut2'].prompt, 10)
-      if !@equipment['dut2'].response.match(/msix\d+:\s+okay/i)
+      if !@equipment['dut2'].response.match(/msi-x\d+:\s+okay/i)
         report_msg "MSI-X Interrupt #{i} test failed" 
         result += 1
       end
@@ -218,9 +223,14 @@ def run
   if msi_int.to_i >= 1
     @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
     msi_int_after = get_msi_int(@equipment['dut2'].response)
-    if msi_int_after.to_i <= msi_int_before.to_i
-      result += 1
-      report_msg "MSI interrupt was not increased"
+    if msi_int_after == "FAIL"
+      report_msg "Could not find MSI interrupt number!" 
+      result += 1 
+    else
+      if msi_int_after.to_i <= msi_int_before.to_i
+        result += 1
+        report_msg "MSI interrupt was not increased"
+      end
     end
   end
 
@@ -260,8 +270,12 @@ def get_func_driver_name(platform, linux_version)
 end
 
 def get_msi_int(response)
-  rtn = response.match(/:\s+(\d+).*(?:PCI-MSI|ITS-MSI).*pci-endpoint-test/).captures[0]
-  return rtn
+  if response.match(/:\s+(\d+).*(?:PCI-MSI|ITS-MSI).*pci-endpoint-test/)
+    rtn = response.match(/:\s+(\d+).*(?:PCI-MSI|ITS-MSI).*pci-endpoint-test/).captures[0]
+    return rtn
+  else
+    return "FAIL"
+  end
 end
 
 def clean
