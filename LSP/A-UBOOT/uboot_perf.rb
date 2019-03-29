@@ -284,7 +284,7 @@ end
 # get DRAM size
 def get_dram_size()
   @equipment['dut1'].send_cmd("bdinfo", @equipment['dut1'].boot_prompt, 10)
-  dram_size = @equipment['dut1'].response.match(/DRAM\s+bank\s*=\s*0x00000000\s*->\s*start\s*=\s*0x\h+\s*->\s*?size\s*=\s*0x(\h+)/im).captures[0]
+  dram_size = @equipment['dut1'].response.match(/DRAM\s+bank\s*=\s*0x[0]+\s*->\s*start\s*=\s*0x\h+\s*->\s*?size\s*=\s*0x(\h+)/im).captures[0]
   return dram_size
 end
 
