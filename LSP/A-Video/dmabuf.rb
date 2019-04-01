@@ -34,7 +34,7 @@ def run
   video_devices.each do |dev|
     device = '/dev/'+dev
     @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --list-formats", @equipment['dut1'].prompt, 10)
-    pix_fmts = @equipment['dut1'].response.scan(/(?<=Pixel\sFormat:\s')\w+/im)
+    pix_fmts = @equipment['dut1'].response.scan(/(?<=Pixel\sFormat:\s')\w+|(?<=\d\]:\s')[A-Z\d]+/im)
     pix_fmts.select! { |p| valid_formats.include?(p) }
     pix_fmts.each do |src_format|
       @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --list-framesizes=#{src_format}", @equipment['dut1'].prompt, 10)

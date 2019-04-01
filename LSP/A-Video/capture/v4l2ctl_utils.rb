@@ -9,10 +9,10 @@ require 'set'
 def get_fmt_options(capture_device, dut=@equipment['dut1'])
   result = {'pixel-format' => [], 'frame-size' => []}
   opts_string = dut.send_cmd("v4l2-ctl --list-formats -d #{capture_device}", dut.prompt, 10).gsub(/#{dut.prompt}[^\n]+/,'')
-  formats = opts_string.scan(/Pixel\s*Format\s*:\s*'\w+'\s*/i)
+  formats = opts_string.scan(/Pixel\s*Format\s*:\s*'\w+'\s*|\[\d+\]:\s*'[A-Z\d]+/im)
   frame_sizes = []
   formats.each do |fmt_str|
-    result['pixel-format'] << fmt_str.match(/Pixel\s*Format\s*:\s*'(\w+)'\s*/i).captures[0]
+    result['pixel-format'] << fmt_str.match(/Pixel\s*Format\s*:\s*'(\w+)'\s*|\[\d+\]:\s*'([A-Z\d]+)/im).captures.select{|f| f}[0]
     dut.send_cmd("v4l2-ctl --list-framesizes=#{result['pixel-format'][-1]} -d #{capture_device}", dut.prompt, 10)
     result['frame-size'] += dut.response.scan(/Size:\s*Discrete\s*(\d+x\d+)\s*/i).flatten
   end
