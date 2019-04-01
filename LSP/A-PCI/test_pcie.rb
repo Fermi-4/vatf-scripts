@@ -111,7 +111,7 @@ def run
   @equipment['dut2'].send_cmd("lspci -vv", @equipment['dut2'].prompt, 10)
   res = check_pcie_speed(@equipment['dut2'].response, @equipment['dut2'].name)
   if res != 0
-    report_msg "LnkSta is not at expected speed" 
+    report_msg "LnkSta is not at expected speed" "dut2"
     result += res
   end
   @equipment['dut2'].send_cmd("pcitest -h", @equipment['dut2'].prompt, 10)
@@ -126,7 +126,7 @@ def run
     @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
     msi_int_before = get_msi_int(@equipment['dut2'].response)
     if msi_int_before == "FAIL"
-      report_msg "Could not find MSI interrupt number!" 
+      report_msg "Could not find MSI interrupt number!" "dut2"
       result += 1 
     end
   else
@@ -156,7 +156,7 @@ def run
   while i < num_bars.to_i do
     @equipment['dut2'].send_cmd("pcitest -b #{i}", @equipment['dut2'].prompt, 10)
     if !@equipment['dut2'].response.match(/bar\d+:\s+okay/i)
-      report_msg "BAR #{i} test failed" 
+      report_msg "BAR #{i} test failed" "dut2"
       result += 1
     end
     i += 1
@@ -167,7 +167,7 @@ def run
     while i <= msi_int.to_i do
       @equipment['dut2'].send_cmd("pcitest -m #{i}", @equipment['dut2'].prompt, 10)
       if !@equipment['dut2'].response.match(/msi\d+:\s+okay/i)
-        report_msg "MSI Interrupt #{i} test failed" 
+        report_msg "MSI Interrupt #{i} test failed" "dut2" 
         result += 1
       end
       i += 1
@@ -177,15 +177,15 @@ def run
     while i <= msi_int.to_i do
       @equipment['dut2'].send_cmd("pcitest -x #{i}", @equipment['dut2'].prompt, 10)
       if !@equipment['dut2'].response.match(/msi-x\d+:\s+okay/i)
-        report_msg "MSI-X Interrupt #{i} test failed" 
+        report_msg "MSI-X Interrupt #{i} test failed" "dut2"
         result += 1
       end
       i += 1
     end
-  else #msi_int=0 for Legacy IRQ
+  else # for Legacy IRQ
       @equipment['dut2'].send_cmd("pcitest -l", @equipment['dut2'].prompt, 10)
       if @equipment['dut2'].response.match(/not\s+okay/i)
-        report_msg "Legacy Interrupt test failed"
+        report_msg "Legacy Interrupt test failed" "dut2"
         result += 1
       end
   end
@@ -201,17 +201,17 @@ def run
       puts "size is: #{size}"
       @equipment['dut2'].send_cmd("pcitest -w -s #{size}", @equipment['dut2'].prompt, 120)
       if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
-        report_msg "Write test w/ #{size} failed" 
+        report_msg "Write test w/ #{size} failed" "dut2"
         result += 1
       end
       @equipment['dut2'].send_cmd("pcitest -r -s #{size}", @equipment['dut2'].prompt, 120)
       if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
-        report_msg "Read test w/ #{size} failed" 
+        report_msg "Read test w/ #{size} failed" "dut2"
         result += 1
       end
       @equipment['dut2'].send_cmd("pcitest -c -s #{size}", @equipment['dut2'].prompt, 120)
       if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
-        report_msg "Copy test w/ #{size} test failed" 
+        report_msg "Copy test w/ #{size} test failed" "dut2"
         result += 1
       end
     }
@@ -220,16 +220,16 @@ def run
 
   @equipment['dut1'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut1'].prompt, 5) 
   @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
-  if msi_int.to_i >= 1
+  if int_mode == "msi" or int_mode == "msix"
     @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
     msi_int_after = get_msi_int(@equipment['dut2'].response)
     if msi_int_after == "FAIL"
-      report_msg "Could not find MSI interrupt number!" 
+      report_msg "Could not find MSI interrupt number!" "dut2"
       result += 1 
     else
       if msi_int_after.to_i <= msi_int_before.to_i
         result += 1
-        report_msg "MSI interrupt was not increased"
+        report_msg "MSI interrupt was not increased" "dut2"
       end
     end
   end
