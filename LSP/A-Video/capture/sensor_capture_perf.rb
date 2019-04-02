@@ -155,7 +155,7 @@ def get_sensor_name(device, dut=@equipment['dut1'])
 end
 
 def find_sensor_name(ep_path, dut)
-  devices = "/sys/devices"
+  devices = "/sys/devices/platform"
   fw_dir = "/sys/firmware/devicetree/base"
   dut.send_cmd("hexdump #{ep_path}", dut.prompt)
   handle = dut.response.match(/0000000[^\r\n]+/im)[0].strip()
