@@ -39,7 +39,7 @@ def run
       thr = Thread.new do
         @equipment['dut1'].wait_for(e_re,10)
       end
-      @equipment['hdmi_sw'].disconnect_video_audio()
+      @equipment['hdmi_sw'].disconnect_video_audio(@equipment['dut1'].video_io_info.hdmi_outputs.values[0])
       sleep(1)
       @equipment['hdmi_sw'].connect_video_audio(@equipment['dut1'].video_io_info.hdmi_outputs.values[0], @equipment['server1'].video_io_info.hdmi_inputs.values[0])
       thr.join(20)
