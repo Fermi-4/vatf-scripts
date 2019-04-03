@@ -402,8 +402,8 @@ module LspTestScript
     new_params['kernel_image_name'] = new_params['kernel2_image_name'] ? new_params['kernel2_image_name'] : 
                              @test_params.instance_variable_defined?(:@var_kernel2_image_name) ? @test_params.var_kernel2_image_name : 
                              new_params['kernel'] != '' ? File.basename(new_params['kernel']) : 'uImage'                          
-    new_params['kernel_modules'] = new_params['kernel2_modules'] ? new_params['kernel2_modules'] : 
-                             @test_params.instance_variable_defined?(:@kernel2_modules) ? @test_params.kernel2_modules : 
+    new_params['kernel_modules'] = new_params['kernel_modules2'] ? new_params['kernel_modules2'] : 
+                             @test_params.instance_variable_defined?(:@kernel_modules2) ? @test_params.kernel_modules2 : 
                              ''  
     new_params['skern']     = new_params['skern2'] ? new_params['skern2'] : 
                              @test_params.instance_variable_defined?(:@skern2) ? @test_params.skern2 : 

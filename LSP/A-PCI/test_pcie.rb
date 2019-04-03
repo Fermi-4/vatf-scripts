@@ -99,8 +99,10 @@ def run
   params2 = {'platform'=>@equipment['dut2'].name}
   boot_params2 = translate_params2(params2)
 
-  @power_handler.switch_on(@equipment['dut2'].power_port)
-  sleep 1
+  if @equipment['dut2'].name =~ /dra7/
+    @power_handler.switch_on(@equipment['dut2'].power_port)
+    sleep 1
+  end
   setup_boards('dut2', boot_params2)
 
   # Run pcie ep tests
