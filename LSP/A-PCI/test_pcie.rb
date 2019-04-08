@@ -284,6 +284,7 @@ end
 
 def clean
   #super
+  @power_handler.switch_on(@equipment['dut2'].power_port)
   self.as(LspTestScript).clean
   clean_boards('dut2')
 end
