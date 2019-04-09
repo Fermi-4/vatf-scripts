@@ -84,7 +84,7 @@ end
 def parse_connectors()
   result = {}
   @equipment['dut1'].send_cmd('modetest -c | grep connected', @equipment['dut1'].prompt)
-  connectors = @equipment['dut1'].response.scan(/connected\s+([^\s]+)\s+0x/i).flatten
+  connectors = @equipment['dut1'].response.scan(/connected\s+([^\s]+)\s+[\dx]+/i).flatten
   connectors.each_with_index { |c,i| result[i] = c }
   result
 end
