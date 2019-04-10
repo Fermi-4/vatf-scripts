@@ -17,7 +17,7 @@ def run
   tests = @equipment['dut1'].response.scan(/glmark[\w].*/)
   tests.select! { |t| t.match(/#{type}/) }
   tests.each do |test|
-    @equipment['dut1'].send_cmd("#{test}", @equipment['dut1'].prompt, 420)
+    @equipment['dut1'].send_cmd("#{test}", @equipment['dut1'].prompt, 700)
     @equipment['dut1'].response.downcase().scan(/\[[^\r\n]+/m).each do |result|
       res_arr = result.split(/\s+/,3)
       t_dat = res_arr[2].split(/:\s*/)
