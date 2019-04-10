@@ -35,9 +35,8 @@ def run
         if !response.match(/enforcing/i)
           result += "Expecting enforcing got #{response}, "
         else
-          comp = CmdTranslator.get_android_cmd({'cmd'=>'gallery_movie_cmp', 'version'=>@equipment['dut1'].get_android_version })
           send_adb_cmd("shell logcat -c")
-          send_adb_cmd("shell am start -W -n #{comp}")
+          send_adb_cmd("shell am start -W -n com.android.gallery3d/.app.GalleryActivity")
           send_events_for("__sysrq__")
           send_events_for("__home__")
           send_events_for("__sysrq__")
