@@ -7,7 +7,7 @@ def run
   rx_bw =[]
   i =0 
   file_size = @test_params.params_control.file_size[0].to_i
-  file_size = (file_size/2).to_i if new_params['dut'].name == 'am57xx-evm'
+  file_size = (file_size/2).to_i if @equipment['dut1'].name == 'am57xx-evm'
   iterations = @test_params.params_control.iterations[0].to_i
   
   host_path = File.join(@linux_temp_folder, 'adb_test_file')
