@@ -32,7 +32,18 @@ def run
       when 'basic'
         send_adb_cmd("shell su root setenforce 1")
         response = send_adb_cmd("shell getenforce")
-        result += "Expecting enforcing got #{response}, " if !response.match(/enforcing/i)
+        if !response.match(/enforcing/i)
+          result += "Expecting enforcing got #{response}, "
+        else
+          comp = CmdTranslator.get_android_cmd({'cmd'=>'gallery_movie_cmp', 'version'=>@equipment['dut1'].get_android_version })
+          send_adb_cmd("shell logcat -c")
+          send_adb_cmd("shell am start -W -n #{comp}")
+          send_events_for("__sysrq__")
+          send_events_for("__home__")
+          send_events_for("__sysrq__")
+          response = send_adb_cmd("shell 'logcat -d | grep -i exception'")
+          result += "Unexpected exception while enforcing: #{response}," if response.match(/exception/i)
+        end
         send_adb_cmd("shell su root setenforce 0")
         response = send_adb_cmd("shell getenforce")
         result += "Expecting permissive got #{response}" if !response.match(/permissive/i)
