@@ -83,14 +83,14 @@ def run
       alt_name_secondary_bootloader_raw = "u-boot.img"
     end
     case @test_params.platform 
-      when /dra7/
+      when /dra7|am57/
         dfu_alt_info_raw_spi = "\"#{alt_name_primary_bootloader_raw} raw 0x0 0x20000;#{alt_name_secondary_bootloader_raw} raw 0x40000 0x100000\" "
         dfu_alt_info_raw_spi = " \"${dfu_alt_info_qspi}\" " if use_uboot_env == 'yes'
       when /am654/
         dfu_alt_info_raw_spi = "\"#{alt_name_sysfw_raw} raw 0x7a0000 0x60000;#{alt_name_initial_bootloader_raw} raw 0x0 0x80000;#{alt_name_primary_bootloader_raw} raw 0x80000 0x200000;#{alt_name_secondary_bootloader_raw} raw 0x280000 0x500000\" "
         dfu_alt_info_raw_spi = " \"${dfu_alt_info_ospi}\" " if use_uboot_env == 'yes'
       else
-        raise "No dfu_alt_info being defined for SPI for #{@test_params.platform}"
+        raise "No dfu_alt_info being defined for QSPI/OSPI/SPI for #{@test_params.platform}"
     end
   when /ram/
     # generate testfile in host
