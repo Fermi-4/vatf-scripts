@@ -32,6 +32,8 @@ def run
   enable_switching = @test_params.params_chan.enable_switching[0] # set 'yes' to verify runtime configurability
   mc_filter = @test_params.params_chan.instance_variable_defined?(:@mc_filter) ? @test_params.params_chan.mc_filter[0].to_i : 0
   mc_cli_ser_bins = @test_params.params_chan.instance_variable_defined?(:@mc_cli_ser_bins) ? @test_params.params_chan.mc_cli_ser_bins[0] : ""
+  # flag to verfiy packets over hsr/prp
+  verify_packet = @test_params.params_chan.instance_variable_defined?(:@verify_packet) ? @test_params.params_chan.verify_packet[0].to_i : 0
   # specify payloads in case of ping required at various payload sizes
   payloads = @test_params.params_chan.instance_variable_defined?(:@payloads) ? @test_params.params_chan.payloads : [""]
 
@@ -71,6 +73,9 @@ def run
         is_mc_filter_enabled(dan_X_2, switch_from)
         verify_mcast_filtering(dan_X_1, dan_X_2, dan_X_1_ips[0], dan_X_2_ips[0], switch_from, dan_X_1_pruicss_ports[0])
       end
+
+      #verify packets if verify_packet specified
+      verify_packets(dan_X_1, dan_X_2, switch_from, dan_X_1_ips[0]) if verify_packet == 1
       # disable any one pruicss_port and verify redundancy
       verify_redundancy(dan_X_1, dan_X_2, dan_X_1_pruicss_ports[1], dan_X_2_ips[0])
       # disable feature
@@ -230,6 +235,18 @@ def verify_mcast_filtering(dut_client, dut_server, cli_ipaddr, ser_ipaddr, featu
   lremcdropped_n = dut_client.response[/(lreMulticastDropped:\s*\d*)/]
   if (lremcdropped == lremcdropped_n)
     raise "Failed to verify dropped count for multicast filtering."
+  end
+end
+
+# function to verify hsr/prp packets, this function dumps ICMP
+# frames using tcpdump utility and checks for packets size
+def verify_packets(dan_X_1, dan_X_2, feature, ipaddr, id = 0)
+  dan_X_2.send_cmd("ping -c 40 #{ipaddr} &", dan_X_2.prompt, 10)
+  dan_X_1.send_cmd("tcpdump -i #{feature}#{id} -xx icmp > tcpdump.log 2>&1 & sleep 10 ; killall tcpdump", dan_X_1.prompt, 30)
+  dan_X_1.send_cmd("cat tcpdump.log", dan_X_1.prompt, 10)
+  if !( dan_X_1.response =~ /ICMP\secho\s(request|reply)[\s\S\n]*0x0060:\s+\w{4}\s*\n/ ) or \
+      ( dan_X_1.response =~ /ICMP\secho\s(request|reply)[\s\S\n]*0x0060:\s+\w{4}\s\w{4}/ )
+    raise "Failed to verify packet size for #{feature}."
   end
 end
 
