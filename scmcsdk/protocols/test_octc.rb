@@ -14,6 +14,10 @@ def run
   testtype = @test_params.params_chan.testtype[0]
   m_options = "-m"      # master options
   s_options = "-m -s"   # slave options
+  # get config params
+  tx_timestamp_timeout = @test_params.params_chan.instance_variable_defined?(:@tx_timestamp_timeout) ? @test_params.params_chan.tx_timestamp_timeout[0].to_i : 20
+  priority2            = @test_params.params_chan.instance_variable_defined?(:@priority2) ? @test_params.params_chan.priority2[0].to_i : 128
+  redundancy           = @test_params.params_chan.instance_variable_defined?(:@redundancy) ? @test_params.params_chan.redundancy[0].to_i : 1
 
   # consider dut1 as DAN-X-1 and dut2 as DAN-X-2,
   # X can be P->PRP or H->HSR, Example: DAN-H-1
@@ -39,10 +43,12 @@ def run
       dan_X_3_ip = dan_X_3.params['dut3_if']
       enable_feature(dan_X_3, feature, cmd, dan_X_3_ip, pruicss_ports)
       ping_status(dan_X_2, dan_X_3_ip)
-      test_octc([dan_X_1, dan_X_2, dan_X_3], [m_options, s_options, s_options], feature, pruicss_ports)
+      test_octc([dan_X_1, dan_X_2, dan_X_3], [m_options, s_options, s_options], feature,
+                pruicss_ports, tx_timestamp_timeout, priority2, redundancy)
       disable_feature(dan_X_3, feature, pruicss_ports)
     else
-      test_octc([dan_X_1, dan_X_2], [m_options, s_options], feature, pruicss_ports)
+      test_octc([dan_X_1, dan_X_2], [m_options, s_options], feature, pruicss_ports,
+                tx_timestamp_timeout, priority2, redundancy)
     end
 
     # disable feature
@@ -57,10 +63,10 @@ def run
 end
 
 # function to test transparent clock and PTP OC
-def test_octc(dan_X_ns, options, feature, pruicss_ports)
+def test_octc(dan_X_ns, options, feature, pruicss_ports, tx_timestamp_timeout, priority2, redundancy)
   (0..(dan_X_ns.length-1)).each do |n|
     dan_X_ns[n].send_cmd("date", dan_X_ns[n].prompt, 10)
-    gen_config_file(dan_X_ns[n], feature, pruicss_ports)
+    gen_config_file(dan_X_ns[n], feature, pruicss_ports, tx_timestamp_timeout, priority2, redundancy)
     dan_X_ns[n].send_cmd("ptp4l -f #{feature}_octc.cfg #{options[n]} &", dan_X_ns[n].prompt, 10)
     sleep(10)
   end
@@ -71,28 +77,31 @@ def test_octc(dan_X_ns, options, feature, pruicss_ports)
 end
 
 # function to generate config file
-def gen_config_file(dan_X_n, feature, pruicss_ports, id = "0")
+def gen_config_file(dan_X_n, feature, pruicss_ports, tx_timestamp_timeout, priority2, redundancy, id = "0")
   br = "\"$'\\n'\"" # break line
   dan_X_n.send_cmd("echo \"[global]#{br}sanity_freq_limit 0#{br}"\
-                   "step_threshold 0.00002#{br}tx_timestamp_timeout 20#{br}#{br}"\
-                   "domainNumber 0#{br}priority1    128#{br}priority2    128#{br}"\
+                   "step_threshold 0.00002#{br}tx_timestamp_timeout #{tx_timestamp_timeout}#{br}#{br}"\
+                   "domainNumber 0#{br}priority1    128#{br}priority2    #{priority2}#{br}"\
                    "slaveOnly    0#{br}#{br}twoStepFlag                  1#{br}summary_interval             0#{br}"\
-                   "doubly_attached_clock        1#{br}#{br}[#{feature}#{id}]#{br}redundancy                   1#{br}"\
+                   "doubly_attached_clock        1#{br}#{br}[#{feature}#{id}]#{br}redundancy                   #{redundancy}#{br}"\
                    "delay_mechanism              P2P#{br}network_transport            L2#{br}#{br}"\
-                   "#{get_config(dan_X_n, feature, pruicss_ports[0], br)}#{br}#{br}#{get_config(dan_X_n, feature, pruicss_ports[1], br, 2)}"\
+                   "#{get_config(dan_X_n, feature, pruicss_ports[0], br, tx_timestamp_timeout, priority2, redundancy)}"\
+                   "#{br}#{br}#{get_config(dan_X_n, feature, pruicss_ports[1], br, tx_timestamp_timeout, priority2, redundancy, 2)}"\
                    "\" > #{feature}_octc.cfg", dan_X_n.prompt, 10)
   dan_X_n.send_cmd("cat #{feature}_octc.cfg", dan_X_n.prompt, 10)
 end
 
 # function to return common configs for eth ports
-def get_config(dan_X_n, feature, pruicss_port, br, slave_num = 1, id = 0)
-  return "[#{pruicss_port}]#{br}redundancy                   1#{br}"\
-         "redundancy_master_interface  #{feature}#{id}#{br}redundancy_slave_number      #{slave_num}#{br}#{br}"\
-         "logAnnounceInterval          0#{br}logSyncInterval              0#{br}"\
-         "logMinPdelayReqInterval      0#{br}announceReceiptTimeout       3#{br}"\
-         "syncReceiptTimeout           2#{br}#{br}delay_mechanism              P2P#{br}"\
-         "network_transport            L2#{br}egressLatency                726#{br}"\
-         "ingressLatency               186"
+def get_config(dan_X_n, feature, pruicss_port, br, tx_timestamp_timeout, priority2, redundancy, slave_num = 1, id = 0)
+  config = "[#{pruicss_port}]#{br}redundancy                   #{redundancy}#{br}"\
+           "redundancy_master_interface  #{feature}#{id}#{br}redundancy_slave_number      #{slave_num}#{br}#{br}"\
+           "logAnnounceInterval          0#{br}logSyncInterval              0#{br}"\
+           "logMinPdelayReqInterval      0#{br}announceReceiptTimeout       3#{br}"\
+           "syncReceiptTimeout           2#{br}#{br}delay_mechanism              P2P#{br}"\
+           "network_transport            L2#{br}egressLatency                726#{br}"\
+           "ingressLatency               186"
+  config += "#{br}fault_reset_interval          0" if feature == 'prp'
+  return config
 end
 
 # function to verify clocks are synced or not
