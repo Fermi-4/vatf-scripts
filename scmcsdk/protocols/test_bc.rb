@@ -50,9 +50,9 @@ def run
     phc2sys_cmd = "phc2sys -a -X -g #{gmc_port} -S 0.000002 -L 0 -m"
 
     # verify boundary clock between GMAC and PRU
-    verify_bc(dan_X_n_bc, dan_X_n_ocs, dan_X_n_ocm, phc2sys_cmd, ptp_pass_crit, ptp_fail_crit, phc_pass_crit, phc_fail_crit, gmc_port)
+    verify_bc(dan_X_n_bc, dan_X_n_ocs, dan_X_n_ocm, phc2sys_cmd, ptp_pass_crit, ptp_fail_crit, phc_pass_crit, phc_fail_crit, gmc_port, ocm_port[0])
 
-    test_comment = "Verified BC between GMAC and PRU using #{gmc_port}."
+    test_comment = "Verified BC between GMAC and PRU."
     set_result(FrameworkConstants::Result[:pass], "Test Passed. #{test_comment}")
   rescue Exception => e
     set_result(FrameworkConstants::Result[:fail], "Test Failed. #{e}")
@@ -66,7 +66,7 @@ end
 
 # function to run ptp4l and phc2sys to sync internal clocks on
 # GMC DUT and sync clocks with OC Slave and Master DUT
-def verify_bc(bc, ocs, ocm, phc2sys_cmd, ptp_pass_crit, ptp_fail_crit, phc_pass_crit, phc_fail_crit, gmc_port)
+def verify_bc(bc, ocs, ocm, phc2sys_cmd, ptp_pass_crit, ptp_fail_crit, phc_pass_crit, phc_fail_crit, gmc_port, ocm_port)
   bc_cmd  = "ptp4l -f bc.cfg -m"
   ocs_cmd = "ptp4l -2 -P -f oc.cfg -m -s"
   ocm_cmd = "ptp4l -2 -P -f oc.cfg -m"
@@ -80,7 +80,7 @@ def verify_bc(bc, ocs, ocm, phc2sys_cmd, ptp_pass_crit, ptp_fail_crit, phc_pass_
   ocm.send_cmd("ptp4l -2 -P -f oc.cfg -m 2>&1 | tee ptp4l_ocm.txt &", ocm.prompt, 10)
   sleep(60)
 
-  (@equipment['dut1'].params['gmac_list'].include? gmc_port) ? verify_clock_time([bc, ocs, ocm], ['0', '1', '0']) : verify_clock_time([bc, ocs, ocm], ['0', '0', '1'])
+  (@equipment['dut1'].params['gmac_list'].include? ocm_port) ? verify_clock_time([bc, ocs, ocm], ['0', '1', '0']) : verify_clock_time([bc, ocs, ocm], ['0', '0', '1'])
 
   stop_process(bc, ["phc2sys", "ptp4l"])
   stop_process(ocs, ["ptp4l"])
@@ -94,11 +94,11 @@ def verify_bc(bc, ocs, ocm, phc2sys_cmd, ptp_pass_crit, ptp_fail_crit, phc_pass_
   verify_log("GMC", bc.response, ptp_pass_crit, ptp_fail_crit)
   verify_log("OCS", ocs.response, ptp_pass_crit, ptp_fail_crit)
   bc.send_cmd("cat phc2sys_bc.txt", bc.prompt, 10)
-  bc.send_cmd("cat phc2sys_bc.txt | tail -20", bc.prompt, 10)
-  verify_log("GMC", bc.response, phc_pass_crit, phc_fail_crit)
   verify_log("GMC", bc.response, "selecting eth\\d for synchronization")
   verify_log("GMC", bc.response, "selecting eth\\d for synchronization")
   verify_log("GMC", bc.response, "selecting #{gmc_port} as the default clock")
+  bc.send_cmd("cat phc2sys_bc.txt | grep ']: eth' | tail -20", bc.prompt, 10)
+  verify_log("GMC", bc.response, phc_pass_crit, phc_fail_crit)
 end
 
 # function to get multiline criteria
