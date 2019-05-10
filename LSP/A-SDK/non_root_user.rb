@@ -15,7 +15,7 @@ def run
     # Delete tester user if it exists
     @equipment['dut1'].send_cmd("getent passwd | grep tester: && userdel tester", @equipment['dut1'].prompt)
     # Create tester user and assign appropriate groups
-    check_cmd("useradd -G audio,video tester")
+    check_cmd("useradd -G audio,video,render tester")
     # Set tester password
     @equipment['dut1'].send_cmd("passwd tester", "password:", 2, false)
     @equipment['dut1'].send_cmd("1234", "password:", 2, false)
