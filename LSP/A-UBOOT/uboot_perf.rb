@@ -8,6 +8,12 @@ include PlatformSpecificVarNames
 def setup
 	@equipment['dut1'].set_api('psp')
 
+end
+
+def run
+  result_msg = ''
+  perfs = []
+
   translated_boot_params = setup_host_side()
   translated_boot_params['dut'].set_bootloader(translated_boot_params) if !@equipment['dut1'].boot_loader
   translated_boot_params['dut'].set_systemloader(translated_boot_params) if !@equipment['dut1'].system_loader
@@ -16,12 +22,6 @@ def setup
   @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
   @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 5)
   raise 'Bootloader was not loaded properly. Failed to get bootloader prompt' if @equipment['dut1'].timeout?
-  
-end
-
-def run
-  result_msg = ''
-  perfs = []
 
   @equipment['dut1'].send_cmd("help time", @equipment['dut1'].boot_prompt, 5)
   if @equipment['dut1'].response.match("Unknown command")
@@ -164,6 +164,14 @@ def run
     @equipment['dut1'].send_cmd("usb storage", @equipment['dut1'].boot_prompt, 10)
     @equipment['dut1'].send_cmd("usb tree", @equipment['dut1'].boot_prompt, 10)
     @equipment['dut1'].send_cmd("usb info", @equipment['dut1'].boot_prompt, 10)
+
+    # boot to kernel to create/format partition 
+    create_format_partition translated_boot_params
+    translated_boot_params['dut'].boot_to_bootloader translated_boot_params
+    @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
+    @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 5)
+    raise 'Failed to stop at bootloader prompt after format sata partition in kernel' if @equipment['dut1'].timeout?
+
     @equipment['dut1'].send_cmd("ls usb 0", @equipment['dut1'].boot_prompt, 10)
     raise "Unrecognized filesystem type in usb" if @equipment['dut1'].response.match(/Unrecognized\s+filesystem/i)
 
@@ -254,6 +262,18 @@ end
 def clean
   	#self.as(LspTestScript).clean
     puts "clean..."
+end
+
+def create_format_partition(params)
+  # first boot to kernel
+  params['bootargs'] = @equipment['dut1'].boot_args
+  @equipment['dut1'].system_loader.run params
+  # format partition
+  # run ltp-ddt test; by default ltp-ddt format partition as vfat 
+  cmd = "./runltp -P #{@equipment['dut1'].name} -f ddt/usbhost_dd_rw_vfat -s \"USBHOST_L_FUNC_VFAT_DD_RW_0001\" "
+  @equipment['dut1'].send_cmd("cd /opt/ltp; #{cmd}", @equipment['dut1'].prompt, 600)
+  @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2, false)
+  raise "ltp-ddt usbhost test failed and failed to format partitions" if @equipment['dut1'].timeout?
 end
 
 # The throughput will be in KBytes/sec
