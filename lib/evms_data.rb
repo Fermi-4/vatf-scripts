@@ -158,7 +158,7 @@ module EvmData
 
   def get_ospi_loc(platform)
     case platform
-    when /am654x/
+    when /am654x/,/j721e/
       return {'initial_bootloader' => '0', 'primary_bootloader' => '0x80000', 'secondary_bootloader' => '0x280000', 'sysfw'=>'0x6c0000'}
     else
       raise "get_ospi_loc: No location is being specified for OSPI partitions for #{platform}"
