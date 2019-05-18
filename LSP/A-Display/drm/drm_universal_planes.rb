@@ -37,7 +37,8 @@ def run
     puts("2 or fewer planes (#{drm_info['Planes:'].length()}) or connectors (#{drm_info['Connectors:'].length()}) detected performing a simple check")
     plane_width = connectors[0]['width']/plane_ids.length
     plane_height = connectors[0]['height']/plane_ids.length
-    if plane_check(plane_ids, plane_width, plane_height, connectors[0]['width'], res_table)
+    test_response, tout = plane_check(plane_ids, plane_width, plane_height, connectors[0]['width'], res_table)
+    if tout
       fails += 1
       fail_str="#{fails}/#{connectors.length} TEST FAILED!!!\r\n #{test_response}"
     end
@@ -51,7 +52,8 @@ def run
       plane_height = connector['height']/plane_ids.length
       off_set = [plane_width, plane_height].min
       test_pls = plane_ids - [primary_plane]
-      if plane_check(test_pls, plane_width, plane_height, connector['width'], res_table, "-c @#{connector['id']}")
+      test_response, tout = plane_check(test_pls, plane_width, plane_height, connector['width'], res_table, "-c @#{connector['id']}")
+      if tout
         fails += 1
         fail_str="#{fails}/#{connectors.length} TEST FAILED!!!\r\n #{test_response}"
       end
@@ -83,6 +85,6 @@ def plane_check(test_pls, plane_width, plane_height, connector_width, res_table,
                                        !tout ? ["Passed",{:bgcolor => "green"}] : 
                                        ["Failed",{:bgcolor => "red"}],
                                        test_response]])
-  tout
+  [test_response, tout]
 end
 
