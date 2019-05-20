@@ -158,7 +158,7 @@ module EvmData
 
   def get_ospi_loc(platform)
     case platform
-    when /am654x/
+    when /am654x/,/j721e/
       return {'initial_bootloader' => '0', 'primary_bootloader' => '0x80000', 'secondary_bootloader' => '0x280000', 'sysfw'=>'0x6c0000'}
     else
       raise "get_ospi_loc: No location is being specified for OSPI partitions for #{platform}"
@@ -561,7 +561,7 @@ module EvmData
     case platform.downcase
     when /^k2.{0,2}-(hs){0,1}evm/
       return :LOAD_FROM_SERIAL_UBOOT
-    when /^am65.+/
+    when /^am65.+/,/^j7.+/
       return :LOAD_FROM_SERIAL_TI_BOOT3
     when /^am57.+/
       return :LOAD_FROM_SERIAL_TI_OMAP
