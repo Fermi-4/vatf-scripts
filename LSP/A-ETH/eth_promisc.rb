@@ -165,7 +165,7 @@ end
 # install nping if it is not in host
 def install_nping()
   @equipment['server1'].send_cmd("which nping;echo $?", /^0[\0\n\r]+/m, 5)
-  @equipment['server1'].send_sudo_cmd("apt-get install nmap", @equipment['server1'].prompt, 600) if @equipment['server1'].timeout?
+  @equipment['server1'].send_sudo_cmd("apt-get -y install nmap", @equipment['server1'].prompt, 600) if @equipment['server1'].timeout?
   @equipment['server1'].send_cmd("which nping;echo $?", /^0[\0\n\r]+/m, 5)
   raise "Could not install nping!" if @equipment['server1'].timeout?
 end
