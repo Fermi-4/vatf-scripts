@@ -133,7 +133,7 @@ def run
       report_msg "===Testing size #{testsize_hex.to_i(16).to_s} ..."
       # write 'test' file to mmc fat partition from loadaddr
       @equipment['dut1'].send_cmd("time fatwrite mmc #{mmcdev_nums['mmc']} ${loadaddr} test #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
-      if @equipment['dut1'].response.match(/overflow/i)
+      if @equipment['dut1'].response.match(/overflow|no\s*space\s*left/i)
         report_msg "MMCSD first fat partition do not have enough space for the #{testsize_hex.to_i(16)} file, so skip it."
         next
       end
