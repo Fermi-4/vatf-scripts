@@ -29,15 +29,15 @@ def run
   when 'promisc'
 
     # When promisc mode is not enabled
-    report_msg "====Case 1.1: promisc is not enabled (default behavior); dest-mac is the wrong one (not dut mac) "
+    report_msg "====Case 1.1: promisc is not enabled (default behavior); dest-mac is the wrong one (not dut mac). => Should not see packets in this case "
     this_flags = {'promisc'=>false, 'allmulti'=>false, 'broadcast'=>false, 'multicast'=>false, 'set_wrong_mac'=>true}
     pacnum = capture_packets(eth_params, this_flags)
     if pacnum.to_i > 0
       result += 1
-      msg += "Should not see packets when promisc is disabled and wrong dut mac"
+      msg += "Should not see packets when promisc is disabled with wrong dut mac"
     end
 
-    report_msg "====Case 1.2: promisc is not enabled (default behavior); dest-mac is the right one"
+    report_msg "====Case 1.2: promisc is not enabled (default behavior); dest-mac is the right one. => Should see packets in this case"
     this_flags = {'promisc'=>false, 'allmulti'=>false, 'broadcast'=>false, 'multicast'=>false, 'set_wrong_mac'=>false}
     pacnum = capture_packets(eth_params, this_flags)
     if pacnum.to_i == 0
@@ -45,7 +45,7 @@ def run
       msg += "Should see packets when promisc is disabled with the right dut mac"
     end
 
-    report_msg "====Case 1.3: promisc is not enabled (default behavior); send broadcast packets "
+    report_msg "====Case 1.3: promisc is not enabled (default behavior); send broadcast packets. => Should see packets in this case "
     this_flags = {'promisc'=>false, 'allmulti'=>false, 'broadcast'=>true, 'multicast'=>false, 'set_wrong_mac'=>false}
     pacnum = capture_packets(eth_params, this_flags)
     if pacnum.to_i == 0
@@ -53,7 +53,7 @@ def run
       msg += "Should see packets when promisc is disabled and broadcast packets was sent"
     end
 
-    report_msg "====Case 1.4: promisc is not enabled (default behavior); send multicast packets "
+    report_msg "====Case 1.4: promisc is not enabled (default behavior); send multicast packets. => Should not see packets in this case "
     this_flags = {'promisc'=>false, 'allmulti'=>false, 'broadcast'=>false, 'multicast'=>true, 'set_wrong_mac'=>false}
     pacnum = capture_packets(eth_params, this_flags)
     if pacnum.to_i > 0
@@ -63,7 +63,7 @@ def run
 
     # Now enable promisc
 
-    report_msg "====Case 2.1: promisc is enabled ; dest-mac is the wrong one (not dut mac) "
+    report_msg "====Case 2.1: promisc is enabled ; dest-mac is the wrong one (not dut mac). => Should see packets in this case "
     this_flags = {'promisc'=>true, 'allmulti'=>false, 'broadcast'=>false, 'multicast'=>false, 'set_wrong_mac'=>true}
     pacnum = capture_packets(eth_params, this_flags)
     if pacnum.to_i == 0
@@ -71,7 +71,7 @@ def run
       msg += "Should see packets when promisc is enabled and wrong dut mac"
     end
 
-    report_msg "====Case 2.2: promisc enabled ; dest-mac is the right one "
+    report_msg "====Case 2.2: promisc enabled ; dest-mac is the right one. => Should see packets in this case "
     this_flags = {'promisc'=>true, 'allmulti'=>false, 'broadcast'=>false, 'multicast'=>false, 'set_wrong_mac'=>false}
     pacnum = capture_packets(eth_params, this_flags)
     if pacnum.to_i == 0
@@ -79,7 +79,7 @@ def run
       msg += "Should see packets when promisc is enabled with the right dut mac"
     end
 
-    report_msg "====Case 2.3: promisc enabled ; send broadcast packets "
+    report_msg "====Case 2.3: promisc enabled ; send broadcast packets. => Should see packets in this case "
     this_flags = {'promisc'=>true, 'allmulti'=>false, 'broadcast'=>true, 'multicast'=>false, 'set_wrong_mac'=>false}
     pacnum = capture_packets(eth_params, this_flags)
     if pacnum.to_i == 0
@@ -87,7 +87,7 @@ def run
       msg += "Should see packets when promisc is enabled and broadcast packets was sent"
     end
 
-    report_msg "====Case 2.4: promisc is enabled ; send multicast packets "
+    report_msg "====Case 2.4: promisc is enabled ; send multicast packets. => Should see packets in this case "
     this_flags = {'promisc'=>true, 'allmulti'=>false, 'broadcast'=>false, 'multicast'=>true, 'set_wrong_mac'=>false}
     pacnum = capture_packets(eth_params, this_flags)
     if pacnum.to_i == 0
@@ -96,7 +96,7 @@ def run
     end
 
   when 'allmulti'
-    report_msg "====Case 3.1: allmulti disabled; promisc is disabled ; send multicast packets "
+    report_msg "====Case 3.1: allmulti disabled; promisc is disabled ; send multicast packets. => Should not see packets in this case "
     this_flags = {'promisc'=>false, 'allmulti'=>false, 'broadcast'=>false, 'multicast'=>true, 'set_wrong_mac'=>false}
     pacnum = capture_packets(eth_params, this_flags)
     if pacnum.to_i > 0
@@ -104,7 +104,7 @@ def run
       msg += "Should not see packets when allmulti and promisc are disabled and multicast packets was sent"
     end
 
-    report_msg "====Case 3.2: allmulti enabled; promisc is disabled ; send multicast packets "
+    report_msg "====Case 3.2: allmulti enabled; promisc is disabled ; send multicast packets. => Should see packets in this case "
     this_flags = {'promisc'=>false, 'allmulti'=>true, 'broadcast'=>false, 'multicast'=>true, 'set_wrong_mac'=>false}
     pacnum = capture_packets(eth_params, this_flags)
     if pacnum.to_i == 0
