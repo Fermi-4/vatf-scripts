@@ -42,7 +42,7 @@ def run
     end
 
 	if ! @equipment['dut1'].response.match(/reboot: Power down/)
-		@equipment['dut1'].wait_for(/reboot: Power down/, 120)
+		@equipment['dut1'].wait_for(/(reboot: Power down|Reached target Shutdown)/, 120)
 	    if @equipment['dut1'].timeout?
 			return set_result FrameworkConstants::Result[:fail], "critical temp #{temp_value} for #{temp_node} did not power down the board.\n"
 	    end
