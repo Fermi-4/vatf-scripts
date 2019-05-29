@@ -43,10 +43,10 @@ def run
     sleep (suspend_time - elapsed_time) if elapsed_time < suspend_time and wakeup_domain == 'rtc'
     response = resume(wakeup_domain, max_resume_time)
     if wakeup_domain != 'rtc_only'
-      time_captures = /PM:\s+resume\s+of\s+devices\s+complete\s+after\s+([0-9\.]+)\s+([umsec]+)/i.match(response)
+      time_captures = /PM:\s+resume\s+of\s+devices\s+complete\s+after\s+([0-9\.]+)/i.match(response)
       resume_time << time_captures[1]
       # here assume the printed unit is same for all iterations
-      unit = time_captures[2]
+      unit = time_captures.size > 2 ? time_captures[2] : 'msecs'
     end
     i += 1
     sleep 5
