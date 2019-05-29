@@ -22,15 +22,15 @@ def run
     @equipment['dut1'].send_cmd("1234", "password updated successfully", 2, false)
     sleep 2
     # Set system prompt
-    @equipment['dut1'].prompt = /[\w-]{5,}:.+#/
+    @equipment['dut1'].prompt = /[\w-]{5,}:.+[#$]/
     # login as tester
     3.times {
       @equipment['dut1'].send_cmd("logout", "login:", 10, false)
       break if !@equipment['dut1'].timeout?
     }
-    sleep 5
+    sleep 10
     3.times {
-      @equipment['dut1'].send_cmd("tester", "/Password/i", 2, false)
+      @equipment['dut1'].send_cmd("tester", "/Password/i", 5, false)
       @equipment['dut1'].send_cmd("1234", @equipment['dut1'].prompt, 10, false)
       break if !@equipment['dut1'].timeout?
     }
