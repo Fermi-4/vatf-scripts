@@ -3,9 +3,9 @@ include LspTestScript
 
 def run
 
-    cpu_mode_match = @equipment['dut1'].boot_log.match(/CPU: All CPU.*? started (in|at)\s+(\w+)/)
+    cpu_mode_match = @equipment['dut1'].boot_log.match(/CPU: All CPU.*? started (?:in|at)\s+(\w+)/)
     if (cpu_mode_match)
-       if (cpu_mode_match.captures[0] == "EL2")
+       if (cpu_mode_match.captures[0] == "EL2" or cpu_mode_match.captures[0] == "HYP")
          set_result(FrameworkConstants::Result[:pass], "CPUs start in EL2 confirming basic HYP mode support")
        else
          set_result(FrameworkConstants::Result[:fail], "Check starting mode of CPUs - not EL2 as expected")
