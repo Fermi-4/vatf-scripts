@@ -268,7 +268,7 @@ module EvmData
     machines['k2hk-evm'] = {'0.0' => /Machine model:.*Keystone 2 Kepler\/Hawking EVM/, }
     machines['k2e-evm'] = {'0.0' => /Machine model:.*Keystone 2 Edison EVM/, }
     machines['k2l-evm'] = {'0.0' => /Machine model:.*Keystone 2 Lamarr EVM/, }
-    machines['am654x-evm'] = {'0.0' => /Machine model: Texas Instruments AM654 Base Board/. }
+    machines['am654x-evm'] = {'0.0' => /Machine model: Texas Instruments AM654 Base Board/ }
                                           
     params.merge!({'dict' => machines})
     get_cmd(params)
