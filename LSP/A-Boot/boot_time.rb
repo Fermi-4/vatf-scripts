@@ -148,10 +148,10 @@ def run
       perf_data <<  {'name' => "Boottime-LoadSPL", 'value' => boottimes_load_spl, 'units' => "sec"}
       perf_data <<  {'name' => "Boottime-LoadUboot", 'value' => boottimes_load_uboot, 'units' => "sec"}
     end
-    perf_data <<  {'name' => "Boottime-LoadKernel", 'value' => boottimes_load_kernel, 'units' => "sec"}
-    perf_data <<  {'name' => "Boottime-InitKernel", 'value' => boottimes_initialize_kernel, 'units' => "sec"}
-    perf_data <<  {'name' => "Boottime-InitFS", 'value' => boottimes_initialize_fs, 'units' => "sec"} if !skip_fs
-    perf_data <<  {'name' => "Boottime-Total", 'value' => boottimes_total, 'units' => "sec"}
+    perf_data <<  {'name' => "Boottime-LoadKernel", 'value' => boottimes_load_kernel, 'units' => "sec", 'significant_difference' => 4}
+    perf_data <<  {'name' => "Boottime-InitKernel", 'value' => boottimes_initialize_kernel, 'units' => "sec", 'significant_difference' => 6}
+    perf_data <<  {'name' => "Boottime-InitFS", 'value' => boottimes_initialize_fs, 'units' => "sec", 'significant_difference' => 50} if !skip_fs
+    perf_data <<  {'name' => "Boottime-Total", 'value' => boottimes_total, 'units' => "sec", 'significant_difference' => 50}
     set_result(FrameworkConstants::Result[:pass], "Boot Time are collected. Total is #{boottimes_total}. ",perf_data)
   else
     set_result(FrameworkConstants::Result[:fail], "Could not get boot time.")
