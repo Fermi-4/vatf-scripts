@@ -142,7 +142,7 @@ end
 
 def ping_ip(dut, ipaddr)
   dut.send_cmd("ping -c 10 #{ipaddr}", dut.prompt, 20, false)
-  if dut.timeout?
+  if dut.timeout? or !(dut.response =~ Regexp.new("(\s0%\spacket\sloss)"))
     dut.send_cmd("\cC echo 'Kill ping process...'", dut.prompt, 20)
     raise "Failed to ping (#{ipaddr})"
   end
