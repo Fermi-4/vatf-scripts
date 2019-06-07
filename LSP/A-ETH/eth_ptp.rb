@@ -67,6 +67,14 @@ def run
   network_option = @test_params.params_control.instance_variable_defined?(:@network_option) ? @test_params.params_control.network_option[0].to_s : '-2'
   timestamp_option = @test_params.params_control.instance_variable_defined?(:@timestamp_option) ? @test_params.params_control.timestamp_option[0].to_s : '-H'
 
+  # get corresponding ptp device
+  @equipment['dut1'].send_cmd("ethtool -T #{slave_iface}", @equipment['dut1'].prompt, 10, false)
+  ptp_num_slave = @equipment['dut1'].response.match(/PTP\s+Hardware\s+Clock\s*:\s*(\d+)/im).captures[0]
+  ptp_device_slave = "/dev/ptp#{ptp_num_slave}"
+  @equipment['dut2'].send_cmd("ethtool -T #{master_iface}", @equipment['dut2'].prompt, 10, false)
+  ptp_num_master = @equipment['dut1'].response.match(/PTP\s+Hardware\s+Clock\s*:\s*(\d+)/im).captures[0]
+  ptp_device_master = "/dev/ptp#{ptp_num_master}"
+
   # gen config file for both
   cfg_file = '/test/ptp.cfg'
   configs = {}
@@ -75,9 +83,9 @@ def run
 
   # set different time on master(dut2) and slave(dut1)
   master_time = 100000
-  testptp_settime(@equipment['dut2'], master_time)
+  testptp_settime(@equipment['dut2'], master_time, ptp_device_master)
   slave_time = 900000
-  testptp_settime(@equipment['dut1'], slave_time)
+  testptp_settime(@equipment['dut1'], slave_time, ptp_device_slave)
 
   # master side
   @equipment['dut2'].send_cmd("ptp4l #{delay_option} #{network_option} #{timestamp_option} -i #{master_iface} -l 6 -m -q -f #{cfg_file}", "assuming the grand master role", 30, false)
@@ -114,10 +122,10 @@ def run
   msg += "#{fail_cnt} offsets are not within the range; it did not converge which means it did not sync to master. " if fail_cnt != 0
 
   # Check if ptp clock time is synced
-  master_time_now = testptp_gettime(@equipment['dut2']) 
-  slave_time_now = testptp_gettime(@equipment['dut1']) 
+  master_time_now = testptp_gettime(@equipment['dut2'], ptp_device_master) 
+  slave_time_now = testptp_gettime(@equipment['dut1'], ptp_device_slave) 
   time_diff = master_time_now.to_f - slave_time_now.to_f
-  if time_diff > 1
+  if time_diff.abs > 1
     msg += "ptp clock on slave is not synced with master ptp clock with testptp;"
     result += 1
   end
@@ -142,15 +150,15 @@ end
 
 def ping_ip(dut, ipaddr)
   dut.send_cmd("ping -c 10 #{ipaddr}", dut.prompt, 20, false)
-  if dut.timeout? or !(dut.response =~ Regexp.new("(\s0%\spacket\sloss)"))
+  if dut.timeout? or (dut.response =~ Regexp.new("(\s100%\spacket\sloss)"))
     dut.send_cmd("\cC echo 'Kill ping process...'", dut.prompt, 20)
     raise "Failed to ping (#{ipaddr})"
   end
 end
 
 # testptp get ptp clock time
-def testptp_gettime(dut)
-  dut.send_cmd("testptp -g", dut.prompt, 10)
+def testptp_gettime(dut, ptp_device)
+  dut.send_cmd("testptp -g -d #{ptp_device}", dut.prompt, 10)
   if !dut.response.match(/clock\s+time:/i)
     raise "testptp failed to get ptp clock time"
   end
@@ -159,8 +167,8 @@ def testptp_gettime(dut)
 end
 
 # testptp set ptp clock time 
-def testptp_settime(dut, val)
-  dut.send_cmd("testptp -g && testptp -T #{val} && testptp -g", dut.prompt, 10)
+def testptp_settime(dut, val, ptp_device)
+  dut.send_cmd("testptp -g -d #{ptp_device} && testptp -T #{val} -d #{ptp_device} && testptp -g #{ptp_device}", dut.prompt, 10)
   if !dut.response.match(/set\s+time\s+ok/i)
     raise "testptp failed to set ptp clock time by val"
   end
