@@ -95,6 +95,62 @@ module EvmData
                                                        'VDD_IVA' => '0.01', 'VDDR' => '0.01', 'VDDR_SOC' => '0.01',
                                                        'VDDS_1V8' => '0.01', 'VDD_SDIO' => '0.01', 'VDA_USB' => '0.01',
                                                        'VDA_PLL' => '0.01', 'VDA_PHY2' => '0.01', 'VDA_PHY1' => '0.01'}}
+    power_data['j721e-evm'] = {'power_domains' => [ 
+													'VDD_CPU_AVS',
+													'VDD_MCU_0V85',
+													'VDD_MCU_RAM_0V85',
+													'VDA_MCU_1V8',
+													'VDD_MCUIO_3V3',
+													'VDD_MCUIO_1V8',
+													'VDD_CORE_0V8',
+													'VDD_CORE_RAM_0V85',
+													'VDD_CPU_RAM_0V85',
+													'VDDR_BIAS_1V1',
+													'VDDR_IO_DV',
+													'VDD_PHYCORE_0V8',
+													'VDA_PLL_1V8',
+													'VDD_PHYIO_1V8',
+													'VDA_USB_3V3',		
+													'VDD_IO_1V8',
+													'VDD_IO_3V3',
+													'VDD_SD_DV',
+												  ],
+                                'domain_resistors' => {
+													#SOC 
+													'VDD_CPU_AVS' => '0.010',
+													'VDD_MCU_0V85' => '0.010',
+													'VDD_MCU_RAM_0V85' => '0.010',
+													'VDA_MCU_1V8' => '0.010',
+													'VDD_MCUIO_3V3' => '0.010',
+													'VDD_MCUIO_1V8' => '0.010',
+													'VDD_CORE_0V8' => '0.010',
+													'VDD_CORE_RAM_0V85' => '0.010',
+													'VDD_CPU_RAM_0V85' => '0.010',
+													'VDDR_BIAS_1V1' => '0.010',
+													'VDDR_IO_DV' => '0.010',
+													'VDD_PHYCORE_0V8' => '0.010',
+													'VDA_PLL_1V8' => '0.010',
+													'VDD_PHYIO_1V8' => '0.010',
+													'VDA_USB_3V3' => '0.010',
+													'SPARE' => '0.000',		
+													'VDD_IO_1V8' => '0.010',
+													'VDD_IO_3V3' => '0.010',
+													'VDD_SD_DV' => '0.010',
+													#Others
+													'VDD1_LP4_1V8' => '0.010',
+													'VDD2_LP4_1V1' => '0.010',
+													'VDDQ_LP4_DV' => '0.010',
+													'VSYS_MCUIO_1V8' => '0.010',
+													'VSYS_MCUIO_3V3' => '0.010',
+													'VSYS_IO_1V8' => '0.010',
+													'VSYS_IO_3V3' => '0.010',
+													'VCC_12V0' => '0.010',
+													'VSYS_5V0' => '0.010',
+													'VSYS_3V3' => '0.010',
+													'VSYS_3V3_SOM' => '0.010',
+													'VDDA_DLL_0V8' => '0.010',
+													'EXP_3V3' => '0.010',
+                                }}
 
     return power_data[key]
   end
@@ -158,7 +214,7 @@ module EvmData
 
   def get_ospi_loc(platform)
     case platform
-    when /am654x/
+    when /am654x/,/j721e/
       return {'initial_bootloader' => '0', 'primary_bootloader' => '0x80000', 'secondary_bootloader' => '0x280000', 'sysfw'=>'0x6c0000'}
     else
       raise "get_ospi_loc: No location is being specified for OSPI partitions for #{platform}"
@@ -562,7 +618,7 @@ module EvmData
     case platform.downcase
     when /^k2.{0,2}-(hs){0,1}evm/
       return :LOAD_FROM_SERIAL_UBOOT
-    when /^am65.+/
+    when /^am65.+/,/^j7.+/
       return :LOAD_FROM_SERIAL_TI_BOOT3
     when /^am57.+/
       return :LOAD_FROM_SERIAL_TI_OMAP

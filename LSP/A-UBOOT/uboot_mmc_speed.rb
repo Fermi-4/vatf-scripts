@@ -82,6 +82,8 @@ def get_expected_busspeed_emmc(platform)
   expected_speed_emmc['am574x-idk'] = '48000000'
   expected_speed_emmc['am654x-evm'] = '200000000'
   expected_speed_emmc['am654x-idk'] = '200000000'
+  expected_speed_emmc['j721e-idk-gw'] = '200000000'
+  expected_speed_emmc['j721e-evm'] = '200000000'
   return expected_speed_emmc[platform]
 end
 
@@ -91,5 +93,7 @@ def get_expected_mode_emmc(platform)
   expected_mode_emmc['am574x-idk'] = 'MMC DDR52'
   expected_mode_emmc['am654x-evm'] = 'HS200'
   expected_mode_emmc['am654x-idk'] = 'HS200'
+  expected_mode_emmc['j721e-idk-gw'] = 'HS200'
+  expected_mode_emmc['j721e-evm'] = 'HS200'
   return expected_mode_emmc[platform]
 end
