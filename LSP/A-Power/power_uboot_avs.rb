@@ -17,20 +17,22 @@ def run
 
   translated_boot_params = setup_host_side()
   @equipment['dut1'].boot_to_bootloader(translated_boot_params)
-
-  requirements = get_required_uboot_avs(@equipment['dut1'].name)
+  requirements = get_required_uboot_avs(@equipment['dut1'].name).compact
   result_str = ''
   multimeter_readings = @equipment['multimeter1'].get_multimeter_output(10, 10) # 10 samples
   requirements.each{|req|
     domain = req.keys[0]
     efuse_addr = req[domain].values[0]
+    opp = req[domain].keys[0]
     measurement_domain = map_domain_to_measurement_rail(@equipment['dut1'].name, domain)
     measured_voltage = multimeter_readings['domain_'+measurement_domain+'_volt_readings'][0]  # AVG of 10 samples
     measured_voltage = measured_voltage.to_f * 1000 # Convert to mv, which is unit used in efuse registers
-    expected_voltage = read_address(efuse_addr, false) & 0xfff # Only use bits 0-11
+    expected_voltage =  get_opp_vtm_bits(@equipment['dut1'].name, opp, read_address(efuse_addr, false))
+    expected_voltage = map_vtm_vid_value_to_voltage(@equipment['dut1'].name, expected_voltage)
     ganged_rails = get_ganged_rails(@equipment['dut1'].name, domain, req[domain].keys[0])
     ganged_rails.each {|ganged_rail_addr|
-      expected_ganged_voltage = read_address(ganged_rail_addr, false) & 0xfff # Only use bits 0-11
+      expected_ganged_voltage = get_opp_vtm_bits(@equipment['dut1'].name, opp, read_address(ganged_rail_addr, false))
+      expected_ganged_voltage = map_vtm_vid_value_to_voltage(@equipment['dut1'].name, expected_ganged_voltage)
       expected_voltage = expected_ganged_voltage if expected_ganged_voltage > expected_voltage
     }
     deviation = (measured_voltage - expected_voltage.to_f).abs

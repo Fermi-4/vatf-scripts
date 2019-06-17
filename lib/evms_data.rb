@@ -95,6 +95,30 @@ module EvmData
                                                        'VDD_IVA' => '0.01', 'VDDR' => '0.01', 'VDDR_SOC' => '0.01',
                                                        'VDDS_1V8' => '0.01', 'VDD_SDIO' => '0.01', 'VDA_USB' => '0.01',
                                                        'VDA_PLL' => '0.01', 'VDA_PHY2' => '0.01', 'VDA_PHY1' => '0.01'}}
+    power_data['am654x-evm'] = {'power_domains' => [
+                          'VDD_CORE',
+                          'VDD_MCU',
+                          'VDD_MPU',
+                          'SOC_DVDD3V3',
+                          'SOC_DVDD1V8',
+                          'SOC_AVDD1V8',
+                          'SOC_VDDS_DDR',
+                          'VDD_DDR'
+                          ],
+                              'domain_resistors' => {
+                          #SOC
+                          'VDD_CORE' => '0.002',
+                          'VDD_MCU' => '0.010',
+                          'VDD_MPU' => '0.002',
+                          'SOC_DVDD3V3' => '0.002',
+                          'SOC_DVDD1V8' => '0.010',
+                          'SOC_AVDD1V8' => '0.010',
+                          'SOC_VDDS_DDR' => '0.010',
+                          'VDD_DDR' => '0.010'
+                          }}
+
+    power_data['am654x-idk'] = power_data['am654x-evm']
+
     power_data['j721e-evm'] = {'power_domains' => [ 
 													'VDD_CPU_AVS',
 													'VDD_MCU_0V85',
@@ -446,8 +470,13 @@ module EvmData
                                'VDD_GPU' => {'OPP_NOM'=>'0x4A003B08','OPP_OD'=>'0x4A003B0C','OPP_HIGH'=>'0x4A003B10','OPP_PLUS'=>'0x4A003B14'},
                                'VDD_MPU' => {'OPP_NOM'=>'0x4A003B20','OPP_OD'=>'0x4A003B24','OPP_HIGH'=>'0x4A003B28','OPP_PLUS'=>'0x4A003B2C'},
                               }
+    machines['am654x-evm']  = {'VDD_MPU' => {'OPP_LOW'=>'0x42050164', 'OPP_NOM'=>'0x42050164', 'OPP_OD'=>'0x42050164', 'OPP_HIGH'=>'0x42050164'},
+                               'VDD_MPU2' => {'OPP_LOW'=>'0x42050184', 'OPP_NOM'=>'0x42050184', 'OPP_OD'=>'0x42050184', 'OPP_HIGH'=>'0x42050184'},
+                              }
     machines['am57xx-evm']   = machines['dra7xx-evm']
     machines['dra71x-evm']   = machines['dra72x-evm']
+    machines['am654x-idk']   = machines['am654x-evm']
+
     raise "AVS class0 data not defined for #{platform}" if !machines.key?(platform)
     machines[platform]
   end
@@ -484,10 +513,57 @@ module EvmData
         return []
       end
 
+    when "am654x-evm", "am654x-idk"
+      case domain
+      when "VDD_MPU"
+        return [data['VDD_MPU2'][opp]]
+      when "VDD_MPU2"
+        return [data['VDD_MPU'][opp]]
+      else
+        return []
+      end
+
     else
       return []
     end
   end
+
+
+  def map_vtm_vid_value_to_voltage(platform, value)
+    case platform.downcase
+    when "am654x-evm", "am654x-idk"
+      if value < 30 or value > 145
+        raise "Invalid VTM VID efuse value #{value} for #{platform}"
+      else
+        return ((value - 30) * 5) + 600
+      end
+
+    else
+      return value
+    end
+  end
+
+  def get_opp_vtm_bits(platform, opp, value)
+    case platform.downcase
+    when "am654x-evm", "am654x-idk"
+      case opp.upcase
+      when "OPP_LOW"
+        return value & 0xff
+      when "OPP_NOM"
+        return (value & 0xff00) >> 8
+      when "OPP_OD"
+        return (value & 0xff0000) >> 16
+      when "OPP_HIGH"
+        return (value & 0xff000000) >> 24
+      else
+        raise "Invalid operating point #{opp} for #{platform}"
+      end
+
+    else
+      return value & 0xfff
+    end
+  end
+
 
   # Define usb controller instance for usb gadget
   def get_usb_gadget_number(platform)
@@ -522,6 +598,13 @@ module EvmData
         end
       }
 
+    when "am654x-evm", "am654x-idk"
+      return data.map{|domain,opps|
+        if domain == 'VDD_MPU'
+          { domain => opps.select{|name,address| name == "OPP_NOM"} }
+        end
+      }
+
     else
       raise "AVS class0 uboot requirements are not defined for #{platform}" 
     end
@@ -548,6 +631,13 @@ module EvmData
         if domain == 'VDD_IVA' or domain == 'VDD_DSPEVE'
           { domain => opps.select{|name,address| name == "OPP_HIGH"} }
         else
+          { domain => opps.select{|name,address| name == "OPP_NOM"} }
+        end
+      }
+
+    when "am654x-evm", "am654x-idk"
+      return data.map{|domain,opps|
+        if domain == 'VDD_MPU'
           { domain => opps.select{|name,address| name == "OPP_NOM"} }
         end
       }

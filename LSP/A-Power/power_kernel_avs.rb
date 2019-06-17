@@ -64,10 +64,12 @@ def check_opp(opp, max_deviation)
     measurement_domain = map_domain_to_measurement_rail(@equipment['dut1'].name, domain)
     measured_voltage = multimeter_readings['domain_'+measurement_domain+'_volt_readings'][0]  # AVG of 10 samples
     measured_voltage = measured_voltage.to_f * 1000 # Convert to mv, which is unit used in efuse registers
-    expected_voltage = read_address(efuse_addr) & 0xfff # Only use bits 0-11
+    expected_voltage = get_opp_vtm_bits(@equipment['dut1'].name, opp, read_address(efuse_addr))
+    expected_voltage = map_vtm_vid_value_to_voltage(@equipment['dut1'].name, expected_voltage)
     ganged_rails = get_ganged_rails(@equipment['dut1'].name, domain, opp)
     ganged_rails.each {|ganged_rail_addr|
-      expected_ganged_voltage = read_address(ganged_rail_addr) & 0xfff # Only use bits 0-11
+      expected_ganged_voltage = get_opp_vtm_bits(@equipment['dut1'].name, opp, read_address(ganged_rail_addr))
+      expected_ganged_voltage = map_vtm_vid_value_to_voltage(@equipment['dut1'].name, expected_ganged_voltage)
       expected_voltage = expected_ganged_voltage if expected_ganged_voltage > expected_voltage
     }
     deviation = (measured_voltage - expected_voltage.to_f).abs
@@ -91,7 +93,7 @@ def run
 
   enable_cpufreq_governor('userspace')
 
-  requirements = get_required_linux_avs(@equipment['dut1'].name)
+  requirements = get_required_linux_avs(@equipment['dut1'].name).compact
   requirements.each {|req| req.values.each {|v| v.keys.each {|opp| opps.add(opp)} } }
   opps.to_a.each{|opp|
     @reqs_for_opp =  requirements.select {|req| req.values[0].has_key?(opp)}
