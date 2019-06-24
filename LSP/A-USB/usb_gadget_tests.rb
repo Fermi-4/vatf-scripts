@@ -23,7 +23,7 @@ def run
   test_type = @test_params.params_control.instance_variable_defined?(:@test_type) ? @test_params.params_control.test_type[0] : 'insert_remove'
   iterations = @test_params.params_control.instance_variable_defined?(:@iterations) ? @test_params.params_control.iterations[0].to_i : 5 
   duration = @test_params.params_control.instance_variable_defined?(:@duration) ? @test_params.params_control.duration[0].to_i : 60 
-  speed = @test_params.params_control.instance_variable_defined?(:@speed) ? @test_params.params_control.duration[0] : 'none' 
+  speed = @test_params.params_control.instance_variable_defined?(:@speed) ? @test_params.params_control.duration[0] : 'high' 
 
   mutex_timeout = iterations*60000
   staf_mutex("usbdevice", mutex_timeout) do
@@ -113,7 +113,6 @@ def run_performance
         return
      end
      modprobe_on_device(module_name, gadget_types, 'remove')
-
 
      # Collect mount directory and other details
      device_details = check_mount_interface_on_host(gadget_types)
@@ -279,7 +278,7 @@ def check_enum_on_host(gadget_types)
   host_gadget_string = Hash.new
   host_gadget_string = {'mass_storage'=>'usb-storage','ether'=>'cdc_ether',
                        'serial'=>'cdc_acm', 'acm'=>'cdc_acm', 'ncm' => 'cdc_ncm'}
-  speed = @test_params.params_control.instance_variable_defined?(:@speed) ? @test_params.params_control.duration[0] : 'none' 
+  speed = @test_params.params_control.instance_variable_defined?(:@speed) ? @test_params.params_control.duration[0] : 'high' 
   system("sleep 10")
   @equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
   host_response = @equipment['server1'].response
@@ -312,6 +311,12 @@ def check_mount_interface_on_host(gadget_types)
   @equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
   host_response =  @equipment['server1'].response
   @equipment['server1'].send_sudo_cmd('bash -c "df | grep /dev > dev_string2.txt"', @equipment['server1'].prompt , 30)
+  File.foreach("dev_string1.txt") do |line|
+    @equipment['server1'].log_info "DEV_STRING1.txt LINE is #{line}\n"
+  end
+  File.foreach("dev_string2.txt") do |line|
+    @equipment['server1'].log_info "DEV_STRING2.txt LINE is #{line}\n"
+  end
   @equipment['server1'].send_sudo_cmd('bash -c "df | grep /media > media_string2.txt"', @equipment['server1'].prompt , 30)
   mscdev= find_newdevice()
   mscmount = find_newmedia()
@@ -321,6 +326,7 @@ def check_mount_interface_on_host(gadget_types)
   @equipment['server1'].send_sudo_cmd("rm media_string1.txt",@equipment['server1'].prompt)
   @equipment['server1'].send_sudo_cmd("rm dev_string2.txt",@equipment['server1'].prompt)
   @equipment['server1'].send_sudo_cmd("rm media_string2.txt",@equipment['server1'].prompt)
+
   if mscdev == mscmount then
     puts "Host does not detect any USB device"
     set_result(FrameworkConstants::Result[:fail], "No new USB mount is reported on host.")
@@ -400,7 +406,9 @@ def start_usb_dev_cdc(usb_interface,duration)
   end
   system ("sleep 10")
   output_string=''
-  output_string = iperftest_cdc(server_usb_interface, duration)
+  perf_data = []
+  output_string = iperftest_cdc(server_usb_interface, duration, perf_data)
+  @equipment['server1'].log_info ("CDC OUTPUT is #{output_string}\n")
   out_file.write(output_string)
   out_file.close
   out_file_name = File.join(@linux_temp_folder, 'cdc_test.log')
@@ -446,11 +454,13 @@ def serialtest_acm(host_interface, device_interface, test_sequence, iterations)
       dut_output=@equipment['dut1'].send_cmd("while read p; do
                                               echo $p
                                               done </home/root/serial_test.txt", @equipment['dut1'].prompt)
-      dut_output=dut_output.split(/serial_test.txt/)
-      dut_output=dut_output.reverse[0]
-      dut_output=dut_output.split(/#{@equipment['dut1'].login}/)[0].strip
-      if (test_sequence.to_s == dut_output.to_s)
+   @equipment['server1'].log_info("Serial_Test DUT output is #{dut_output} in serialtest_acm")
+   @equipment['server1'].log_info("End of Serial_Test DUT output")
+      if (dut_output.include? test_sequence)
+        @equipment['server1'].log_info("Substring comparison was true")
+        @equipment['server1'].log_info("BEFORE pass_count is #{pass_count} and iterations is #{iterations} and #[i}")
         pass_count += 1
+        @equipment['server1'].log_info("AFTER pass_count is #{pass_count} and iterations is #{iterations} and #[i}")
       end
       @equipment['dut1'].send_cmd("rm /home/root/serial_test.txt")
    end
