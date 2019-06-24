@@ -11,6 +11,7 @@ end
 
 
 def run
+  perf_data = []
   simultaneous_host_device_test=false
   packet_count=100
   test_duration=60
@@ -80,10 +81,12 @@ def run
      while (!@stop_test)
         case  
         when cmds.match(/usb_dev_msc/) 
-            usb_dev_msc()
+            perf_data=usb_dev_msc()
+            @equipment['server1'].log_info("PERF after return is #{perf_data}")
             @stop_test=true
         when cmds.match(/usb_dev_cdc/) 
-            usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
+            perf_data=usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
+            @equipment['server1'].log_info("PERF after return is #{perf_data}")
             @stop_test=true
         else
             $result = 1
@@ -95,7 +98,7 @@ def run
         end
      end
      if $result == 0
-       set_result(FrameworkConstants::Result[:pass], "Testcase Result is PASS.")  
+       set_result(FrameworkConstants::Result[:pass], "Testcase Result is PASS.",perf_data)  
      else
        set_result(FrameworkConstants::Result[:fail], $result_message)
        command = "modprobe -r g_ether"
@@ -143,7 +146,8 @@ end
 
 #MSC test
 def usb_dev_msc()
-
+ 
+perf_data=[]
   @equipment['server1'].send_sudo_cmd('bash -c "df | grep /dev > dev_string1.txt"', @equipment['server1'].prompt , 30)
   @equipment['server1'].send_sudo_cmd('bash -c "df | grep /media > media_string1.txt"', @equipment['server1'].prompt , 30)
 
@@ -263,34 +267,53 @@ def usb_dev_msc()
   case
   when $cmd.match(/_msc_slave/)  
     MSC_Mount_Device("#{mscdev}","#{mscmount}")
-    MSC_Raw_Write("#{mscmount}","150")
+    output=MSC_Raw_Write("#{mscmount}","150")
+    throughput=output.scan(/\d*\.\d*\s+MB\/s/)
+    perf_data << {'name' => "Slave Write Throughput 150 Blocks", 'value' => throughput, 'units' => "MB/s"}
     
     MSC_Mount_Device("#{mscdev}","#{mscmount}")  
-    MSC_Raw_Read("#{mscmount}","150")
+    output=MSC_Raw_Read("#{mscmount}","150")
+    throughput=output.scan(/\d*\.\d*\s+MB\/s/)
+     @equipment['server1'].log_info("OUTPUT is #{output}\n")
+     @equipment['server1'].log_info("THROUGHPUT is #{throughput}\n")
+    perf_data << {'name' => "Slave Read Throughput 150 Blocks", 'value' => throughput, 'units' => "MB/s"}
 
     puts "DONE Mount, raw read, raw write\n"
   else
   
     MSC_Mount_Device("#{mscdev}","#{mscmount}")
-    MSC_Raw_Write("#{mscmount}","100")
+    output=MSC_Raw_Write("#{mscmount}","100")
+    throughput=output.scan(/\d*\.\d*\s+MB\/s/)
+    perf_data << {'name' => "MSC Device Write Throughput 100 Blocks", 'value' => throughput, 'units' => "MB/s"}
 
     MSC_Mount_Device("#{mscdev}","#{mscmount}")  
-    MSC_Raw_Read("#{mscmount}","100")
+    output=MSC_Raw_Read("#{mscmount}","100")
+    throughput=output.scan(/\d*\.\d*\s+MB\/s/)
+    perf_data << {'name' => "MSC Device Read Throughput 100 Blocks", 'value' => throughput, 'units' => "MB/s"}
 
     MSC_Mount_Device("#{mscdev}","#{mscmount}")
-    MSC_Raw_Write("#{mscmount}", "250")
+    output=MSC_Raw_Write("#{mscmount}", "250")
+    throughput=output.scan(/\d*\.\d*\s+MB\/s/)
+    perf_data << {'name' => "MSC Device Write Throughput 250 Blocks", 'value' => throughput, 'units' => "MB/s"}
 
     MSC_Mount_Device("#{mscdev}","#{mscmount}")  
-    MSC_Raw_Read("#{mscmount}", "250")
+    output=MSC_Raw_Read("#{mscmount}", "250")
+    throughput=output.scan(/\d*\.\d*\s+MB\/s/)
+    perf_data << {'name' => "MSC Device Read Throughput 250 Blocks", 'value' => throughput, 'units' => "MB/s"}
 
     MSC_Mount_Device("#{mscdev}","#{mscmount}")
-    MSC_Raw_Write("#{mscmount}", "500")
+    output=MSC_Raw_Write("#{mscmount}", "500")
+    throughput=output.scan(/\d*\.\d*\s+MB\/s/)
+    perf_data << {'name' => "MSC Device Write Throughput 500 Blocks", 'value' => throughput, 'units' => "MB/s"}
 
     MSC_Mount_Device("#{mscdev}","#{mscmount}")  
-    MSC_Raw_Read("#{mscmount}", "500")
+    output=MSC_Raw_Read("#{mscmount}", "500")
+    throughput=output.scan(/\d*\.\d*\s+MB\/s/)
+    perf_data << {'name' => "MSC Device Read Throughput 500 Blocks", 'value' => throughput, 'units' => "MB/s"}
 
 end
 
+  @equipment['server1'].log_info("PERF is #{perf_data}")
   # Remove the msc gadget module
   
   system ("sleep 10")
@@ -302,11 +325,13 @@ end
   @equipment['server1'].send_sudo_cmd("rm -rf  media_string1.txt", @equipment['server1'].prompt , 30)
   @equipment['server1'].send_sudo_cmd("rm -rf  media_string2.txt", @equipment['server1'].prompt , 30)
   @equipment['server1'].send_sudo_cmd("rm -rf /media/test", @equipment['server1'].prompt , 30)
+  perf_data
 end
 
 
 #CDC test
 def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
+  perf_data=[]
   gadget_name = "g_#{module_name}"
   command = "depmod -a"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,20)
@@ -426,7 +451,7 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
     when $cmd.match(/_cdc_iperf/)
 
       #iperf test
-      iperftest_cdc(server_usb_interface, test_duration)
+      iperftest_cdc(server_usb_interface, test_duration,perf_data)
 
     else
       $result = 1
@@ -439,7 +464,7 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   command = "modprobe -r g_ncm"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
-
+  perf_data
 
 end
 
@@ -529,8 +554,8 @@ end
 
 
 #iperf test
-def iperftest_cdc(server_usb_interface, test_duration)
-
+def iperftest_cdc(server_usb_interface, test_duration,perf_data)
+    output_string = ''
 #  iperf test from host to DUT
   test_timeout = test_duration+15
   windowsize = [8,16,32,64,128]
@@ -538,6 +563,7 @@ def iperftest_cdc(server_usb_interface, test_duration)
 
   command ="kill -9 $(pidof iperf)"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt,1)
   command = "iperf -s &"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,3)
   command ="ps | grep iperf"
@@ -557,6 +583,8 @@ def iperftest_cdc(server_usb_interface, test_duration)
   command="iperf -c #{@equipment['dut1'].usb_ip} -w #{wsize}K -d -t #{test_duration}"
   @equipment['server1'].send_cmd(command, @equipment['server1'].prompt,test_timeout)
   response = @equipment['server1'].response
+  puts "IPERF RESPONSE is #{response}\n"
+  @equipment['server1'].log_info("IPERF RESPONSE: \n #{response}")
   if response.include?('Connection refused')
     $result = 1
     $result_message = "IPERF application could not be started on DUT"
@@ -566,13 +594,21 @@ def iperftest_cdc(server_usb_interface, test_duration)
   command ="kill -9 $(pidof iperf)"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   system ("sleep 3")
+  match_string=response.scan(/\d+.\d+\sMbits\/sec/)
+  if (match_string.length == 0)
+    $result = 1
+    $result_message += "IPERF response does not have performance numbers for #{wsize}"
+  end
+  throughput = match_string[0].split(' Mbits/sec')[0].to_f+match_string[1].split(' Mbits/sec')[0].to_f
+  output_string += " Packetsize="+wsize.to_s+"_Throughput="+throughput.to_s
+  puts "Throughput is #{throughput}\n"
+  perf_data << {'name' => "RX Throughput #{wsize}K", 'value' => throughput, 'units' => "Mbits/s"}
   }
 
 #  iperf test from DUT to host
 
   windowsize = [8,16,32,64,128]
   assign_server_ip(server_usb_interface)
-  output_string = ''
   windowsize.each { |wsize|
 
   system ("kill -9 $(pidof iperf)")
@@ -612,7 +648,9 @@ def iperftest_cdc(server_usb_interface, test_duration)
   throughput = match_string[0].split(' Mbits/sec')[0].to_f+match_string[1].split(' Mbits/sec')[0].to_f
   output_string += " Packetsize="+wsize.to_s+"_Throughput="+throughput.to_s
   puts "Throughput is #{throughput}\n"
+  perf_data << {'name' => "TX Throughput #{wsize}K", 'value' => throughput, 'units' => "Mbits/s"}
   }
+ @equipment['server1'].log_info("PERF is #{perf_data}")
  return output_string
 end
 
