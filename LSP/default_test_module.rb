@@ -324,6 +324,9 @@ module LspTestScript
     when 'ospi'
       spi_loc = get_ospi_loc(params['dut'].name)
       new_params["spi_#{part}_loc"] = spi_loc["#{part}"]
+    when 'hflash'
+      hflash_loc = get_hflash_loc(params['dut'].name)
+      new_params["hflash_#{part}_loc"] = hflash_loc["#{part}"]
     when /rawmmc/
       rawmmc_loc = get_rawmmc_loc(params['dut'].name)
       new_params["rawmmc_#{part}_loc"] = rawmmc_loc["#{part}"]

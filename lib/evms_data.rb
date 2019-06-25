@@ -258,6 +258,15 @@ module EvmData
     end
   end
 
+  def get_hflash_loc(platform)
+    case platform
+    when /j721e/
+      return {'initial_bootloader' => '0', 'primary_bootloader' => '0x80000', 'secondary_bootloader' => '0x280000', 'sysfw'=>'0x6c0000'}
+    else
+      raise "get_hflash_loc: No location is being specified for hyperflash partitions for #{platform}"
+    end
+  end
+
   def get_rawmmc_loc(platform)
     case platform
     when /am654x/
