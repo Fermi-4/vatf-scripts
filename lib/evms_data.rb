@@ -680,6 +680,8 @@ module EvmData
 
   def get_pci_deviceid(platform)
     case platform.downcase
+      when /j7/
+        return "0xb00d"
       when /k2g/
         return "0xb00b"
       when /am654x/

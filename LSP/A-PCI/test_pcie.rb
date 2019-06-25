@@ -23,75 +23,41 @@ def run
   #self.as(LspTestScript).run
   result = 0
   result_msg = ''
+
+  num_pfs = @test_params.params_chan.instance_variable_defined?(:@num_pfs) ? @test_params.params_chan.num_pfs[0] : '1'   
+  num_vfs = @test_params.params_chan.instance_variable_defined?(:@num_vfs) ? @test_params.params_chan.num_vfs[0] : '0'   
+
   msi_int = @test_params.params_chan.instance_variable_defined?(:@msi_interrupts) ? @test_params.params_chan.msi_interrupts[0] : '16'
   num_bars = @test_params.params_chan.instance_variable_defined?(:@num_bars) ? @test_params.params_chan.num_bars[0] : '6'   
   rw_sizes = @test_params.params_chan.instance_variable_defined?(:@rw_sizes) ? @test_params.params_chan.rw_sizes[0] : '1 1024'   
-  test_duration = @test_params.params_chan.instance_variable_defined?(:@test_duration) ? @test_params.params_chan.test_duration[0] : '60'   
+  test_duration = @test_params.params_chan.instance_variable_defined?(:@test_duration) ? @test_params.params_chan.test_duration[0] : '30'   
   linux_version = @equipment['dut1'].get_linux_version
   # option: 'legacy, msi, msix'
   int_mode = @test_params.params_chan.instance_variable_defined?(:@int_mode) ? @test_params.params_chan.int_mode[0] : 'msi'
   msi_map = {"legacy"=>"0", "msi"=>"1", "msix"=>"2"}
 
   # Config EP
-  @equipment['dut1'].send_cmd("cd /sys/kernel/config/pci_ep", @equipment['dut1'].prompt, 10)
+  config_fs = "/sys/kernel/config"
+  func_driver_name = get_func_driver_name(@equipment['dut1'].name, linux_version)
+  func_dir = "#{config_fs}/pci_ep/functions/#{func_driver_name}"
+  @equipment['dut1'].send_cmd("ctrl_driver_name=`ls /sys/class/pci_epc`", @equipment['dut1'].prompt, 10)
 
-  if Gem::Version.new(linux_version) >= Gem::Version.new("4.12")
-    func_driver_name = get_func_driver_name(@equipment['dut1'].name, linux_version) 
-    @equipment['dut1'].send_cmd("mkdir functions/#{func_driver_name}/func1", @equipment['dut1'].prompt, 20)
-    raise "Failed to create pci-epf-test device!" if @equipment['dut1'].response.match(/can't\s+create\s+directory/i)
-    @equipment['dut1'].send_cmd("ls functions/#{func_driver_name}/func1", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("cd functions/#{func_driver_name}/func1", @equipment['dut1'].prompt, 10)
-  elsif Gem::Version.new(linux_version) >= Gem::Version.new("4.9")
-    @equipment['dut1'].send_cmd("fun_driver_name=`ls /sys/bus/pci-epf/drivers`", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("fun_driver_name=${fun_driver_name}_k2g", @equipment['dut1'].prompt, 10) if @equipment['dut1'].name.match(/k2g/i)
-    epf_dir = "dev/epf/"
-    #epf_dir = "" # 4.4kernel
-    @equipment['dut1'].send_cmd("mkdir -p #{epf_dir}${fun_driver_name}.0", @equipment['dut1'].prompt, 20)
-    @equipment['dut1'].send_cmd("ls #{epf_dir}${fun_driver_name}.0", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("cd #{epf_dir}${fun_driver_name}.0", @equipment['dut1'].prompt, 10)
-  else
-    raise "There is no test support for #{linux_version} kernel"
-  end
-
-  deviceid = get_pci_deviceid(@equipment['dut1'].name)
-  @equipment['dut1'].send_cmd("cat vendorid", @equipment['dut1'].prompt, 10)
-  @equipment['dut1'].send_cmd("cat interrupt_pin", @equipment['dut1'].prompt, 10)
-  @equipment['dut1'].send_cmd("echo 0x104c > vendorid", @equipment['dut1'].prompt, 10)
-  @equipment['dut1'].send_cmd("echo #{deviceid} > deviceid", @equipment['dut1'].prompt, 10)
-  if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
-    msi_int = '16' if int_mode == 'legacy' #This number no use in this case; but can not be 0
-    @equipment['dut1'].send_cmd("echo #{msi_int} > msi_interrupts", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("echo #{msi_int} > msix_interrupts", @equipment['dut1'].prompt, 10)
-  else
-    @equipment['dut1'].send_cmd("echo #{msi_int} > msi_interrupts", @equipment['dut1'].prompt, 10)
-  end
-
-  if Gem::Version.new(linux_version) >= Gem::Version.new("4.12")
-    @equipment['dut1'].send_cmd("cd /sys/kernel/config/pci_ep", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("ctrl_driver_name=`ls /sys/class/pci_epc`", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("ln -s functions/#{func_driver_name}/func1 controllers/${ctrl_driver_name}", @equipment['dut1'].prompt, 10)
+  for i in 1..num_pfs.to_i do
+    setup_ep("pf#{i}", func_dir, linux_version)
+    for v in 1..num_vfs.to_i do
+      setup_ep("vf#{v}", func_dir, linux_version) if i <= 4 #Only the 1st 4 PF support VF
+      @equipment['dut1'].send_cmd("ln -s #{func_dir}/vf#{v} #{func_dir}/pf#{i}", @equipment['dut1'].prompt, 10) if i <= 4
+    end
+    @equipment['dut1'].send_cmd("ln -s #{func_dir}/pf#{i} #{config_fs}/pci_ep/controllers/${ctrl_driver_name}", @equipment['dut1'].prompt, 10)
     raise "Failed to bind pci-epf-test device to EP controller!" if @equipment['dut1'].response.match(/invalid/i)
-    @equipment['dut1'].send_cmd("echo 1 > controllers/${ctrl_driver_name}/start", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("cat controllers/${ctrl_driver_name}/start", @equipment['dut1'].prompt, 10)
-    if ! @equipment['dut1'].response.match(/^1/i) 
-      @power_handler.switch_on(@equipment['dut2'].power_port)
-      raise "Failed to setup PCIe EP"
-    end
+  end
 
-  elsif Gem::Version.new(linux_version) >= Gem::Version.new("4.9")
-    epc_dir = "dev/"
-    #epc_dir = "#{epf_dir}${fun_driver_name}.0/" # 4.4 kernel
-    @equipment['dut1'].send_cmd("cd /sys/kernel/config/pci_ep", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("ctrl_driver_name=`ls /sys/class/pci_epc`", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("echo \"${ctrl_driver_name}\" > #{epc_dir}epc", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("cat #{epc_dir}epc", @equipment['dut1'].prompt, 10)
-    if ! @equipment['dut1'].response.match(/pcie_ep/i) 
-      @power_handler.switch_on(@equipment['dut2'].power_port)
-      raise "Failed to setup PCIe EP"
-    end
-
-  else
-    raise "There is no test support for #{linux_version} kernel"
+  # Start pcie ep
+  @equipment['dut1'].send_cmd("echo 1 > #{config_fs}/pci_ep/controllers/${ctrl_driver_name}/start", @equipment['dut1'].prompt, 10)
+  @equipment['dut1'].send_cmd("cat #{config_fs}/pci_ep/controllers/${ctrl_driver_name}/start", @equipment['dut1'].prompt, 10)
+  if ! @equipment['dut1'].response.match(/^1/i) 
+    @power_handler.switch_on(@equipment['dut2'].power_port)
+    raise "Failed to setup PCIe EP"
   end
 
   puts "Bringup RC board..."
@@ -136,6 +102,10 @@ def run
   @equipment['dut2'].send_cmd("ls /dev/pci-endpoint-test*", @equipment['dut2'].prompt, 10)
   raise "pci-endpoint-test driver devnode is missing!" if @equipment['dut2'].response.match(/No\s+such\s+file\s+or\s+directory/i)
 
+  # run pcitest for each of pci-endpoint-test
+  test_dev_array = @equipment['dut2'].response.scan(/\/dev\/pci-endpoint-test\.\d+/im)
+  report_msg "There are #{test_dev_array.length} pci-endpoint-test being created", "dut2"
+
   # Enable different interrupt
   if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
     mode = msi_map[int_mode]
@@ -145,103 +115,134 @@ def run
   @equipment['dut1'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut1'].prompt, 5) 
   @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
   @equipment['dut2'].send_cmd("lspci -vv", @equipment['dut2'].prompt, 30)
-  if int_mode == "msi" or int_mode == "msix"
-    @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
-    msi_int_before = get_msi_int(@equipment['dut2'].response)
-    if msi_int_before == "FAIL"
-      report_msg "Test Fail Reason: Could not find intial MSI interrupt number!", "dut2"
-      result += 1 
-    end
-  end
 
-  i = 0
-  i = 1 if @equipment['dut1'].name.match(/k2g/i)
-  i = 2 if @equipment['dut1'].name.match(/am654x/i)
-  while i < num_bars.to_i do
-    @equipment['dut2'].send_cmd("pcitest -b #{i}", @equipment['dut2'].prompt, 10)
-    if !@equipment['dut2'].response.match(/bar\d+:\s+okay/i)
-      report_msg "Test Fail Reason: BAR #{i} test failed", "dut2"
-      result += 1
+  test_dev_array.each do |test_dev|
+    report_msg "=== Testing #{test_dev} ===", "dut2"
+    if int_mode == "msi" or int_mode == "msix"
+      @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
+      msi_int_before = get_msi_int(@equipment['dut2'].response)
+      if msi_int_before == "FAIL"
+        report_msg "Test Fail Reason: Could not find intial MSI interrupt number!", "dut2"
+        result += 1 
+      end
     end
-    i += 1
-  end
 
-  if int_mode == 'msi'
-    i = 1
-    while i <= msi_int.to_i do
-      @equipment['dut2'].send_cmd("pcitest -m #{i}", @equipment['dut2'].prompt, 10)
-      if !@equipment['dut2'].response.match(/msi\d+:\s+okay/i)
-        report_msg "Test Fail Reason: MSI Interrupt #{i} test failed", "dut2" 
+    i = 0
+    i = 1 if @equipment['dut1'].name.match(/k2g/i)
+    i = 2 if @equipment['dut1'].name.match(/am654x/i)
+    while i < num_bars.to_i do
+      @equipment['dut2'].send_cmd("pcitest -b #{i} -D #{test_dev}", @equipment['dut2'].prompt, 10)
+      if !@equipment['dut2'].response.match(/bar\d+:\s+okay/i)
+        report_msg "Test Fail Reason: BAR #{i} test failed", "dut2"
         result += 1
       end
       i += 1
     end
-  elsif int_mode == 'msix'
-    i = 1
-    while i <= msi_int.to_i do
-      @equipment['dut2'].send_cmd("pcitest -x #{i}", @equipment['dut2'].prompt, 10)
-      if !@equipment['dut2'].response.match(/msi-x\d+:\s+okay/i)
-        report_msg "Test Fail Reason: MSI-X Interrupt #{i} test failed", "dut2"
-        result += 1
+
+    if int_mode == 'msi'
+      i = 1
+      while i <= msi_int.to_i do
+        @equipment['dut2'].send_cmd("pcitest -m #{i} -D #{test_dev}", @equipment['dut2'].prompt, 10)
+        if !@equipment['dut2'].response.match(/msi\d+:\s+okay/i)
+          report_msg "Test Fail Reason: MSI Interrupt #{i} test failed", "dut2" 
+          result += 1
+        end
+        i += 1
       end
+    elsif int_mode == 'msix'
+      i = 1
+      while i <= msi_int.to_i do
+        @equipment['dut2'].send_cmd("pcitest -x #{i} -D #{test_dev}", @equipment['dut2'].prompt, 10)
+        if !@equipment['dut2'].response.match(/msi-x\d+:\s+okay/i)
+          report_msg "Test Fail Reason: MSI-X Interrupt #{i} test failed", "dut2"
+          result += 1
+        end
+        i += 1
+      end
+    else # for Legacy IRQ
+        @equipment['dut2'].send_cmd("pcitest -l -D #{test_dev}", @equipment['dut2'].prompt, 10)
+        if @equipment['dut2'].response.match(/not\s+okay/i)
+          report_msg "Test Fail Reason: Legacy Interrupt test failed", "dut2"
+          result += 1
+        end
+    end
+    @equipment['dut1'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut1'].prompt, 5) 
+    @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
+
+    i = 0
+    time = Time.now
+    while ((Time.now - time) < test_duration.to_f )
+      puts "In loop #{i.to_s}"
+      @equipment['dut2'].log_info("====In loop #{i.to_s}====")
+      rw_sizes.split(' ').each {|size|
+        puts "size is: #{size}"
+        @equipment['dut2'].send_cmd("pcitest -w -s #{size} -D #{test_dev}", @equipment['dut2'].prompt, 120)
+        if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
+          report_msg "Test Fail Reason: Write test w/ #{size} failed", "dut2"
+          result += 1
+        end
+        @equipment['dut2'].send_cmd("pcitest -r -s #{size} -D #{test_dev}", @equipment['dut2'].prompt, 120)
+        if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
+          report_msg "Test Fail Reason: Read test w/ #{size} failed", "dut2"
+          result += 1
+        end
+        @equipment['dut2'].send_cmd("pcitest -c -s #{size} -D #{test_dev}", @equipment['dut2'].prompt, 120)
+        if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
+          report_msg "Test Fail Reason: Copy test w/ #{size} test failed", "dut2"
+          result += 1
+        end
+      }
       i += 1
     end
-  else # for Legacy IRQ
-      @equipment['dut2'].send_cmd("pcitest -l", @equipment['dut2'].prompt, 10)
-      if @equipment['dut2'].response.match(/not\s+okay/i)
-        report_msg "Test Fail Reason: Legacy Interrupt test failed", "dut2"
-        result += 1
-      end
-  end
-  @equipment['dut1'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut1'].prompt, 5) 
-  @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
 
-  i = 0
-  time = Time.now
-  while ((Time.now - time) < test_duration.to_f )
-    puts "In loop #{i.to_s}"
-    @equipment['dut2'].log_info("====In loop #{i.to_s}====")
-    rw_sizes.split(' ').each {|size|
-      puts "size is: #{size}"
-      @equipment['dut2'].send_cmd("pcitest -w -s #{size}", @equipment['dut2'].prompt, 120)
-      if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
-        report_msg "Test Fail Reason: Write test w/ #{size} failed", "dut2"
-        result += 1
-      end
-      @equipment['dut2'].send_cmd("pcitest -r -s #{size}", @equipment['dut2'].prompt, 120)
-      if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
-        report_msg "Test Fail Reason: Read test w/ #{size} failed", "dut2"
-        result += 1
-      end
-      @equipment['dut2'].send_cmd("pcitest -c -s #{size}", @equipment['dut2'].prompt, 120)
-      if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
-        report_msg "Test Fail Reason: Copy test w/ #{size} test failed", "dut2"
-        result += 1
-      end
-    }
-    i += 1
-  end
-
-  @equipment['dut1'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut1'].prompt, 5) 
-  @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
-  if int_mode == "msi" or int_mode == "msix"
+    @equipment['dut1'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut1'].prompt, 5) 
     @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
-    msi_int_after = get_msi_int(@equipment['dut2'].response)
-    if msi_int_after == "FAIL"
-      report_msg "Test Fail Reason: Could not find end MSI interrupt number!", "dut2"
-      result += 1 
-    else
-      if msi_int_after.to_i <= msi_int_before.to_i
-        result += 1
-        report_msg "Test Fail Reason: MSI interrupt was not increased", "dut2"
+    if int_mode == "msi" or int_mode == "msix"
+      @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
+      msi_int_after = get_msi_int(@equipment['dut2'].response)
+      if msi_int_after == "FAIL"
+        report_msg "Test Fail Reason: Could not find end MSI interrupt number!", "dut2"
+        result += 1 
+      else
+        if msi_int_after.to_i <= msi_int_before.to_i
+          result += 1
+          report_msg "Test Fail Reason: MSI interrupt was not increased", "dut2"
+        end
       end
     end
-  end
+
+  end # test_dev_array 
 
   if result == 0 
     set_result(FrameworkConstants::Result[:pass], "Test Pass")
   else
     set_result(FrameworkConstants::Result[:fail], "Test Failed")
+  end
+
+end
+
+def setup_ep(func='pf1', func_dir, linux_version)
+  func_dir = "#{func_dir}/#{func}"
+
+  @equipment['dut1'].send_cmd("mkdir #{func_dir}", @equipment['dut1'].prompt, 20)
+  raise "Failed to create pci-epf-test device!" if @equipment['dut1'].response.match(/can't\s+create\s+directory/i)
+  @equipment['dut1'].send_cmd("ls #{func_dir}", @equipment['dut1'].prompt, 10)
+
+  deviceid = get_pci_deviceid(@equipment['dut1'].name)
+  @equipment['dut1'].send_cmd("cat #{func_dir}/vendorid", @equipment['dut1'].prompt, 10)
+  @equipment['dut1'].send_cmd("cat #{func_dir}/interrupt_pin", @equipment['dut1'].prompt, 10)
+  @equipment['dut1'].send_cmd("echo 0x104c > #{func_dir}/vendorid", @equipment['dut1'].prompt, 10)
+  @equipment['dut1'].send_cmd("echo #{deviceid} > #{func_dir}/deviceid", @equipment['dut1'].prompt, 10)
+
+  msi_int = @test_params.params_chan.instance_variable_defined?(:@msi_interrupts) ? @test_params.params_chan.msi_interrupts[0] : '16'
+  # option: 'legacy, msi, msix'
+  int_mode = @test_params.params_chan.instance_variable_defined?(:@int_mode) ? @test_params.params_chan.int_mode[0] : 'msi'
+  if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
+    msi_int = '16' if int_mode == 'legacy' #This number no use in this case; but can not be 0
+    @equipment['dut1'].send_cmd("echo #{msi_int} > #{func_dir}/msi_interrupts", @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("echo #{msi_int} > #{func_dir}/msix_interrupts", @equipment['dut1'].prompt, 10)
+  else
+    @equipment['dut1'].send_cmd("echo #{msi_int} > #{func_dir}/msi_interrupts", @equipment['dut1'].prompt, 10)
   end
 
 end
