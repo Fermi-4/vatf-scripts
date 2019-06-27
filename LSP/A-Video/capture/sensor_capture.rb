@@ -97,6 +97,10 @@ def run
         width,  height = resolution.split(/x/i)
         f_length = get_format_length(pix_fmt)
         width,  height = get_scaled_resolution(width, height, cap_rand.rand()) if @test_params.params_chan.instance_variable_defined?(:@scaling)
+        if width.to_i * height.to_i > 1280*720 && @equipment['dut1'].name.match(/am57.*/i) && @equipment['dut1'].params['sensor_info']['id'].match(/ov10635.*/i)
+          width = 1280
+          height = 720
+        end
         test_params = get_test_opts(capture_opts, "#{width}x#{height}", pix_fmt, capture_path)
         puts "Test params: " + test_params.to_s
         trial_result = FrameworkConstants::Result[:nry]
