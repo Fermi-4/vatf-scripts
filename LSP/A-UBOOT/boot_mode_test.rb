@@ -18,6 +18,7 @@ def run
   this_params = {}
   set_bootloader_devs(this_params, boot_media)
   bparams = setup_host_side(this_params)
+  set_bootloader_devs(this_params, boot_media)
   bparams.each{|k,v| puts "#{k}:#{v}"}
   if bparams['secondary_bootloader'].strip == '' and bparams['primary_bootloader'].strip == '' 
     raise "Bootloaders are not provided"
