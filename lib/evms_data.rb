@@ -482,9 +482,14 @@ module EvmData
     machines['am654x-evm']  = {'VDD_MPU' => {'OPP_LOW'=>'0x42050164', 'OPP_NOM'=>'0x42050164', 'OPP_OD'=>'0x42050164', 'OPP_HIGH'=>'0x42050164'},
                                'VDD_MPU2' => {'OPP_LOW'=>'0x42050184', 'OPP_NOM'=>'0x42050184', 'OPP_OD'=>'0x42050184', 'OPP_HIGH'=>'0x42050184'},
                               }
+    machines['j721e-evm']  = {'VDD_MPU' => {'OPP_LOW'=>'0x42040104', 'OPP_NOM'=>'0x42040104', 'OPP_OD'=>'0x42040104', 'OPP_HIGH'=>'0x42040104'},
+                             }
+
     machines['am57xx-evm']   = machines['dra7xx-evm']
     machines['dra71x-evm']   = machines['dra72x-evm']
     machines['am654x-idk']   = machines['am654x-evm']
+    machines['j721e-idk-gw']   = machines['j721e-evm']
+    machines['j721e-evm-ivi']   = machines['j721e-evm']
 
     raise "AVS class0 data not defined for #{platform}" if !machines.key?(platform)
     machines[platform]
