@@ -546,10 +546,20 @@ module EvmData
   def map_vtm_vid_value_to_voltage(platform, value)
     case platform.downcase
     when "am654x-evm", "am654x-idk"
-      if value < 30 or value > 145
-        raise "Invalid VTM VID efuse value #{value} for #{platform}"
+      min_volt = 300
+      step1 = 15; step1_size = 20
+      step2 = 115; step2_size = 5
+      step3 = 171; step3_size = 10
+      step4 = 255; step4_size = 20
+      raise "Invalid VTM VID efuse value #{value} for #{platform}" if value == 0 or value > step4
+      if value <= step1
+        return (value * step1_size) + min_volt
+      elsif value <= step2
+        return ((value - step1) * step2_size) + (step1 * step1_size) + min_volt
+      elsif value <= step3
+        return ((value - step2) * step3_size) + ((step2 - step1) * step2_size) + (step1 * step1_size) + min_volt
       else
-        return ((value - 30) * 5) + 600
+        return ((value - step3) * step4_size) + ((step3 - step2) * step3_size) + ((step2 - step1) * step2_size) + (step1 * step1_size) + min_volt
       end
 
     else
