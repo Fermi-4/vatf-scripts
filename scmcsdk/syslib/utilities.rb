@@ -15,25 +15,29 @@ def get_host_ubuntu_version()
 end
 
 def is_crypto_type()
-  if dut_dir_exist?("/opt/ltp")
-    dut_orig_path = save_dut_orig_path()
-    export_ltppath()
-    @equipment['dut1'].send_cmd("get_modular_name.sh crypto",@equipment['dut1'])
+    crypto_type=''
+    @equipment['dut1'].send_cmd("grep -r crypto /proc/device-tree",@equipment['dut1'].prompt)
     response = @equipment['dut1'].response
-    restore_dut_path(dut_orig_path)
-    if response.include? "omap"
-      return "omap"
-    elsif response.include? "sa2ul"
-      return "sa2ul"
+    puts "RESPONSE is is #{response}"
+    if response.include? "sa2ul"
+      puts "RESPONSE has sa2ul"
+      crypto_type="sa2ul"
     else
-      return false
+
+       @equipment['dut1'].send_cmd("grep -r aes /proc/device-tree|grep omap",@equipment['dut1'].prompt)
+       response = @equipment['dut1'].response
+       puts "RESPONSE is is #{response}"
+       if response.include? "aes"
+         crypto_type="omap_crypto"
+       end
     end
- end
+    crypto_type
 end
 
 def get_crypto_modules()
   module_list = Array.new
-  if (is_crypto_type == "omap")
+  puts "is_crypto_type is #{is_crypto_type}\n"
+  if (is_crypto_type == "omap_crypto")
     module_list = ["omap_aes_driver", "omap_des", "omap_sham"]
   elsif (is_crypto_type == "sa2ul")
     module_list = ["sa2ul"]
