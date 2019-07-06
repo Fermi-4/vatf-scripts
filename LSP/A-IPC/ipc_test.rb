@@ -34,6 +34,11 @@ def run
   set_fw_links(uboot_procs)
   set_fw_links(kernel_procs)
   translated_boot_params = setup_host_side()
+  if translated_boot_params['fs'] == 'nfs'
+    @equipment['dut1'].send_cmd("mkdir -p /run/media/mmcblk1p2/lib/firmware", @equipment['dut1'].prompt)
+    @equipment['dut1'].send_cmd("rm -rf /run/media/mmcblk1p2/lib/firmware/*", @equipment['dut1'].prompt)
+    @equipment['dut1'].send_cmd("cp -rf /lib/firmware/* /run/media/mmcblk1p2/lib/firmware/", @equipment['dut1'].prompt, 120)
+  end
   @equipment['dut1'].boot_to_bootloader(translated_boot_params)
 
   #Check that SPL remoteprocs booted
