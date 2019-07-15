@@ -269,7 +269,7 @@ module EvmData
 
   def get_rawmmc_loc(platform)
     case platform
-    when /am654x/
+    when /am654x|j721e/
       # if there is difference from the default, add value here
       return {'initial_bootloader'=> '0x0', 'primary_bootloader' => '0x400', 'secondary_bootloader' => '0x1400', 'sysfw'=>'0x3600'}
     when "am335x-evm"
