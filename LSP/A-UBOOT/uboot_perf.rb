@@ -28,7 +28,7 @@ def run
     raise " 'time' command needs to be enabled in uboot. Please enable CONFIG_CMD_TIME. "
   end
 
-  # valid device names: 'spi', 'qspi', 'raw-mmc', 'raw-emmc', 'fat-mmc', 'fat-emmc', 'fat-usb'
+  # valid device names: 'nand', 'hflash', 'spi', 'qspi', 'raw-mmc', 'raw-emmc', 'fat-mmc', 'fat-emmc', 'fat-usb'
   # since we don't want to corrupt the SD card if there is partition there, we only
   # do read when device is 'raw-mmc'
   device = @test_params.params_chan.device[0]
@@ -37,6 +37,50 @@ def run
   mmcdev = mmcdev_nums['mmc'] if device == "raw-mmc" || device == "fat-mmc"
 
   case device.downcase
+  when /hflash/
+
+    testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000"] # [4M, 8M, 16M, 32M]
+    @equipment['dut1'].send_cmd("help mtd", @equipment['dut1'].boot_prompt, 10)
+    @equipment['dut1'].send_cmd("mtd list", @equipment['dut1'].boot_prompt, 10)
+
+    hflash_test_addr = PlatformSpecificVarNames.translate_var_name(@equipment['dut1'].name,'hflash_test_addr')
+
+    testsizes.each do |testsize_hex|
+      loadaddr, loadaddr2 = get_loadaddres(testsize_hex)
+      report_msg "===Testing size #{testsize_hex.to_i(16).to_s} ..."
+      # read the data from hflash
+      @equipment['dut1'].send_cmd("time mtd read nor0 ${loadaddr} #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      if @equipment['dut1'].response.match(/error|fail/i)
+        report_msg "hflash read failed with size #{testsize_hex.to_i(16)};"
+        next
+      end
+      @equipment['dut1'].send_cmd("time mtd erase nor0 #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      if @equipment['dut1'].response.match(/error|fail/i)
+        report_msg "hflash erase failed with size #{testsize_hex.to_i(16)};"
+        next
+      end
+      # write the data just read back to hflash
+      @equipment['dut1'].send_cmd("time mtd write nor0 ${loadaddr} #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      if @equipment['dut1'].response.match(/error|fail/i)
+        report_msg "hflash write failed with size #{testsize_hex.to_i(16)};"
+        next
+      end
+      this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
+      perfs << {'name' => "#{device.upcase} Write 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+
+      # read back from hflash to loadaddr2
+      @equipment['dut1'].send_cmd("time mtd read nor0 #{loadaddr2} #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
+      perfs << {'name' => "#{device.upcase} Read 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      
+      @equipment['dut1'].send_cmd("cmp.b #{loadaddr} #{loadaddr2} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
+      if @equipment['dut1'].response.match(/!=/i)
+        result_msg = result_msg + "#{device}: cmp failed for size 0x#{testsize_hex}; "
+        set_result(FrameworkConstants::Result[:fail], result_msg)
+      end
+    end
+    @equipment['dut1'].send_cmd("mtd list ", @equipment['dut1'].boot_prompt, 10)
+
   when /spi/
 
     # Find out the (Q)SPI size, then run test using 1/2, 1/4, ... and so on to test
