@@ -165,6 +165,13 @@ module PlatformSpecificVarNames
       },
     )
 
+    @platform_specific_var_name['hflash_test_addr'] = Hash.new('0x800000')
+    @platform_specific_var_name['hflash_test_addr'].merge!(
+      {
+      'k2g-evm'=>'0x800000',
+      },
+    )
+
     @platform_specific_var_name['i2cchipadd'] = Hash.new('0x50')
     @platform_specific_var_name['i2cchipadd'].merge!(
       {
