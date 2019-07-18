@@ -40,8 +40,11 @@ def run
   config_fs = "/sys/kernel/config"
   func_driver_name = get_func_driver_name(@equipment['dut1'].name, linux_version)
   func_dir = "#{config_fs}/pci_ep/functions/#{func_driver_name}"
-  @equipment['dut1'].send_cmd("ctrl_driver_name=`ls /sys/class/pci_epc`", @equipment['dut1'].prompt, 10)
-
+  if @equipment['dut1'].params.has_key?("pcie_ctrl_driver_name")
+    @equipment['dut1'].send_cmd("ctrl_driver_name=#{@equipment['dut1'].params['pcie_ctrl_driver_name']} ", @equipment['dut1'].prompt, 10)
+  else 
+    @equipment['dut1'].send_cmd("ctrl_driver_name=`ls /sys/class/pci_epc|head -1`", @equipment['dut1'].prompt, 10)
+  end
   for i in 1..num_pfs.to_i do
     setup_ep("pf#{i}", func_dir, linux_version)
     for v in 1..num_vfs.to_i do
