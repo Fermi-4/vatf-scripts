@@ -54,7 +54,7 @@ def run
   begin
     if switch_from == "emac"
       # get pruicss port information
-      dan_X_1_pruicss_ports = [dan_X_1.params["#{switch_to}_port1"], dan_X_1.params["#{switch_to}_port2"]]
+      dan_X_1_pruicss_ports = [dan_X_1.params["#{switch_from}_port1"], dan_X_1.params["#{switch_from}_port2"]]
       dan_X_2_pruicss_ports = [dan_X_2.params["#{switch_from}_port1"], dan_X_2.params["#{switch_from}_port2"]]
       emac_status(dan_X_1, dan_X_2, dan_X_1_pruicss_ports, dan_X_2_pruicss_ports, dan_X_1_ips, dan_X_2_ips)
     else
@@ -92,8 +92,8 @@ def run
       else
         dan_X_1_pruicss_ports = [dan_X_1.params["#{switch_to}_port1"], dan_X_1.params["#{switch_to}_port2"]]
         dan_X_2_pruicss_ports = [dan_X_2.params["#{switch_to}_port1"], dan_X_2.params["#{switch_to}_port2"]]
-        disable_feature(dan_X_1, switch_from, pruicss_ports)
-        disable_feature(dan_X_2, switch_from, pruicss_ports)
+        disable_feature(dan_X_1, switch_from, dan_X_1_pruicss_ports)
+        disable_feature(dan_X_2, switch_from, dan_X_2_pruicss_ports)
         # setting offload to true as switching of feature need to
         # be done by offloading feature using ethtool utility
         offload = true
@@ -151,7 +151,7 @@ def enable_feature(dan_X_n, feature, command, ipaddr, pruicss_ports, offload = f
   dan_X_n.send_cmd("ifconfig #{pruicss_ports[1]} up", dan_X_n.prompt, 10)
   dan_X_n.send_cmd("#{command}", dan_X_n.prompt, 10)
   dan_X_n.send_cmd("ifconfig #{feature}#{id} #{ipaddr} up", dan_X_n.prompt, 10)
-  sleep(10) # give time to initialize link
+  sleep(20) # give time to initialize link
   dan_X_n.send_cmd("ifconfig", dan_X_n.prompt, 10)
   if !(dan_X_n.response =~ Regexp.new("(#{feature}#{id}\s+Link\sencap:Ethernet\s+HWaddr)")) or dan_X_n.timeout?
     raise "Failed to enable #{feature}."

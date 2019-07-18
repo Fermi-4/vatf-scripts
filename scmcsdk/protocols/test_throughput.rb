@@ -10,7 +10,6 @@ end
 def run
   # get dut params
   feature = @test_params.params_chan.feature[0]           # feature to load initially
-  cmd = @test_params.params_chan.cmd[0]                   # command to enable feature link
 
   # get bandwidth, time, rx_usecs and adaptive_rx
   bandwidth = @test_params.params_chan.instance_variable_defined?(:@bandwidth) ? @test_params.params_chan.bandwidth : [""]
@@ -31,7 +30,7 @@ def run
   dan_X_2_ip = dan_X_2.params['dut2_if']
 
   # get pru port list
-  port_list = dan_X_1.params['pru_list']
+  port_list = dan_X_1.params['pru_emac_list']
 
   test_comment = ""
   begin
@@ -43,6 +42,7 @@ def run
     else
     # get pruicss port information
       pruicss_ports = [dan_X_1.params["#{feature}_port1"], dan_X_1.params["#{feature}_port2"]]
+      cmd = get_cmd(feature, pruicss_ports) # get command to enable feature link
       enable_feature(dan_X_1, feature, cmd, dan_X_1_ip, pruicss_ports)
       enable_feature(dan_X_2, feature, cmd, dan_X_2_ip, pruicss_ports)
       ping_status(dan_X_1, dan_X_2_ip)

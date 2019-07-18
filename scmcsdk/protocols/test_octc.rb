@@ -10,7 +10,6 @@ end
 def run
   # get dut params
   feature = @test_params.params_chan.feature[0]           # feature to load initially
-  cmd = @test_params.params_chan.cmd[0]                   # command to enable feature link
   testtype = @test_params.params_chan.testtype[0]
   m_options = "-m"      # master options
   s_options = "-m -s"   # slave options
@@ -32,7 +31,7 @@ def run
   begin
     # get pruicss port information
     pruicss_ports = [dan_X_1.params["#{feature}_port1"], dan_X_1.params["#{feature}_port2"]]
-
+    cmd = get_cmd(feature, pruicss_ports) # get command to enable feature link
     enable_feature(dan_X_1, feature, cmd, dan_X_1_ip, pruicss_ports)
     enable_feature(dan_X_2, feature, cmd, dan_X_2_ip, pruicss_ports)
     ping_status(dan_X_1, dan_X_2_ip)

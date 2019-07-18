@@ -134,10 +134,10 @@ end
 
 # function to enable PRP emac mode
 def set_prp_emac(dan_X_n, enable='1')
-  dan_X_n.send_cmd("echo #{enable} > /sys/devices/platform/pruss2_eth/net/eth2/prp_emac_mode", dan_X_n.prompt, 10)
-  dan_X_n.send_cmd("echo #{enable} > /sys/devices/platform/pruss2_eth/net/eth3/prp_emac_mode", dan_X_n.prompt, 10)
-  dan_X_n.send_cmd("echo #{enable} > /sys/devices/platform/pruss1_eth/net/eth4/prp_emac_mode", dan_X_n.prompt, 10)
-  dan_X_n.send_cmd("echo #{enable} > /sys/devices/platform/pruss1_eth/net/eth5/prp_emac_mode", dan_X_n.prompt, 10)
+  dan_X_n.send_cmd("echo #{enable} > /sys/devices/platform/pruss*_eth/net/eth2/prp_emac_mode", dan_X_n.prompt, 10)
+  dan_X_n.send_cmd("echo #{enable} > /sys/devices/platform/pruss*_eth/net/eth3/prp_emac_mode", dan_X_n.prompt, 10)
+  dan_X_n.send_cmd("echo #{enable} > /sys/devices/platform/pruss*_eth/net/eth4/prp_emac_mode", dan_X_n.prompt, 10)
+  dan_X_n.send_cmd("echo #{enable} > /sys/devices/platform/pruss*_eth/net/eth5/prp_emac_mode", dan_X_n.prompt, 10)
   dan_X_n.send_cmd("cat /sys/devices/platform/pruss*_eth/net/eth*/prp_emac_mode", dan_X_n.prompt, 10)
   if !( dan_X_n.response =~ /#{enable}/ )
       raise "PRP emac mode: Failed to set #{enable}."
