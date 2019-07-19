@@ -48,8 +48,8 @@ def run
   for i in 1..num_pfs.to_i do
     setup_ep("pf#{i}", func_dir, linux_version)
     for v in 1..num_vfs.to_i do
-      setup_ep("vf#{v}", func_dir, linux_version) if i <= 4 #Only the 1st 4 PF support VF
-      @equipment['dut1'].send_cmd("ln -s #{func_dir}/vf#{v} #{func_dir}/pf#{i}", @equipment['dut1'].prompt, 10) if i <= 4
+      setup_ep("vf#{i}_#{v}", func_dir, linux_version) if i <= 4 #Only the 1st 4 PF support VF
+      @equipment['dut1'].send_cmd("ln -s #{func_dir}/vf#{i}_#{v} #{func_dir}/pf#{i}", @equipment['dut1'].prompt, 10) if i <= 4
     end
     @equipment['dut1'].send_cmd("ln -s #{func_dir}/pf#{i} #{config_fs}/pci_ep/controllers/${ctrl_driver_name}", @equipment['dut1'].prompt, 10)
     raise "Failed to bind pci-epf-test device to EP controller!" if @equipment['dut1'].response.match(/invalid/i)
