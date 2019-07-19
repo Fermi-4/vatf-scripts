@@ -375,7 +375,7 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
   sleep 10
   command = "dmesg"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,4)
-  @equipment['server1'].send_cmd(command, @equipment['server1'].prompt,4)
+  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt,4)
   response = @equipment['dut1'].response
   response_server = @equipment['server1'].response
   if response.include?('usb0')

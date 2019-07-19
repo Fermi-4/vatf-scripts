@@ -67,7 +67,7 @@ def run_performance
      @equipment['dut1'].send_cmd("dmesg -c",@equipment['dut1'].prompt)  
      setup_configfs
      sleep 30
-     @equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
+     @equipment['server1'].send_sudo_cmd("dmesg",@equipment['server1'].prompt)  
      @equipment['dut1'].send_cmd("dmesg",@equipment['dut1'].prompt)  
      dut_response = @equipment['dut1'].response
      host_response = @equipment['server1'].response
@@ -213,7 +213,7 @@ def modprobe_on_device(module_name,gadget_types,action)
     @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt)  
     cmd = 'modprobe -r'
     @equipment['dut1'].send_cmd("#{cmd} g_#{module_name}",@equipment['dut1'].prompt)  
-    @equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
+    @equipment['server1'].send_sudo_cmd("dmesg",@equipment['server1'].prompt)  
     dut_response = @equipment['dut1'].response
     host_response = @equipment['server1'].response
     if (!dut_response.match(/USB disconnect/))
@@ -280,7 +280,7 @@ def check_enum_on_host(gadget_types)
                        'serial'=>'cdc_acm', 'acm'=>'cdc_acm', 'ncm' => 'cdc_ncm'}
   speed = @test_params.params_control.instance_variable_defined?(:@speed) ? @test_params.params_control.duration[0] : 'high' 
   system("sleep 10")
-  @equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
+  @equipment['server1'].send_sudo_cmd("dmesg",@equipment['server1'].prompt)  
   host_response = @equipment['server1'].response
   # Verify that string matches with gadget type
   gadget_found = false
@@ -308,7 +308,7 @@ def check_mount_interface_on_host(gadget_types)
   @equipment['server1'].send_sudo_cmd('bash -c "df | grep /media > media_string1.txt"', @equipment['server1'].prompt , 30)
   modprobe_on_device(module_name, gadget_types, 'insert')
   #system("sleep 20")
-  @equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
+  @equipment['server1'].send_sudo_cmd("dmesg",@equipment['server1'].prompt)  
   host_response =  @equipment['server1'].response
   @equipment['server1'].send_sudo_cmd('bash -c "df | grep /dev > dev_string2.txt"', @equipment['server1'].prompt , 30)
   File.foreach("dev_string1.txt") do |line|
