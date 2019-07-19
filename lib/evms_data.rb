@@ -176,6 +176,9 @@ module EvmData
 													'EXP_3V3' => '0.010',
                                 }}
 
+    power_data['j721e-idk-gw'] = power_data['j721e-evm']
+    power_data['j721e-evm-ivi'] = power_data['j721e-evm']
+
     return power_data[key]
   end
 
@@ -205,7 +208,13 @@ module EvmData
       when "VDD_MPU", "VDD_GPU"
         return 'VDD_CORE'
       end
+    when "j721e-evm", "j721e-idk-gw", "j721e-evm-ivi"
+      case domain
+      when "VDD_MPU"
+        return 'VDD_MCU_0V85'
+      end
     end
+
     return domain
   end
 
@@ -626,7 +635,7 @@ module EvmData
         end
       }
 
-    when "am654x-evm", "am654x-idk"
+    when "am654x-evm", "am654x-idk", "j721e-evm", "j721e-evm-ivi", "j721e-idk-gw"
       return data.map{|domain,opps|
         if domain == 'VDD_MPU'
           { domain => opps.select{|name,address| name == "OPP_NOM"} }
@@ -663,7 +672,7 @@ module EvmData
         end
       }
 
-    when "am654x-evm", "am654x-idk"
+    when "am654x-evm", "am654x-idk", "j721e-evm", "j721e-evm-ivi", "j721e-idk-gw"
       return data.map{|domain,opps|
         if domain == 'VDD_MPU'
           { domain => opps.select{|name,address| name == "OPP_NOM"} }
