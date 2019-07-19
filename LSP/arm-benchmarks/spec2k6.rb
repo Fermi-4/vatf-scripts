@@ -27,7 +27,7 @@ def run_generate_script()
     "opkg update",
     "opkg install --nodeps spec2k6",
     "cd /opt/spec2k6/scripts",
-    "./specint2006_fpga.sh #{determine_arch()} `grep -c ^processor /proc/cpuinfo`"
+    "./specint2006.sh #{determine_arch()} `grep -c ^processor /proc/cpuinfo`"
   ]
   out_file = File.new(File.join(@linux_temp_folder, 'test.sh'),'w')
   raw_test_lines.each do |current_line|
@@ -38,8 +38,8 @@ end
 
 
 def geo_mean(xs)
-  one = BigDecimal.new 1
-  xs.map { |x| BigDecimal.new x }.inject(one, :*) ** (one / xs.size.to_f)
+  one = BigDecimal.new("1.0")
+  xs.map { |x| BigDecimal.new x.to_s }.inject(one, :*) ** (one / xs.size.to_f)
 end
 
 
@@ -72,6 +72,7 @@ def calculate_spec2k6_score()
       end
     }
     values = values.map{|k,v| { k => v.values.inject(0, :+) }}
+    values = values.reduce Hash.new, :merge
     values = values.map{|k,v| (ref[k]/v.to_f)*num_cores }
     spec2k6_rate = geo_mean(values).to_f
     spec2k6_data = {'name' => 'Spec2K6_rate', 'value' => spec2k6_rate, 'units' => ''}
