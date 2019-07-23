@@ -2725,12 +2725,14 @@ class PerfUtilities
         @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ifconfig eth#{this_eth_port} up", "Link is Up", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
         sleep(2)
         @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "dhclient eth#{this_eth_port} ; echo 'command_done'", "command_done", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
+# try ifup if rootfs does not support dhclient
+        @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ifup eth#{this_eth_port} ; echo 'command_done'", "command_done", @vatf_helper.DONT_SET_ERROR_BIT(), 0, 20)
       else
         @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ifconfig eth#{this_eth_port} #{this_eth_static_ip_address} up", "Link is Up", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
       end
     end
     for curr_port in (eth_min_port..eth_max_port)
-      if curr_port != this_eth_port
+      if (curr_port != this_eth_port && curr_port != 0)
         @vatf_helper.smart_send_cmd_wait(is_alpha_side, @normal_cmd, "ifconfig eth#{curr_port} down ; echo 'command_done'", "command_done", @vatf_helper.DONT_SET_ERROR_BIT(), 0, wait_secs)
       end
     end
