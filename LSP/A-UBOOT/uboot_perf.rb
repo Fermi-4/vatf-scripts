@@ -216,6 +216,10 @@ def run
     @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 5)
     raise 'Failed to stop at bootloader prompt after format sata partition in kernel' if @equipment['dut1'].timeout?
 
+    @equipment['dut1'].send_cmd("usb start", @equipment['dut1'].boot_prompt, 10)
+    if ! @equipment['dut1'].response.match(/[1-9]+\s+Storage\s+Device.*found/i)
+      raise "No usb storage device being detected"
+    end
     @equipment['dut1'].send_cmd("ls usb 0", @equipment['dut1'].boot_prompt, 10)
     raise "Unrecognized filesystem type in usb" if @equipment['dut1'].response.match(/Unrecognized\s+filesystem/i)
 
