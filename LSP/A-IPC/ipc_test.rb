@@ -129,12 +129,12 @@ def set_uboot_ids(uboot_procs, dut_response)
 end
 
 def clean
-  #if !is_uut_up?(@equipment['dut1'])
-  #  translated_boot_params = setup_host_side()
-  #  @equipment['dut1'].boot(translated_boot_params)
-  #end
-  #restore_firmware()
-  #super
+  if !is_uut_up?(@equipment['dut1'])
+    translated_boot_params = setup_host_side()
+    @equipment['dut1'].boot(translated_boot_params)
+  end
+  restore_firmware()
+  super
 end
 
 def fw2linux_map()
