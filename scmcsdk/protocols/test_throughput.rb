@@ -29,15 +29,16 @@ def run
   dan_X_1_ip = dan_X_1.params['dut1_if']
   dan_X_2_ip = dan_X_2.params['dut2_if']
 
-  # get pru port list
-  port_list = dan_X_1.params['pru_emac_list']
-
   test_comment = ""
   begin
     if feature == 'emac'
-       for port in port_list
-         setup_port(port_list, dan_X_1, dan_X_2, dan_X_1_ip, dan_X_2_ip, port)
-         test_throughput(dan_X_1, dan_X_2, [port], dan_X_2_ip, bandwidth, time, rx_usecs, adaptive_rx, cmd_timeout, feature)
+       # get pru port list
+       danx1_port_list  = dan_X_1.params['pru_emac_list']
+       danx2_port_list = dan_X_2.params['pru_emac_list']
+       for port_index in 0..(danx1_port_list.length - 1)
+         setup_port([danx1_port_list, danx2_port_list], [dan_X_1, dan_X_2], [dan_X_1_ip, dan_X_2_ip], port_index)
+         test_throughput(dan_X_1, dan_X_2, [[danx1_port_list[port_index]], [danx2_port_list[port_index]]], dan_X_2_ip, bandwidth, time, rx_usecs, adaptive_rx, cmd_timeout, feature)
+         port_index += 1
        end
     else
     # get pruicss port information
@@ -63,30 +64,36 @@ def run
 end
 
 # function to enable PRU ports
-def setup_port(port_list, dan_X_1, dan_X_2, dan_X_1_ip, dan_X_2_ip, port)
-  for pru_port in port_list
-    dan_X_1.send_cmd("ifconfig #{pru_port} down", dan_X_1.prompt, 10)
-    dan_X_2.send_cmd("ifconfig #{pru_port} down", dan_X_2.prompt, 10)
+def setup_port(danxn_port_list, dan_X_n, dan_X_n_ips, port_index)
+  dut_index = 0
+  for dut in dan_X_n
+    for port in danxn_port_list[dut_index]
+      dut.send_cmd("ifconfig #{port} down", dut.prompt, 10)
+    end
+    dut.send_cmd("ifconfig #{danxn_port_list[dut_index][port_index]} #{dan_X_n_ips[dut_index]}", dut.prompt, 10)
+    dut_index += 1
   end
-  dan_X_1.send_cmd("ifconfig #{port} #{dan_X_1_ip}", dan_X_1.prompt, 10)
-  dan_X_2.send_cmd("ifconfig #{port} #{dan_X_2_ip}", dan_X_2.prompt, 10)
 end
 
 
 # function to test throughput
 def test_throughput(dan_X_1, dan_X_2, pruicss_ports, dan_X_2_ip, bandwidth, time, rx_usecs, adaptive_rx, cmd_timeout, feature)
-  set_interrupts(dan_X_1, pruicss_ports, cmd_timeout, feature)
-  set_interrupts(dan_X_2, pruicss_ports, cmd_timeout, feature)
+  feature == 'emac' ? danx1_pruicss_ports = pruicss_ports[0] : danx1_pruicss_ports = pruicss_ports
+  feature == 'emac' ? danx2_pruicss_ports = pruicss_ports[1] : danx2_pruicss_ports = pruicss_ports
+  #danx1_pruicss_ports = pruicss_ports[0] if feature == 'emac'
+  #danx2_pruicss_ports = pruicss_ports[1] if feature == 'emac'
+  set_interrupts(dan_X_1, danx1_pruicss_ports, cmd_timeout, feature)
+  set_interrupts(dan_X_2, danx2_pruicss_ports, cmd_timeout, feature)
   dan_X_2.send_cmd("echo '******** RX-USECS = 0, ADAPTIVE-RX = off ********' > iperf_response.log 2>&1",\
                     dan_X_2.prompt, cmd_timeout)
   dan_X_2.send_cmd("iperf3 -s -i5 >> iperf_response.log 2>&1 &", dan_X_2.prompt, cmd_timeout)
   test_iperf(dan_X_1, dan_X_2, dan_X_2_ip, bandwidth, time, cmd_timeout)
-  set_interrupts(dan_X_1, pruicss_ports, cmd_timeout, feature, rx_usecs)
-  set_interrupts(dan_X_2, pruicss_ports, cmd_timeout, feature, rx_usecs)
+  set_interrupts(dan_X_1, danx1_pruicss_ports, cmd_timeout, feature, rx_usecs)
+  set_interrupts(dan_X_2, danx2_pruicss_ports, cmd_timeout, feature, rx_usecs)
   dan_X_2.send_cmd("echo '******** RX-USECS = #{rx_usecs}, ADAPTIVE-RX = off ********' >> iperf_response.log 2>&1",\
                     dan_X_2.prompt, cmd_timeout)
   test_iperf(dan_X_1, dan_X_2, dan_X_2_ip, bandwidth, time, cmd_timeout)
-  set_interrupts(dan_X_2, pruicss_ports, cmd_timeout, feature, rx_usecs, adaptive_rx)
+  set_interrupts(dan_X_2, danx2_pruicss_ports, cmd_timeout, feature, rx_usecs, adaptive_rx)
   dan_X_2.send_cmd("echo '******** RX-USECS = #{rx_usecs}, ADAPTIVE-RX = #{adaptive_rx}  ********' >> iperf_response.log 2>&1",\
                     dan_X_2.prompt, cmd_timeout)
   test_iperf(dan_X_1, dan_X_2, dan_X_2_ip, bandwidth, time, cmd_timeout)
