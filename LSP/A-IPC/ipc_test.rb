@@ -11,11 +11,12 @@ def run
   save_firmware(rprocs_firmware_info.values())
   rprocs_firmware_info.values().each do |info|
 	@equipment['dut1'].send_cmd("rm /lib/firmware/#{info['link']}", @equipment['dut1'].prompt)
+	@equipment['dut1'].send_cmd("rm /run/media/mmcblk1p2/lib/firmware/#{info['link']}", @equipment['dut1'].prompt)
   end
 
   #Parse remoteproc test configuration
   default_test = @test_params.params_chan.default_test[0]
-  lockstep_procs = @test_params.instance_variable_defined?(:@var_lockstep_procs) ? @test_params.var_lockstep_procs[0].split(',') : []
+  lockstep_procs = @test_params.instance_variable_defined?(:@var_lockstep_procs) ? @test_params.var_lockstep_procs.split(',') : []
 
   #spl_procs/uboot_procs/kernel_procs arrays element syntax <proc_key>:[<test_name>], if test_name is not specified default_test is used
   spl_procs_tests = @test_params.params_chan.instance_variable_defined?(:@spl_procs) ? @test_params.params_chan.spl_procs : []
@@ -24,23 +25,20 @@ def run
   uboot_procs_tests = @test_params.params_chan.instance_variable_defined?(:@uboot_procs) ? @test_params.params_chan.uboot_procs : []
   uboot_procs = filter_rprocs(rprocs_firmware_info, uboot_procs_tests, spl_procs)
   uboot_procs_tests.each { |ub| get_fw_path(ub, default_test, uboot_procs) }
-  kernel_procs = filter_rprocs(rprocs_firmware_info, ['.*'], uboot_procs.merge(spl_procs), lockstep_procs)
+  kernel_procs = filter_rprocs(rprocs_firmware_info, rprocs_firmware_info.keys(), uboot_procs.merge(spl_procs), lockstep_procs)
   kernel_procs.keys().each { |k| get_fw_path(k, default_test, kernel_procs) }
   kernel_procs_tests = @test_params.params_chan.instance_variable_defined?(:@kernel_procs) ? @test_params.params_chan.kernel_procs : []
   kernel_procs_tests.each { |k| get_fw_path(k, default_test, kernel_procs) }
 
   #Setting links for spl and uboot loaded remote procs
-  set_fw_links(spl_procs)
-  set_fw_links(uboot_procs)
-  set_fw_links(kernel_procs)
+  set_fw_links(spl_procs, true)
+  set_fw_links(uboot_procs, true)
+  set_fw_links(kernel_procs, false)
+ 
   translated_boot_params = setup_host_side()
-  if translated_boot_params['fs'] == 'nfs'
-    @equipment['dut1'].send_cmd("mkdir -p /run/media/mmcblk1p2/lib/firmware", @equipment['dut1'].prompt)
-    @equipment['dut1'].send_cmd("rm -rf /run/media/mmcblk1p2/lib/firmware/*", @equipment['dut1'].prompt)
-    @equipment['dut1'].send_cmd("cp -rf /lib/firmware/* /run/media/mmcblk1p2/lib/firmware/", @equipment['dut1'].prompt, 120)
-  end
-  @equipment['dut1'].boot_to_bootloader(translated_boot_params)
 
+  @equipment['dut1'].boot_to_bootloader(translated_boot_params)
+  
   #Check that SPL remoteprocs booted
   if spl_procs.length > 0
     spl_check = @equipment['dut1'].response.match(/Remoteproc\s*#{spl_procs.length}\s*started\s*successfully/im)
@@ -89,12 +87,18 @@ def run
     set_result(FrameworkConstants::Result[:pass], "IPC test passed.")
   else
     failure_message = "IPC test failed for:"
-    proc_failures.each{ |rp, f_info| failure_message += "\n\n======= #{rp} ======\n#{f_info['test_trace']}\n====== end ======\n\n" } 
+    proc_failures.each{ |rp, f_info| failure_message += "\n\n======= #{rp} ======\n#{f_info['test_trace'][-80..-1]}\n====== end ======\n\n" } 
     set_result(FrameworkConstants::Result[:fail], failure_message)
   end
 end
 
-def set_fw_links(rprocs)
+def set_fw_links(rprocs, sd_card=false)
+  if sd_card
+    @equipment['dut1'].send_cmd("ls /run/media/mmcblk1p2/lib/firmware > /dev/null || mkdir -p /run/media/mmcblk1p2/lib/firmware", @equipment['dut1'].prompt)
+    rprocs.each do |rp, info|
+	  @equipment['dut1'].send_cmd("cd /run/media/mmcblk1p2/lib/firmware && ln -sf #{info['path']} #{info['link'].strip}", @equipment['dut1'].prompt)
+    end
+  end
   rprocs.each do |rp, info|
     @equipment['dut1'].send_cmd("ln -sf #{info['path'].strip} /lib/firmware/#{info['link'].strip}", @equipment['dut1'].prompt)
   end
