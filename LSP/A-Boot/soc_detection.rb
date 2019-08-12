@@ -15,7 +15,8 @@ def run
     end
     
     # Check max OPP is available if cpufreq is enabled
-    if check_cmd?("zcat /proc/config.gz |grep  _CPUFREQ=y") or check_cmd?("zcat /proc/config.gz |grep  _CPUFREQ=m")
+    if ((check_cmd?("zcat /proc/config.gz |grep  _CPUFREQ=y") or check_cmd?("zcat /proc/config.gz |grep  _CPUFREQ=m")) \
+        and check_cmd?("ls /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq"))
       @equipment['dut1'].send_cmd('cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq', @equipment['dut1'].prompt)
       max_opp_string = get_max_opp_string(params)
       if !@equipment['dut1'].response.match(/#{max_opp_string}/i)
