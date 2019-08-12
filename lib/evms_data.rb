@@ -358,6 +358,10 @@ module EvmData
     machines['k2e-evm'] = {'0.0' => /Machine model:.*Keystone 2 Edison EVM/, }
     machines['k2l-evm'] = {'0.0' => /Machine model:.*Keystone 2 Lamarr EVM/, }
     machines['am654x-evm'] = {'0.0' => /Machine model: Texas Instruments AM654 Base Board/ }
+    machines['am654x-idk'] = {'0.0' => /Machine model: Texas Instruments AM654 Base Board/ }
+    machines['j721e-idk-gw'] = {'0.0' => /Machine model: Texas Instruments K3 J721E SoC/ }
+    machines['j721e-evm'] = {'0.0' => /Machine model: Texas Instruments K3 J721E SoC/ }
+    machines['j721e-evm-ivi'] = {'0.0' => /Machine model: Texas Instruments K3 J721E SoC/ }
                                           
     params.merge!({'dict' => machines})
     get_cmd(params)
