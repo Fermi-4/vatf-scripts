@@ -78,7 +78,7 @@ def run
   @equipment['dut2'].send_cmd("echo 1 > /sys/bus/pci/rescan", @equipment['dut2'].prompt, 10)
   sleep 1
   @equipment['dut2'].send_cmd("lspci", @equipment['dut2'].prompt, 10)
-  raise "Endpoint is not showing in RC using lspci" if !@equipment['dut2'].response.match(/^01:00\.0/i)
+  raise "Endpoint is not showing in RC using lspci" if !@equipment['dut2'].response.match(/01:00\.0/i)
   @equipment['dut2'].send_cmd("lspci -vv", @equipment['dut2'].prompt, 10)
   res = check_pcie_speed(@equipment['dut2'].response, @equipment['dut2'].name)
   if res != 0
