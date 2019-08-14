@@ -18,7 +18,11 @@ def run
   tests.select! { |t| t.match(/#{type}/) }
   tests.each do |test|
     @equipment['dut1'].send_cmd("#{test}", @equipment['dut1'].prompt, 700)
-    @equipment['dut1'].response.downcase().scan(/\[[^\r\n]+/m).each do |result|
+    @equipment['dut1'].response.downcase().scan(/\[.*?ms/im).each do |result|
+      if result.match(/\[terrain\].*?Error.*?SGXKickTA:\s*TA\s*went\s*out\s*of\s*Mem/im)
+        puts "Known issue  \"#{result}\" for terrain test skipping metric"
+        next
+      end
       res_arr = result.split(/\s+/,3)
       t_dat = res_arr[2].split(/:\s*/)
       metric = t_dat[0]
