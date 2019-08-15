@@ -45,7 +45,7 @@ def run
   else
     connectors.each do |connector|
       @equipment['dut1'].send_cmd("kmstest -c @#{connector['id']} 2>&1",/press enter to exit/im,30)
-      primary_plane = @equipment['dut1'].response.match(/plane\s*\d+\/@(\d+)\)/im)[1]
+      primary_plane = @equipment['dut1'].response.match(/plane\s*\d+\/@(\d+)/im)[1]
       @equipment['dut1'].send_cmd("",@equipment['dut1'].prompt)
 
       plane_width = connector['width']/plane_ids.length
