@@ -6,6 +6,7 @@ $EXTRA_PARAMS_TESTS = {
   /^SPI_/      => {'extra_params' => ['bootargs_append=spi']},
   /^QSPI_/      => {'extra_params' => ['bootargs_append=qspi']},
   /^NAND_/      => {'extra_params' => ['bootargs_append=nand']},
+  /^HFLASH_/      => {'extra_params' => ['bootargs_append=hflash']},
   /^REALTIME_.+ISOLCPUS/      => {'extra_params' => ['bootargs_append=isolcpus\=0']},
   /REALTIME_[XSLM]{1,3}_PERF/ => {'extra_params' => ['perf_metrics_file=LSP/A-Realtime/cyclic_parser.rb'] },
 }
