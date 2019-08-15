@@ -253,7 +253,7 @@ end
 def check_pcie_speed(log, platform)
   rtn = 0
   case platform
-    when /am654/
+    when /am654|j7/
       expected_speed = "8GT/s"
     else
       expected_speed = "5GT/s"
