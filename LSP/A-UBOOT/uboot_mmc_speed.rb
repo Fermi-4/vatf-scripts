@@ -93,7 +93,7 @@ def get_expected_mode_emmc(platform)
   expected_mode_emmc['am574x-idk'] = 'MMC DDR52'
   expected_mode_emmc['am654x-evm'] = 'HS200'
   expected_mode_emmc['am654x-idk'] = 'HS200'
-  expected_mode_emmc['j721e-idk-gw'] = 'HS200'
-  expected_mode_emmc['j721e-evm'] = 'HS200'
+  expected_mode_emmc['j721e-idk-gw'] = 'HS400'
+  expected_mode_emmc['j721e-evm'] = 'HS400'
   return expected_mode_emmc[platform]
 end
