@@ -3,23 +3,24 @@ require File.dirname(__FILE__)+'/../android_test_module'
 include AndroidTest
 
 def run
-  partition_map = Hash.new(Hash.new({1 => 'xloader',
-									 2 => 'bootloader',
-									 3 => 'uboot-env',
-									 4 => 'misc',
-									 5 => 'recovery',
-									 6 => 'boot',
-									 7 => 'system',
-									 8 => 'vendor',
-									 9 => 'userdata'}))
-  partition_map['am654x-evm']['2019.01'] = {
-								1 => 'bootloader',
-								2 => 'tiboot3',
-								3 => 'boot',
-								4 => 'vendor',
-								5 => 'system',
-								6 => 'userdata' 
-  }
+  partition_map = {}
+  partition_map.default = Hash.new({1 => 'xloader',
+                                    2 => 'bootloader',
+                                    3 => 'uboot-env',
+                                    4 => 'misc',
+                                    5 => 'recovery',
+                                    6 => 'boot',
+                                    7 => 'system',
+                                    8 => 'vendor',
+                                    9 => 'userdata'})
+  partition_map['am654x-evm']= {'2019.01' => {
+                                  1 => 'bootloader',
+                                  2 => 'tiboot3',
+                                  3 => 'boot',
+                                  4 => 'vendor',
+                                  5 => 'system',
+                                  6 => 'userdata' 
+  }}
   partition_map['am654x-idk'] = partition_map['am654x-evm']
   partition_map['am654x-hsevm'] = partition_map['am654x-evm']
   @equipment['dut1'].disconnect('serial')
