@@ -7,6 +7,7 @@ include LspTestScript
 def setup
   self.as(LspTestScript).setup
   connect_to_extra_equipment()
+  sleep 60
 end
 
 def connect_to_extra_equipment
