@@ -286,7 +286,7 @@ end
 #       scale => <value>                      : (Optional) fraction to scale, i.e. 0.5,
 #       xyoffset => [<xoffset>,<yoffset>]     : (Optional) x,y offsets array in pixels,
 #Return true if the captured frame rate matches the expected frame rate, specified by framerate 
-def run_sync_flip_test(params, dut=@equipment['dut1'], timeout=600)
+def run_sync_flip_test(params, dut=@equipment['dut1'], timeout=150)
   result = run_perf_sync_flip_test(params, dut, timeout) do
              yield
            end
@@ -299,7 +299,7 @@ end
 #Returns an array with two elements: 
 #          [true/false if the captured frame rate matches the expected frame rate or not, 
 #           an array [] containing the fps captured]
-def run_perf_sync_flip_test(params, dut=@equipment['dut1'], timeout=600)
+def run_perf_sync_flip_test(params, dut=@equipment['dut1'], timeout=150)
   #-v test vsynced page flipping
   s_f_test_str = '-t -v '
   f_rates = []
@@ -496,8 +496,11 @@ def get_test_modes(drm_info, formats, conn=nil, p_formats=nil)
       end
     end
   end
+  c_modes = {}
+  olays = {}
   drm_info['Connectors:'].each do |connector|
-    c_modes = []
+    c_modes[connector['id']] = []
+    olays[connector['id']] = overlay_planes
     drm_info['Encoders:'].each do |encoder|
       next if encoder['id'] != connector['encoders']
       crtc = drm_info['CRTCs:'][encoder["possible crtcs"].to_i(16)-1]
@@ -506,7 +509,7 @@ def get_test_modes(drm_info, formats, conn=nil, p_formats=nil)
         connector['modes:'] << connector['modes:'][0]
       end
       adj_idx = 0
-      connector['modes:'].each_index do |i| 
+      connector['modes:'].each_index do |i|
         mode = connector['modes:'][i]
         if (@equipment['dut1'].name.match(/beagle|am335x|am43xx|k2g/) && (mode['name'].match(/(\d+)x(\d+)/).captures[0].to_i > 1280 || mode['name'].match(/(\d+)x(\d+)/).captures[1].to_i > 720)) 
           adj_idx += 1
@@ -533,27 +536,27 @@ def get_test_modes(drm_info, formats, conn=nil, p_formats=nil)
                             'format' => p_formats ? p_formats[rand(p_formats.length)] : plane['formats:'][rand(plane['formats:'].length)]}
           end
           mode_params['plane'] = plane_params
-          c_modes << [mode_params]
+          c_modes[connector['id']] << mode_params
           single_disp_modes << [mode_params] if !conn || connector['name'].match(/#{conn}/i)
         end
       end
     end
-    if multi_disp_modes
-      m_modes = multi_disp_modes
-      multi_disp_modes = []
-      m_modes.each do |m|
-        c_modes.each do |cm|
-          chk_conn = !conn
-          if conn
-            cm.each { |a_cm| chk_conn |= a_cm['connectors_names'].join(',').match(/#{conn}/i) }
-            m.each { |a_m| chk_conn |= a_m['connectors_names'].join(',').match(/#{conn}/i) }
-          end
-          next if cm[0]['plane'] && m[0]['plane'] && cm[0]['plane']['id'] == m[0]['plane']['id']
-          multi_disp_modes << m + cm if chk_conn
-        end
+  end
+  multi_disp_modes = []
+  if c_modes.length > 1
+    c1, c2 = c_modes.values()
+    if c1.length > c2.length
+      idx = c1.length - 1 - c2.length
+      c2.concat(c2[0..idx])
+    elsif c2.length > c1.length
+      idx = c2.length - 1 - c1.length
+      c1.concat(c1[0..idx])
+    end
+    multi_disp_modes = c1.zip(c2[0..(c2.length/2).to_i].concat(c2[(c2.length/2).to_i+1..-1].reverse))
+    multi_disp_modes.each do |m|
+      if m[0]['plane'] && m[1]['plane'] && m[0]['plane']['id'] == m[1]['plane']['id']
+        m[1]['plane']['id'] = olays[m[1]['connectors_ids'][0]].select{|o| o !=  m[1]['plane']['id']}[0]
       end
-    else
-      multi_disp_modes = c_modes.dup
     end
   end
   [single_disp_modes, multi_disp_modes]
