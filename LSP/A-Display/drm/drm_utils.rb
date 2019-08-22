@@ -286,7 +286,7 @@ end
 #       scale => <value>                      : (Optional) fraction to scale, i.e. 0.5,
 #       xyoffset => [<xoffset>,<yoffset>]     : (Optional) x,y offsets array in pixels,
 #Return true if the captured frame rate matches the expected frame rate, specified by framerate 
-def run_sync_flip_test(params, dut=@equipment['dut1'], timeout=150)
+def run_sync_flip_test(params, dut=@equipment['dut1'], timeout=nil)
   result = run_perf_sync_flip_test(params, dut, timeout) do
              yield
            end
@@ -299,7 +299,7 @@ end
 #Returns an array with two elements: 
 #          [true/false if the captured frame rate matches the expected frame rate or not, 
 #           an array [] containing the fps captured]
-def run_perf_sync_flip_test(params, dut=@equipment['dut1'], timeout=150)
+def run_perf_sync_flip_test(params, dut=@equipment['dut1'], timeout=nil)
   #-v test vsynced page flipping
   s_f_test_str = '-t -v '
   f_rates = []
@@ -308,7 +308,12 @@ def run_perf_sync_flip_test(params, dut=@equipment['dut1'], timeout=150)
     s_f_test_str += get_mode_string(disp_inf, disp_inf['plane'])
     f_rates << disp_inf['framerate'].to_f
   end
-  output = modetest(s_f_test_str + ' &', dut, timeout, /^freq:\s*([\d.]+)Hz.*?#{dut.prompt}/im) do
+  if timeout == nil
+    t_out = [(60*150.0/f_rates.min).to_i, 600].min
+  else
+    t_out = timeout
+  end
+  output = modetest(s_f_test_str + ' &', dut, t_out, /^freq:\s*([\d.]+)Hz.*?#{dut.prompt}/im) do
     yield
   end
   fps_arr = output.scan(/^freq:\s*([\d.]+)Hz/).drop(2).flatten
