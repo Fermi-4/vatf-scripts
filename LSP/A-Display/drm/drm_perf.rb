@@ -22,9 +22,9 @@ def run_mode_test(mode_params, perf_data=[])
   fps_res = nil
   fps_data = nil
   output = ''
-  use_memory(1920 * 1080 * 26 * 4) do
-    fps_res, fps_data, output = run_perf_sync_flip_test(mode_params) do
-      sleep 60
+  use_memory(4096 * 2160 * 26 * 4) do
+    fps_res, fps_data, output = run_perf_sync_flip_test(mode_params) do |def_timeout|
+      sleep [60, def_timeout].max
     end
   end
 

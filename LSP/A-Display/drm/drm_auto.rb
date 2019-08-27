@@ -130,7 +130,7 @@ def run
       fps_res = nil
       fps_data = nil
       f_length = get_format_length(s_mode[0]['format'])
-      use_memory(1920 * 1080 * 26 * 4) do
+      use_memory(4096 * 2160 * 26 * 4) do
         fps_res, fps_data = run_perf_sync_flip_test(s_mode) do
           begin
             sleep 5
