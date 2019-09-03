@@ -314,7 +314,7 @@ def run_perf_sync_flip_test(params, dut=@equipment['dut1'], timeout=nil)
     t_out = timeout
   end
   output = modetest(s_f_test_str + ' &', dut, t_out, /^freq:\s*([\d.]+)Hz.*?#{dut.prompt}/im) do
-    yield
+    yield t_out
   end
   fps_arr = output.scan(/^freq:\s*([\d.]+)Hz/).drop(2).flatten
   failed_samples = 0.0

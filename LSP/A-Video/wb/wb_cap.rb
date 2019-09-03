@@ -54,7 +54,7 @@ def run
   single_disp_modes, multi_disp_modes = get_test_modes(drm_info, formats, nil, ['XR24'])
   
   video_test_file = File.join(@linux_temp_folder, 'video_tst_file.raw')
-  free_mem = 1920 * 1080 * 26 * 4
+  free_mem = 4096 * 2160 * 26 * 4
   single_disp_modes.each do |s_mode|
       video_width, video_height = s_mode[0]['mode'].sub(/i$/,'').split('x').map(&:to_i)
       wb_devices.each do |dev|
