@@ -23,9 +23,13 @@ def run
       test_result = !dut_play_dev.empty?
       dut_play_dev.each do |p_dev|
         @equipment['dut1'].send_cmd("modetest -t -s #{hdmi_conn}:1280x720 &",/setting\s*mode.*?connectors\s*#{hdmi_conn}/) if hdmi_conn && p_dev['device_info'].match(/hdmi/im)
-        @equipment['dut1'].send_cmd("time aplay -i -f cd -d #{duration} -D hw:#{p_dev['card']},#{p_dev['device']} /dev/urandom",
-                                    /Playing\s*raw\s*data\s*'\/dev\/urandom'[^\r\n]+/im,10)
-        
+        if p_dev['card'].to_s != '' && p_dev['device'].to_s != ''
+          @equipment['dut1'].send_cmd("time aplay -i -f cd -d #{duration} -D hw:#{p_dev['card']},#{p_dev['device']} /dev/urandom",
+                                      /Playing\s*raw\s*data\s*'\/dev\/urandom'[^\r\n]+/im,10)
+        else
+          @equipment['dut1'].send_cmd("time aplay -i -f S24_3LE -r 48000 -c 2 -d #{duration} -D #{p_dev['card']} /dev/urandom",
+                                      /Playing\s*raw\s*data\s*'\/dev\/urandom'[^\r\n]+/im,10)
+        end
         test_result, cmt = get_result(duration, p_dev['device_info'])
         @equipment['dut1'].send_cmd("killall -9 modetest") if hdmi_conn && p_dev['device_info'].match(/hdmi/im)
         if !test_result
@@ -35,8 +39,13 @@ def run
       end
     when 'record'
       dut_rec_dev.each do |r_dev|
-        @equipment['dut1'].send_cmd("time arecord -i -f cd -d #{duration} -D hw:#{r_dev['card']},#{r_dev['device']} > /dev/null",
-                                    /Recording\s*WAVE\s*'stdin'[^\r\n]+/im,10)
+        if r_dev['card'].to_s != '' && r_dev['device'].to_s != ''
+          @equipment['dut1'].send_cmd("time arecord -i -f cd -d #{duration} -D hw:#{r_dev['card']},#{r_dev['device']} > /dev/null",
+                                                                            /Recording\s*WAVE\s*'stdin'[^\r\n]+/im,10)
+        else
+          @equipment['dut1'].send_cmd("time arecord -i -f S24_3LE -r 48000 -c 2 -d #{duration} -D #{r_dev['card']} > /dev/null",
+                                                                            /Recording\s*WAVE\s*'stdin'[^\r\n]+/im,10)
+        end
         test_result, cmt = get_result(duration, r_dev['device_info'])
         if !test_result
           comment += cmt
