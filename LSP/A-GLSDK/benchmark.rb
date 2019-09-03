@@ -18,7 +18,22 @@ def run
     @equipment['dut1'].send_cmd("wget #{url}", @equipment['dut1'].prompt, 600)
     @equipment['dut1'].send_cmd("tar -zxvf #{tarball}", @equipment['dut1'].prompt, 600)
   end
-  execfile = './GLBenchmark2'
+  if @equipment['dut1'].name.match(/j7*/)
+    nulldrm_libdir = "#{@linux_dst_dir}/nulldrmusr"
+    if !dut_dir_exist?(nulldrm_libdir)
+      @equipment['dut1'].send_cmd("rm -rf ti-img-rogue-umlibs", @equipment['dut1'].prompt, 30)
+      @equipment['dut1'].send_cmd("git clone git://git.ti.com/graphics/ti-img-rogue-umlibs.git -b linuxws/thud/k4.19/1.10.5371573", @equipment['dut1'].prompt, 300)
+      @equipment['dut1'].send_cmd("ln -sf #{@linux_dst_dir}/ti-img-rogue-umlibs/targetfs/j721e_linux/nulldrmws/release/usr #{nulldrm_libdir}", @equipment['dut1'].prompt)
+      @equipment['dut1'].send_cmd("ls #{nulldrm_libdir}/lib", @equipment['dut1'].prompt)
+      raise "Unable to setup nulldrm libs" if @equipment['dut1'].response.match(/No\s*such\s*file\s*or\s*directory/im)
+      create_lib_link('/usr/lib/libgbm.so', '/usr/lib/libgbm.so.2')
+      create_lib_link("#{nulldrm_libdir}/lib/libIMGegl.so", "#{nulldrm_libdir}/lib/libIMGegl.so.1")
+      create_lib_link("#{nulldrm_libdir}/lib/libsrv_um.so", "#{nulldrm_libdir}/lib/libsrv_um.so.1")
+    end
+    execfile = "LD_LIBRARY_PATH=#{nulldrm_libdir}/lib:/usr/lib ./GLBenchmark2"
+  else
+    execfile = './GLBenchmark2'
+  end
   @equipment['dut1'].send_cmd("gl_dir=`ls -d glbenchmark*/|sort|tail -n 1`; cd $gl_dir", @equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd("#{execfile} 2>&1 | grep -i 'Log:.*GLB.*|[0-9]*'", @equipment['dut1'].prompt)
   tests_table = @equipment['dut1'].response.slice(/^Log:\s*(.*?)#{@equipment['dut1'].prompt}/im,1).gsub(/^\s*Log:\s+/im,'').split(/[\s\|]+/im)
@@ -60,4 +75,14 @@ def run
                   'values' => metrics[1]}
   end
   set_result(FrameworkConstants::Result[:pass], "GFX test passed", perf_data)
+end
+
+def create_lib_link(l_pattern, l_link)
+  @equipment['dut1'].send_cmd("ls #{l_link}", @equipment['dut1'].prompt)
+  if @equipment['dut1'].response.match(/No\s*such\s*file\s*or\s*directory/im)
+    @equipment['dut1'].send_cmd("ls #{l_pattern}* | tail -1", @equipment['dut1'].prompt)
+    return if @equipment['dut1'].response.match(/No\s*such\s*file\s*or\s*directory/im)
+    lib = @equipment['dut1'].response.match(/^#{l_pattern}[^\r\n]+/)[0]
+    @equipment['dut1'].send_cmd("ln -sf #{lib} #{l_link}", @equipment['dut1'].prompt)
+  end
 end
