@@ -137,7 +137,14 @@ def prep_audio_string(audio_info={})
                 'format' => 'SE16_LE', 'channels' => 2, 
                 'file' => nil}.merge(audio_info)
   raise "Audio file not specified" if !audio_inf['file']
-  "-D hw:#{audio_inf['card']},#{audio_inf['device']} -t #{audio_inf['type']} " \
+  if audio_inf['card'].to_s != '' && audio_inf['device'].to_s != ''
+    device = "hw:#{audio_inf['card']},#{audio_inf['device']}" 
+  elsif audio_inf['card'].to_s != ''
+    device = audio_inf['card']
+  else
+    raise "No audio device specified Card == #{audio_info['card'].to_s}"
+  end
+  "-D #{device} -t #{audio_inf['type']} " \
   "-d #{audio_inf['duration']} -r #{audio_inf['rate']} -f #{audio_inf['format']} " \
   "-c #{audio_inf['channels']} --period-size=#{audio_inf['period-size']} " \
   "--buffer-size=#{audio_inf['buffer-size']} #{audio_inf['file']}" 
@@ -266,7 +273,11 @@ def parse_wav_audio_info(wav_info)
   if wav_info.match(/pcm_\w\d+\w+/i)
     result['fmt'] = wav_info.match(/pcm_(\w\d+\w+)/i).captures[0]
     sf, endian = result['fmt'].match(/(\w\d+)(\w+)/i).captures[0..1]
-    result['format'] = "#{sf.upcase()}_#{endian.upcase()}"  
+    if result['fmt'] == 's24le'
+      result['format'] = 'S24_3LE'
+    else
+      result['format'] = "#{sf.upcase()}_#{endian.upcase()}"
+    end
   else
     result['fmt'] = wav_info.match(/pcm_(\w+)/i).captures[0]
     result['format'] = result['fmt'].upcase()
@@ -367,49 +378,53 @@ end
 def config_devices(sys=@equipment['dut1'], volume=0.6)
   dut_rec_dev = []
   dut_play_dev = []
-  sys.send_cmd("ls /sys/class/sound/ | grep 'card'", sys.prompt,10)
-  c_dirs = sys.response.scan(/^card[^\s]*/)
-  c_dirs.each do |card|
-    sys.send_cmd("echo \"TI $(cat /sys/class/sound/#{card}/id)\"", sys.prompt,10)
-    rec_dev_info = sys.response.match(/^TI\s*([^\n\r]+)/).captures[0].gsub(/\s*/,'')
-    rec_dev_info += '|' + rec_dev_info.gsub(/x/,'')
-    play_dev_info = rec_dev_info
-    rec_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@rec_device)
-    play_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@play_device)
-    d_rec_dev = get_audio_rec_dev(rec_dev_info)
-    d_play_dev = get_audio_play_dev(play_dev_info)
-    #Turning on playout/capture ctrls
-    if d_rec_dev
-      ['Left PGA Mixer Line1L', 'Right PGA Mixer Line1R', 
-       'Left PGA Mixer Mic3L', 'Right PGA Mixer Mic3R', 'Output Left From MIC1LP',
-       'Output Left From MIC1RP', 'Output Right From MIC1RP',
-       'Left PGA Mixer Mic2L', 'Right PGA Mixer Mic2R',
-       'Line'
-       ].each do |ctrl|
-          puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl, d_rec_dev['card'])
+  if sys.name.match(/j7.*/) #Create plugins for PCM3168A 6 input/8 output channel codec
+    dut_rec_dev, dut_play_dev = get_plugins(sys.name)
+  else
+    sys.send_cmd("ls /sys/class/sound/ | grep 'card'", sys.prompt,10)
+    c_dirs = sys.response.scan(/^card[^\s]*/)
+    c_dirs.each do |card|
+      sys.send_cmd("echo \"TI $(cat /sys/class/sound/#{card}/id)\"", sys.prompt,10)
+      rec_dev_info = sys.response.match(/^TI\s*([^\n\r]+)/).captures[0].gsub(/\s*/,'')
+      rec_dev_info += '|' + rec_dev_info.gsub(/x/,'')
+      play_dev_info = rec_dev_info
+      rec_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@rec_device)
+      play_dev_info = @test_params.params_chan.rec_device[0] if @test_params.params_chan.instance_variable_defined?(:@play_device)
+      d_rec_dev = get_audio_rec_dev(rec_dev_info)
+      d_play_dev = get_audio_play_dev(play_dev_info)
+      #Turning on playout/capture ctrls
+      if d_rec_dev
+        ['Left PGA Mixer Line1L', 'Right PGA Mixer Line1R', 
+         'Left PGA Mixer Mic3L', 'Right PGA Mixer Mic3R', 'Output Left From MIC1LP',
+         'Output Left From MIC1RP', 'Output Right From MIC1RP',
+         'Left PGA Mixer Mic2L', 'Right PGA Mixer Mic2R',
+         'Line'
+         ].each do |ctrl|
+            puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl, d_rec_dev['card'])
+        end
+      cset_state('on','ADC Capture Switch', d_rec_dev['card'])
+      if @equipment['dut1'].name == 'am43xx-epos'
+        ['MIC1RP P-Terminal', 'MIC1LP P-Terminal'].each {|ctrl| set_state('FFR 10 Ohm', ctrl, d_rec_dev['card'])}
       end
-    cset_state('on','ADC Capture Switch', d_rec_dev['card'])
-    if @equipment['dut1'].name == 'am43xx-epos'
-      ['MIC1RP P-Terminal', 'MIC1LP P-Terminal'].each {|ctrl| set_state('FFR 10 Ohm', ctrl, d_rec_dev['card'])}
-    end
-    #Setting volume
-    set_volume(0, 'ADC', d_rec_dev['card'])
-      ['PCM', 'PGA', 'Mic PGA'].each do |ctrl|
-        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(volume, ctrl, d_rec_dev['card'])
+      #Setting volume
+      set_volume(0, 'ADC', d_rec_dev['card'])
+        ['PCM', 'PGA', 'Mic PGA'].each do |ctrl|
+          puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(volume, ctrl, d_rec_dev['card'])
+        end
+        dut_rec_dev << d_rec_dev
       end
-      dut_rec_dev << d_rec_dev
-    end
-    if d_play_dev
-      [['Speaker Driver', 0], 'Speaker Left', 'Speaker Right', ['SP Driver', 0], 
-        'SP Left', 'SP Right', 'Output Left From Left DAC', 'Output Right From Right DAC',
-        ['HP Driver',0], 'HP Left', 'HP Right', ['Left DAC Mux','DAC_L1'],
-        ['Right DAC Mux','DAC_R1']].each do |ctrl|
-        puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl, d_play_dev['card'])
+      if d_play_dev
+        [['Speaker Driver', 0], 'Speaker Left', 'Speaker Right', ['SP Driver', 0], 
+          'SP Left', 'SP Right', 'Output Left From Left DAC', 'Output Right From Right DAC',
+          ['HP Driver',0], 'HP Left', 'HP Right', ['Left DAC Mux','DAC_L1'],
+          ['Right DAC Mux','DAC_R1']].each do |ctrl|
+          puts "Warning: Unable to turn on #{ctrl}!!!" if !set_state('on',ctrl, d_play_dev['card'])
+        end
+        ['PCM', 'HP DAC', 'DAC', 'HP Analog', 'SP Analog', 'Speaker Analog', 'Mic PGA'].each do |ctrl|
+          puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(volume, ctrl, d_play_dev['card'])
+        end
+        dut_play_dev << d_play_dev
       end
-      ['PCM', 'HP DAC', 'DAC', 'HP Analog', 'SP Analog', 'Speaker Analog', 'Mic PGA'].each do |ctrl|
-        puts "Warning: Unable to set the volume in #{ctrl}, playback volume may be low!!!" if !set_volume(volume, ctrl, d_play_dev['card'])
-      end
-      dut_play_dev << d_play_dev
     end
   end
   [dut_rec_dev, dut_play_dev]
@@ -451,7 +466,9 @@ def separate_audio_chans(in_file, fmt_bytes=2, channels = 2, offset_sample=0, wa
                   'c*'
                 when 2
                   's<*'
-                when 3,4
+                when 3
+                  'a3'
+                when 4
                   'l<*'
                 else
                   'q<*'
@@ -463,7 +480,13 @@ def separate_audio_chans(in_file, fmt_bytes=2, channels = 2, offset_sample=0, wa
     read_length = ((ifd.size - offset)/(channels * fmt_bytes)).to_i * channels * fmt_bytes
     ifd.seek(offset, IO::SEEK_SET)
     if !ifd.eof?
-      data = ifd.read(read_length).unpack(pack_type).partition.with_index { |_, index| index % channels ==0 }
+      if fmt_bytes == 3
+        data = ifd.read(read_length).unpack(pack_type*(read_length/3)).partition.with_index { |_, index| index % channels ==0 }
+        data[0] = data[0].map { |d| (0.chr+d).unpack('l<') }.flatten
+        data[1] = data[1].map { |d| (0.chr+d).unpack('l<') }.flatten
+      else
+        data = ifd.read(read_length).unpack(pack_type).partition.with_index { |_, index| index % channels ==0 }
+      end
     end
   end
 
@@ -524,12 +547,187 @@ def remove_offset(in_file, out_file=nil, fmt_bytes=2, s_rate=44100, channels=2, 
         ofd.write('data')
         ofd.write([data_size].pack('l<'))
       end
-      if channels == 1
-        ofd.write(n_arrs[0].pack(pack_type+'*'))
+      if fmt_bytes == 3
+        n_arrs[0].each_index do |i|
+          ofd.write([n_arrs[0][i]].pack(pack_type)[1..-1])
+          if channels > 1
+            ofd.write([n_arrs[1][i]].pack(pack_type)[1..-1])
+          end
+        end
       else
-        ofd.write(n_arrs[0].zip(*n_arrs[1..-1]).flatten.pack(pack_type+'*'))
+        if channels == 1
+          ofd.write(n_arrs[0].pack(pack_type+'*'))
+        else
+          ofd.write(n_arrs[0].zip(*n_arrs[1..-1]).flatten.pack(pack_type+'*'))
+        end
       end
     end
   end
   return *n_arrs
+end
+
+def get_plugins(name, dut=@equipment['dut1'])
+
+j7_plugins = "
+pcm.dmixed8 {
+    type dmix
+    ipc_key 2048
+    ipc_perm 0666
+    slave {
+        pcm \\\"hw:j721ecpbanalog,0\\\"
+        format S24_LE
+        channels 8
+        rate 96000
+    }
+    bindings {
+        0 0
+        1 1
+        2 2
+        3 3
+        4 4
+        5 5
+        6 6
+        7 7
+    }
+}
+
+pcm.dsnooped6 {
+    type dsnoop
+    ipc_key 2049
+    ipc_perm 0666
+    slave {  
+        pcm \\\"hw:j721ecpbanalog,1\\\"
+        format S24_LE
+        channels 6
+        rate 96000
+    }
+    bindings {
+        0 0
+        1 1
+        2 2
+        3 3
+        4 4
+        5 5
+    }
+}
+
+pcm.cpb-headset-1 {
+    type plug
+    slave.pcm dmixed8
+
+    hint {
+         show on
+         description \\\"Headset 1 jack on Common Processor Board\\\"
+    }
+    ttable.0.0 1
+    ttable.1.4 1
+}
+
+pcm.cpb-headset-2 {
+    type plug
+    slave.pcm dmixed8
+
+    hint {
+         show on
+         description \\\"Headset 2 jack on Common Processor Board\\\"
+    }
+    ttable.0.1 1
+    ttable.1.5 1
+}
+
+pcm.cpb-headset-3 {
+    type plug 
+    slave.pcm dmixed8
+
+    hint {    
+         show on
+         description \\\"Headset 3 jack on Common Processor Board\\\"
+    }
+    ttable.0.2 1
+    ttable.1.6 1
+}
+
+pcm.cpb-line-out {
+    type plug 
+    slave.pcm dmixed8
+
+    hint {    
+         show on
+         description \\\"Line Out jack on Common Processor Board\\\"
+    }
+    ttable.0.3 1
+    ttable.1.7 1
+}
+
+pcm.cpb-playback-all {
+    type plug
+    slave.pcm dmixed8
+
+    hint {
+         show on
+         description \\\"Playback on all 8 channels\\\"
+    }
+    ttable.0.0 1
+    ttable.1.4 1
+    ttable.2.1 1
+    ttable.3.5 1
+    ttable.4.2 1
+    ttable.5.6 1
+    ttable.6.3 1
+    ttable.7.7 1
+}
+
+pcm.cpb-mic-1 {
+    type plug
+    slave.pcm \\\"dsnooped6\\\"
+
+    hint {
+         show on
+         description \\\"Microphone 1 jack on Common Processor Board\\\"
+    }
+    ttable.0.0 1
+    ttable.1.3 1
+}
+
+pcm.cpb-mic-2 {
+    type plug
+    slave.pcm \\\"dsnooped6\\\"
+
+    hint {
+         show on
+         description \\\"Microphone 2 jack on Common Processor Board\\\"
+    }
+    ttable.0.1 1
+    ttable.1.4 1
+}
+
+pcm.cpb-line-in {
+    type plug
+    slave.pcm \\\"dsnooped6\\\"
+
+    hint {
+         show on
+         description \\\"Line In jack on Common Processor Board\\\"
+    }
+    ttable.0.2 1
+    ttable.1.5 1
+}
+"
+
+  case name
+    when /j7.*/
+      dut.send_cmd("rm ~/.asoundrc", dut.prompt)
+      j7_plugins.each_line { |line| dut.send_cmd("echo \"#{line.rstrip()}\" >> ~/.asoundrc", dut.prompt) }
+      audio_info = {'card' => nil,
+       'card_info' => '',
+       'device' => nil,
+       'device_info' => 'Audio plugin'}
+      rec_devs = []
+      ['cpb-line-in','cpb-mic-1','cpb-mic-2'].each { |d| rec_devs << audio_info.merge({'card'=> d, 'card_info' => "Audio plugin #{d.gsub(/(?:-in|-out)$/,'')}"}) }
+      play_devs = []
+      ['cpb-line-out','cpb-headset-1','cpb-headset-2','cpb-headset-3','cpb-playback-all'].each { |d| play_devs << audio_info.merge({'card' => d, 'card_info' => "Audio plugin #{d.gsub(/(?:-in|-out)$/,'')}"}) }
+      return [rec_devs, play_devs]
+    else
+      raise "Cannot provide asoundrc plugin config. Unsupported platform #{name}"
+    end
 end

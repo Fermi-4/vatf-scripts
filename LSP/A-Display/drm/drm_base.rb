@@ -68,7 +68,7 @@ def run
     end
   end
 
-  if multi_disp_modes.length > single_disp_modes.length && !@test_params.params_chan.instance_variable_defined?(:@test_type)
+  if multi_disp_modes.length > 0 && !@test_params.params_chan.instance_variable_defined?(:@test_type)
     @results_html_file.add_paragraph("")
     res_table = @results_html_file.add_table([["Multidisplay Mode",{:bgcolor => "4863A0"}], 
                                               ["Result", {:bgcolor => "4863A0"}],
