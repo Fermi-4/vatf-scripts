@@ -30,7 +30,7 @@ def run
   msi_int = @test_params.params_chan.instance_variable_defined?(:@msi_interrupts) ? @test_params.params_chan.msi_interrupts[0] : '16'
   num_bars = @test_params.params_chan.instance_variable_defined?(:@num_bars) ? @test_params.params_chan.num_bars[0] : '6'   
   rw_sizes = @test_params.params_chan.instance_variable_defined?(:@rw_sizes) ? @test_params.params_chan.rw_sizes[0] : '1 1024'   
-  test_duration = @test_params.params_chan.instance_variable_defined?(:@test_duration) ? @test_params.params_chan.test_duration[0] : '30'   
+  test_duration = @test_params.params_chan.instance_variable_defined?(:@test_duration) ? @test_params.params_chan.test_duration[0] : '10'   
   linux_version = @equipment['dut1'].get_linux_version
   # option: 'legacy, msi, msix'
   int_mode = @test_params.params_chan.instance_variable_defined?(:@int_mode) ? @test_params.params_chan.int_mode[0] : 'msi'
@@ -54,6 +54,7 @@ def run
     @equipment['dut1'].send_cmd("ln -s #{func_dir}/pf#{i} #{config_fs}/pci_ep/controllers/${ctrl_driver_name}", @equipment['dut1'].prompt, 10)
     raise "Failed to bind pci-epf-test device to EP controller!" if @equipment['dut1'].response.match(/invalid/i)
   end
+  @equipment['dut1'].send_cmd("ls -l #{func_dir}", @equipment['dut1'].prompt, 10) 
 
   # Start pcie ep
   @equipment['dut1'].send_cmd("echo 1 > #{config_fs}/pci_ep/controllers/${ctrl_driver_name}/start", @equipment['dut1'].prompt, 10)
@@ -75,31 +76,32 @@ def run
   setup_boards('dut2', boot_params2)
 
   # Run pcie ep tests
+  @equipment['dut2'].send_cmd("lspci", @equipment['dut2'].prompt, 10)
   @equipment['dut2'].send_cmd("echo 1 > /sys/bus/pci/rescan", @equipment['dut2'].prompt, 10)
   sleep 1
+  @equipment['dut2'].send_cmd("for f in /sys/bus/pci/devices/*/sriov_numvfs; do echo #{num_vfs} > $f; done", @equipment['dut2'].prompt, 10)
   @equipment['dut2'].send_cmd("lspci", @equipment['dut2'].prompt, 10)
   raise "Endpoint is not showing in RC using lspci" if !@equipment['dut2'].response.match(/01:00\.0/i)
+
   @equipment['dut2'].send_cmd("lspci -vv", @equipment['dut2'].prompt, 10)
   res = check_pcie_speed(@equipment['dut2'].response, @equipment['dut2'].name)
   if res != 0
     report_msg "Test Fail Reason: LnkSta is not at expected speed", "dut2"
     result += res
   end
+
   @equipment['dut2'].send_cmd("pcitest -h", @equipment['dut2'].prompt, 10)
   raise "pcitest app is missing from filesystem" if @equipment['dut2'].response.match(/command\s+not\s+found/i)
 
   @equipment['dut1'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut1'].prompt, 5) 
   @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
 
-  @equipment['dut2'].send_cmd("rmmod pci_endpoint_test", @equipment['dut2'].prompt, 60)
-  if int_mode == "msi" or int_mode == "msix"
-    @equipment['dut2'].send_cmd("modprobe pci_endpoint_test", @equipment['dut2'].prompt, 30)
+  if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
+    #@equipment['dut2'].send_cmd("modprobe pci_endpoint_test ", @equipment['dut2'].prompt, 30)
+    puts "do not modprobe"
   else
-    if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
-      @equipment['dut2'].send_cmd("modprobe pci_endpoint_test ", @equipment['dut2'].prompt, 30)
-    else
-      @equipment['dut2'].send_cmd("modprobe pci_endpoint_test no_msi=1", @equipment['dut2'].prompt, 30)
-    end
+    @equipment['dut2'].send_cmd("rmmod pci_endpoint_test", @equipment['dut2'].prompt, 60)
+    @equipment['dut2'].send_cmd("modprobe pci_endpoint_test no_msi=1", @equipment['dut2'].prompt, 30)
   end
 
   @equipment['dut2'].send_cmd("ls /dev/pci-endpoint-test*", @equipment['dut2'].prompt, 10)
@@ -109,18 +111,18 @@ def run
   test_dev_array = @equipment['dut2'].response.scan(/\/dev\/pci-endpoint-test\.\d+/im)
   report_msg "There are #{test_dev_array.length} pci-endpoint-test being created", "dut2"
 
-  # Enable different interrupt
-  if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
-    mode = msi_map[int_mode]
-    @equipment['dut2'].send_cmd("pcitest -i #{mode}", @equipment['dut2'].prompt, 10)
-  end
-
   @equipment['dut1'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut1'].prompt, 5) 
   @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
   @equipment['dut2'].send_cmd("lspci -vv", @equipment['dut2'].prompt, 30)
 
   test_dev_array.each do |test_dev|
+    #next if test_dev.include? "pci-endpoint-test.0"
     report_msg "=== Testing #{test_dev} ===", "dut2"
+    # Enable different interrupt
+    if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
+      mode = msi_map[int_mode]
+      @equipment['dut2'].send_cmd("pcitest -i #{mode} -D #{test_dev}", @equipment['dut2'].prompt, 10)
+    end
     if int_mode == "msi" or int_mode == "msix"
       @equipment['dut2'].send_cmd("cat /proc/interrupts | grep -i pci", @equipment['dut2'].prompt, 5) 
       msi_int_before = get_msi_int(@equipment['dut2'].response)
@@ -214,6 +216,12 @@ def run
       end
     end
 
+    # Clear interrupt
+    if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
+      mode = msi_map[int_mode]
+      @equipment['dut2'].send_cmd("pcitest -e #{mode} -D #{test_dev}", @equipment['dut2'].prompt, 10)
+    end
+
   end # test_dev_array 
 
   if result == 0 
@@ -278,6 +286,7 @@ def get_func_driver_name(platform, linux_version)
 end
 
 def get_msi_int(response)
+  #"333:          0          0   ITS-MSI 134742016 Edge      pci-endpoint-test.0"
   if response.match(/:\s+(\d+).*(?:PCI-MSI|ITS-MSI).*pci-endpoint-test/)
     rtn = response.match(/:\s+(\d+).*(?:PCI-MSI|ITS-MSI).*pci-endpoint-test/).captures[0]
     return rtn
