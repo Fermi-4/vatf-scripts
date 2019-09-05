@@ -28,6 +28,7 @@ def run
   num_vfs = @test_params.params_chan.instance_variable_defined?(:@num_vfs) ? @test_params.params_chan.num_vfs[0] : '0'   
 
   msi_int = @test_params.params_chan.instance_variable_defined?(:@msi_interrupts) ? @test_params.params_chan.msi_interrupts[0] : '16'
+  msix_int = @test_params.params_chan.instance_variable_defined?(:@msix_interrupts) ? @test_params.params_chan.msix_interrupts[0] : '16'
   num_bars = @test_params.params_chan.instance_variable_defined?(:@num_bars) ? @test_params.params_chan.num_bars[0] : '6'   
   rw_sizes = @test_params.params_chan.instance_variable_defined?(:@rw_sizes) ? @test_params.params_chan.rw_sizes[0] : '1 1024'   
   test_duration = @test_params.params_chan.instance_variable_defined?(:@test_duration) ? @test_params.params_chan.test_duration[0] : '10'   
@@ -156,7 +157,7 @@ def run
       end
     elsif int_mode == 'msix'
       i = 1
-      while i <= msi_int.to_i do
+      while i <= msix_int.to_i do
         @equipment['dut2'].send_cmd("pcitest -x #{i} -D #{test_dev}", @equipment['dut2'].prompt, 10)
         if !@equipment['dut2'].response.match(/msi-x\d+:\s+okay/i)
           report_msg "Test Fail Reason: MSI-X Interrupt #{i} test failed", "dut2"
@@ -246,12 +247,14 @@ def setup_ep(func='pf1', func_dir, linux_version)
   @equipment['dut1'].send_cmd("echo #{deviceid} > #{func_dir}/deviceid", @equipment['dut1'].prompt, 10)
 
   msi_int = @test_params.params_chan.instance_variable_defined?(:@msi_interrupts) ? @test_params.params_chan.msi_interrupts[0] : '16'
+  msix_int = @test_params.params_chan.instance_variable_defined?(:@msix_interrupts) ? @test_params.params_chan.msix_interrupts[0] : '16'
   # option: 'legacy, msi, msix'
   int_mode = @test_params.params_chan.instance_variable_defined?(:@int_mode) ? @test_params.params_chan.int_mode[0] : 'msi'
   if Gem::Version.new(linux_version) >= Gem::Version.new("4.19")
     msi_int = '16' if int_mode == 'legacy' #This number no use in this case; but can not be 0
+    msix_int = '16' if int_mode == 'legacy' #This number no use in this case; but can not be 0
     @equipment['dut1'].send_cmd("echo #{msi_int} > #{func_dir}/msi_interrupts", @equipment['dut1'].prompt, 10)
-    @equipment['dut1'].send_cmd("echo #{msi_int} > #{func_dir}/msix_interrupts", @equipment['dut1'].prompt, 10)
+    @equipment['dut1'].send_cmd("echo #{msix_int} > #{func_dir}/msix_interrupts", @equipment['dut1'].prompt, 10)
   else
     @equipment['dut1'].send_cmd("echo #{msi_int} > #{func_dir}/msi_interrupts", @equipment['dut1'].prompt, 10)
   end
