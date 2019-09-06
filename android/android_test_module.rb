@@ -17,10 +17,17 @@ def setup
   @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s, 'android')
   FileUtils.mkdir_p @linux_temp_folder
   self.as(LspTestScript).setup
-  sleep 40
   @android_boot_params['server'].send_sudo_cmd("rm #{@linux_temp_folder}/*", @android_boot_params['server'].prompt, 120) #Cleanup for next test
   @equipment['dut1'].set_android_tools(@android_boot_params)
   @equipment['dut1'].send_cmd("export PATH=$PATH:/data/nativetest/modetest", @equipment['dut1'].prompt, 10)
+  adb_timeout = 40
+  res = ''
+  while !res.match(/^\d+$/) && !res.match(/.*?password\s+for\s+[^:]+:\s*\d+$/i) && adb_timeout > 0
+    sleep 5
+    res = @equipment['dut1'].send_adb_cmd('shell getprop sys.boot_completed').strip()
+    adb_timeout -= 5
+  end
+  raise "Android did not finish booting after 40 secs" if adb_timeout <= 0
   send_adb_cmd("shell mkdir #{@linux_dst_dir}")
   send_events_for('__menu__')
   send_events_for('__home__')
