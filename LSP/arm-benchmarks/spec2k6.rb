@@ -84,23 +84,8 @@ end
 def run_save_results(return_non_zero)
   puts "\n Spec2K6::run_save_results"
   result = run_determine_test_outcome(return_non_zero)
-  if result.length == 3 && result[2] != nil
-    perfdata = result[2]
-    perfdata = perfdata << calculate_spec2k6_score()
-    perfdata = perfdata.concat(@target_sys_stats) if @target_sys_stats
-    set_result(result[0],result[1],perfdata)
-  elsif File.exists?(File.join(@linux_temp_folder,'perf.log'))
-    perfdata = []
-    data = File.new(File.join(@linux_temp_folder,'perf.log'),'r').readlines
-    data.each {|line|
-      if /(\S+)\s+([\.\d]+)\s+(\S+)/.match(line)
-        name,value,units = /(\S+)\s+([\.\d]+)\s+(\S+)/.match(line).captures
-        perfdata << {'name' => name, 'value' => value, 'units' => units}
-      end
-    }
-    perfdata = perfdata.concat(@target_sys_stats) if @target_sys_stats
-    set_result(result[0],result[1],perfdata)
-  else
-    set_result(result[0],result[1], @target_sys_stats)
-  end
+  perfdata = []
+  perfdata << calculate_spec2k6_score()
+  perfdata = perfdata.concat(@target_sys_stats) if @target_sys_stats
+  set_result(result[0],result[1],perfdata)
 end
