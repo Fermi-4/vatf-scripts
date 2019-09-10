@@ -48,34 +48,37 @@ def run
     testsizes.each do |testsize_hex|
       loadaddr, loadaddr2 = get_loadaddres(testsize_hex)
       report_msg "===Testing size #{testsize_hex.to_i(16).to_s} ..."
-      # read the data from hflash
-      @equipment['dut1'].send_cmd("time mtd read nor0 ${loadaddr} #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
-      if @equipment['dut1'].response.match(/error|fail/i)
-        report_msg "hflash read failed with size #{testsize_hex.to_i(16)};"
-        next
-      end
+
+      testfile = "#{@linux_temp_folder}/perf_testfile"
+      @equipment['server1'].send_cmd("dd if=/dev/urandom of=#{testfile} bs=1M count=#{testsize_hex.to_i(16) / 1048576}", @equipment['server1'].prompt, 120)
+      tftp_testfile_to_dut(testfile)
+
+      # write to hflash
       @equipment['dut1'].send_cmd("time mtd erase nor0 #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
       if @equipment['dut1'].response.match(/error|fail/i)
         report_msg "hflash erase failed with size #{testsize_hex.to_i(16)};"
         next
       end
-      # write the data just read back to hflash
       @equipment['dut1'].send_cmd("time mtd write nor0 ${loadaddr} #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
       if @equipment['dut1'].response.match(/error|fail/i)
         report_msg "hflash write failed with size #{testsize_hex.to_i(16)};"
         next
       end
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-      perfs << {'name' => "#{device.upcase} Write 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      perfs << {'name' => "#{device.upcase} Write #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
 
-      # read back from hflash to loadaddr2
-      @equipment['dut1'].send_cmd("time mtd read nor0 #{loadaddr2} #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      # read the data from hflash to loadaddr2
+      @equipment['dut1'].send_cmd("time mtd read nor0 ${loadaddr2} #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      if @equipment['dut1'].response.match(/error|fail/i)
+        report_msg "hflash read failed with size #{testsize_hex.to_i(16)};"
+        next
+      end
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-      perfs << {'name' => "#{device.upcase} Read 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
-      
+      perfs << {'name' => "#{device.upcase} Read #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+
       @equipment['dut1'].send_cmd("cmp.b #{loadaddr} #{loadaddr2} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
       if @equipment['dut1'].response.match(/!=/i)
-        result_msg = result_msg + "#{device}: cmp failed for size 0x#{testsize_hex}; "
+        result_msg = result_msg + "#{device}: cmp failed for size #{testsize_hex}; "
         set_result(FrameworkConstants::Result[:fail], result_msg)
       end
     end
@@ -182,16 +185,16 @@ def run
         next
       end
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-      perfs << {'name' => "#{device.upcase} Write 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      perfs << {'name' => "#{device.upcase} Write #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
 
       # read back 'test' file from mmc to loadaddr2
       @equipment['dut1'].send_cmd("time fatload mmc #{mmcdev_nums['mmc']} #{loadaddr2} test ", @equipment['dut1'].boot_prompt, 300)
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-      perfs << {'name' => "#{device.upcase} Read 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      perfs << {'name' => "#{device.upcase} Read #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
       
       @equipment['dut1'].send_cmd("cmp.b #{loadaddr} #{loadaddr2} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
       if @equipment['dut1'].response.match(/!=/i)
-        result_msg = result_msg + "#{device}: cmp failed for size 0x#{testsize_hex}; "
+        result_msg = result_msg + "#{device}: cmp failed for size #{testsize_hex}; "
         set_result(FrameworkConstants::Result[:fail], result_msg)
       end
       @equipment['dut1'].send_cmd("test ", @equipment['dut1'].boot_prompt, 30)
@@ -233,16 +236,16 @@ def run
         next
       end
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-      perfs << {'name' => "#{device.upcase} Write 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      perfs << {'name' => "#{device.upcase} Write #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
 
       # read back 'test' file from mmc to loadaddr2
       @equipment['dut1'].send_cmd("time fatload usb 0 #{loadaddr2} test ", @equipment['dut1'].boot_prompt, 300)
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-      perfs << {'name' => "#{device.upcase} Read 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      perfs << {'name' => "#{device.upcase} Read #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
       
       @equipment['dut1'].send_cmd("cmp.b #{loadaddr} #{loadaddr2} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
       if @equipment['dut1'].response.match(/!=/i)
-        result_msg = result_msg + "#{device}: cmp failed for size 0x#{testsize_hex}; "
+        result_msg = result_msg + "#{device}: cmp failed for size #{testsize_hex}; "
         set_result(FrameworkConstants::Result[:fail], result_msg)
       end
       @equipment['dut1'].send_cmd("test ", @equipment['dut1'].boot_prompt, 30)
@@ -278,16 +281,16 @@ def run
         next
       end
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-      perfs << {'name' => "#{device.upcase} Write 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      perfs << {'name' => "#{device.upcase} Write #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
 
       # read back from Nand to loadaddr2
       @equipment['dut1'].send_cmd("time nand read #{loadaddr2} #{nand_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
       this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
-      perfs << {'name' => "#{device.upcase} Read 0x#{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+      perfs << {'name' => "#{device.upcase} Read #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
       
       @equipment['dut1'].send_cmd("cmp.b #{loadaddr} #{loadaddr2} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
       if @equipment['dut1'].response.match(/!=/i)
-        result_msg = result_msg + "#{device}: cmp failed for size 0x#{testsize_hex}; "
+        result_msg = result_msg + "#{device}: cmp failed for size #{testsize_hex}; "
         set_result(FrameworkConstants::Result[:fail], result_msg)
       end
     end
