@@ -40,9 +40,6 @@ def run
     set_result(FrameworkConstants::Result[:fail], "consecutive reboot test failed.")
   end
   
-  #restore firmware link
-  func_ptr["restore_fw_link"].call()
-
 end
 
 # funtion pointer table 
