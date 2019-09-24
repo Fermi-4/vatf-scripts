@@ -10,7 +10,7 @@
 #        val_adj: hash of regex:val. The capture unit value will be check agains regex key, if match value is adjusted by val.
 def get_metrics
   perf_metrics = [
-  {'name' => 'ARMNN_MobilenetV1',
+  {'name' => 'ARMNN_TFLite_MobilenetV1',
    'regex' => '.*.FPS.:\s(\d*.\d*)',
    'units' => 'fps',
   }
