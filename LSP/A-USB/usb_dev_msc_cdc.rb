@@ -193,8 +193,8 @@ perf_data=[]
       sd_drive = '/media/'+device
       command = "umount "+sd_drive
       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)      
-      command = "modprobe g_mass_storage file="+sd_dev+" stall=0 removable=1"
       @equipment['server1'].send_sudo_cmd("dmesg -c", @equipment['server1'].prompt, 5)
+      command = "modprobe g_mass_storage file="+sd_dev+" stall=0 removable=1"
     
     when $cmd.match(/_msc_usb/)
       command = "umount /media/sda1"
@@ -216,8 +216,10 @@ perf_data=[]
       $result_message = "$cmd does not match any case"
     end
 
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
   response = @equipment['dut1'].response
+  sleep 2
+  @equipment['dut1'].send_cmd("dmesg|grep gadget", @equipment['dut1'].prompt,2)
   @equipment['server1'].send_sudo_cmd("dmesg", @equipment['server1'].prompt, 5)
   dmesg_output = @equipment['server1'].response
   if response.include?('Error')
