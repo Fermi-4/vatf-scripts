@@ -115,7 +115,7 @@ def run
     end
   when /-emmc/
     interface = 'mmc'
-    if @equipment['dut1'].name =~ /am654x/
+    if @equipment['dut1'].name =~ /am654x|j7/
       dev = 0
     else
       dev = 1
