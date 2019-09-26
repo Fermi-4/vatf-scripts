@@ -19,8 +19,13 @@ def run
   @equipment['dut1'].send_cmd("which ufs-tool; echo $?", /^0[\0\n\r]+/im, 5)
   raise "ufs-tool is not in rootfs" if @equipment['dut1'].timeout?
 
-  ufs_config_file = "config_desc_data_ind_0"
+  ufs_config_file = "config_desc_data_ind_1"
   @equipment['dut1'].send_cmd("wget http://10.218.103.34/anonymous/tmp/yan/#{ufs_config_file}", @equipment['dut1'].prompt, 20)
+
+  @equipment['dut1'].send_cmd("ls -l #{ufs_config_file}", @equipment['dut1'].prompt, 10)
+  if @equipment['dut1'].response.match(/No\s+such\s+file/i)
+    raise "Could not wget #{ufs_config_file} file"
+  end
 
   @equipment['dut1'].send_cmd("ls -l /dev/disk/by-path/", @equipment['dut1'].prompt, 10)
   if @equipment['dut1'].response.match(/ufs-scsi/i)
