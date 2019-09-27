@@ -28,7 +28,7 @@ def run
     raise " 'time' command needs to be enabled in uboot. Please enable CONFIG_CMD_TIME. "
   end
 
-  # valid device names: 'nand', 'hflash', 'spi', 'qspi', 'raw-mmc', 'raw-emmc', 'fat-mmc', 'fat-emmc', 'fat-usb'
+  # valid device names: 'raw-ufs', 'nand', 'hflash', 'spi', 'qspi', 'raw-mmc', 'raw-emmc', 'fat-mmc', 'fat-emmc', 'fat-usb'
   # since we don't want to corrupt the SD card if there is partition there, we only
   # do read when device is 'raw-mmc'
   device = @test_params.params_chan.device[0]
@@ -37,6 +37,83 @@ def run
   mmcdev = mmcdev_nums['mmc'] if device == "raw-mmc" || device == "fat-mmc"
 
   case device.downcase
+
+  when /raw-ufs/
+    #testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000", "0x4000000"] # [4M, 8M, 16M, 32M, 64M]
+    testsizes = ["0x400000", "0x1000000", "0x2000000", "0x4000000"] # [4M, 16M, 32M, 64M]
+
+    @equipment['dut1'].send_cmd("ufs init", @equipment['dut1'].boot_prompt, 10)
+    if ! @equipment['dut1'].response.match(/Device\s+at\s+ufs@\h+\s+up/i)
+      raise "UFS device was not able to be initialized"
+    end
+
+=begin
+    # boot to kernel to create/format partition 
+    create_format_partition translated_boot_params, 'ufs'
+    translated_boot_params['dut'].boot_to_bootloader translated_boot_params
+    @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
+    @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 5)
+    raise 'Failed to stop at bootloader prompt after format sata partition in kernel' if @equipment['dut1'].timeout?
+    @equipment['dut1'].send_cmd("ufs init", @equipment['dut1'].boot_prompt, 10)
+    if ! @equipment['dut1'].response.match(/Device\s+at\s+ufs@\h+\s+up/i)
+      raise "UFS device was not able to be initialized"
+    end
+=end
+
+    @equipment['dut1'].send_cmd("scsi scan", @equipment['dut1'].boot_prompt, 10)
+    if ! @equipment['dut1'].response.match(/Capacity:/i)
+      raise "Could not see UFS device by scsi scan"
+    end
+
+    testdev,devsize = get_scsi_biggest_dev @equipment['dut1'].response
+
+    @equipment['dut1'].send_cmd("scsi device #{testdev}", @equipment['dut1'].boot_prompt, 10)
+    #@equipment['dut1'].send_cmd("ext4ls scsi 1:2", @equipment['dut1'].boot_prompt, 10)
+
+    @equipment['dut1'].send_cmd("ls scsi #{testdev}:2", @equipment['dut1'].boot_prompt, 10)
+    #raise "Unrecognized filesystem type in usb" if @equipment['dut1'].response.match(/Unrecognized\s+filesystem/i)
+
+    #ufs_test_addr = PlatformSpecificVarNames.translate_var_name(@equipment['dut1'].name,'ufs_test_addr')
+    ufs_test_addr = '0'
+
+    testsizes.each do |testsize_hex|
+      loadaddr, loadaddr2 = get_loadaddres(testsize_hex)
+      report_msg "===Testing size #{testsize_hex.to_i(16).to_s} ..."
+
+      testfile = "#{@linux_temp_folder}/perf_testfile"
+      @equipment['server1'].send_cmd("dd if=/dev/urandom of=#{testfile} bs=1M count=#{testsize_hex.to_i(16) / 1048576}", @equipment['server1'].prompt, 120)
+      tftp_testfile_to_dut(testfile)
+
+      cnt = get_blk_cnt(testsize_hex, 4096)
+
+      # write to UFS 
+      @equipment['dut1'].send_cmd("time scsi write ${loadaddr} #{ufs_test_addr} #{cnt}", @equipment['dut1'].boot_prompt, 300)
+      #@equipment['dut1'].send_cmd("time mtd write nor0 ${loadaddr} #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      if @equipment['dut1'].response.match(/error|fail/i)
+        report_msg "UFS raw write failed with size #{testsize_hex.to_i(16)};"
+        next
+      end
+      this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
+      perfs << {'name' => "#{device.upcase} Write #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+
+      # read the data from UFS to loadaddr2
+      @equipment['dut1'].send_cmd("time scsi read #{loadaddr2} #{ufs_test_addr} #{cnt}", @equipment['dut1'].boot_prompt, 300)
+      #@equipment['dut1'].send_cmd("time mtd read nor0 ${loadaddr2} #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      if @equipment['dut1'].response.match(/error|fail/i)
+        report_msg "UFS raw read failed with size #{testsize_hex.to_i(16)};"
+        next
+      end
+      this_perf = calculate_perf(@equipment['dut1'].response, testsize_hex)
+      perfs << {'name' => "#{device.upcase} Read #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
+
+      @equipment['dut1'].send_cmd("cmp.b #{loadaddr} #{loadaddr2} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 300)
+      if @equipment['dut1'].response.match(/!=/i)
+        result_msg = result_msg + "#{device}: cmp failed for size #{testsize_hex}; "
+        set_result(FrameworkConstants::Result[:fail], result_msg)
+      end
+    end
+
+
   when /hflash/
 
     testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000"] # [4M, 8M, 16M, 32M]
@@ -59,7 +136,7 @@ def run
         report_msg "hflash erase failed with size #{testsize_hex.to_i(16)};"
         next
       end
-      @equipment['dut1'].send_cmd("time mtd write nor0 ${loadaddr} #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      @equipment['dut1'].send_cmd("time mtd write nor0 #{loadaddr} #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
       if @equipment['dut1'].response.match(/error|fail/i)
         report_msg "hflash write failed with size #{testsize_hex.to_i(16)};"
         next
@@ -68,7 +145,7 @@ def run
       perfs << {'name' => "#{device.upcase} Write #{testsize_hex}", 'value' => this_perf, 'units' => 'KB/S'}
 
       # read the data from hflash to loadaddr2
-      @equipment['dut1'].send_cmd("time mtd read nor0 ${loadaddr2} #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
+      @equipment['dut1'].send_cmd("time mtd read nor0 #{loadaddr2} #{hflash_test_addr} #{testsize_hex} ", @equipment['dut1'].boot_prompt, 600)
       if @equipment['dut1'].response.match(/error|fail/i)
         report_msg "hflash read failed with size #{testsize_hex.to_i(16)};"
         next
@@ -213,7 +290,7 @@ def run
     @equipment['dut1'].send_cmd("usb info", @equipment['dut1'].boot_prompt, 10)
 
     # boot to kernel to create/format partition 
-    create_format_partition translated_boot_params
+    create_format_partition translated_boot_params "usb"
     translated_boot_params['dut'].boot_to_bootloader translated_boot_params
     @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
     @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 5)
@@ -315,16 +392,20 @@ def clean
     puts "clean..."
 end
 
-def create_format_partition(params)
+def create_format_partition(params, dev='usb')
   # first boot to kernel
   params['bootargs'] = @equipment['dut1'].boot_args
   @equipment['dut1'].system_loader.run params
   # format partition
   # run ltp-ddt test; by default ltp-ddt format partition as vfat 
-  cmd = "./runltp -P #{@equipment['dut1'].name} -f ddt/usbhost_dd_rw_vfat -s \"USBHOST_L_FUNC_VFAT_DD_RW_0001\" "
+  if dev == 'usb'
+    cmd = "./runltp -P #{@equipment['dut1'].name} -f ddt/usbhost_dd_rw_vfat -s \"USBHOST_L_FUNC_VFAT_DD_RW_0001\" "
+  elsif dev == 'ufs'
+    cmd = "./runltp -P #{@equipment['dut1'].name} -f ddt/ufs_dd_rw -s \"UFS_S_FUNC_DD_RW_10M\" "
+  end
   @equipment['dut1'].send_cmd("cd /opt/ltp; #{cmd}", @equipment['dut1'].prompt, 600)
   @equipment['dut1'].send_cmd("echo $?",/^0[\0\n\r]+/m, 2, false)
-  raise "ltp-ddt usbhost test failed and failed to format partitions" if @equipment['dut1'].timeout?
+  raise "ltp-ddt #{dev} test failed and failed to format partitions" if @equipment['dut1'].timeout?
 end
 
 # The throughput will be in KBytes/sec
@@ -373,4 +454,36 @@ def tftp_testfile_to_dut(testfile)
   raise "Could not tftp testfile to dut" if !@equipment['dut1'].response.match(/Bytes\s+transferred/im)
 end
 
+def get_scsi_biggest_dev(response)
+  # parse the output of 'scsi scan' and get the biggest device for testing
+  mat = response.scan(/Device\s+(\d+):.*?Capacity:\s+([0-9\.]+)\s+MB/im)
+
+  puts mat.to_s
+  puts mat.length
+  puts mat[0][1]
+  puts mat[1][1]
+
+  i=0
+  max_cap = 0
+  while i < mat.length
+    if mat[i][1].to_f > max_cap
+      max_cap = mat[i][1].to_f
+      testdev = i
+    end
+    i += 1
+  end
+
+  puts max_cap.to_s
+  puts testdev.to_s
+  return testdev, max_cap  
+end
+
+# filesize: in hex
+# blk_len: in decimal
+# return: in hex
+def get_blk_cnt(filesize_hex, blk_len_dec)
+  b = (filesize_hex.to_i(16).to_f / blk_len_dec.to_f).ceil
+  cnt_hex = "0x" + b.to_s(16)
+  return cnt_hex
+end
 
