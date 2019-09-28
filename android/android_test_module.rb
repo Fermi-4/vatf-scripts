@@ -134,7 +134,7 @@ module AndroidTest
     end
     new_params['run_fastboot.sh'] = new_params['dut'].name.match(/am65.*/i) != nil # Not fasboot.sh based so set flag to false
     loaders = case new_params['dut'].name
-      when /am65.*/
+      when /am65.*/i, /j7.*/i
         ['tispl.bin', 'u-boot.img']
       when /-hsevm$/i
         ["u-boot-spl_HS_X-LOADER","HS_u-boot.img"]
