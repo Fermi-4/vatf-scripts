@@ -17,18 +17,18 @@ def run
   test_duration=60
   module_name="ether"
   zlp_test=0
- if (@test_params.params_control.instance_variable_defined?(:@module_name))
-  module_name=@test_params.params_control.module_name[0] 
- end
- if (@test_params.params_control.instance_variable_defined?(:@test_duration))
-  test_duration=@test_params.params_control.test_duration[0].to_f
- end
- if (@test_params.params_control.instance_variable_defined?(:@packet_count))
-  packet_count=@test_params.params_control.packet_count[0].to_f
- end
- if (@test_params.params_control.instance_variable_defined?(:@zlp_test))
-  zlp_test=@test_params.params_control.zlp_test[0].to_f
- end
+  if (@test_params.params_control.instance_variable_defined?(:@module_name))
+    module_name=@test_params.params_control.module_name[0] 
+  end
+  if (@test_params.params_control.instance_variable_defined?(:@test_duration))
+    test_duration=@test_params.params_control.test_duration[0].to_f
+  end
+  if (@test_params.params_control.instance_variable_defined?(:@packet_count))
+    packet_count=@test_params.params_control.packet_count[0].to_f
+  end
+  if (@test_params.params_control.instance_variable_defined?(:@zlp_test))
+    zlp_test=@test_params.params_control.zlp_test[0].to_f
+  end
 
   mutex_timeout = test_duration>packet_count ? test_duration*5 : packet_count*5
   staf_mutex("usbdevice", mutex_timeout*1000) do
@@ -40,7 +40,6 @@ def run
               }
      test_command = ''
 
-  
      # Preserve current governor
      prev_gov = create_save_cpufreq_governors
      #Change to performance governor
@@ -114,7 +113,7 @@ def run
      end  
 
      stop_usbhost_test
- # Restore previous governor
+     # Restore previous governor
      restore_cpufreq_governors(prev_gov)
 
   end
@@ -147,7 +146,7 @@ end
 #MSC test
 def usb_dev_msc()
  
-perf_data=[]
+  perf_data=[]
   @equipment['server1'].send_sudo_cmd('bash -c "df | grep /dev > dev_string1.txt"', @equipment['server1'].prompt , 30)
   @equipment['server1'].send_sudo_cmd('bash -c "df | grep /media > media_string1.txt"', @equipment['server1'].prompt , 30)
 
@@ -214,7 +213,7 @@ perf_data=[]
     else
       $result = 1
       $result_message = "$cmd does not match any case"
-    end
+  end
 
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
   response = @equipment['dut1'].response
@@ -222,6 +221,12 @@ perf_data=[]
   @equipment['dut1'].send_cmd("dmesg|grep gadget", @equipment['dut1'].prompt,2)
   @equipment['server1'].send_sudo_cmd("dmesg", @equipment['server1'].prompt, 5)
   dmesg_output = @equipment['server1'].response
+  speed_rtn = check_usb_speed dmesg_output
+  if !speed_rtn
+    $result = 1
+    $result_message = "USBdev speed is not at expected speed"
+  end
+
   if response.include?('Error')
     $result = 1
     $result_message = "g_mass_storage.ko insertion failed"
@@ -380,6 +385,13 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
   @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt,4)
   response = @equipment['dut1'].response
   response_server = @equipment['server1'].response
+
+  speed_rtn = check_usb_speed response_server
+  if !speed_rtn
+    $result = 1
+    $result_message = "USBdev speed is not at expected speed"
+  end
+
   if response.include?('usb0')
     puts "#{gadget_name} module inserted succesfully"
   else
@@ -429,6 +441,7 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
   command ="bash -c 'ifconfig #{server_usb_interface} #{@equipment['server1'].usb_ip} up'"
   @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 5)
   response = @equipment['server1'].response
+
   if response.include?('No such device')
     $result = 1
     $result_message = "Linux system ip address is not assigned properly"
@@ -501,31 +514,29 @@ def pingtest_cdc(server_usb_interface, packet_count, zlp_test=0)
   test_timeout = packet_count + 15
   assign_server_ip(server_usb_interface) 
   packetsize.each { |psize| 
-  #Ping from DUT to host
-
-  command ="ping -c #{packet_count} #{@equipment['server1'].usb_ip} -s #{psize}"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,test_timeout)
-  response = @equipment['dut1'].response
-  if response.include?(' 0% packet loss')
-    puts "Ping from DUT to host is successful "
+    #Ping from DUT to host
+    command ="ping -c #{packet_count} #{@equipment['server1'].usb_ip} -s #{psize}"
+    @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,test_timeout)
+    response = @equipment['dut1'].response
+    if response.include?(' 0% packet loss')
+      puts "Ping from DUT to host is successful "
     else
-    $result = 1
-    $result_message = "Ping from DUT to host failed"
-    return 
-  end
+      $result = 1
+      $result_message = "Ping from DUT to host failed when packet_count=#{psize}"
+      return 
+    end
 
-  #Ping from host to DUT
-
-  command="ping -c #{packet_count} #{@equipment['dut1'].usb_ip} -s #{psize}"
-  @equipment['server1'].send_cmd(command, @equipment['server1'].prompt,test_timeout)
-  response = @equipment['server1'].response
-  if response.include?(' 0% packet loss')
-    puts "Ping from host to DUT is successful "
-  else
-    $result = 1
-    $result_message = "Ping from host to DUT failed"
-    return 
-  end
+    #Ping from host to DUT
+    command="ping -c #{packet_count} #{@equipment['dut1'].usb_ip} -s #{psize}"
+    @equipment['server1'].send_cmd(command, @equipment['server1'].prompt,test_timeout)
+    response = @equipment['server1'].response
+    if response.include?(' 0% packet loss')
+      puts "Ping from host to DUT is successful "
+    else
+      $result = 1
+      $result_message = "Ping from host to DUT failed when packet_count=#{psize}"
+      return 
+    end
 
   }
 end
@@ -554,11 +565,10 @@ def floodpingtest_cdc(server_usb_interface, packet_count)
   }
 end
 
-
 #iperf test
 def iperftest_cdc(server_usb_interface, test_duration,perf_data)
-    output_string = ''
-#  iperf test from host to DUT
+  output_string = ''
+  #  iperf test from host to DUT
   test_timeout = test_duration+15
   windowsize = [8,16,32,64,128]
   windowsize.each { |wsize|
@@ -568,9 +578,6 @@ def iperftest_cdc(server_usb_interface, test_duration,perf_data)
   @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt,1)
   command = "iperf -s &"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,3)
-  command ="ps | grep iperf"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,3)
-  response = @equipment['dut1'].response
   command ="ps"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,3)
   response = @equipment['dut1'].response
@@ -596,12 +603,14 @@ def iperftest_cdc(server_usb_interface, test_duration,perf_data)
   command ="kill -9 $(pidof iperf)"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
   system ("sleep 3")
-  match_string=response.scan(/\d+.\d+\sMbits\/sec/)
+  match_string=response.scan(/\d+.\d+\s[MGK]bits\/sec/)
   if (match_string.length == 0)
     $result = 1
     $result_message += "IPERF response does not have performance numbers for #{wsize}"
   end
-  throughput = match_string[0].split(' Mbits/sec')[0].to_f+match_string[1].split(' Mbits/sec')[0].to_f
+  m0 = convert_number match_string[0]
+  m1 = convert_number match_string[1]
+  throughput = m0 + m1
   output_string += " Packetsize="+wsize.to_s+"_Throughput="+throughput.to_s
   puts "Throughput is #{throughput}\n"
   perf_data << {'name' => "RX Throughput #{wsize}K", 'value' => throughput, 'units' => "Mbits/s"}
@@ -613,47 +622,67 @@ def iperftest_cdc(server_usb_interface, test_duration,perf_data)
   assign_server_ip(server_usb_interface)
   windowsize.each { |wsize|
 
-  system ("kill -9 $(pidof iperf)")
-  system ("iperf -s &")
-  system ("ps | grep iperf")
-  system ("ps | grep iperf")
+    system ("kill -9 $(pidof iperf)")
+    system ("iperf -s &")
+    system ("ps | grep iperf")
+    system ("ps | grep iperf")
 
-  command ="ps"
-  @equipment['server1'].send_cmd(command, @equipment['server1'].prompt,3)
-  response = @equipment['server1'].response
-  if response.include?('iperf')
-    puts "iperf application started succesfully"
-  else
-    $result = 1
-    $result_message = "IPERF application initialization failed on server"
-    return 
-  end
+    command ="ps"
+    @equipment['server1'].send_cmd(command, @equipment['server1'].prompt,3)
+    response = @equipment['server1'].response
+    if response.include?('iperf')
+      puts "iperf application started succesfully"
+    else
+      $result = 1
+      $result_message = "IPERF application initialization failed on server"
+      return 
+    end
 
-  command="iperf -c #{@equipment['server1'].usb_ip} -w #{wsize}K -d -t #{test_duration}"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt, test_timeout)
-  response = @equipment['dut1'].response
-  if response.include?('Connection refused')
-    $result = 1
-    $result_message = "IPERF application not started on host"
-    return 
-  end
-  
-  system ("sleep 5")
+    command="iperf -c #{@equipment['server1'].usb_ip} -w #{wsize}K -d -t #{test_duration}"
+    @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt, test_timeout)
+    response = @equipment['dut1'].response
+    if response.include?('Connection refused')
+      $result = 1
+      $result_message = "IPERF application not started on host"
+      return 
+    end
+    
+    system ("sleep 5")
 
-  system ("kill -9 $(pidof iperf)")
-  system ("ps | grep iperf")
-  match_string=response.scan(/\d+.\d+\sMbits\/sec/)
-  if (match_string.length == 0)
-    $result = 1
-    $result_message += "IPERF response does not have performance numbers for #{wsize}"
-  end
-  throughput = match_string[0].split(' Mbits/sec')[0].to_f+match_string[1].split(' Mbits/sec')[0].to_f
-  output_string += " Packetsize="+wsize.to_s+"_Throughput="+throughput.to_s
-  puts "Throughput is #{throughput}\n"
-  perf_data << {'name' => "TX Throughput #{wsize}K", 'value' => throughput, 'units' => "Mbits/s"}
+    system ("kill -9 $(pidof iperf)")
+    system ("ps | grep iperf")
+    match_string=response.scan(/\d+.\d+\s[GMK]bits\/sec/)
+    if (match_string.length == 0)
+      $result = 1
+      $result_message += "IPERF response does not have performance numbers for #{wsize}"
+    end
+    m0 = convert_number match_string[0]
+    m1 = convert_number match_string[1]
+    throughput = m0 + m1
+    output_string += " Packetsize="+wsize.to_s+"_Throughput="+throughput.to_s
+    puts "Throughput is #{throughput}\n"
+    perf_data << {'name' => "TX Throughput #{wsize}K", 'value' => throughput, 'units' => "Mbits/s"}
   }
- @equipment['server1'].log_info("PERF is #{perf_data}")
- return output_string
+
+  @equipment['server1'].log_info("PERF is #{perf_data}")
+  return output_string
+end
+
+# Input: 2000 Kbits/sec, 513 Mbits/sec or 1.3 Gbits/sec
+# Output: 2.0, 513 or 1331.2  (in Mbits/sec)
+def convert_number(string_w_unit)
+  bw = string_w_unit.split(/\s+[MGK]bits\/sec/)[0].to_f
+  case string_w_unit
+    when /Gbits/
+      rtn = bw * 1024
+    when /Mbits/
+      rtn = bw 
+    when /Kbits/
+      rtn = bw / 1024
+    else
+      raise "Could not convert the number based unit"
+  end
+  return rtn # rtn is float number
 end
 
 #Finding /dev point
@@ -824,3 +853,15 @@ def get_stripped_partition(response)
   response = response.strip
   return response
 end
+
+def check_usb_speed(response)
+  speed = @test_params.params_control.instance_variable_defined?(:@speed) ? @test_params.params_control.speed[0] : 'high-speed'
+  if response.match(speed)
+    at_right_speed = true
+  else
+    at_right_speed = false
+    @equipment['server1'].log_info("The usbdev is not working at the expected speed: #{speed}")
+  end 
+  return at_right_speed
+end
+
