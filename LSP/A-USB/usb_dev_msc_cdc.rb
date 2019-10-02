@@ -48,11 +48,11 @@ def run
      $result = 0
      $result_message = ""
      command = "modprobe -r g_ether"
-     @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+     @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
      command = "modprobe -r g_ncm"
-     @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+     @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
      command = "modprobe -r g_mass_storage"
-     @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+     @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
 
      cmds = @test_params.params_chan.instance_variable_get("@#{'cmd'}").to_s
      $cmd = cmds
@@ -101,11 +101,11 @@ def run
      else
        set_result(FrameworkConstants::Result[:fail], $result_message)
        command = "modprobe -r g_ether"
-       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,5)
        command = "modprobe -r g_ncm"
-       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,5)
        command = "modprobe -r g_mass_storage"
-       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+       @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,5)
        if (!simultaneous_host_device_test)
           @stop_test=true
        end
@@ -157,7 +157,7 @@ def usb_dev_msc()
 
   #command = "modprobe -l"
   command = "find /lib/modules -name *.ko"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,20)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,120)
   response = @equipment['dut1'].response
   if response.include?('g_mass_storage.ko')
     puts "g_mass_storage USB Module is available"
@@ -172,7 +172,7 @@ def usb_dev_msc()
   end
 
   command = "dmesg -c"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,30)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,120)
 
   system ("sleep 2")
 
@@ -182,7 +182,7 @@ def usb_dev_msc()
     when $cmd.match(/_msc_mmc/)
       device = get_sd_partition.strip+'p3'
       sd_dev = '/dev/'+device
-      @equipment['dut1'].send_cmd("ls -al #{sd_dev}",@equipment['dut1'].prompt,1)
+      @equipment['dut1'].send_cmd("ls -al #{sd_dev}",@equipment['dut1'].prompt,5)
       if (@equipment['dut1'].response.include?("No such file or directory"))
         $result = 1
         $result_message = "MMC/SD does not contain a third partition"
@@ -191,13 +191,13 @@ def usb_dev_msc()
       end
       sd_drive = '/media/'+device
       command = "umount "+sd_drive
-      @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)      
-      @equipment['server1'].send_sudo_cmd("dmesg -c", @equipment['server1'].prompt, 5)
+      @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)      
+      @equipment['server1'].send_sudo_cmd("dmesg -c", @equipment['server1'].prompt, 60)
       command = "modprobe g_mass_storage file="+sd_dev+" stall=0 removable=1"
     
     when $cmd.match(/_msc_usb/)
       command = "umount /media/sda1"
-      @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+      @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
       command = "modprobe g_mass_storage file=/dev/sda1 stall=0 removable=1"
 
     when $cmd.match(/_msc_slave/)
@@ -206,7 +206,7 @@ def usb_dev_msc()
       command = create_share_memory(command, "#", "echo $?", 2)
       command = create_share_memory(command, "0", "mkfs.vfat /dev/loop0", 3)
 
-      @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+      @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,30)
       
       command = "modprobe g_mass_storage file=/dev/loop0 stall=0 removable=1"
 
@@ -215,11 +215,11 @@ def usb_dev_msc()
       $result_message = "$cmd does not match any case"
   end
 
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,30)
   response = @equipment['dut1'].response
   sleep 2
-  @equipment['dut1'].send_cmd("dmesg|grep gadget", @equipment['dut1'].prompt,2)
-  @equipment['server1'].send_sudo_cmd("dmesg", @equipment['server1'].prompt, 5)
+  @equipment['dut1'].send_cmd("dmesg|grep gadget", @equipment['dut1'].prompt,60)
+  @equipment['server1'].send_sudo_cmd("dmesg", @equipment['server1'].prompt, 60)
   dmesg_output = @equipment['server1'].response
   speed_rtn = check_usb_speed dmesg_output
   if !speed_rtn
@@ -266,9 +266,9 @@ def usb_dev_msc()
      @equipment['server1'].send_sudo_cmd("umount #{mscmount}", @equipment['server1'].prompt , 30)
   end
   mountfolder = 'test'
-  @equipment['server1'].send_sudo_cmd("mkdir -p /media/#{mountfolder}", @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("mkdir -p /media/#{mountfolder}", @equipment['server1'].prompt , 60)
   mscmount = "/media/#{mountfolder}"
-  @equipment['server1'].send_sudo_cmd("mount #{mscdev} #{mscmount}", @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("mount #{mscdev} #{mscmount}", @equipment['server1'].prompt , 60)
 
   MSC_Unmount_Device("#{mscdev}","#{mscmount}")
   case
@@ -325,7 +325,7 @@ end
   
   system ("sleep 10")
   command = "modprobe -r g_mass_storage"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
 
   @equipment['server1'].send_sudo_cmd("rm -rf  dev_string1.txt", @equipment['server1'].prompt , 30)
   @equipment['server1'].send_sudo_cmd("rm -rf  dev_string2.txt", @equipment['server1'].prompt , 30)
@@ -347,7 +347,7 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
 
   #command = "modprobe -l"
   command = "find /lib/modules -name *.ko"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,20)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,120)
   response = @equipment['dut1'].response
   if response.include?("#{gadget_name}.ko")
     puts "#{gadget_name} USB Module is available"
@@ -362,13 +362,13 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
   end
 
   command = "dmesg -c"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,30)
-  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt,10)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,60)
+  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt,60)
 
   system ("sleep 2")
 
   command = "modprobe #{gadget_name}"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
   response = @equipment['dut1'].response
   if response.include?('not found')
     $result = 1
@@ -381,8 +381,8 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
   end
   sleep 10
   command = "dmesg"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,4)
-  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt,4)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,60)
+  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt,60)
   response = @equipment['dut1'].response
   response_server = @equipment['server1'].response
 
@@ -428,7 +428,7 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
   system ("sleep 10")
 
   command ="ifconfig usb0 #{@equipment['dut1'].usb_ip} up"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
   response = @equipment['dut1'].response
   if response.include?('No such device')
     $result = 1
@@ -439,7 +439,7 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
   #system ("sleep  60")
 
   command ="bash -c 'ifconfig #{server_usb_interface} #{@equipment['server1'].usb_ip} up'"
-  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 5)
+  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 10)
   response = @equipment['server1'].response
 
   if response.include?('No such device')
@@ -476,9 +476,9 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
 #  Remove the ethernet gadget module
   system ("sleep 5")
   command = "modprobe -r g_ether"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,5)
   command = "modprobe -r g_ncm"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,5)
   perf_data
 
 end
@@ -486,7 +486,7 @@ end
 
 def assign_server_ip(server_usb_interface)
   command ="bash -c 'ifconfig #{server_usb_interface} #{@equipment['server1'].usb_ip} up'"
-  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 5)
+  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 10)
   response = @equipment['server1'].response
   if response.include?('No such device')
     $result = 1
@@ -494,7 +494,7 @@ def assign_server_ip(server_usb_interface)
     return
   end
   command ="ping -I #{server_usb_interface} #{@equipment['dut1'].usb_ip} -c 3"
-  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 5)
+  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 10)
   system ("sleep 1")
 end
 
@@ -574,8 +574,8 @@ def iperftest_cdc(server_usb_interface, test_duration,perf_data)
   windowsize.each { |wsize|
 
   command ="kill -9 $(pidof iperf)"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
-  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt,1)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
+  @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt,10)
   command = "iperf -s &"
   @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,3)
   command ="ps"
@@ -601,7 +601,7 @@ def iperftest_cdc(server_usb_interface, test_duration,perf_data)
   end
   
   command ="kill -9 $(pidof iperf)"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,10)
   system ("sleep 3")
   match_string=response.scan(/\d+.\d+\s[MGK]bits\/sec/)
   if (match_string.length == 0)
@@ -628,7 +628,7 @@ def iperftest_cdc(server_usb_interface, test_duration,perf_data)
     system ("ps | grep iperf")
 
     command ="ps"
-    @equipment['server1'].send_cmd(command, @equipment['server1'].prompt,3)
+    @equipment['server1'].send_cmd(command, @equipment['server1'].prompt,5)
     response = @equipment['server1'].response
     if response.include?('iperf')
       puts "iperf application started succesfully"
@@ -740,7 +740,7 @@ end
 
 def MSC_Unmount_Device(mscdev,mscmount)
 
-  @equipment['server1'].send_sudo_cmd("umount #{mscmount}", @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("umount #{mscmount}", @equipment['server1'].prompt , 60)
   
 
 end
@@ -750,7 +750,7 @@ end
 
 def MSC_Mount_Device(mscdev, mscmount)
 
-  @equipment['server1'].send_sudo_cmd("mount #{mscdev} #{mscmount}", @equipment['server1'].prompt , 30)
+  @equipment['server1'].send_sudo_cmd("mount #{mscdev} #{mscmount}", @equipment['server1'].prompt , 60)
 end
 
 

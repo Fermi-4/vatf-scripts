@@ -64,8 +64,8 @@ def run_performance
      #command="modprobe g_ffs"
      command="modprobe libcomposite"
      @equipment['dut1'].send_cmd(command,@equipment['dut1'].prompt)
-     @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt)  
-     @equipment['dut1'].send_cmd("dmesg -c",@equipment['dut1'].prompt)  
+     @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt, 60)  
+     @equipment['dut1'].send_cmd("dmesg -c",@equipment['dut1'].prompt, 60)  
      setup_configfs
      sleep 30
      @equipment['server1'].send_sudo_cmd("dmesg",@equipment['server1'].prompt)  
@@ -182,7 +182,7 @@ def run_stress_insert_remove(iterations)
 end
 
 def check_config_module(module_name)
-  @equipment['dut1'].send_cmd("ls /lib/modules/*/kernel/drivers/usb/gadget/g_#{module_name}.ko",@equipment['dut1'].prompt)
+  @equipment['dut1'].send_cmd("ls /lib/modules/*/kernel/drivers/usb/gadget/g_#{module_name}.ko",@equipment['dut1'].prompt, 120)
   if !@equipment['dut1'].response.match(/#{module_name}/)
     return false
   else
@@ -205,8 +205,8 @@ end
 
 def modprobe_on_device(module_name,gadget_types,action)
   if (action == 'remove')
-    @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt)  
-    @equipment['dut1'].send_cmd("dmesg -c",@equipment['dut1'].prompt)  
+    @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt, 60)  
+    @equipment['dut1'].send_cmd("dmesg -c",@equipment['dut1'].prompt, 60)  
     cmd = 'modprobe -r'
     this_module = "g_#{module_name}"
     if module_name == 'configfs'
@@ -214,7 +214,7 @@ def modprobe_on_device(module_name,gadget_types,action)
       sleep 10 
       this_module = 'libcomposite' 
     end
-    @equipment['dut1'].send_cmd("#{cmd} #{this_module}",@equipment['dut1'].prompt)  
+    @equipment['dut1'].send_cmd("#{cmd} #{this_module}",@equipment['dut1'].prompt, 30)  
     @equipment['server1'].send_sudo_cmd("dmesg",@equipment['server1'].prompt)  
     @equipment['dut1'].send_cmd("dmesg",@equipment['dut1'].prompt)  
     dut_response = @equipment['dut1'].response
@@ -247,10 +247,10 @@ def modprobe_on_device(module_name,gadget_types,action)
        end
 
        command = "umount /media/"+dir_path[mount_type].to_s
-       @equipment['dut1'].send_cmd("#{command}",@equipment['dut1'].prompt)
+       @equipment['dut1'].send_cmd("#{command}",@equipment['dut1'].prompt, 60)
     end
-    @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt)  
-    @equipment['dut1'].send_cmd("dmesg -c",@equipment['dut1'].prompt)  
+    @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt, 60)  
+    @equipment['dut1'].send_cmd("dmesg -c",@equipment['dut1'].prompt, 60)  
     puts "EXTRA_PARAMS is #{extra_params}\n"
     if module_name == 'configfs'
       @equipment['dut1'].send_cmd("#{cmd} libcomposite",@equipment['dut1'].prompt)
@@ -316,7 +316,7 @@ end
 
 def check_mount_interface_on_host(gadget_types)
   module_name = @test_params.params_control.module_name[0]
-  @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt)  
+  @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt, 60)  
   @equipment['server1'].send_sudo_cmd('bash -c "df | grep /dev > dev_string1.txt"', @equipment['server1'].prompt , 30)
   @equipment['server1'].send_sudo_cmd('bash -c "df | grep /media > media_string1.txt"', @equipment['server1'].prompt , 30)
   modprobe_on_device(module_name, gadget_types, 'insert')
@@ -397,7 +397,7 @@ def start_usb_dev_cdc(usb_interface,duration)
     command ="ifconfig usb0 #{@equipment['dut1'].usb_ip} up"
     @linux_temp_folder = File.join(SiteInfo::LINUX_TEMP_FOLDER,@test_params.staf_service_name.to_s)    
     out_file = File.new(File.join(@linux_temp_folder,'cdc_test.log'),'w')
-    @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
+    @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt)
     response = @equipment['dut1'].response
     if response.include?('No such device')
       $result = 1
@@ -406,7 +406,7 @@ def start_usb_dev_cdc(usb_interface,duration)
     end
 
     command ="bash -c 'ifconfig #{server_usb_interface} #{@equipment['server1'].usb_ip} up'"
-    @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 5)
+    @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 10)
     response = @equipment['server1'].response
     if response.include?('No such device')
       $result = 1
@@ -459,7 +459,7 @@ def serialtest_acm(host_interface, device_interface, test_sequence, iterations)
       dut_output=""
       @equipment['dut1'].send_cmd(dut_cmd, @equipment['dut1'].prompt)
       @equipment['server1'].send_cmd(host_cmd, @equipment['server1'].prompt)
-      @equipment['dut1'].send_cmd("kill -9 $(pidof cat)", @equipment['dut1'].prompt)
+      @equipment['dut1'].send_cmd("kill -9 $(pidof cat)", @equipment['dut1'].prompt, 60)
       dut_output=@equipment['dut1'].send_cmd("while read p; do
                                               echo $p
                                               done </home/root/serial_test.txt", @equipment['dut1'].prompt)
