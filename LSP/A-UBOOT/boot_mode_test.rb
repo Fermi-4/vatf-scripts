@@ -86,8 +86,12 @@ def run
       end
 
       bparams['dut'].send_cmd("version", bparams['dut'].boot_prompt, 10)
-      result += 1 if bparams['dut'].timeout? 
-      report_msg ("DUT is able to boot from #{boot_media} on iteration #{counter}.")
+      if bparams['dut'].timeout?
+        result += 1  
+        report_msg ("DUT failed to boot from #{boot_media} on iteration #{counter}.")
+      else
+        report_msg ("DUT is able to boot from #{boot_media} on iteration #{counter}.")
+      end
 
       test_uboot = @test_params.params_chan.instance_variable_defined?(:@test_uboot) ? @test_params.params_chan.test_uboot[0].downcase : "no"
       if test_uboot != 'no'
