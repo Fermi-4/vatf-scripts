@@ -23,7 +23,7 @@ def run
   test_type = @test_params.params_control.instance_variable_defined?(:@test_type) ? @test_params.params_control.test_type[0] : 'insert_remove'
   iterations = @test_params.params_control.instance_variable_defined?(:@iterations) ? @test_params.params_control.iterations[0].to_i : 5 
   duration = @test_params.params_control.instance_variable_defined?(:@duration) ? @test_params.params_control.duration[0].to_i : 60 
-  speed = @test_params.params_control.instance_variable_defined?(:@speed) ? @test_params.params_control.duration[0] : 'high' 
+  speed = @test_params.params_control.instance_variable_defined?(:@speed) ? @test_params.params_control.speed[0] : 'high' 
 
   mutex_timeout = iterations*60000
   staf_mutex("usbdevice", mutex_timeout) do
@@ -47,7 +47,7 @@ end
 # Function for running simultaneous device tests in parallel when using g_multi module
 def run_performance
   perf_data = []
- # Collect data from test params
+  # Collect data from test params
   module_name = @test_params.params_control.module_name[0]
   gadget_types = @test_params.params_control.gadget_types
   mount_type = @test_params.params_control.instance_variable_defined?(:@dev_type) ? @test_params.params_control.dev_type[0] : 'msc_mmc'
@@ -61,7 +61,8 @@ def run_performance
      puts "CONFIGFS test case\n"
      gadget_types = @test_params.params_control.gadget_types
      puts "GADGET_TYPES is #{gadget_types}\n"
-     command="modprobe g_ffs"
+     #command="modprobe g_ffs"
+     command="modprobe libcomposite"
      @equipment['dut1'].send_cmd(command,@equipment['dut1'].prompt)
      @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt)  
      @equipment['dut1'].send_cmd("dmesg -c",@equipment['dut1'].prompt)  
@@ -75,9 +76,9 @@ def run_performance
         set_result(FrameworkConstants::Result[:fail], "#{gadget_types} configfs-gadget not enumerated on DUT.")
         return
      end
+
      command="stty -F /dev/ttyGS0 -icanon"
      @equipment['dut1'].send_cmd(command,@equipment['dut1'].prompt)
-     gadget_types=["ncm","acm"]
      if !check_enum_on_host(gadget_types)
         set_result(FrameworkConstants::Result[:fail], "#{gadget_types} gadget not detected on host or not enumerated at expected speed.")
         return
@@ -95,30 +96,19 @@ def run_performance
      end  
      if host_acm_name == ''
         set_result(FrameworkConstants::Result[:fail], "No ACM Interface Detected on Host.")
-     return
+        return
      else
         host_acm_name = host_acm_name.split(':')[0]
         puts "ACM INTERFACE is #{host_acm_name}\n"
      end  
      device_details['interface']=host_ncm_name
-  else
-     # Sanity check that modules are loading correctly
-     modprobe_on_device(module_name, gadget_types, 'insert')
-     if !check_enum_on_target(module_name)
-        set_result(FrameworkConstants::Result[:fail], "Gadget not detected on target.")
-        return
-     end
-     if !check_enum_on_host(gadget_types)
-        set_result(FrameworkConstants::Result[:fail], "One or more gadgets not detected on host.")
-        return
-     end
-     modprobe_on_device(module_name, gadget_types, 'remove')
-
+   else #module_name != 'configfs'
      # Collect mount directory and other details
      device_details = check_mount_interface_on_host(gadget_types)
      puts "DEVICE_DETAILS is #{device_details}\n"
      mode='all'
    end
+
    # Spawn the threads
    t1 = Thread.new{ start_usb_dev_cdc(device_details['interface'], duration) }
    sleep 20 # starting acm or msc thread a few seconds later to ensure iperf test is setup
@@ -159,7 +149,12 @@ end
 
 def setup_configfs
    command_array = ["mount -t configfs none /sys/kernel/config", "cd /sys/kernel/config/", "cd usb_gadget/", "mkdir j6g", "cd j6g", "echo \"0xA55A\" > idVendor", "cat idVendor", "echo \"0x0111\" > idProduct", "mkdir strings/0x409", "cd strings/", "cd 0x409/", "echo \"0123456789\" > serialnumber", "echo \"Xyz Inc.\" > manufacturer", "echo \"NCM+ACM gadget\" > product", "cd ..", "cd ..", "cd functions/", "mkdir acm.gs0", "mkdir ncm.usb0", "cd ..", "cd configs/", "mkdir c.1", "cd c.1", "mkdir strings/0x409", "cd strings/0x409/",  "echo \"ACM+NCM\" > configuration", "cd ..", "cd ..", "cd ..", "cd ..", "ln -s functions/acm.gs0 configs/c.1", "ln -s functions/ncm.usb0 configs/c.1", "echo $(ls /sys/class/udc/) > UDC"]
-     command_array.each { |x| @equipment['dut1'].send_cmd(x,@equipment['dut1'].prompt) }
+   command_array.each { |x| @equipment['dut1'].send_cmd(x,@equipment['dut1'].prompt) }
+end
+
+def cleanup_configfs
+   command_array = ["echo '' > UDC", "rm configs/c.1/ncm.usb0", "rm configs/c.1/acm.gs0", "rmdir functions/acm.gs0", "rmdir functions/ncm.usb0", "rmdir strings/0x409/", "rmdir configs/c.1/strings/0x409/", "rmdir configs/c.1/", "cd ..", "rmdir j6g/", "cd /"]
+   command_array.each { |x| @equipment['dut1'].send_cmd(x,@equipment['dut1'].prompt) }
 end
 
 def run_stress_insert_remove(iterations)
@@ -211,9 +206,17 @@ end
 def modprobe_on_device(module_name,gadget_types,action)
   if (action == 'remove')
     @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt)  
+    @equipment['dut1'].send_cmd("dmesg -c",@equipment['dut1'].prompt)  
     cmd = 'modprobe -r'
-    @equipment['dut1'].send_cmd("#{cmd} g_#{module_name}",@equipment['dut1'].prompt)  
+    this_module = "g_#{module_name}"
+    if module_name == 'configfs'
+      cleanup_configfs
+      sleep 10 
+      this_module = 'libcomposite' 
+    end
+    @equipment['dut1'].send_cmd("#{cmd} #{this_module}",@equipment['dut1'].prompt)  
     @equipment['server1'].send_sudo_cmd("dmesg",@equipment['server1'].prompt)  
+    @equipment['dut1'].send_cmd("dmesg",@equipment['dut1'].prompt)  
     dut_response = @equipment['dut1'].response
     host_response = @equipment['server1'].response
     if (!dut_response.match(/USB disconnect/))
@@ -224,32 +227,40 @@ def modprobe_on_device(module_name,gadget_types,action)
       set_result(FrameworkConstants::Result[:fail], "Disconnect message not seen on host during module removal.")
       return
     end
-  else
-   cmd = 'modprobe'
-   extra_params = ''
-   dir_path = Hash.new
-   sd_dev = get_sd_partition.strip+'p1'
+  else # for 'insert'
+    cmd = 'modprobe'
+    extra_params = ''
+    dir_path = Hash.new
+    sd_dev = get_sd_partition.strip+'p1'
 
-   dir_path = {'msc_mmc'=>sd_dev,'msc_usb'=>'sda1','msc_slave'=>'loop0'}
-   if gadget_types.include? 'mass_storage'
-     mount_type = @test_params.params_control.instance_variable_defined?(:@dev_type) ? @test_params.params_control.dev_type[0] : 'msc_mmc'
-   # special cases like g_mass_storage to be handled here and action is not remove
-     extra_params = 'file=/dev/'+dir_path[mount_type].to_s+' stall=0 removable=1'
+    dir_path = {'msc_mmc'=>sd_dev,'msc_usb'=>'sda1','msc_slave'=>'loop0'}
+    if gadget_types.include? 'mass_storage'
+       mount_type = @test_params.params_control.instance_variable_defined?(:@dev_type) ? @test_params.params_control.dev_type[0] : 'msc_mmc'
+       # special cases like g_mass_storage to be handled here and action is not remove
+       extra_params = 'file=/dev/'+dir_path[mount_type].to_s+' stall=0 removable=1'
 
-      if (mount_type.match(/msc_slave/))
+       if (mount_type.match(/msc_slave/))
           command = create_share_memory("dd if=/dev/zero of=/dev/shm/disk bs=1M count=52", "52+0 records", "mknod /dev/loop0 b 7 0", 10)
           command = create_share_memory(command, "#", "losetup /dev/loop0 /dev/shm/disk", 5)
           command = create_share_memory(command, "#", "echo $?", 2)
           command = create_share_memory(command, "0", "mkfs.vfat /dev/loop0", 3)
-      end
+       end
 
-     command = "umount /media/"+dir_path[mount_type].to_s
-     @equipment['dut1'].send_cmd("#{command}",@equipment['dut1'].prompt)
-   end
-   @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt)  
-   puts "EXTRA_PARAMS is #{extra_params}\n"
-   @equipment['dut1'].send_cmd("#{cmd} g_#{module_name} #{extra_params}",@equipment['dut1'].prompt)  
-   #@equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
+       command = "umount /media/"+dir_path[mount_type].to_s
+       @equipment['dut1'].send_cmd("#{command}",@equipment['dut1'].prompt)
+    end
+    @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt)  
+    @equipment['dut1'].send_cmd("dmesg -c",@equipment['dut1'].prompt)  
+    puts "EXTRA_PARAMS is #{extra_params}\n"
+    if module_name == 'configfs'
+      @equipment['dut1'].send_cmd("#{cmd} libcomposite",@equipment['dut1'].prompt)
+      setup_configfs
+      sleep 30
+    else
+      @equipment['dut1'].send_cmd("#{cmd} g_#{module_name} #{extra_params}",@equipment['dut1'].prompt)  
+      #@equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
+    end
+
   end
 end
 
@@ -259,8 +270,10 @@ def check_enum_on_target(module_name)
   dut_module_string = Hash.new
   dut_module_string = {'mass_storage'=>'gadget:\s+g_mass_storage\s+ready','ether'=>'gadget:\s+g_ether\s+ready',
                        'serial'=>'gadget:\s+g_serial\s+ready', 'cdc' => 'gadget:\s+g_cdc\s+ready',
+                       'configfs'=>'configfs-gadget',
                        'multi' => 'gadget:\s+g_multi\s+ready', 'ncm' => 'gadget:\s+g_ncm\s+ready'}
   # Verify that string matches with gadget type
+  @equipment['dut1'].send_cmd("dmesg",@equipment['dut1'].prompt)  
   dut_response = @equipment['dut1'].response
   module_found = false
   if dut_response.match(dut_module_string[module_name])
@@ -278,7 +291,7 @@ def check_enum_on_host(gadget_types)
   host_gadget_string = Hash.new
   host_gadget_string = {'mass_storage'=>'usb-storage','ether'=>'cdc_ether',
                        'serial'=>'cdc_acm', 'acm'=>'cdc_acm', 'ncm' => 'cdc_ncm'}
-  speed = @test_params.params_control.instance_variable_defined?(:@speed) ? @test_params.params_control.duration[0] : 'high' 
+  speed = @test_params.params_control.instance_variable_defined?(:@speed) ? @test_params.params_control.speed[0] : 'high' 
   system("sleep 10")
   @equipment['server1'].send_sudo_cmd("dmesg",@equipment['server1'].prompt)  
   host_response = @equipment['server1'].response
@@ -376,12 +389,8 @@ def start_usb_dev_msc(mscmount, mscdev, mode, blocknum)
   @equipment['server1'].send_sudo_cmd("rm -rf /media/test", @equipment['server1'].prompt , 30)
 end
 
-
-
-
 #CDC test
 def start_usb_dev_cdc(usb_interface,duration)
-
     server_usb_interface=usb_interface
     puts "USB_INTERFACE is #{server_usb_interface}\n"
     system ("sleep 10")
@@ -391,28 +400,28 @@ def start_usb_dev_cdc(usb_interface,duration)
     @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,1)
     response = @equipment['dut1'].response
     if response.include?('No such device')
-     $result = 1
-     set_result(FrameworkConstants::Result[:fail], "DUT ip address is not assigned properly.")
-    return
+      $result = 1
+      set_result(FrameworkConstants::Result[:fail], "DUT ip address is not assigned properly.")
+      return
     end
 
-  command ="bash -c 'ifconfig #{server_usb_interface} #{@equipment['server1'].usb_ip} up'"
- @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 5)
-  response = @equipment['server1'].response
-  if response.include?('No such device')
-    $result = 1
-    set_result(FrameworkConstants::Result[:fail], "Linux system ip address is not assigned properly.")
-    return
-  end
-  system ("sleep 10")
-  output_string=''
-  perf_data = []
-  output_string = iperftest_cdc(server_usb_interface, duration, perf_data)
-  @equipment['server1'].log_info ("CDC OUTPUT is #{output_string}\n")
-  out_file.write(output_string)
-  out_file.close
-  out_file_name = File.join(@linux_temp_folder, 'cdc_test.log')
-  add_log_to_html(out_file_name)
+    command ="bash -c 'ifconfig #{server_usb_interface} #{@equipment['server1'].usb_ip} up'"
+    @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt , 5)
+    response = @equipment['server1'].response
+    if response.include?('No such device')
+      $result = 1
+      set_result(FrameworkConstants::Result[:fail], "Linux system ip address is not assigned properly.")
+      return
+    end
+    system ("sleep 10")
+    output_string=''
+    perf_data = []
+    output_string = iperftest_cdc(server_usb_interface, duration, perf_data)
+    @equipment['server1'].log_info ("CDC OUTPUT is #{output_string}\n")
+    out_file.write(output_string)
+    out_file.close
+    out_file_name = File.join(@linux_temp_folder, 'cdc_test.log')
+    add_log_to_html(out_file_name)
 end
 
 

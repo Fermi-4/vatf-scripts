@@ -23,6 +23,9 @@ def run
   }}
   partition_map['am654x-idk'] = partition_map['am654x-evm']
   partition_map['am654x-hsevm'] = partition_map['am654x-evm']
+  partition_map['j721e-evm'] = partition_map['am654x-evm']
+  partition_map['j721e-idk-gw'] = partition_map['am654x-evm']
+  partition_map['j721e-evm-ivi'] = partition_map['am654x-evm']
   @equipment['dut1'].disconnect('serial')
   @equipment['dut1'].boot_to_bootloader(@android_boot_params)
   @equipment['dut1'].send_cmd('version', @equipment['dut1'].boot_prompt)
