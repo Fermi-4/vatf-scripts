@@ -119,7 +119,7 @@ def run
     interface = 'mmc'
     mmcdev_nums = get_uboot_mmcdev_mapping()
     dev = mmcdev_nums['emmc']
-  when /qspi/
+  when /qspi|ospi/
     interface = 'sf 0:0'
   when /ram/
     interface = 'ram'
@@ -140,7 +140,7 @@ def run
     alt_name_initial_bootloader = alt_name_initial_bootloader_fat if alt_name_initial_bootloader_fat
     alt_name_primary_bootloader = alt_name_primary_bootloader_fat
     alt_name_secondary_bootloader = alt_name_secondary_bootloader_fat
-  elsif media == "qspi"
+  elsif media == "qspi" || media == "ospi"
     dfu_alt_info = dfu_alt_info_raw_spi
     alt_name_sysfw = alt_name_sysfw_raw if alt_name_sysfw_raw
     alt_name_initial_bootloader = alt_name_initial_bootloader_raw if alt_name_initial_bootloader_raw
@@ -223,6 +223,8 @@ def run
       case media
       when /qspi/
         translated_boot_params['primary_bootloader_dev'] = 'qspi'
+      when /ospi/
+        translated_boot_params['primary_bootloader_dev'] = 'ospi'
       when /-mmc/
         translated_boot_params['primary_bootloader_dev'] = 'mmc'
       when /emmc/
