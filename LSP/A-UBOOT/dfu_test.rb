@@ -39,7 +39,7 @@ def run
   use_uboot_env = @test_params.params_chan.instance_variable_defined?(:@use_uboot_env) ? @test_params.params_chan.use_uboot_env[0].downcase : 'yes' 
   case media
   when /mmc/
-    if @test_params.platform =~ /am654x/
+    if @test_params.platform =~ /am654x|j721e/
       #dfu_alt_info_emmc=rawemmc raw 0 0x1000000 mmcpart 1;rootfs part 0 1 mmcpart 0;tiboot3.bin.raw raw 0x0 0x400 mmcpart 1;tispl.bin.raw raw 0x400 0x1000 mmcpart 1;u-boot.img.raw raw 0x1400 0x2800 mmcpart 1;u-env.raw raw 0x3c00 0x100 mmcpart 1;sysfw.itb.raw raw 0x3d00 0x300 mmcpart 1
       #dfu_alt_info_mmc=boot part 1 1;rootfs part 1 2;tiboot3.bin fat 1 1;tispl.bin fat 1 1;u-boot.img fat 1 1;uEnv.txt fat 1 1;sysfw.itb fat 1 1
       alt_name_sysfw_fat = "sysfw.itb"
@@ -72,7 +72,7 @@ def run
     end
 
   when /spi/
-    if @test_params.platform =~ /am654x/
+    if @test_params.platform =~ /am654x|j721e/
       #dfu_alt_info_ospi=tiboot3.bin raw 0x0 0x080000;tispl.bin raw 0x080000 0x200000;u-boot.img raw 0x280000 0x500000;u-boot-env raw 0x780000 0x020000;sysfw.itb raw 0x7a0000 0x060000;rootfs raw 0x800000 0x3800000
       alt_name_sysfw_raw = "sysfw.itb"
       alt_name_initial_bootloader_raw = "tiboot3.bin"
@@ -86,7 +86,7 @@ def run
       when /dra7|am57/
         dfu_alt_info_raw_spi = "\"#{alt_name_primary_bootloader_raw} raw 0x0 0x20000;#{alt_name_secondary_bootloader_raw} raw 0x40000 0x100000\" "
         dfu_alt_info_raw_spi = " \"${dfu_alt_info_qspi}\" " if use_uboot_env == 'yes'
-      when /am654/
+      when /am654|j721e/
         dfu_alt_info_raw_spi = "\"#{alt_name_sysfw_raw} raw 0x7a0000 0x60000;#{alt_name_initial_bootloader_raw} raw 0x0 0x80000;#{alt_name_primary_bootloader_raw} raw 0x80000 0x200000;#{alt_name_secondary_bootloader_raw} raw 0x280000 0x500000\" "
         dfu_alt_info_raw_spi = " \"${dfu_alt_info_ospi}\" " if use_uboot_env == 'yes'
       else
@@ -105,21 +105,20 @@ def run
     dfu_alt_info_ram = "\"ram_testimage ram ${loadaddr} 0x#{filesize_hex}\""
   end
 
+  # boot to uboot prompt if it is not in uboot prompt
+  if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
+    @equipment['dut1'].boot_to_bootloader(translated_boot_params)
+  end
+
   case media
   when /-mmc/
     interface = 'mmc'
-    if @equipment['dut1'].name =~ /am654x/
-      dev = 1
-    else
-      dev = 0
-    end
+    mmcdev_nums = get_uboot_mmcdev_mapping()
+    dev = mmcdev_nums['mmc']
   when /-emmc/
     interface = 'mmc'
-    if @equipment['dut1'].name =~ /am654x|j7/
-      dev = 0
-    else
-      dev = 1
-    end
+    mmcdev_nums = get_uboot_mmcdev_mapping()
+    dev = mmcdev_nums['emmc']
   when /qspi/
     interface = 'sf 0:0'
   when /ram/
@@ -150,16 +149,13 @@ def run
   elsif media == "ram"
     dfu_alt_info = dfu_alt_info_ram
   else
-    raise "Not supported media #{media}. The supported media are fat-mmc, raw-mmc, fat-emmc, raw-emmc."
+    raise "Not supported media #{media}. The supported media are fat-mmc, raw-mmc, fat-emmc, raw-emmc, qspi(ospi)."
   end
 
-  # boot to uboot prompt if it is not in uboot prompt
-  if ! @equipment['dut1'].at_prompt?({'prompt'=>@equipment['dut1'].boot_prompt})
-    @equipment['dut1'].boot_to_bootloader(translated_boot_params)
-  end
 
   # set dfu env 
   @equipment['dut1'].send_cmd("version", @equipment['dut1'].boot_prompt, 5)
+  @equipment['dut1'].send_cmd("mmc list", @equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("gpt write mmc #{dev} ${partitions}", @equipment['dut1'].boot_prompt, 10) if media == "raw-emmc"
   @equipment['dut1'].send_cmd("setenv dfu_alt_info #{dfu_alt_info}", @equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("print dfu_alt_info", @equipment['dut1'].boot_prompt, 5)
@@ -188,7 +184,7 @@ def run
     end
     
   else
-    if @test_params.platform =~ /am654x/
+    if @test_params.platform =~ /am654x|j721e/
       # download sysfw
       start_dfu_on_target("dfu #{usb_controller} #{interface} #{dev}", /.*/, /download.*ok/i) do
         host_dfu_download_image("#{images_dir}/#{File.basename(translated_boot_params['sysfw_image_name'])}", alt_name_sysfw)
