@@ -5,19 +5,20 @@ include LspTargetTestScript
 
 def setup
   super
-  @equipment['dut1'].send_cmd('/etc/init.d/weston stop; sleep 3',@equipment['dut1'].prompt,10)
+  @equipment['dut1'].send_cmd('for i in `seq 1 3`; do /etc/init.d/weston stop && sleep 3 && ps -ef | grep -i weston | grep -v grep || break; done',@equipment['dut1'].prompt,10)
 end
 
 def run
   @equipment['dut1'].send_cmd('',@equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd('mkdir ' + @linux_dst_dir,@equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd('cd ' + @linux_dst_dir,@equipment['dut1'].prompt)
-  if !dut_dir_exist?('glbenchmark*')
+  if !dut_dir_exist?('glbenchmark*/')
     url = @test_params.params_chan.benchmark[0]
     tarball = File.basename(url)
     @equipment['dut1'].send_cmd("wget #{url}", @equipment['dut1'].prompt, 600)
-    @equipment['dut1'].send_cmd("tar -zxvf #{tarball}", @equipment['dut1'].prompt, 600)
+    @equipment['dut1'].send_cmd("tar -zxvf #{tarball} || rm -rf glbenchmark*", @equipment['dut1'].prompt, 600)
   end
+  create_lib_link('/usr/lib/libgbm.so', '/usr/lib/libgbm.so.2')
   if @equipment['dut1'].name.match(/j7*/)
     nulldrm_libdir = "#{@linux_dst_dir}/nulldrmusr"
     if !dut_dir_exist?(nulldrm_libdir)
@@ -26,7 +27,6 @@ def run
       @equipment['dut1'].send_cmd("ln -sf #{@linux_dst_dir}/ti-img-rogue-umlibs/targetfs/j721e_linux/nulldrmws/release/usr #{nulldrm_libdir}", @equipment['dut1'].prompt)
       @equipment['dut1'].send_cmd("ls #{nulldrm_libdir}/lib", @equipment['dut1'].prompt)
       raise "Unable to setup nulldrm libs" if @equipment['dut1'].response.match(/No\s*such\s*file\s*or\s*directory/im)
-      create_lib_link('/usr/lib/libgbm.so', '/usr/lib/libgbm.so.2')
       create_lib_link("#{nulldrm_libdir}/lib/libIMGegl.so", "#{nulldrm_libdir}/lib/libIMGegl.so.1")
       create_lib_link("#{nulldrm_libdir}/lib/libsrv_um.so", "#{nulldrm_libdir}/lib/libsrv_um.so.1")
     end
