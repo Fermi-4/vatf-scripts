@@ -268,10 +268,10 @@ def check_enum_on_target(module_name)
   # Hash for each gadget and expected logs - for instance mass_storage would lead to "Mass Storage Function"
   # And multi could lead to  multiple gadgets
   dut_module_string = Hash.new
-  dut_module_string = {'mass_storage'=>'gadget:\s+g_mass_storage\s+ready','ether'=>'gadget:\s+g_ether\s+ready',
-                       'serial'=>'gadget:\s+g_serial\s+ready', 'cdc' => 'gadget:\s+g_cdc\s+ready',
+  dut_module_string = {'mass_storage'=>'g_mass_storage\s+ready','ether'=>'g_ether\s+ready',
+                       'serial'=>'g_serial\s+ready', 'cdc' => 'g_cdc\s+ready',
                        'configfs'=>'configfs-gadget',
-                       'multi' => 'gadget:\s+g_multi\s+ready', 'ncm' => 'gadget:\s+g_ncm\s+ready'}
+                       'multi' => 'g_multi\s+ready', 'ncm' => 'g_ncm\s+ready'}
   # Verify that string matches with gadget type
   @equipment['dut1'].send_cmd("dmesg",@equipment['dut1'].prompt)  
   dut_response = @equipment['dut1'].response

@@ -49,7 +49,7 @@ def run
 
 =begin
     # boot to kernel to create/format partition 
-    create_format_partition translated_boot_params, 'ufs'
+    create_format_partition translated_boot_params, 'fat-ufs'
     translated_boot_params['dut'].boot_to_bootloader translated_boot_params
     @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
     @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 5)
@@ -400,7 +400,7 @@ def create_format_partition(params, dev='usb')
   # run ltp-ddt test; by default ltp-ddt format partition as vfat 
   if dev == 'usb'
     cmd = "./runltp -P #{@equipment['dut1'].name} -f ddt/usbhost_dd_rw_vfat -s \"USBHOST_L_FUNC_VFAT_DD_RW_0001\" "
-  elsif dev == 'ufs'
+  elsif dev == 'fat-ufs'
     cmd = "./runltp -P #{@equipment['dut1'].name} -f ddt/ufs_dd_rw -s \"UFS_S_FUNC_DD_RW_10M\" "
   end
   @equipment['dut1'].send_cmd("cd /opt/ltp; #{cmd}", @equipment['dut1'].prompt, 600)
