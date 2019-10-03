@@ -105,6 +105,7 @@ def run_performance
    else #module_name != 'configfs'
      # Collect mount directory and other details
      device_details = check_mount_interface_on_host(gadget_types)
+     return if device_details == ''
      puts "DEVICE_DETAILS is #{device_details}\n"
      mode='all'
    end
@@ -343,17 +344,17 @@ def check_mount_interface_on_host(gadget_types)
   if mscdev == mscmount then
     puts "Host does not detect any USB device"
     set_result(FrameworkConstants::Result[:fail], "No new USB mount is reported on host.")
-    return
+    return ''
   end
   interface_name = host_response.match(/usb\d: register 'cdc_'/)[0]
   puts "HOST_RESPONSE is #{host_response}\n"
   puts "INTERFACE_NAME is #{interface_name}\n"
   if interface_name == ''
     set_result(FrameworkConstants::Result[:fail], "Testcase Result is FAIL.")
-    return
+    return ''
   else
-  interface_name = interface_name.split(':')[0]
-  puts "INTERFACE is #{interface_name}\n"
+    interface_name = interface_name.split(':')[0]
+    puts "INTERFACE is #{interface_name}\n"
   end  
   params = Hash.new
   params = {'mscdev'=>mscdev, 'mscmount'=>mscmount, 'interface'=>interface_name}
