@@ -71,7 +71,7 @@ module LspHelpers
       params['dut'].log_info("Setting dtb file to an NFS directory path...")
       # Set default parameter values so that in most cases only the dtb filter suffix need be specified
       nfs_dtb_subdirectory = "boot"
-      nfs_dtb_filter_prefix = "zImage"
+      nfs_dtb_filter_prefix = ""
       nfs_dtb_filter_suffix = ""
       dtb_platform = @test_params.platform.downcase.split(",")[0]
       # Set parameters from test case, if present
