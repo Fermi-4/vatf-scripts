@@ -290,7 +290,7 @@ def run
     @equipment['dut1'].send_cmd("usb info", @equipment['dut1'].boot_prompt, 10)
 
     # boot to kernel to create/format partition 
-    create_format_partition translated_boot_params "usb"
+    create_format_partition translated_boot_params,"usb"
     translated_boot_params['dut'].boot_to_bootloader translated_boot_params
     @equipment['dut1'].connect({'type'=>'serial'}) if !@equipment['dut1'].target.serial
     @equipment['dut1'].send_cmd("",@equipment['dut1'].boot_prompt, 5)
