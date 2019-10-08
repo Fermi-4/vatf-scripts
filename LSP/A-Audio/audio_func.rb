@@ -31,7 +31,8 @@ def run
   rec_duration = duration + 2
   table_title = ''
   test_type = @test_params.params_chan.test_type[0].strip.downcase
-  dut_rec_dev, dut_play_dev = setup_devices(@equipment['dut1'], 0.6)
+  use_plugins = @equipment['dut1'].name.match(/j7.*/) 
+  dut_rec_dev, dut_play_dev = setup_devices(@equipment['dut1'], 0.6, use_plugins)
   dut_play_dev.select! {|p_dev| !p_dev['card_info'].match(/USB/) && !p_dev['device_info'].match(/USB/)}
   dut_rec_dev.select! {|r_dev| !r_dev['card_info'].match(/USB/) && !r_dev['device_info'].match(/USB/)}
   table_title += "\n\nRec Dev " + dut_rec_dev.join("\nRec Dev ") if test_type.include?('record') && !dut_rec_dev.empty?

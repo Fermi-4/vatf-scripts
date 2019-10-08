@@ -29,7 +29,8 @@ def run
   left_ref, right_ref = separate_audio_chans(ref_pcm_path)
   rec_duration = duration + 2
   table_title = ''
-  dut_rec_dev, dut_play_dev = setup_devices(@equipment['dut1'], 0.6)
+  use_plugins = @equipment['dut1'].name.match(/j7.*/) 
+  dut_rec_dev, dut_play_dev = setup_devices(@equipment['dut1'], 0.6, use_plugins)
   table_title += "\n\nRec Dev " + dut_rec_dev.join("\nRec Dev ") + "\n\nPlay Dev " + dut_play_dev.join("\nPlay Dev ")
   dut_ip = get_ip_addr()
   @results_html_file.add_paragraph("")
@@ -45,20 +46,23 @@ def run
   test_audio = []
   dut_rec_dev.each do |r_dev|
     next if r_dev['card_info'].match(/USB/) || r_dev['device_info'].match(/USB/)
-    dut_rec_info = [dut_audio_info.merge({'card'=>r_dev['card'],
-                                          'device'=>r_dev['device'],
-                                          'file'=>"#{dut_test_file}.card#{r_dev['card']}",
-                                          'duration'=>rec_duration,
-                                          'type' => 'raw'})]
-    dut_play_info = [dut_audio_info.merge({'card'=>r_dev['card'],
-                                           'device'=>r_dev['device'],
-                                           'file'=>dut_src_file,
-                                           'duration'=>duration,
-                                           'type'=>'wav'})]
-    play_rec_audio(dut_play_info, dut_rec_info)
-    t_file = File.join(@linux_temp_folder, "local_test_file.card#{r_dev['card']}")
-    scp_pull_file(dut_ip, "#{dut_test_file}.card#{r_dev['card']}", t_file)
-    test_audio << t_file
+    dut_play_dev.each do |p_dev|
+      next if p_dev['card_info'] != r_dev['card_info']
+      dut_rec_info = [dut_audio_info.merge({'card'=>r_dev['card'],
+                                            'device'=>r_dev['device'],
+                                            'file'=>"#{dut_test_file}.card#{r_dev['card']}",
+                                            'duration'=>rec_duration,
+                                            'type' => 'raw'})]
+      dut_play_info = [dut_audio_info.merge({'card'=>p_dev['card'],
+                                             'device'=>p_dev['device'],
+                                             'file'=>dut_src_file,
+                                             'duration'=>duration,
+                                             'type'=>'wav'})]
+      play_rec_audio(dut_play_info, dut_rec_info)
+      t_file = File.join(@linux_temp_folder, "local_test_file.card#{r_dev['card']}")
+      scp_pull_file(dut_ip, "#{dut_test_file}.card#{r_dev['card']}", t_file)
+      test_audio << t_file
+    end
   end
   s_rate = audio_info['rate']
   test_audio.each do |current_audio|
@@ -99,8 +103,8 @@ end
 
 def zero_crossing(arr)
    arr.each_index do |i| 
-     if i + 1 < arr.length
-       return i if arr[i] <= 0 && arr[i+1] > 0
+     if i + 3 < arr.length
+       return i if (arr[i] < 0 && arr[i+1] <= 0 && arr[i+2] > 0 && arr[i+3] > 0) || arr[i] < 0 && arr[i+1] < 0 && arr[i+2] >= 0 && arr[i+3] > 0
      end
    end
 end
