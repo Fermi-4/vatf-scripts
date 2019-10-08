@@ -365,8 +365,8 @@ end
 #       be set
 #Returns, two arrays. Element 0 contains the rec devices info and element
 #         1 containg the playout devices info  
-def setup_devices(sys=@equipment['dut1'], volume=0.6)
-  config_devices(sys, 0.6)
+def setup_devices(sys=@equipment['dut1'], volume=0.6, use_plugins=false)
+  config_devices(sys, volume, use_plugins)
 end
 
 #Function to setup (enable/disable, gains, etc) the audio devices
@@ -375,10 +375,10 @@ end
 #       be set
 #Returns, two arrays. Element 0 contains the rec devices info and element
 #         1 containg the playout devices info  
-def config_devices(sys=@equipment['dut1'], volume=0.6)
+def config_devices(sys=@equipment['dut1'], volume=0.6, use_plugins=false)
   dut_rec_dev = []
   dut_play_dev = []
-  if sys.name.match(/j7.*/) #Create plugins for PCM3168A 6 input/8 output channel codec
+  if use_plugins #Create plugins for PCM3168A 6 input/8 output channel codec
     dut_rec_dev, dut_play_dev = get_plugins(sys.name)
   else
     sys.send_cmd("ls /sys/class/sound/ | grep 'card'", sys.prompt,10)
