@@ -6,24 +6,33 @@ include LspTargetTestScript
 def setup
   super
   @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep || /etc/init.d/weston start; sleep 3',@equipment['dut1'].prompt,10)
-  @equipment['dut1'].send_cmd('export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib',@equipment['dut1'].prompt,10)
 end
 
 def run
   test_string = ''
+  dut_pvhrhub_path = '/opt/img-powervr-sdk/PVRHub'
   dut_profile_path = "#{@linux_dst_dir}/systest.pvrtrace"
   local_profile_path = File.join(@linux_temp_folder, 'systest.pvrtrace')
   pvrtrace_config_path = "~/pvrtraceconfig.json"
   @equipment['server1'].send_cmd("ls #{local_profile_path} && rm #{local_profile_path}", @equipment['server1'].prompt)
   @equipment['dut1'].send_cmd("ls #{pvrtrace_config_path} && rm #{pvrtrace_config_path}", @equipment['dut1'].prompt)
+  @equipment['dut1'].send_cmd("ls #{@linux_dst_dir}/lib* && rm #{@linux_dst_dir}/lib*", @equipment['dut1'].prompt)
   dut_ip = get_ip_addr()
   @equipment['dut1'].send_cmd("ls #{@linux_dst_dir} &>/dev/null || mkdir -p #{@linux_dst_dir}", @equipment['dut1'].prompt) #Make sure test folder exists
   @equipment['dut1'].send_cmd("rm -f #{@linux_dst_dir}/*", @equipment['dut1'].prompt) #Make sure that test file is new
   create_json(pvrtrace_config_path, dut_profile_path, @equipment['dut1'])
   @equipment['dut1'].send_cmd("cd", @equipment['dut1'].prompt)
   @equipment['dut1'].send_cmd("cat #{pvrtrace_config_path}", @equipment['dut1'].prompt)
-  @equipment['dut1'].send_cmd("export LD_LIBRARY_PATH=/opt/img-powervr-sdk/PVRHub/PVRTrace/Recorder/ PVRHUB_DIR=/opt/img-powervr-sdk/PVRHub", @equipment['dut1'].prompt)
-  @equipment['dut1'].send_cmd("timeout -t 30 -s 2 weston-simple-egl", @equipment['dut1'].prompt, 120)
+  @equipment['dut1'].send_cmd("readelf -a /usr/bin/weston-simple-egl | grep -i needed", @equipment['dut1'].prompt)
+  libs_needed = @equipment['dut1'].response.scan(/\[(lib.*?GL[^\]]+)/m).flatten()
+  @equipment['dut1'].send_cmd("ls #{dut_pvhrhub_path}/PVRTrace/Recorder/lib*",  @equipment['dut1'].prompt)
+  pvrtrace_libs = @equipment['dut1'].response.scan(/#{dut_pvhrhub_path}\/PVRTrace\/Recorder\/lib.*?.so/).flatten()
+  libs_needed.each do |lib|
+    lib_pattern = lib.match(/lib.*?.so/)[0]
+    pvrtrace_lib = pvrtrace_libs.select { |l| l.match(/#{lib_pattern}$/) || l.match(/#{lib}$/) }
+    @equipment['dut1'].send_cmd("ln -sf #{pvrtrace_lib[0]} #{@linux_dst_dir}/#{lib}", @equipment['dut1'].prompt) if !pvrtrace_lib.empty?
+  end
+  @equipment['dut1'].send_cmd("LD_LIBRARY_PATH=#{dut_pvhrhub_path}/PVRTrace/Recorder/:#{@linux_dst_dir} PVRHUB_DIR=#{dut_pvhrhub_path} timeout -t 30 -s 2 weston-simple-egl", @equipment['dut1'].prompt, 120)
   begin
     scp_pull_file(dut_ip, dut_profile_path, local_profile_path)
     @equipment['server1'].send_cmd("ls -l #{local_profile_path}", @equipment['server1'].prompt)
@@ -42,6 +51,11 @@ def run
   else
     set_result(FrameworkConstants::Result[:fail], "PVRTrace Test failed: " + test_string)
   end
+end
+
+def clean()
+  @equipment['dut1'].send_cmd("rm #{@linux_dst_dir}/*", @equipment['dut1'].prompt)
+  super
 end
 
 def create_json(json_path, trace_path, dut=@equipment['dut1'])
