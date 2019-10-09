@@ -34,7 +34,11 @@ def docker_hello_world()
     # Docker images must be stored locally, so we need to change the defualt Docker image directory
     # when rootfs is mounted over NFS
     @equipment['dut1'].send_cmd("cp /lib/systemd/system/docker.service ~/docker.service.orig",@equipment['dut1'].prompt)
-    @equipment['dut1'].send_cmd("sed -i '/\\/usr\\/bin\\/dockerd -H fd:\\/\\// s/$/ -g \\/run\\/media\\/mmcblk1p2\\/docker/' /lib/systemd/system/docker.service",@equipment['dut1'].prompt)
+    if @test_params.platform.to_s == 'am57xx-evm' || @test_params.platform.to_s == 'am572x-evm'
+        @equipment['dut1'].send_cmd("sed -i '/\\/usr\\/bin\\/dockerd -H fd:\\/\\// s/$/ -g \\/run\\/media\\/mmcblk0p2\\/docker/' /lib/systemd/system/docker.service",@equipment['dut1'].prompt)
+    else
+        @equipment['dut1'].send_cmd("sed -i '/\\/usr\\/bin\\/dockerd -H fd:\\/\\// s/$/ -g \\/run\\/media\\/mmcblk1p2\\/docker/' /lib/systemd/system/docker.service",@equipment['dut1'].prompt)
+    end
     @equipment['dut1'].send_cmd("cat /lib/systemd/system/docker.service",@equipment['dut1'].prompt)
     # Restart the Docker service to apply settings from above
     @equipment['dut1'].send_cmd("systemctl daemon-reload",@equipment['dut1'].prompt, 60)

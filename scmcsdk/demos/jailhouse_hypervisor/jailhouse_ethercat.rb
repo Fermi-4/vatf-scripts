@@ -8,8 +8,6 @@ end
 
 def run
   # download and copy Ethercat binaries to evm
-  download_package("#{@test_params.params_chan.jailhouse_inmate1[0]}",'/tftpboot/jailhouse_inmates/')
-  transfer_to_dut("jailhouse_inmates/am572x-ethercat.cell",@equipment['server1'].telnet_ip)
   download_package("#{@test_params.params_chan.jailhouse_inmate2[0]}",'/tftpboot/jailhouse_inmates/')
   transfer_to_dut("jailhouse_inmates/ethercat_slave_demo.bin",@equipment['server1'].telnet_ip)
 
@@ -32,17 +30,13 @@ end
 # function to enable jailhouse EtherCAT slave
 def enable_jailhouse_etherCAT_Slave()
   @equipment['dut1'].send_cmd("modprobe jailhouse", @equipment['dut1'].prompt, 10)
-  @equipment['dut1'].send_cmd("cp am572x-ethercat.cell /usr/share/jailhouse/examples/", \
-                              @equipment['dut1'].prompt, 20)
-  @equipment['dut1'].send_cmd("cp ethercat_slave_demo.bin /usr/share/jailhouse/examples/",\
+  @equipment['dut1'].send_cmd("cp ethercat_slave_demo.bin /usr/share/jailhouse/inmates/",\
                              @equipment['dut1'].prompt, 20)
-  @equipment['dut1'].send_cmd("jailhouse enable /usr/share/jailhouse/examples/*-evm.cell",\
+  @equipment['dut1'].send_cmd("jailhouse enable /usr/share/jailhouse/cells/*-evm.cell",\
                               @equipment['dut1'].prompt, 10)
-  @equipment['dut1'].send_cmd("jailhouse cell create /usr/share/jailhouse/examples/*-ethercat.cell",\
+  @equipment['dut1'].send_cmd("jailhouse cell create /usr/share/jailhouse/cells/*-ethercat.cell",\
                               @equipment['dut1'].prompt, 10)
-  @equipment['dut1'].send_cmd("jailhouse cell load 1 /usr/share/jailhouse/examples/linux-loader.bin\
- -a 0 -s \"kernel=0x80000000\" -a 0x100", @equipment['dut1'].prompt, 10)
-  @equipment['dut1'].send_cmd("jailhouse cell load 1 /usr/share/jailhouse/examples/ethercat_slave_demo.bin -a 0x80000000",\
+  @equipment['dut1'].send_cmd("jailhouse cell load 1 /usr/share/jailhouse/inmates/ethercat_slave_demo.bin -a 0x90000000",\
                               @equipment['dut1'].prompt, 10)
 end
 
