@@ -41,11 +41,11 @@ end
 
 #Function to setup Jailhouse Hypervisor
 def setup_jailhouse_hypervisor()
-  @equipment['dut1'].send_cmd("cp led_test.bin /usr/share/jailhouse/examples/",\
+  @equipment['dut1'].send_cmd("cp led_test.bin /usr/share/jailhouse/inmates/",\
                                 @equipment['dut1'].prompt,10)
-  @equipment['dut1'].send_cmd("cd /usr/share/jailhouse/examples/", @equipment['dut1'].prompt,10)
+  @equipment['dut1'].send_cmd("cd /usr/share/jailhouse/", @equipment['dut1'].prompt,10)
   @equipment['dut1'].send_cmd("modprobe jailhouse", @equipment['dut1'].prompt,10)
-  @equipment['dut1'].send_cmd("jailhouse enable am57xx-evm.cell", @equipment['dut1'].prompt,10)
-  @equipment['dut1'].send_cmd("jailhouse cell create am57xx-pdk-leddiag.cell", @equipment['dut1'].prompt,60)
-  @equipment['dut1'].send_cmd("jailhouse cell load 1 led_test.bin", @equipment['dut1'].prompt,10)
+  @equipment['dut1'].send_cmd("jailhouse enable ./cells/am57xx-evm.cell", @equipment['dut1'].prompt,10)
+  @equipment['dut1'].send_cmd("jailhouse cell create ./cells/am57xx-pdk-leddiag.cell", @equipment['dut1'].prompt,60)
+  @equipment['dut1'].send_cmd("jailhouse cell load 1 ./inmates/led_test.bin", @equipment['dut1'].prompt,10)
 end
