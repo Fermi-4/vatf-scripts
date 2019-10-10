@@ -7,9 +7,9 @@ def run
   type = @test_params.params_chan.instance_variable_defined?(:@type) ? @test_params.params_chan.type[0].downcase() : 'drm'
   @equipment['dut1'].send_cmd('/etc/init.d/matrix-gui-2.0 stop',@equipment['dut1'].prompt,10)
   if type != 'wayland'
-    @equipment['dut1'].send_cmd('/etc/init.d/weston stop',@equipment['dut1'].prompt,10)
+    @equipment['dut1'].send_cmd('/etc/init.d/weston stop; sleep 3',@equipment['dut1'].prompt,10)
   else
-    @equipment['dut1'].send_cmd('/etc/init.d/weston start',@equipment['dut1'].prompt,10)
+    @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep || /etc/init.d/weston start; sleep 3',@equipment['dut1'].prompt,10)
   end
   sleep 3
   perf_data = []
@@ -23,6 +23,7 @@ def run
         puts "Known issue  \"#{result}\" for terrain test skipping metric"
         next
       end
+      result = result.gsub(/\[[\s\d\.]{5,}.*?PVR_K:.*?\.\s*This\s*is\s*not\s*an\s*error[^\.]+\.[\r\n]/,'')
       res_arr = result.split(/\s+/,3)
       t_dat = res_arr[2].split(/:\s*/)
       metric = t_dat[0]
@@ -64,5 +65,5 @@ def compose_metric(name, extra)
   else
     result = "#{result}#{extra[1]}"
   end
-  result
+  result.gsub(/[><]+/,'')
 end
