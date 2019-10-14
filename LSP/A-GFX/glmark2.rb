@@ -23,7 +23,7 @@ def run
         puts "Known issue  \"#{result}\" for terrain test skipping metric"
         next
       end
-      result = result.gsub(/\[[\s\d\.]{5,}.*?PVR_K:.*?\.\s*This\s*is\s*not\s*an\s*error[^\.]+\.[\r\n]/,'')
+      result = result.gsub(/\[[\s\d\.]{5,}.*?PVR_K:.*?\.\s*This\s*is\s*not\s*an\s*error[^\.]+\.[\r\n]/i,'')
       res_arr = result.split(/\s+/,3)
       t_dat = res_arr[2].split(/:\s*/)
       metric = t_dat[0]
