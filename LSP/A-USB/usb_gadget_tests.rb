@@ -208,6 +208,7 @@ def modprobe_on_device(module_name,gadget_types,action)
   if (action == 'remove')
     @equipment['server1'].send_sudo_cmd("dmesg -c",@equipment['server1'].prompt, 60)  
     @equipment['dut1'].send_cmd("dmesg -c",@equipment['dut1'].prompt, 60)  
+    sleep 1
     cmd = 'modprobe -r'
     this_module = "g_#{module_name}"
     if module_name == 'configfs'
@@ -216,6 +217,7 @@ def modprobe_on_device(module_name,gadget_types,action)
       this_module = 'libcomposite' 
     end
     @equipment['dut1'].send_cmd("#{cmd} #{this_module}",@equipment['dut1'].prompt, 30)  
+    sleep 1
     @equipment['server1'].send_sudo_cmd("dmesg",@equipment['server1'].prompt)  
     @equipment['dut1'].send_cmd("dmesg",@equipment['dut1'].prompt)  
     dut_response = @equipment['dut1'].response
@@ -258,6 +260,7 @@ def modprobe_on_device(module_name,gadget_types,action)
       setup_configfs
       sleep 30
     else
+      sleep 1
       @equipment['dut1'].send_cmd("#{cmd} g_#{module_name} #{extra_params}",@equipment['dut1'].prompt)  
       #@equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
     end

@@ -92,6 +92,7 @@ def run
         end
 
       when /dra7/ 
+        sleep 2
         @equipment['server1'].send_sudo_cmd("usbboot -S #{bparams['primary_bootloader']}", /reading/i, 30) 
         @equipment['dut1'].wait_for(/Trying\s+to\s+boot\s+from\s*(?:USB){0,1}\s+DFU/i, 60)
         if @equipment['dut1'].timeout?
