@@ -174,6 +174,7 @@ def run_stress_insert_remove(iterations)
          host_test=host_test+1
       end
       modprobe_on_device(module_name,gadget_types, 'remove')
+      sleep 1
   end # of while
   if ((loop_count == device_test) && (loop_count == host_test))
       set_result(FrameworkConstants::Result[:pass], "In #{loop_count} iterations, device detected gadget #{device_test} times and host detected gadget #{host_test} times.")
