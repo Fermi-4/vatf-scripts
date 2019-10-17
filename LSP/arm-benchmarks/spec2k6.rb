@@ -13,6 +13,7 @@ end
 
 
 def determine_num_cores()
+  return @test_params.params_control.cores[0].to_i if @test_params.params_control.instance_variable_defined?(:@cores)
   @equipment['dut1'].send_cmd("grep -c ^processor /proc/cpuinfo",@equipment['dut1'].prompt)
   if @equipment['dut1'].response.match(/^(\d+)\s*$/)
     return @equipment['dut1'].response.match(/^(\d+)\s*$/).captures[0]
@@ -27,7 +28,7 @@ def run_generate_script()
     "opkg update",
     "opkg install --nodeps spec2k6",
     "cd /opt/spec2k6/scripts",
-    "./specint2006.sh #{determine_arch()} `grep -c ^processor /proc/cpuinfo`"
+    "./specint2006.sh #{determine_arch()} #{determine_num_cores().to_i}"
   ]
   out_file = File.new(File.join(@linux_temp_folder, 'test.sh'),'w')
   raw_test_lines.each do |current_line|
