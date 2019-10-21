@@ -21,7 +21,9 @@ def run
     @equipment['dut1'].send_cmd("tar -Jxvf #{tarball}", @equipment['dut1'].prompt, 600)
   end
   @equipment['dut1'].send_cmd('cd gfxbench5-bins',@equipment['dut1'].prompt)
-  execfile = './testfw_app --gfx egl --gl_api gles -w 1920 -h 1080'
+  width = @test_params.params_chan.instance_variable_defined?(:@width) ? @test_params.params_chan.width[0].to_i : 1920
+  height = @test_params.params_chan.instance_variable_defined?(:@height) ? @test_params.params_chan.height[0].to_i : 1080
+  execfile = "./testfw_app --gfx egl --gl_api gles -w #{width} -h #{height}"
   perf_data = []
   @test_params.params_chan.tests.each do |test|
     @equipment['dut1'].send_cmd("#{execfile} -t #{test}", @equipment['dut1'].prompt, 600)
