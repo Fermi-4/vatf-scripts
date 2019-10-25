@@ -94,7 +94,6 @@ end
 
 def set_fw_links(rprocs, sd_card=false)
   if sd_card
-    @equipment['dut1'].send_cmd("ls /run/media/mmcblk1p2/lib/firmware > /dev/null || mkdir -p /run/media/mmcblk1p2/lib/firmware", @equipment['dut1'].prompt)
     rprocs.each do |rp, info|
 	  @equipment['dut1'].send_cmd("cd /run/media/mmcblk1p2/lib/firmware && ln -sf #{info['path']} #{info['link'].strip}", @equipment['dut1'].prompt)
     end
@@ -244,16 +243,24 @@ def rprocs_initial_info(dut)
 end
 
 def save_firmware(links_info, e=@equipment['dut1'])
+  #save firmware on NFS
   @firmware_links = {}
   links_info.each do |info|
     e.send_cmd("ls -l /lib/firmware/#{info['link']}", e.prompt)
     l_match = e.response.match(/\/lib\/firmware\/#{info['link']}\s*->\s*(.*)/)
     @firmware_links[l_match.captures[0]] = "/lib/firmware/#{info['link']}" if l_match
   end
+  #save firmware on SD card
+  @equipment['dut1'].send_cmd("mv /run/media/mmcblk1p2/lib/firmware /sdcard-firmware", @equipment['dut1'].prompt)
+  #sync up to the firmware from NFS
+  @equipment['dut1'].send_cmd("cp -rfa /lib/firmware /run/media/mmcblk1p2/lib/firmware", @equipment['dut1'].prompt,60)
 end
 
 def restore_firmware(e=@equipment['dut1'])
+  #restore firmware on NFS
   @firmware_links.each {|k,v|
-     e.send_cmd("ln -sf #{k.strip} #{v.strip}", e.prompt)
+    e.send_cmd("ln -sf #{k.strip} #{v.strip}", e.prompt)
   }
+  #restore firmware on SD card
+  @equipment['dut1'].send_cmd("mv /sdcard-firmware /run/media/mmcblk1p2/lib/firmware", @equipment['dut1'].prompt)
 end

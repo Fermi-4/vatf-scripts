@@ -221,7 +221,7 @@ end
 #          [0-1] 0-silence, 1-100%
 #Returns, two arrays. Element 0 contains the rec devices info and element
 #         1 containg the playout devices info 
-def setup_devices(sys=@equipment['dut1'], volume=0.6)
-  config_devices(sys, volume)
+def setup_devices(sys=@equipment['dut1'], volume=0.6, use_plugins=false)
+  config_devices(sys, volume, false)
   [get_pulseaudio_rec_dev, get_pulseaudio_play_dev(sys)]
 end
