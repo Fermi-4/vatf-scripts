@@ -140,6 +140,8 @@ class TestImporter
         tc = tsl.add_element "testcase", {'name' => t['name']}
         et = tc.add_element "execution_type"
         et.text = "2"
+        er = tc.add_element "expectedresults"
+        er.text = "The test commands sequence must return 0 (non error) per error code standard in Linux"
         summary = tc.add_element "summary"
         CData.new( t['desc'], true, summary )
         cfs = tc.add_element "custom_fields"
