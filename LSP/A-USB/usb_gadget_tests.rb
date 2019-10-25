@@ -21,7 +21,7 @@ def run
   $result_comment='' 
   modprobe_remove_all
   test_type = @test_params.params_control.instance_variable_defined?(:@test_type) ? @test_params.params_control.test_type[0] : 'insert_remove'
-  iterations = @test_params.params_control.instance_variable_defined?(:@iterations) ? @test_params.params_control.iterations[0].to_i : 5 
+  iterations = @test_params.params_control.instance_variable_defined?(:@iterations) ? @test_params.params_control.iterations[0].to_i : 1 
   duration = @test_params.params_control.instance_variable_defined?(:@duration) ? @test_params.params_control.duration[0].to_i : 60 
   speed = @test_params.params_control.instance_variable_defined?(:@speed) ? @test_params.params_control.speed[0] : 'high' 
 
@@ -165,8 +165,11 @@ def run_stress_insert_remove(iterations)
   device_test = 0
   host_test = 0
   while (loop_count<iterations)
+      @equipment['dut1'].log_info ("=======Iteration: #{loop_count.to_s}=======")
+      @equipment['server1'].log_info ("=======Iteration: #{loop_count.to_s}=======")
       loop_count = loop_count+1
       modprobe_on_device(module_name, gadget_types, 'insert')
+      sleep 2
       if check_enum_on_target(module_name)
          device_test=device_test+1
       end
@@ -262,8 +265,11 @@ def modprobe_on_device(module_name,gadget_types,action)
       sleep 30
     else
       sleep 1
-      @equipment['dut1'].send_cmd("#{cmd} g_#{module_name} #{extra_params}",@equipment['dut1'].prompt)  
-      #@equipment['server1'].send_cmd("dmesg",@equipment['server1'].prompt)  
+      @equipment['dut1'].send_cmd("#{cmd} g_#{module_name} #{extra_params}",@equipment['dut1'].prompt,30)  
+      5.times {
+        @equipment['dut1'].send_cmd("",@equipment['dut1'].prompt,2)  
+      }
+      sleep 2
     end
 
   end
@@ -282,10 +288,10 @@ def check_enum_on_target(module_name)
   dut_response = @equipment['dut1'].response
   module_found = false
   if dut_response.match(dut_module_string[module_name])
-   @equipment['dut1'].log_info("FOUND #{dut_module_string[module_name]} in check_enum_target")
+   @equipment['dut1'].log_info("Debug: FOUND #{dut_module_string[module_name]} in check_enum_target")
    module_found = true
   else
-   @equipment['dut1'].log_info("NOT FOUND #{dut_module_string[module_name]} in check_enum_target")
+   @equipment['dut1'].log_info("Debug: NOT FOUND #{dut_module_string[module_name]} in check_enum_target")
    module_found = false
   end
   return module_found
@@ -304,7 +310,7 @@ def check_enum_on_host(gadget_types)
   gadget_found = false
   gadget_types.each do |gadget|
        if host_response.match(host_gadget_string[gadget])
-            @equipment['server1'].log_info("FOUND in host #{host_gadget_string[gadget]}")
+            @equipment['server1'].log_info("Debug: FOUND in host #{host_gadget_string[gadget]}")
             if host_response.match(speed)
                 gadget_found = true
 
@@ -312,7 +318,7 @@ def check_enum_on_host(gadget_types)
                 gadget_found = false
             end
        else
-            @equipment['server1'].log_info("NOT FOUND in host #{host_gadget_string[gadget]}")
+            @equipment['server1'].log_info("Debug: NOT FOUND in host #{host_gadget_string[gadget]}")
             gadget_found = false
        end                    
   end
@@ -468,8 +474,8 @@ def serialtest_acm(host_interface, device_interface, test_sequence, iterations)
       dut_output=@equipment['dut1'].send_cmd("while read p; do
                                               echo $p
                                               done </home/root/serial_test.txt", @equipment['dut1'].prompt)
-   @equipment['server1'].log_info("Serial_Test DUT output is #{dut_output} in serialtest_acm")
-   @equipment['server1'].log_info("End of Serial_Test DUT output")
+      @equipment['server1'].log_info("Serial_Test DUT output is #{dut_output} in serialtest_acm")
+      @equipment['server1'].log_info("End of Serial_Test DUT output")
       if (dut_output.include? test_sequence)
         @equipment['server1'].log_info("Substring comparison was true")
         @equipment['server1'].log_info("BEFORE pass_count is #{pass_count} and iterations is #{iterations} and #[i}")
