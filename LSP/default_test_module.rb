@@ -624,6 +624,7 @@ module LspTestScript
     boot_params = params.merge({'platform' => @test_params.platform.downcase}) if !params.has_key?("platform")
     boot_params = params.merge({
        'power_handler'     => @power_handler,
+       'usb_switch_handler'     => @usb_switch_handler,
        'tester'            => @tester.downcase,
        'target'            => @test_params.target.downcase ,
        'staf_service_name' => @test_params.staf_service_name.to_s
