@@ -28,7 +28,7 @@ module LspHelpers
         raise "Filesystem image is not a recognizable tar archive" if tar_options == "not tar"
         params['server'].send_sudo_cmd("mkdir -p  #{nfs_root_path_temp}", params['server'].prompt, 10)
         params['server'].send_sudo_cmd("tar -C #{nfs_root_path_temp} #{tar_options} #{fs}", params['server'].prompt, 2400)
-        raise "Error extracting tarball" if params['server'].response.match(/tar:\s+Error/)
+        raise "Error extracting tarball" if params['server'].response.match(/(tar:\s+Error|Sorry, try again)/)
       end
       # Add workaround for disabling weston
       weston_start_dst = "#{nfs_root_path_temp}/etc/init.d/weston.bak"
