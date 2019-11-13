@@ -750,6 +750,25 @@ module LspTestScript
     params
   end
 
+  def update_mmcsd(device_object, params)
+
+    update_mmc = @test_params.instance_variable_defined?(:@var_update_mmc)? @test_params.var_update_mmc : "0"
+    host_side_mmc_update = (update_mmc != '0' and device_object.params.has_key?("microsd_switch"))
+    params = params.merge({'host_side_mmc_update' => host_side_mmc_update})
+
+    if host_side_mmc_update
+        begin
+            params = flash_sd_card_from_host(params)
+        rescue Exception => e
+            report_msg "Failed to switch to host or update SD card. "+e.to_s
+            raise e
+        end
+    end
+
+    params
+
+  end
+
   def setup
     load_known_setup_issues_dictionary(KNOWN_SETUP_PROBLEMS)
     @equipment.select{|k| k.match(/dut/i)}.keys.each {|device|
@@ -760,20 +779,9 @@ module LspTestScript
   def setup_boards(device_name='dut1', params={})
     device_object = @equipment[device_name]
     device_object.set_api('psp')
-    update_mmc = @test_params.instance_variable_defined?(:@var_update_mmc)? @test_params.var_update_mmc : "0"
-    host_side_mmc_update = (update_mmc != '0' and device_object.params.has_key?("microsd_switch"))
-    params = params.merge({'host_side_mmc_update' => host_side_mmc_update})
     params['dut'] = device_object
     translated_boot_params = setup_host_side(params)
-
-    if host_side_mmc_update
-        begin
-            translated_boot_params = flash_sd_card_from_host(translated_boot_params)
-        rescue Exception => e
-            report_msg "Failed to switch to host or update SD card. "+e.to_s
-            raise e
-        end
-    end
+    translated_boot_params = update_mmcsd(device_object, translated_boot_params)
 
     # Choose interface via relay 
     # Ex bench:dut.params = {'iface_selection'=> {'pru' => [{'rly16.192.168.0.20' => 1}, {'rly16.192.168.0.20' => 2}] } }
@@ -803,32 +811,6 @@ module LspTestScript
     check_dut_booted(params)
     device_object.send_cmd(@test_params.var_post_boot_cmd, device_object.prompt, 60) if @test_params.instance_variable_defined?(:@var_post_boot_cmd)
     query_start_stats(device_name)
-
-    if update_mmc != '0' and !host_side_mmc_update
-      call_setup = false
-
-      report_msg "Check if bootloader in MMC needs to be updated ..."
-      if translated_boot_params.has_key?('primary_bootloader') \
-         && translated_boot_params.has_key?('secondary_bootloader')\
-         && need_update_mmcbootloader?(translated_boot_params)
-        report_msg "Updating bootloader in MMC ..."
-        update_mmcbootloader translated_boot_params
-        report_msg "Donw with updating bootloader in MMC!"
-        call_setup = true
-      end
-
-      report_msg "Check if rootfs in MMC needs to be updated ..."
-      if translated_boot_params.has_key?('fs') && need_update_mmcfs?(translated_boot_params)
-        report_msg "Updating rootfs in MMC ..."
-        update_mmcfs translated_boot_params
-        report_msg "Donw with updating rootfs in MMC!"
-        call_setup = true
-      end
-      if call_setup
-        device_object.system_loader = nil
-        setup_boards(device_name, translated_boot_params)
-      end
-    end
 
     install_modules(translated_boot_params)
     install_user_binaries(translated_boot_params)

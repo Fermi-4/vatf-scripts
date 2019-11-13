@@ -5,72 +5,8 @@ require File.dirname(__FILE__)+'/lsp_helpers'
 module UpdateMMC   
 
   include LspHelpers    
-  PRIMARY_BOOLOADER_MD5_FILE = "primary_bootloader.md5"
+  SECONDARY_BOOLOADER_MD5_FILE = "secondary_bootloader.md5"
   FS_MD5_FILE = "fs.md5"
-
-  # Check mlo's signature and if mlo signature is different, we update both mlo and uboot
-
-  def need_update_mmcbootloader?(params)
-    params['mmc_boot_mnt_point'] = find_mmc_mnt_point('boot')
-    signature_file = "#{params['mmc_boot_mnt_point']}/#{PRIMARY_BOOLOADER_MD5_FILE}"
-    return true if !dut_dir_exist?(signature_file)
-    old_signature = read_signature(signature_file)
-    new_signature = @test_params.instance_variable_defined?(:@var_primary_bootloader_md5) ? @test_params.var_primary_bootloader_md5 : calculate_signature(params['primary_bootloader'])
-    params['mlo_signature'] = new_signature
-    (old_signature != new_signature)
-  end
-  
-
-  def update_mmcbootloader(params)
-    mlo_signature = params.has_key?('mlo_signature') ? params['mlo_signature'] : calculate_signature(params['primary_bootloader'])
-    # copy mlo and uboot.img to mmc boot partition
-    transfer_file_to_dut(params['primary_bootloader'], params['mmc_boot_mnt_point']+"/MLO")
-    transfer_file_to_dut(params['secondary_bootloader'], params['mmc_boot_mnt_point']+"/u-boot.img")
-    flush_to_mmc(params['mmc_boot_mnt_point']) 
-    save_signature(mlo_signature, params['mmc_boot_mnt_point']+"/#{PRIMARY_BOOLOADER_MD5_FILE}")
-  end
-
-  def need_update_mmcfs?(params)
-    params['mmc_boot_mnt_point'] = find_mmc_mnt_point('boot') if !params.has_key?('mmc_boot_mnt_point')
-    signature_file = "#{params['mmc_boot_mnt_point']}/#{FS_MD5_FILE}"
-    return true if !dut_dir_exist?(signature_file)
-    old_signature = read_signature(signature_file)
-    new_signature = @test_params.instance_variable_defined?(:@var_fs_md5) ? @test_params.var_fs_md5 : calculate_signature(params['fs'])
-    params['fs_signature'] = new_signature
-    (old_signature != new_signature)
-  end
-
-  def update_mmcfs(params)
-    fs_signature = params.has_key?('fs_signature') ? params['fs_signature'] : calculate_signature(params['fs'])
-
-    # boot from nfs, then update mmc rootfs
-    boot_from_nfs(params) 
-
-    params['nfs_root'] = find_nfsroot
-
-    # transfer the rootfs tarball to nfs root directory
-    fs_tarball_src = "/#{File.basename(params['fs'])}"
-    fs_tarball_path = params['nfs_root'].sub("#{params['server'].telnet_ip}:","")+fs_tarball_src
-    params['server'].send_sudo_cmd("rm -f #{fs_tarball_path}", params['server'].prompt, 60)
-    params['server'].send_sudo_cmd("cp #{params['fs']} #{fs_tarball_path} ; echo $?", /^0[\0\n\r]+/im, 120)
-    raise "Failed to copy fs tarball from #{params['fs']} to nfsroot: #{fs_tarball_path}" if params['server'].timeout?
-    params['mmc_fs_mnt_point'] = find_mmc_mnt_point('fs')
-
-    # remove everything in mmc p2 before extract rootfs tarball
-    raise "MMC is used for rootfs, rootfs partition can not be deleted and updated!" if mmc_rootfs?
-    params['dut'].send_cmd("rm -rf #{params['mmc_fs_mnt_point']}/*", params['dut'].prompt, 120)
-    # populate the fs tarball into mnt_fs_mnt_point
-    tar_options = get_tar_options(params['fs'], params)
-    params['dut'].send_cmd("tar -C #{params['mmc_fs_mnt_point']} #{tar_options} #{fs_tarball_src}", params['dut'].prompt, 1200)
-    params['dut'].send_cmd("echo $?", /^0[\0\n\r]+/m, 2)
-    raise "There is error when untar rootfs tarball #{fs_tarball_src} to #{params['mmc_fs_mnt_point']}; Updating MMC rootfs failed; The content of MMC P2 was being deleted and you will not be able to boot rootfs from MMC. Sorry! Please check why untar failed and re-try again " if params['dut'].timeout?
-
-    flush_to_mmc(params['mmc_fs_mnt_point'])
-
-    # save signature after mmc rootfs is successfully updated 
-    params['mmc_boot_mnt_point'] = find_mmc_mnt_point('boot')
-    save_signature(fs_signature, params['mmc_boot_mnt_point']+"/#{FS_MD5_FILE}")
-  end
 
   def setup_ti_test_gadget(params)
     sd_switch_info = params['dut'].params['microsd_switch'].keys[0]
@@ -147,7 +83,6 @@ module UpdateMMC
     end
   end
 
-
   def flash_sd_card_from_host(params)
       report_msg "Going to flash SD card from host if required ..."
       boot_mnt_point = File.join(@linux_temp_folder, 'mnt', 'boot')
@@ -195,14 +130,16 @@ module UpdateMMC
       end
       params = flash_sd_boot_partition_from_host(nodes[0], boot_mnt_point, params)
       params = flash_sd_rootfs_partition_from_host(nodes[1], rootfs_mnt_point, params)
+      params.each{|k,v| puts "#{k}:#{v}"}
       return params
 
     rescue Exception => e
       raise e
     ensure
       if nodes
-        unmount_partition(nodes[0], params)
-        unmount_partition(nodes[1], params)
+        nodes.each {|p|
+          unmount_partition(p, params)
+        }
       end
       report_msg "Switching back to DUT..."
       @equipment['ti_test_gadget'].switch_microsd_to_dut(params['dut'])
@@ -230,23 +167,23 @@ module UpdateMMC
     # unmount all mount points for this partition
     count = 0 # Using count to prevent while-loop stuck
     while count < 10 
-      params['server'].send_cmd("mount |grep #{partition}; echo $?", /^0[\0\n\r]+/im, 30)
+      params['server'].send_cmd("mount |grep \"#{partition} \"; echo $?", /^0[\0\n\r]+/im, 30)
       break if params['server'].timeout?
-      params['server'].send_sudo_cmd("umount -l #{partition}", params['server'].prompt, 300)
       params['server'].send_cmd("sync", params['server'].prompt, 120)
+      params['server'].send_sudo_cmd("umount -l #{partition}", params['server'].prompt, 300)
       sleep 1
       count += 1
     end
-    raise "Could not umount #{partition} on host PC" if system "mount | grep #{partition}"
+    raise "Could not umount #{partition} on host PC" if system "mount | grep \"#{partition} \" "
   end
 
   def need_update_mmcbootloader_from_host?(boot_partition, mnt_point, params)
     mount_partition(boot_partition,mnt_point,'vfat',params)
-    signature_file = "#{mnt_point}/#{PRIMARY_BOOLOADER_MD5_FILE}"
+    signature_file = "#{mnt_point}/#{SECONDARY_BOOLOADER_MD5_FILE}"
     return true if ! system "ls #{signature_file}"
     old_signature = read_signature(signature_file, params['server'])
-    new_signature = @test_params.instance_variable_defined?(:@var_primary_bootloader_md5) ? @test_params.var_primary_bootloader_md5 : calculate_signature(params['primary_bootloader'])
-    params['mlo_signature'] = new_signature
+    new_signature = @test_params.instance_variable_defined?(:@var_secondary_bootloader_md5) ? @test_params.var_secondary_bootloader_md5 : calculate_signature(params['secondary_bootloader'])
+    params['uboot_signature'] = new_signature
     (old_signature != new_signature)
   end
 
@@ -261,15 +198,38 @@ module UpdateMMC
   end
 
   def flash_sd_boot_partition_from_host(boot_partition, mnt_point, params)
-    if params.has_key?('primary_bootloader') && params.has_key?('secondary_bootloader') &&
-     need_update_mmcbootloader_from_host?(boot_partition, mnt_point, params)
-      report_msg "Updating bootloader in MMC from host ..."
-      mlo_signature = params.has_key?('mlo_signature') ? params['mlo_signature'] : calculate_signature(params['primary_bootloader'])
-      params['server'].send_sudo_cmd(["cp -f #{params['primary_bootloader']} #{mnt_point}/MLO", "echo PASS"], /PASS/m, 30)
-      raise "Could not copy primary_bootloader to SD card" if params['server'].timeout?
-      params['server'].send_sudo_cmd(["cp -f #{params['secondary_bootloader']} #{mnt_point}/u-boot.img", "echo PASS"], /PASS/m, 30)
-      raise "Could not copy secondary_bootloader to SD card" if params['server'].timeout?
-      save_signature(mlo_signature, mnt_point+"/#{PRIMARY_BOOLOADER_MD5_FILE}", true, params['server'])
+    # Only check secondary_bootloader since all boards have it.
+    if params.has_key?('secondary_bootloader')  
+      if need_update_mmcbootloader_from_host?(boot_partition, mnt_point, params)
+        report_msg "Updating bootloader in MMC from host ..."
+        uboot_signature = params.has_key?('uboot_signature') ? params['uboot_signature'] : calculate_signature(params['secondary_bootloader'])
+        if params.has_key?('primary_bootloader') && params['primary_bootloader'] != ''
+          primary_bootloader_name = CmdTranslator::get_uboot_cmd({'cmd'=>'primary_bootloader_filename', 'version'=>"0.0", 'platform'=>params['dut'].name})
+          params['server'].send_sudo_cmd(["cp -f #{params['primary_bootloader']} #{mnt_point}/#{primary_bootloader_name}", "echo PASS"], /PASS/m, 30)
+          raise "Could not copy primary_bootloader to SD card" if params['server'].timeout?
+        end
+        if params.has_key?('secondary_bootloader') && params['secondary_bootloader'] != ''
+          if params['dut'].name =~ /omapl/i
+            #sudo dd if=u-boot.ais of=${sd_node} seek=117 bs=512 conv=fsync && sync
+            base_part = boot_partition.sub(/\d+$/i,'')
+            params['server'].send_sudo_cmd(["dd if=#{params['secondary_bootloader']} of=#{base_part} seek=117 bs=512 conv=fsync", "echo PASS"], /PASS/m, 30)
+          else
+            params['server'].send_sudo_cmd(["cp -f #{params['secondary_bootloader']} #{mnt_point}/u-boot.img", "echo PASS"], /PASS/m, 30) 
+          end
+          raise "Could not copy secondary_bootloader to SD card" if params['server'].timeout?
+        end
+        if params.has_key?('initial_bootloader') && params['initial_bootloader'] != ''
+          params['server'].send_sudo_cmd(["cp -f #{params['initial_bootloader']} #{mnt_point}/tiboot3.bin", "echo PASS"], /PASS/m, 30) 
+          raise "Could not copy initial_bootloader to SD card" if params['server'].timeout?
+        end
+        if params.has_key?('sysfw') && params['sysfw'] != ''
+          params['server'].send_sudo_cmd(["cp -f #{params['sysfw']} #{mnt_point}/sysfw.itb", "echo PASS"], /PASS/m, 30) 
+          raise "Could not copy sysfw to SD card" if params['server'].timeout?
+        end
+        params['server'].send_sudo_cmd(["sync", "echo PASS"], /PASS/m, 30)  
+
+        save_signature(uboot_signature, mnt_point+"/#{SECONDARY_BOOLOADER_MD5_FILE}", true, params['server'])
+      end
     end
     return params
   end
@@ -279,11 +239,15 @@ module UpdateMMC
       if need_update_rootfs_from_host?(root_partition, mnt_point, params)
         report_msg "Updating rootfs in MMC from host ..."
         fs_signature = params.has_key?('fs_signature') ? params['fs_signature'] : calculate_signature(params['fs'])
-        params['server'].send_sudo_cmd("sh -c 'rm -rf #{mnt_point}/* && echo PASS ' ", /PASS/m, 120)
-        raise "Could not remove old filesystem from SD card" if params['server'].timeout?
+        unmount_partition(root_partition, params)
+        params['server'].send_sudo_cmd(["mkfs.ext4 -L rootfs #{root_partition}", 'echo PASS'], /PASS/m, 120)
+        raise "Could not format rootfs partition in SD card" if params['server'].timeout?
+        sleep 1
+        mount_partition(root_partition, mnt_point, 'ext4', params)
         tar_options = get_tar_options(params['fs'], params)
-        params['server'].send_sudo_cmd("sh -c 'tar -C #{mnt_point}/ #{tar_options} #{params['fs']} && echo PASS' ", /PASS/m, 2400)
-        raise "Could not untar rootfs to SD card" if params['server'].timeout?
+        params['server'].send_sudo_cmd(["tar -C #{mnt_point}/ #{tar_options} #{params['fs']}", 'echo PASS'], /PASS/m, 2400)
+        raise "Error extracting tarball" if params['server'].response.match(/tar:\s+Error/)
+        raise "Could not untar rootfs to SD card within certain time." if params['server'].timeout?
         save_signature(fs_signature, mnt_point+"/#{FS_MD5_FILE}", true, params['server'])
       end
     end
