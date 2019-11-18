@@ -11,10 +11,6 @@ def setup
   cpsw9g_iface = get_cpsw9g_iface_name()
   @equipment['dut1'].send_cmd("export cpsw9g_iface=#{cpsw9g_iface}",@equipment['dut1'].prompt, 1)
 
-  # Debug
-  @equipment['dut1'].send_cmd("ifconfig -a",@equipment['dut1'].prompt, 1)
-  @equipment['dut1'].send_cmd("lsmod",@equipment['dut1'].prompt, 1)
-
   # Find server ip that cpsw9g is connected to and export
   host_env_name = cpsw9g_iface+"_SERVER"
   ip_addr =  get_ip_address_by_interface('dut1', cpsw9g_iface)
@@ -32,7 +28,12 @@ def get_cpsw9g_iface_name(device='dut1')
 
   diff = pre_up + post_up - (pre_up & post_up)
 
-  raise "Could not bring up CPSW9G iface" if diff.length == 0
+  if (diff.length == 0)
+    # Debug
+    @equipment['dut1'].send_cmd("ifconfig -a",@equipment['dut1'].prompt, 1)
+    @equipment['dut1'].send_cmd("lsmod",@equipment['dut1'].prompt, 1)
+    raise "Could not bring up CPSW9G iface" 
+  end
 
   return diff[0]
 end
