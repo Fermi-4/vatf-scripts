@@ -8,6 +8,7 @@ def setup
 	@equipment['dut1'].set_api('psp')
 
   translated_boot_params = setup_host_side()
+  translated_boot_params = update_mmcsd(translated_boot_params['dut'], translated_boot_params)
   translated_boot_params['dut'].set_bootloader(translated_boot_params) if !@equipment['dut1'].boot_loader
   translated_boot_params['dut'].set_systemloader(translated_boot_params) if !@equipment['dut1'].system_loader
 
