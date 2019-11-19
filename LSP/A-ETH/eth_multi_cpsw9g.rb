@@ -1,18 +1,39 @@
-# This script is intended to be generic enough to run tests on any ethernet
-# interface. Its main function is to set the host network interface corresponding to the interface on the dut.
-# First two setup lines are necessary to configure fw to enable CPSW9G testing  
+# This test aims to bring up the CPSW9G interface with modprobe then
+# find the new CPSW9G interface and get the ip address of the server 
+# it is connected to 
 
 require File.dirname(__FILE__)+'/../TARGET/dev_test2'
 require File.dirname(__FILE__)+'/../network_utils'
 
 def setup
   super
-  @equipment['dut1'].send_cmd("modprobe rpmsg_kdrv_switch", "", 10, false)
-  @equipment['dut1'].send_cmd("", @equipment['dut1'].prompt, 10, false)
-  @equipment['dut1'].send_cmd("ifconfig -a", @equipment['dut1'].prompt, 10, false)
-  iface = @test_params.params_control.instance_variable_defined?(:@iface) ? @test_params.params_control.iface[0].to_s : 'eth0'
-  host_env_name = iface+"_SERVER"
-  server_iface = get_local_iface_name(@equipment['server1'],get_ip_address_by_interface('dut1',iface))
+  # Get the cpsw9g iface name and export
+  cpsw9g_iface = get_cpsw9g_iface_name()
+  @equipment['dut1'].send_cmd("export cpsw9g_iface=#{cpsw9g_iface}",@equipment['dut1'].prompt, 1)
+
+  # Find server ip that cpsw9g is connected to and export
+  host_env_name = cpsw9g_iface+"_SERVER"
+  ip_addr =  get_ip_address_by_interface('dut1', cpsw9g_iface)
+  server_iface = get_local_iface_name(@equipment['server1'], ip_addr)
   server_ip_address = get_ip_address_by_interface('server1', server_iface)
-  @equipment['dut1'].send_cmd("export #{host_env_name}=#{server_ip_address}")
+  @equipment['dut1'].send_cmd("export #{host_env_name}=#{server_ip_address}",@equipment['dut1'].prompt, 1)
+end
+
+def get_cpsw9g_iface_name(device='dut1') 
+  pre_up = get_eth_interfaces(device)
+  
+  @equipment[device].send_cmd("modprobe rpmsg_kdrv_switch && sleep 3", @equipment[device].prompt, 10, false)  
+  
+  post_up = get_eth_interfaces(device)
+
+  diff = pre_up + post_up - (pre_up & post_up)
+
+  if (diff.length == 0)
+    # Debug
+    @equipment['dut1'].send_cmd("ifconfig -a",@equipment['dut1'].prompt, 1)
+    @equipment['dut1'].send_cmd("lsmod",@equipment['dut1'].prompt, 1)
+    raise "Could not bring up CPSW9G iface" 
+  end
+
+  return diff[0]
 end

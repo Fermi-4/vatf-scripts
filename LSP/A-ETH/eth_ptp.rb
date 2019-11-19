@@ -168,7 +168,7 @@ end
 
 # testptp set ptp clock time 
 def testptp_settime(dut, val, ptp_device)
-  dut.send_cmd("testptp -g -d #{ptp_device} && testptp -T #{val} -d #{ptp_device} && testptp -g #{ptp_device}", dut.prompt, 10)
+  dut.send_cmd("testptp -g -d #{ptp_device} && testptp -T #{val} -d #{ptp_device} && testptp -g -d #{ptp_device}", dut.prompt, 10)
   if !dut.response.match(/set\s+time\s+ok/i)
     raise "testptp failed to set ptp clock time by val"
   end
