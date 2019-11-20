@@ -55,8 +55,11 @@ module LspHelpers
       end
       # Add workaround for LCPD-17284 (J7 remoteproc)
       if params['dut'].name =~ /j7/
+        #sudo ln -sf pdk-ipc/ipc_echo_test_mcu2_1_release.xer5f j7-main-r5f0_1-fw
         libfirmware_path = "#{nfs_root_path_temp}/lib/firmware"
-        params['server'].send_sudo_cmd("ln -sf #{libfirmware_path}/pdk-ipc/ipc_echo_test_mcu2_1_release.xer5f #{libfirmware_path}/j7-main-r5f0_1-fw", params['server'].prompt, 10)
+        params['server'].send_sudo_cmd("cd #{libfirmware_path}", params['server'].prompt, 10)
+        params['server'].send_sudo_cmd("ln -sf pdk-ipc/ipc_echo_test_mcu2_1_release.xer5f j7-main-r5f0_1-fw", params['server'].prompt, 10)
+        params['server'].send_sudo_cmd("cd -", params['server'].prompt, 10)
       end
     end
     
