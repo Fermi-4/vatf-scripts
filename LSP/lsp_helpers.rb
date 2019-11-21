@@ -53,14 +53,6 @@ module LspHelpers
         pointercal_rule_src = File.join(File.dirname(__FILE__), 'TARGET', 'S90-fake-pointercal')
         params['server'].send_sudo_cmd("cp #{pointercal_rule_src} #{pointercal_rule_dst}", params['server'].prompt, 10)
       end
-      # Add workaround for LCPD-17284 (J7 remoteproc)
-      if params['dut'].name =~ /j7/
-        #sudo ln -sf pdk-ipc/ipc_echo_test_mcu2_1_release.xer5f j7-main-r5f0_1-fw
-        libfirmware_path = "#{nfs_root_path_temp}/lib/firmware"
-        params['server'].send_sudo_cmd("cd #{libfirmware_path}", params['server'].prompt, 10)
-        params['server'].send_sudo_cmd("ln -sf pdk-ipc/ipc_echo_test_mcu2_1_release.xer5f j7-main-r5f0_1-fw", params['server'].prompt, 10)
-        params['server'].send_sudo_cmd("cd -", params['server'].prompt, 10)
-      end
     end
     
     install_kernel_modules(params, nfs_root_path_temp)    
