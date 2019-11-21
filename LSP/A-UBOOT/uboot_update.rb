@@ -46,6 +46,22 @@ def run
     boot_params['mmcdev'] = boot_params['primary_bootloader_dev'] == 'mmc'? "#{mmcdev_nums['mmc']}" : "#{mmcdev_nums['emmc']}"
     boot_params['dut'].set_systemloader(boot_params.merge({'systemloader_class' => SystemLoader::UbootFlashBootloaderSystemLoader}))
     boot_params['dut'].system_loader.run(boot_params)
+
+    # For J7, write 2 firmwares to SD card
+    # j7-main-r5f0_0-fw and j7-mcu-r5f0_0-fw
+    if boot_params['dut'].name =~ /j7/ and boot_params['fs'] != ''
+      f1 = "j7-main-r5f0_0-fw"
+      f2 = "j7-mcu-r5f0_0-fw"
+      tmp_path = @test_params.staf_service_name.to_s.strip.gsub('@','_')
+      untar_path = File.join(boot_params['server'].tftp_path, tmp_path)
+      untar_dir(boot_params, boot_params['fs'], '/lib/firmware', untar_path)
+      fix_symlink(boot_params, "#{untar_path}/lib/firmware", f1)
+      f1_size = tftp_file(boot_params, "#{tmp_path}/lib/firmware/#{f1}")
+      ext4write_to_mmc(boot_params, mmcdev_nums['mmc'], f1, f1_size)
+      fix_symlink(boot_params, "#{untar_path}/lib/firmware", f2)
+      f2_size = tftp_file(boot_params, "#{tmp_path}/lib/firmware/#{f2}")
+      ext4write_to_mmc(boot_params, mmcdev_nums['mmc'], f2, f2_size)
+    end
   
     # Verify if the board can boot using the updated bootloader
     10.times {puts "Please change the switch setting to boot from #{boot_params['primary_bootloader_dev']}!!!"}
@@ -90,6 +106,46 @@ def run
   end  
 
 end 
+
+def ext4write_to_mmc(params, mmcdev, f, size)
+  params['dut'].send_cmd("ext4write mmc #{mmcdev}:2 ${loadaddr} /lib/firmware/#{f} #{size}", params['dut'].boot_prompt, 60)
+  raise "Failed to ext4write #{f} to mmcdev #{mmcdev}" if !params['dut'].response.match(/written/i)
+end
+
+def fix_symlink(params, dir, f)
+  if File.symlink?("#{dir}/#{f}")
+    #params['server'].send_cmd("cd #{dir}", params['server'].prompt, 5)
+    syml = File.readlink("#{dir}/#{f}").sub("/lib/firmware/", "")
+    params['server'].send_cmd("cd #{dir}; ln -sf #{syml} #{f}; ls -l #{f}", params['server'].prompt, 10)
+    #params['server'].send_cmd("ls -l #{f}", params['server'].prompt, 10)
+    params['server'].send_cmd("cd -", params['server'].prompt, 5)
+    raise "The file #{dir}/#{f} does not have valid symlink" if !File.exist?("#{dir}/#{f}")
+  end 
+end
+
+def untar_dir(params, tarball, dir, dst_dir)
+  tar_options = get_tar_options(tarball, params)
+  #tmp_path = @test_params.staf_service_name.to_s.strip.gsub('@','_')
+  params['server'].send_cmd("rm -rf #{dst_dir}#{dir}", params['server'].prompt, 120)
+  params['server'].send_cmd("tar -C #{dst_dir} #{tar_options} #{tarball} .#{dir}", params['server'].prompt, 120)
+  raise "Error extracting tarball" if params['server'].response.match(/tar:.*error/i)
+  params['server'].send_cmd("ls -l #{dst_dir}#{dir}", params['server'].prompt, 10)
+end
+
+def tftp_file(params, filepath_in_tftp)
+  params['dut'].send_cmd("setenv serverip #{params['server'].telnet_ip}", params['dut'].boot_prompt, 5)
+  params['dut'].send_cmd("setenv autoload no", params['dut'].boot_prompt, 5)
+  3.times {
+    params['dut'].send_cmd("dhcp", params['dut'].boot_prompt, 30)
+    break if !params['dut'].timeout?
+  }
+
+  params['dut'].send_cmd("tftp ${loadaddr} #{filepath_in_tftp}", params['dut'].boot_prompt, 300)
+  raise "Could not tftp file to dut" if !params['dut'].response.match(/Bytes\s+transferred/im)
+  params['dut'].send_cmd("print filesize", params['dut'].boot_prompt, 10)
+  size = /filesize\s*=\s*(\h+)/im.match(@equipment['dut1'].response).captures[0]
+  return size
+end
 
 def set_pre_params(params)
     new_params = params.clone
