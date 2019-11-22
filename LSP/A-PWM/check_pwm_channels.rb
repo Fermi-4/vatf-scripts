@@ -23,14 +23,13 @@ end
 
 def run
   dut_name = @equipment['dut1'].name
+  @equipment['bbb1'].connect({'type'=>'serial'})
+  @equipment['bbb1'].configure_device()
+  period = @test_params.params_chan.period[0].to_i
+  duty_cycles = [1000, period/2, period-1000]
+
   @test_params.params_chan.iterations[0].to_i.times do |iter|
     @equipment['dut1'].log_info("Starting interation #{iter}")
-    period = @test_params.params_chan.period[0].to_i
-    duty_cycles = [1000, period/2, period-1000]
-
-    @equipment['bbb1'].connect({'type'=>'serial'})
-    @equipment['bbb1'].configure_device()
-
     duty_cycles.each_with_index{|duty_cycle, duty_cycle_index|
       PWM_CHANNELS_MAP[dut_name].each_with_index {|channel, channel_index|
         export_channel(channel)
@@ -63,13 +62,13 @@ end
 def test_pwm_signal(channel_index, duty_cycle_index)
   bbb_channel = @equipment['bbb1'].params['adc_ports'][channel_index]
   adc_value = @equipment['bbb1'].adc_read(bbb_channel)
-  case adc_value
-  when 0..0.3
-    return false if duty_cycle_index == 0
-  when 0.3..0.7
-    return false if duty_cycle_index == 1
-  when 0.7..1.0
-    return false if duty_cycle_index == 2
+  case duty_cycle_index
+  when 0
+    return false if adc_value < 0.3
+  when 1
+    return false if adc_value > 0.2 and adc_value < 0.75
+  when 2
+    return false if adc_value > 0.57
   end
   return true # Test failed, voltage read outside expected range
 end
