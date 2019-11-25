@@ -40,7 +40,7 @@ def run
 
   when /raw-ufs/
     #testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000", "0x4000000"] # [4M, 8M, 16M, 32M, 64M]
-    testsizes = ["0x400000", "0x1000000", "0x2000000", "0x4000000"] # [4M, 16M, 32M, 64M]
+    testsizes = ["0x400000", "0x800000", "0x1000000"] # [4M, 8M, 16M]
 
     @equipment['dut1'].send_cmd("ufs init", @equipment['dut1'].boot_prompt, 10)
     if ! @equipment['dut1'].response.match(/Device\s+at\s+ufs@\h+\s+up/i)
@@ -116,7 +116,7 @@ def run
 
   when /hflash/
 
-    testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000"] # [4M, 8M, 16M, 32M]
+    testsizes = ["0x400000", "0x800000", "0x1000000"] # [4M, 8M, 16M]
     @equipment['dut1'].send_cmd("help mtd", @equipment['dut1'].boot_prompt, 10)
     @equipment['dut1'].send_cmd("mtd list", @equipment['dut1'].boot_prompt, 10)
 
@@ -214,7 +214,8 @@ def run
   when /raw-e*mmc/
     @equipment['dut1'].send_cmd("mmc dev #{mmcdev}", @equipment['dut1'].boot_prompt, 10)
     @equipment['dut1'].send_cmd("mmcinfo", @equipment['dut1'].boot_prompt, 10)
-    test_blks = ["0x10000", "0x20000", "0x40000", "0x80000", "0x100000"] # [32M, 64M, 128M, 256M, 512M]
+    #test_blks = ["0x10000", "0x20000", "0x40000", "0x80000", "0x100000"] # [32M, 64M, 128M, 256M, 512M]
+    test_blks = ["0x10000", "0x20000"] # [32M, 64M]
     half_dram = get_dram_size().to_i(16) / 2
     test_blks.each do |test_blknum_hex|
       testsize_hex = (test_blknum_hex.to_i(16) * 512).to_s(16)
@@ -248,7 +249,7 @@ def run
 
   when /fat-mmc/
     #testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000", "0x4000000"] # [4M, 8M, 16M, 32M, 64M]
-    testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000"] # [4M, 8M, 16M, 32M, 64M]
+    testsizes = ["0x400000", "0x800000", "0x1000000"] # [4M, 8M, 16M]
     @equipment['dut1'].send_cmd("mmc dev #{mmcdev}", @equipment['dut1'].boot_prompt, 10)
     @equipment['dut1'].send_cmd("mmcinfo", @equipment['dut1'].boot_prompt, 10)
 
@@ -280,7 +281,7 @@ def run
 
   when /fat-usb/
     #testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000", "0x4000000"] # [4M, 8M, 16M, 32M, 64M]
-    testsizes = ["0x400000", "0x800000", "0x1000000", "0x2000000"] # [4M, 8M, 16M, 32M, 64M]
+    testsizes = ["0x400000", "0x800000", "0x1000000"] # [4M, 8M, 16M]
     @equipment['dut1'].send_cmd("usb start", @equipment['dut1'].boot_prompt, 10)
     if ! @equipment['dut1'].response.match(/[1-9]+\s+Storage\s+Device.*found/i)
       raise "No usb storage device being detected"
@@ -427,9 +428,6 @@ def get_loadaddres(testsize_hex)
   @equipment['dut1'].send_cmd("print loadaddr", @equipment['dut1'].boot_prompt, 10)
   # ex: loadaddr=0x82000000
   loadaddr = @equipment['dut1'].response.match(/loadaddr=0x(\h+)/i).captures[0]
-  # Since 0x90000000 to 0xb0000000 is reseved_memory for j7, do not use them.
-  # loadaddr = 0x80080000, add 3000000 becomes 0xc0080000 which is outside of the above 
-  loadaddr = ( loadaddr.to_i(16) + "0x30000000".to_i(16) ).to_s(16)
   loadaddr2 = ( loadaddr.to_i(16) + testsize_hex.to_i(16) ).to_s(16)
   raise "Failed to get loadaddr and loadaddr2" if (loadaddr == nil or loadaddr2 == nil)
   return [loadaddr, loadaddr2]
