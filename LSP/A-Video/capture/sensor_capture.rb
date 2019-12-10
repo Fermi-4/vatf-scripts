@@ -66,7 +66,6 @@ def run
   cap_devs = get_type_devices(ip_type)
   raise "No capture device of type #{ip_type} found" if !cap_devs
   set_capture_app(ip_type)
-  capture_mem_needed = 1600*1200*48
   cap_devs.each do |dev|
     capture_device = '/dev/' + dev
     if @equipment['dut1'].name == 'omapl138-lcdk'
@@ -83,6 +82,7 @@ def run
       dev_interrupt_info = (@equipment['dut1'].response.scan(/^[0-9A-F ]+/im)*'').gsub(/\s+/,'').sub(/0+/,'') + "_"
     end
     dut_ip = get_ip_addr()
+    capture_mem_needed = fmt_opts['frame-size'].map(){|r| r.split(/x/i).map(&:to_i).reduce(:*)}.max * 50
     fmt_opts['frame-size'].each_index do |res_idx|
       @results_html_file.add_paragraph("")
       res_table = @results_html_file.add_table([["Capture Device",{:bgcolor => "4863A0"}],
