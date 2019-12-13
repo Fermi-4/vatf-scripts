@@ -7,7 +7,10 @@ def setup
   super
   @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep || /etc/init.d/weston start && sleep 3',@equipment['dut1'].prompt,10)
   @equipment['dut1'].send_cmd('ps -ef | grep -i weston | grep -v grep || echo "weston failed"',@equipment['dut1'].prompt,10)
-  raise "Weston did not start, tests require weston" if @equipment['dut1'].response.scan(/weston\s*failed/im).length > 1
+  if @equipment['dut1'].response.scan(/weston\s*failed/im).length > 1
+    @equipment['dut1'].send_cmd('cat /var/log/weston.log', @equipment['dut1'].prompt, 10)
+    raise "Weston did not start, tests require weston"
+  end
 end
 
 def run
