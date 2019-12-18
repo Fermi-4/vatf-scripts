@@ -42,7 +42,7 @@ def run
 
   vlan_filter = @test_params.params_chan.instance_variable_defined?(:@vlan_filter) ? @test_params.params_chan.vlan_filter[0].to_i : 0
   mc_filter = @test_params.params_chan.instance_variable_defined?(:@mc_filter) ? @test_params.params_chan.mc_filter[0].to_i : 0
-  mc_cli_ser_bins = @test_params.params_chan.instance_variable_defined?(:@mc_cli_ser_bins) ? @test_params.params_chan.mc_filter[0] : ""
+  mc_cli_ser_bins = @test_params.params_chan.instance_variable_defined?(:@mc_cli_ser_bins) ? @test_params.params_chan.mc_cli_ser_bins[0].to_s : ""
   vlan_tag = @test_params.params_chan.instance_variable_defined?(:@vlan_tag) ? @test_params.params_chan.vlan_tag[0].to_i : 0
 
   test_comment = ""
@@ -181,7 +181,7 @@ def is_mc_filter_enabled(dut, feature)
     raise "Failed to enable multicast filter."
   end
 end
-
+ 
 # function to verify vlan filtering, this function pings to invalid vlan
 # interface(0.5) and verifies vlan dropped count using ethtool utility.
 def verify_vlan_filtering(dut, dut_sec, ipaddr, dan_X_1_pruicss_port, dan_X_2_pruicss_port, dropped = false)
