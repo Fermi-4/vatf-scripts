@@ -16,9 +16,7 @@ def setup
   # boot 2nd EVM
   # check if both dut's not same
   if @equipment['dut1'].name != @equipment['dut2'].name
-    params2 = {'platform'=>@equipment['dut2'].name}
-    boot_params2 = translate_params2(params2)
-    setup_boards('dut2', boot_params2)
+    setup_boards('dut2', {'dut_idx' => '2'})
   else
     setup_boards('dut2')
   end

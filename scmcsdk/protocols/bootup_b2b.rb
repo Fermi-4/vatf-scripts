@@ -14,9 +14,7 @@ def bootup_b2b(boards_to_setup = 2)
       # boot x EVM
       # check if both dut1 and dut x not same
       if @equipment["dut1"].name != @equipment["dut#{dut_num}"].name
-        params2 = {"platform"=>@equipment["dut#{dut_num}"].name}
-        boot_params2 = translate_params2(params2)
-        setup_boards("dut#{dut_num}", boot_params2)
+        setup_boards("dut#{dut_num}", {'dut_idx' => "#{dut_num}"})
       else
         setup_boards("dut#{dut_num}")
       end

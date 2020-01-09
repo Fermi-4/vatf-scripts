@@ -17,8 +17,7 @@ def setup
   setup_boards('dut1')
 
   # boot up dut2 --- master
-  boot_params2 = translate_params2({'platform'=>@equipment['dut2'].name})
-  setup_boards('dut2', boot_params2)
+  setup_boards('dut2', {'dut_idx' => '2'})
 
 end
 
