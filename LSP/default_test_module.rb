@@ -39,257 +39,261 @@ module LspTestScript
     
   # output params hash in format expected by BootLoader and SystemLoader classes
   def translate_boot_params(params)
+
+    idx = params.has_key?('dut_idx') ? params['dut_idx'] : ''
+
     new_params = params.clone
     new_params['dut']        = @equipment['dut1']     if !new_params['dut'] 
     new_params['server']     = @equipment['server1']  if !new_params['server']
-    new_params['initial_bootloader'] = new_params['initial_bootloader'] ? new_params['initial_bootloader'] :
-                             @test_params.instance_variable_defined?(:@initial_bootloader) ? @test_params.initial_bootloader :
-                             ''
-    new_params['sysfw']      = new_params['sysfw'] ? new_params['sysfw'] :
-                             @test_params.instance_variable_defined?(:@sysfw) ? @test_params.sysfw :
-                             ''
-    new_params['primary_bootloader'] = new_params['primary_bootloader'] ? new_params['primary_bootloader'] : 
-                             @test_params.instance_variable_defined?(:@primary_bootloader) ? @test_params.primary_bootloader : 
-                             ''                                
-    new_params['secondary_bootloader'] = new_params['secondary_bootloader'] ? new_params['secondary_bootloader'] : 
-                             @test_params.instance_variable_defined?(:@secondary_bootloader) ? @test_params.secondary_bootloader : 
-                             ''
-    new_params['initial_bootloader_dev']   = new_params['initial_bootloader_dev'] ? new_params['initial_bootloader_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@initial_bootloader_dev) ? @test_params.params_chan.initial_bootloader_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_initial_bootloader_dev) ? @test_params.var_initial_bootloader_dev : "mmc"
-    new_params['sysfw_dev']   = new_params['sysfw_dev'] ? new_params['sysfw_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@sysfw_dev) ? @test_params.params_chan.sysfw_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_sysfw_dev) ? @test_params.var_sysfw_dev : "mmc"
-    new_params['primary_bootloader_dev']   = new_params['primary_bootloader_dev'] ? new_params['primary_bootloader_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_dev) ? @test_params.params_chan.primary_bootloader_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_primary_bootloader_dev) ? @test_params.var_primary_bootloader_dev : "mmc"
-    new_params['secondary_bootloader_dev']   = new_params['secondary_bootloader_dev'] ? new_params['secondary_bootloader_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_dev) ? @test_params.params_chan.secondary_bootloader_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_secondary_bootloader_dev) ? @test_params.var_secondary_bootloader_dev : "mmc"
-    new_params['initial_bootloader_src_dev']   = new_params['initial_bootloader_src_dev'] ? new_params['initial_bootloader_src_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@initial_bootloader_src_dev) ? @test_params.params_chan.initial_bootloader_src_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_initial_bootloader_src_dev) ? @test_params.var_initial_bootloader_src_dev : 
-                             new_params['initial_bootloader'] != '' ? 'uart' : 'none'  
-    new_params['sysfw_src_dev']   = new_params['sysfw_src_dev'] ? new_params['sysfw_src_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@sysfw_src_dev) ? @test_params.params_chan.sysfw_src_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_sysfw_src_dev) ? @test_params.var_sysfw_src_dev :
-                             new_params['sysfw'] != '' ? 'uart' : 'none'
-    new_params['primary_bootloader_src_dev']   = new_params['primary_bootloader_src_dev'] ? new_params['primary_bootloader_src_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@primary_bootloader_src_dev) ? @test_params.params_chan.primary_bootloader_src_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_primary_bootloader_src_dev) ? @test_params.var_primary_bootloader_src_dev : 
-                             new_params['primary_bootloader'] != '' ? 'uart' : 'none'  
+    new_params["initial_bootloader"] = new_params["initial_bootloader#{idx}"] ? new_params["initial_bootloader#{idx}"] :
+                             @test_params.instance_variable_defined?("@initial_bootloader#{idx}") ? @test_params.instance_variable_get("@initial_bootloader#{idx}") :
+                             ""
+    new_params["sysfw"]      = new_params["sysfw#{idx}"] ? new_params["sysfw#{idx}"] :
+                             @test_params.instance_variable_defined?("@sysfw#{idx}") ? @test_params.instance_variable_get("@sysfw#{idx}") :
+                             ""
+    new_params["primary_bootloader"] = new_params["primary_bootloader#{idx}"] ? new_params["primary_bootloader#{idx}"] : 
+                             @test_params.instance_variable_defined?("@primary_bootloader#{idx}") ? @test_params.instance_variable_get("@primary_bootloader#{idx}") : 
+                             ""                                
+    new_params["secondary_bootloader"] = new_params["secondary_bootloader#{idx}"] ? new_params["secondary_bootloader#{idx}"] : 
+                             @test_params.instance_variable_defined?("@secondary_bootloader#{idx}") ? @test_params.instance_variable_get("@secondary_bootloader#{idx}") : 
+                             ""
+    new_params["initial_bootloader_dev"]   = new_params["initial_bootloader#{idx}_dev"] ? new_params["initial_bootloader#{idx}_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("@initial_bootloader#{idx}_dev") ? 
+                             @test_params.params_chan.instance_variable_get("@initial_bootloader#{idx}_dev")[0] :
+                             @test_params.instance_variable_defined?("@var_initial_bootloader#{idx}_dev") ? 
+                             @test_params.instance_variable_get("@var_initial_bootloader#{idx}_dev") : "mmc"
+    new_params["sysfw_dev"]   = new_params["sysfw#{idx}_dev"] ? new_params["sysfw#{idx}_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("@sysfw#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@sysfw#{idx}_dev")[0] :
+                             @test_params.instance_variable_defined?("@var_sysfw#{idx}_dev") ? @test_params.instance_variable_get("@var_sysfw#{idx}_dev") : "mmc"
+    new_params["primary_bootloader_dev"]   = new_params["primary_bootloader#{idx}_dev"] ? new_params["primary_bootloader#{idx}_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("@primary_bootloader#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@primary_bootloader#{idx}_dev")[0] :
+                             @test_params.instance_variable_defined?("@var_primary_bootloader#{idx}_dev") ? @test_params.instance_variable_get("@var_primary_bootloader#{idx}_dev") : "mmc"
+    new_params["secondary_bootloader_dev"]   = new_params["secondary_bootloader#{idx}_dev"] ? new_params["secondary_bootloader#{idx}_dev"] : 
+                             @test_params.params_chan.instance_variable_defined?("@secondary_bootloader#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@secondary_bootloader#{idx}_dev")[0] : 
+                             @test_params.instance_variable_defined?("@var_secondary_bootloader#{idx}_dev") ? @test_params.instance_variable_get("@var_secondary_bootloader#{idx}_dev") : "mmc"
+    new_params["initial_bootloader_src_dev"]   = new_params["initial_bootloader#{idx}_src_dev"] ? new_params["initial_bootloader#{idx}_src_dev"] : 
+                             @test_params.params_chan.instance_variable_defined?("@initial_bootloader#{idx}_src_dev") ? @test_params.params_chan.instance_variable_get("@initial_bootloader#{idx}_src_dev")[0] : 
+                             @test_params.instance_variable_defined?("@var_initial_bootloader#{idx}_src_dev") ? @test_params.instance_variable_get("@var_initial_bootloader#{idx}_src_dev") : 
+                             new_params["initial_bootloader"] != "" ? "uart" : "none"  
+    new_params["sysfw_src_dev"]   = new_params["sysfw_src_dev"] ? new_params["sysfw_src_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("@sysfw_src_dev") ? @test_params.params_chan.instance_variable_get("@sysfw_src_dev")[0] :
+                             @test_params.instance_variable_defined?("@var_sysfw_src_dev") ? @test_params.instance_variable_get("@var_sysfw_src_dev") :
+                             new_params["sysfw"] != "" ? "uart" : "none"
+    new_params["primary_bootloader_src_dev"]   = new_params["primary_bootloader#{idx}_src_dev"] ? new_params["primary_bootloader#{idx}_src_dev"] : 
+                             @test_params.params_chan.instance_variable_defined?("@primary_bootloader#{idx}_src_dev") ? @test_params.params_chan.instance_variable_get("@primary_bootloader#{idx}_src_dev")[0] : 
+                             @test_params.instance_variable_defined?("@var_primary_bootloader#{idx}_src_dev") ? @test_params.instance_variable_get("@var_primary_bootloader#{idx}_src_dev") : 
+                             new_params["primary_bootloader"] != "" ? "uart" : "none"  
 
-    new_params['secondary_bootloader_src_dev']   = new_params['secondary_bootloader_src_dev'] ? new_params['secondary_bootloader_src_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader_src_dev) ? @test_params.params_chan.secondary_bootloader_src_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_secondary_bootloader_src_dev) ? @test_params.var_secondary_bootloader_src_dev : 
-                             new_params['secondary_bootloader'] != '' ? 'uart' : 'none'
+    new_params["secondary_bootloader_src_dev"]   = new_params["secondary_bootloader#{idx}_src_dev"] ? new_params["secondary_bootloader#{idx}_src_dev"] : 
+                             @test_params.params_chan.instance_variable_defined?("@secondary_bootloader#{idx}_src_dev") ? @test_params.params_chan.instance_variable_get("@secondary_bootloader#{idx}_src_dev")[0] : 
+                             @test_params.instance_variable_defined?("@var_secondary_bootloader#{idx}_src_dev") ? @test_params.instance_variable_get("@var_secondary_bootloader#{idx}_src_dev") : 
+                             new_params["secondary_bootloader"] != "" ? "uart" : "none"
 
-    new_params['primary_bootloader_image_name'] = new_params['primary_bootloader_image_name'] ? new_params['primary_bootloader_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_primary_bootloader_image_name) ? @test_params.var_primary_bootloader_image_name :
-                             new_params['primary_bootloader'] != '' ? File.basename(new_params['primary_bootloader']) : 'MLO'
+    new_params["primary_bootloader_image_name"] = new_params["primary_bootloader#{idx}_image_name"] ? new_params["primary_bootloader#{idx}_image_name"] :
+                             @test_params.instance_variable_defined?("@var_primary_bootloader#{idx}_image_name") ? @test_params.instance_variable_get("@var_primary_bootloader#{idx}_image_name") :
+                             new_params["primary_bootloader"] != "" ? File.basename(new_params["primary_bootloader#{idx}"]) : "MLO"
 
-    new_params['secondary_bootloader_image_name'] = new_params['secondary_bootloader_image_name'] ? new_params['secondary_bootloader_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_secondary_bootloader_image_name) ? @test_params.var_secondary_bootloader_image_name :
-                             new_params['secondary_bootloader'] != '' ? File.basename(new_params['secondary_bootloader']) : 'u-boot.img'
+    new_params["secondary_bootloader_image_name"] = new_params["secondary_bootloader#{idx}_image_name"] ? new_params["secondary_bootloader#{idx}_image_name"] :
+                             @test_params.instance_variable_defined?("@var_secondary_bootloader#{idx}_image_name") ? @test_params.instance_variable_get("@var_secondary_bootloader#{idx}_image_name") :
+                             new_params["secondary_bootloader"] != "" ? File.basename(new_params["secondary_bootloader"]) : "u-boot.img"
 
-    new_params['kernel']     = new_params['kernel'] ? new_params['kernel'] : 
-                             @test_params.instance_variable_defined?(:@kernel) ? @test_params.kernel : 
-                             ''                                
-    new_params['kernel_dev'] = new_params['kernel_dev'] ? new_params['kernel_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@kernel_dev) ? @test_params.params_chan.kernel_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_kernel_dev) ? @test_params.var_kernel_dev : 
-                             new_params['kernel'] != '' ? 'eth' : 'mmc'   
+    new_params["kernel"]     = new_params["kernel#{idx}"] ? new_params["kernel#{idx}"] : 
+                             @test_params.instance_variable_defined?("@kernel#{idx}") ? @test_params.instance_variable_get("@kernel#{idx}") : 
+                             ""                                
+    new_params["kernel_dev"] = new_params["kernel#{idx}_dev"] ? new_params["kernel#{idx}_dev"] : 
+                             @test_params.params_chan.instance_variable_defined?("@kernel#{idx}#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@kernel#{idx}_dev[0]") : 
+                             @test_params.instance_variable_defined?("@var_kernel#{idx}_dev") ? @test_params.instance_variable_get("@var_kernel#{idx}_dev") : 
+                             new_params["kernel"] != "" ? "eth" : "mmc"   
 
-    new_params['kernel_src_dev'] = new_params['kernel_src_dev'] ? new_params['kernel_src_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@kernel_src_dev) ? @test_params.params_chan.kernel_src_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_kernel_src_dev) ? @test_params.var_kernel_src_dev : 
-                             new_params['kernel'] != '' ? 'eth' : 'mmc'   
+    new_params["kernel_src_dev"] = new_params["kernel#{idx}_src_dev"] ? new_params["kernel#{idx}_src_dev"] : 
+                             @test_params.params_chan.instance_variable_defined?("@kernel#{idx}_src_dev") ? @test_params.params_chan.instance_variable_get("@kernel#{idx}_src_dev[0]") : 
+                             @test_params.instance_variable_defined?("@var_kernel#{idx}_src_dev") ? @test_params.instance_variable_get("@var_kernel#{idx}_src_dev") : 
+                             new_params["kernel"] != "" ? "eth" : "mmc"   
 
-    new_params['kernel_image_name'] = new_params['kernel_image_name'] ? new_params['kernel_image_name'] : 
-                             @test_params.instance_variable_defined?(:@var_kernel_image_name) ? @test_params.var_kernel_image_name : 
-                             new_params['kernel'] != '' ? File.basename(new_params['kernel']) : 'uImage'                          
-    new_params['kernel_modules'] = new_params['kernel_modules'] ? new_params['kernel_modules'] : 
-                             @test_params.instance_variable_defined?(:@kernel_modules) ? @test_params.kernel_modules : 
-                             ''  
-    new_params['skern']     = new_params['skern'] ? new_params['skern'] : 
-                             @test_params.instance_variable_defined?(:@skern) ? @test_params.skern : 
-                             @test_params.instance_variable_defined?(:@skern_file) ? @test_params.skern_file : 
-                             ''                               
-    new_params['skern_dev'] = new_params['skern_dev'] ? new_params['skern_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@skern_dev) ? @test_params.params_chan.skern_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_skern_dev) ? @test_params.var_skern_dev : 
-                             new_params['skern'] != '' ? 'eth' : 'none'   
-    new_params['skern_image_name'] = new_params['skern_image_name'] ? new_params['skern_image_name'] : 
-                             @test_params.instance_variable_defined?(:@var_skern_image_name) ? @test_params.var_skern_image_name : 
-                             new_params['skern'] != '' ? File.basename(new_params['skern']) : 'skern'
-    new_params['initramfs'] = new_params['initramfs'] ? new_params['initramfs'] :
-                             @test_params.instance_variable_defined?(:@initramfs) ? @test_params.initramfs :
-                             @test_params.instance_variable_defined?(:@initramfs_file) ? @test_params.initramfs_file :
-                             ''
-    new_params['initramfs_dev'] = new_params['initramfs_dev'] ? new_params['initramfs_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@initramfs_dev) ? @test_params.params_chan.initramfs_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_initramfs_dev) ? @test_params.var_initramfs_dev :
-                             new_params['initramfs'] != '' ? 'eth' : 'none'
-    new_params['initramfs_image_name'] = new_params['initramfs_image_name'] ? new_params['initramfs_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_initramfs_image_name) ? @test_params.var_initramfs_image_name :
-                             new_params['initramfs'] != '' ? File.basename(new_params['initramfs']) : 'initramfs'
-    new_params['pmmc']     = new_params['pmmc'] ? new_params['pmmc'] :
-                             @test_params.instance_variable_defined?(:@pmmc) ? @test_params.pmmc :
-                             @test_params.instance_variable_defined?(:@pmmc_file) ? @test_params.pmmc_file :
-                             ''
-    new_params['pmmc_dev'] = new_params['pmmc_dev'] ? new_params['pmmc_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@pmmc_dev) ? @test_params.params_chan.pmmc_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_pmmc_dev) ? @test_params.var_pmmc_dev :
-                             new_params['pmmc'] != '' ? 'eth' : 'none'
-    new_params['pmmc_image_name'] = new_params['pmmc_image_name'] ? new_params['pmmc_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_pmmc_image_name) ? @test_params.var_pmmc_image_name :
-                             new_params['pmmc'] != '' ? File.basename(new_params['pmmc']) : 'pmmc'
-    new_params['fit']     = new_params['fit'] ? new_params['fit'] :
-                             @test_params.instance_variable_defined?(:@fit) ? @test_params.fit :
-                             @test_params.instance_variable_defined?(:@fit_file) ? @test_params.fit_file :
-                             ''
-    new_params['fit_dev'] = new_params['fit_dev'] ? new_params['fit_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@fit_dev) ? @test_params.params_chan.fit_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_fit_dev) ? @test_params.var_fit_dev :
-                             new_params['fit'] != '' ? 'eth' : 'none'
-    new_params['fit_image_name'] = new_params['fit_image_name'] ? new_params['fit_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_fit_image_name) ? @test_params.var_fit_image_name :
-                             new_params['fit'] != '' ? File.basename(new_params['fit']) : 'fit'
+    new_params["kernel_image_name"] = new_params["kernel#{idx}_image_name"] ? new_params["kernel#{idx}_image_name"] : 
+                             @test_params.instance_variable_defined?("@var_kernel#{idx}_image_name") ? @test_params.instance_variable_get("@var_kernel#{idx}_image_name") : 
+                             new_params["kernel"] != "" ? File.basename(new_params["kernel"]) : "uImage"                          
+    new_params["kernel_modules"] = new_params["kernel#{idx}_modules"] ? new_params["kernel#{idx}_modules"] : 
+                             @test_params.instance_variable_defined?("@kernel#{idx}_modules") ? @test_params.instance_variable_get("@kernel#{idx}_modules") : 
+                             ""  
+    new_params["skern"]     = new_params["skern#{idx}"] ? new_params["skern#{idx}"] : 
+                             @test_params.instance_variable_defined?("@skern#{idx}") ? @test_params.instance_variable_get("@skern#{idx}") : 
+                             @test_params.instance_variable_defined?("@skern#{idx}_file") ? @test_params.instance_variable_get("@skern#{idx}_file") : 
+                             ""                               
+    new_params["skern_dev"] = new_params["skern#{idx}_dev"] ? new_params["skern#{idx}_dev"] : 
+                             @test_params.params_chan.instance_variable_defined?("@skern#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@skern#{idx}_dev")[0] : 
+                             @test_params.instance_variable_defined?("@var_skern#{idx}_dev") ? @test_params.instance_variable_get("@var_skern#{idx}_dev") : 
+                             new_params["skern"] != "" ? "eth" : "none"   
+    new_params["skern_image_name"] = new_params["skern#{idx}_image_name"] ? new_params["skern#{idx}_image_name"] : 
+                             @test_params.instance_variable_defined?("@var_skern#{idx}_image_name") ? @test_params.instance_variable_get("@var_skern#{idx}_image_name") : 
+                             new_params["skern"] != "" ? File.basename(new_params["skern"]) : "skern"
+    new_params["initramfs"] = new_params["initramfs#{idx}"] ? new_params["initramfs#{idx}"] :
+                             @test_params.instance_variable_defined?("@initramfs#{idx}") ? @test_params.instance_variable_get("@initramfs#{idx}") :
+                             @test_params.instance_variable_defined?("@initramfs#{idx}_file") ? @test_params.instance_variable_get("@initramfs#{idx}_file") :
+                             ""
+    new_params["initramfs_dev"] = new_params["initramfs#{idx}_dev"] ? new_params["initramfs#{idx}_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("@initramfs#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@initramfs#{idx}_dev")[0] :
+                             @test_params.instance_variable_defined?("@var_initramfs#{idx}_dev") ? @test_params.instance_variable_get("@var_initramfs#{idx}_dev") :
+                             new_params["initramfs"] != "" ? "eth" : "none"
+    new_params["initramfs_image_name"] = new_params["initramfs#{idx}_image_name"] ? new_params["initramfs#{idx}_image_name"] :
+                             @test_params.instance_variable_defined?("@var_initramfs#{idx}_image_name") ? @test_params.instance_variable_get("@var_initramfs#{idx}_image_name") :
+                             new_params["initramfs"] != "" ? File.basename(new_params["initramfs"]) : "initramfs"
+    new_params["pmmc"]     = new_params["pmmc#{idx}"] ? new_params["pmmc#{idx}"] :
+                             @test_params.instance_variable_defined?("@pmmc#{idx}") ? @test_params.instance_variable_get("@pmmc#{idx}") :
+                             @test_params.instance_variable_defined?("@pmmc#{idx}_file") ? @test_params.instance_variable_get("@pmmc#{idx}_file") :
+                             ""
+    new_params["pmmc_dev"] = new_params["pmmc#{idx}_dev"] ? new_params["pmmc#{idx}_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("@pmmc#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@pmmc#{idx}_dev")[0] :
+                             @test_params.instance_variable_defined?("@var_pmmc#{idx}_dev") ? @test_params.instance_variable_get("@var_pmmc#{idx}_dev") :
+                             new_params["pmmc"] != "" ? "eth" : "none"
+    new_params["pmmc_image_name"] = new_params["pmmc#{idx}_image_name"] ? new_params["pmmc#{idx}_image_name"] :
+                             @test_params.instance_variable_defined?("@var_pmmc#{idx}_image_name") ? @test_params.instance_variable_get("@var_pmmc#{idx}_image_name") :
+                             new_params["pmmc"] != "" ? File.basename(new_params["pmmc"]) : "pmmc"
+    new_params["fit"]     = new_params["fit#{idx}"] ? new_params["fit#{idx}"] :
+                             @test_params.instance_variable_defined?("@fit#{idx}") ? @test_params.instance_variable_get("@fit#{idx}") :
+                             @test_params.instance_variable_defined?("@fit#{idx}_file") ? @test_params.instance_variable_get("@fit#{idx}_file") :
+                             ""
+    new_params["fit_dev"] = new_params["fit#{idx}_dev"] ? new_params["fit#{idx}_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("@fit#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@fit#{idx}_dev")[0] :
+                             @test_params.instance_variable_defined?("@var_fit#{idx}_dev") ? @test_params.instance_variable_get("@var_fit#{idx}_dev") :
+                             new_params["fit"] != "" ? "eth" : "none"
+    new_params["fit_image_name"] = new_params["fit#{idx}_image_name"] ? new_params["fit#{idx}_image_name"] :
+                             @test_params.instance_variable_defined?("@var_fit#{idx}_image_name") ? @test_params.instance_variable_get("@var_fit#{idx}_image_name") :
+                             new_params["fit"] != "" ? File.basename(new_params["fit"]) : "fit"
 
-    new_params['fit_config_suffix'] = new_params['fit_config_suffix'] ? new_params['fit_config_suffix'] :
-                             @test_params.params_chan.instance_variable_defined?(:@fit_config_suffix) ? @test_params.params_chan.fit_config_suffix[0] : ''
+    new_params["fit_config_suffix"] = new_params["fit#{idx}_config_suffix"] ? new_params["fit#{idx}_config_suffix"] :
+                             @test_params.params_chan.instance_variable_defined?("@fit#{idx}_config_suffix") ? @test_params.params_chan.instance_variable_get("@fit#{idx}_config_suffix")[0] : ""
 
-    new_params['dtb']        = new_params['dtb'] ? new_params['dtb'] : 
-                             @test_params.instance_variable_defined?(:@dtb) ? @test_params.dtb : 
-                             @test_params.instance_variable_defined?(:@dtb_file) ? @test_params.dtb_file : 
-                             ''     
-    new_params['dtb_dev']    = new_params['dtb_dev'] ? new_params['dtb_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@dtb_dev) ? @test_params.params_chan.dtb_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_dtb_dev) ? @test_params.var_dtb_dev : 
-                             new_params['dtb'] != '' ? 'eth' : 'none'   
+    new_params["dtb"]        = new_params["dtb#{idx}"] ? new_params["dtb#{idx}"] : 
+                             @test_params.instance_variable_defined?("@dtb#{idx}") ? @test_params.instance_variable_get("@dtb#{idx}") : 
+                             @test_params.instance_variable_defined?("@dtb#{idx}_file") ? @test_params.instance_variable_get("@dtb#{idx}_file") : 
+                             ""     
+    new_params["dtb_dev"]    = new_params["dtb#{idx}_dev"] ? new_params["dtb#{idx}_dev"] : 
+                             @test_params.params_chan.instance_variable_defined?("@dtb#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@dtb#{idx}_dev")[0] : 
+                             @test_params.instance_variable_defined?("@var_dtb#{idx}_dev") ? @test_params.instance_variable_get("@var_dtb#{idx}_dev") : 
+                             new_params["dtb"] != "" ? "eth" : "none"   
 
-    new_params['dtb_src_dev']    = new_params['dtb_src_dev'] ? new_params['dtb_src_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@dtb_src_dev) ? @test_params.params_chan.dtb_src_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_dtb_src_dev) ? @test_params.var_dtb_src_dev : 
-                             new_params['dtb'] != '' ? 'eth' : 'none'   
+    new_params["dtb_src_dev"]    = new_params["dtb#{idx}_src_dev"] ? new_params["dtb#{idx}_src_dev"] : 
+                             @test_params.params_chan.instance_variable_defined?("@dtb#{idx}_src_dev") ? @test_params.params_chan.instance_variable_get("@dtb#{idx}_src_dev")[0] : 
+                             @test_params.instance_variable_defined?("@var_dtb#{idx}_src_dev") ? @test_params.instance_variable_get("@var_dtb#{idx}_src_dev") : 
+                             new_params["dtb"] != "" ? "eth" : "none"   
 
-    new_params['dtb_image_name'] = new_params['dtb_image_name'] ? new_params['dtb_image_name'] : 
-                             @test_params.instance_variable_defined?(:@var_dtb_image_name) ? @test_params.var_dtb_image_name : 
-                             File.basename(new_params['dtb'])
+    new_params["dtb_image_name"] = new_params["dtb#{idx}_image_name"] ? new_params["dtb#{idx}_image_name"] : 
+                             @test_params.instance_variable_defined?("@var_dtb#{idx}_image_name") ? @test_params.instance_variable_get("@var_dtb#{idx}_image_name") : 
+                             File.basename(new_params["dtb"])
     @test_params.instance_variables.each{|k|
-        if k.to_s.match(/dtbo_\d+/)
-            key_name = k.to_s.gsub(/[@:]/,'')
+        if k.to_s.match(/dtbo#{idx}_\d+/)
+            key_name = k.to_s.gsub(/[@:]/,"").gsub(/dtbo#{idx}_/,'dtbo_')
             new_params[key_name] = @test_params.instance_variable_get(k) if !new_params[key_name]
-            new_params[key_name+'_dev'] = 'eth' if !new_params[key_name+'_dev']
+            new_params[key_name+"_dev"] = "eth" if !new_params[key_name+"_dev"]
+            new_params[key_name+"_src_dev"] = "eth" if !new_params[key_name+"_src_dev"]
         end
     }
-    new_params['fs']         = new_params['fs'] ? new_params['fs'] : 
-                             @test_params.instance_variable_defined?(:@fs) ? @test_params.fs : 
-                             @test_params.instance_variable_defined?(:@nfs) ? @test_params.nfs : 
-                             @test_params.instance_variable_defined?(:@ramfs) ? @test_params.ramfs : 
-                             ''                                                          
-    new_params['fs_dev']     = new_params['fs_dev'] ? new_params['fs_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@fs_dev) ? @test_params.params_chan.fs_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_fs_dev) ? @test_params.var_fs_dev :
-                             new_params['fs'] != '' ? 'eth' : 'mmc'
-    new_params['fs_src_dev']     = new_params['fs_src_dev'] ? new_params['fs_src_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@fs_src_dev) ? @test_params.params_chan.fs_src_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_fs_src_dev) ? @test_params.var_fs_src_dev : 
-                             new_params['fs'] != '' ? 'eth' : 'mmc'                                
-    new_params['fs_type']    = new_params['fs_type'] ? new_params['fs_type'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@fs_type) ? @test_params.params_chan.fs_type[0] : 
-                             @test_params.instance_variable_defined?(:@var_fs_type) ? @test_params.var_fs_type : 
-                             @test_params.instance_variable_defined?(:@nfs) || @test_params.instance_variable_defined?(:@var_nfs) ? 'nfs' : 
-                             @test_params.instance_variable_defined?(:@ramfs) ? 'ramfs' : 
-                             'mmcfs'
-    new_params['fs_image_name'] = new_params['fs_image_name'] ? new_params['fs_image_name'] : 
-                             @test_params.instance_variable_defined?(:@var_fs_image_name) ? @test_params.var_fs_image_name : 
-                             new_params['fs_type'] != 'nfs' ? File.basename(new_params['fs']) : ''  
-    new_params['ubi_root'] = new_params['ubi_root'] ? new_params['ubi_root'] :
-                             @test_params.instance_variable_defined?(:@var_ubi_root) ? @test_params.var_ubi_root :
+    new_params["fs"]         = new_params["fs#{idx}"] ? new_params["fs#{idx}"] : 
+                             @test_params.instance_variable_defined?("@fs#{idx}") ? @test_params.instance_variable_get("@fs#{idx}") : 
+                             @test_params.instance_variable_defined?("@nfs#{idx}") ? @test_params.instance_variable_get("@nfs#{idx}") : 
+                             @test_params.instance_variable_defined?("@ramfs#{idx}") ? @test_params.instance_variable_get("@ramfs#{idx}") : 
+                             ""                                                          
+    new_params["fs_dev"]     = new_params["fs#{idx}_dev"] ? new_params["fs#{idx}_dev"] : 
+                             @test_params.params_chan.instance_variable_defined?("@fs#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@fs#{idx}_dev")[0] : 
+                             @test_params.instance_variable_defined?("@var_fs#{idx}_dev") ? @test_params.instance_variable_get("@var_fs#{idx}_dev") :
+                             new_params["fs"] != "" ? "eth" : "mmc"
+    new_params["fs_src_dev"]     = new_params["fs#{idx}_src_dev"] ? new_params["fs#{idx}_src_dev"] : 
+                             @test_params.params_chan.instance_variable_defined?("@fs#{idx}_src_dev") ? @test_params.params_chan.instance_variable_get("@fs#{idx}_src_dev")[0] : 
+                             @test_params.instance_variable_defined?("@var_fs#{idx}_src_dev") ? @test_params.instance_variable_get("@var_fs#{idx}_src_dev") : 
+                             new_params["fs"] != "" ? "eth" : "mmc"                                
+    new_params["fs_type"]    = new_params["fs#{idx}_type"] ? new_params["fs#{idx}_type"] : 
+                             @test_params.params_chan.instance_variable_defined?("@fs#{idx}_type") ? @test_params.params_chan.instance_variable_get("@fs#{idx}_type")[0] : 
+                             @test_params.instance_variable_defined?("@var_fs#{idx}_type") ? @test_params.instance_variable_get("@var_fs#{idx}_type") : 
+                             @test_params.instance_variable_defined?("@nfs#{idx}") || @test_params.instance_variable_defined?("@var_nfs#{idx}") ? "nfs" : 
+                             @test_params.instance_variable_defined?("@ramfs#{idx}") ? "ramfs" : 
+                             "mmcfs"
+    new_params["fs_image_name"] = new_params["fs#{idx}_image_name"] ? new_params["fs#{idx}_image_name"] : 
+                             @test_params.instance_variable_defined?("@var_fs#{idx}_image_name") ? @test_params.instance_variable_get("@var_fs#{idx}_image_name") : 
+                             new_params["fs_type"] != "nfs" ? File.basename(new_params["fs"]) : ""  
+    new_params["ubi_root"] = new_params["ubi#{idx}_root"] ? new_params["ubi#{idx}_root"] :
+                             @test_params.instance_variable_defined?("@var_ubi#{idx}_root") ? @test_params.instance_variable_get("@var_ubi#{idx}_root") :
                              "ubi0:rootfs" 
-    new_params['skip_touchcal'] = new_params['skip_touchcal'] ? new_params['skip_touchcal'] :
-                             @test_params.params_chan.instance_variable_defined?(:@skip_touchcal) ? @test_params.params_chan.skip_touchcal[0] :
-                             @test_params.instance_variable_defined?(:@var_skip_touchcal) ? @test_params.var_skip_touchcal :
+    new_params["skip_touchcal"] = new_params["skip_touchcal#{idx}"] ? new_params["skip_touchcal#{idx}"] :
+                             @test_params.params_chan.instance_variable_defined?("@skip_touchcal#{idx}") ? @test_params.params_chan.instance_variable_get("@skip_touchcal#{idx}")[0] :
+                             @test_params.instance_variable_defined?("@var_skip_touchcal#{idx}") ? @test_params.instance_variable_get("@var_skip_touchcal#{idx}") :
                              "0"
 
     # Optional SW asset to copy binary to rootfs                            
-    new_params['user_bins']  = new_params['user_bins'] ? new_params['user_bins'] : 
-                             @test_params.instance_variable_defined?(:@user_bins) ? @test_params.user_bins : 
-                             ''     
+    new_params["user_bins"]  = new_params["user_bins#{idx}"] ? new_params["user_bins#{idx}"] : 
+                             @test_params.instance_variable_defined?("@user_bins#{idx}") ? @test_params.instance_variable_get("@user_bins#{idx}") : 
+                             ""     
     # Optional SW asset with user-defined boot commands
-    new_params['boot_cmds']  = new_params['boot_cmds'] ? new_params['boot_cmds'] : 
-                             @test_params.instance_variable_defined?(:@boot_cmds) ? @test_params.boot_cmds : 
-                             ''     
+    new_params["boot_cmds"]  = new_params["boot_cmds#{idx}"] ? new_params["boot_cmds#{idx}"] : 
+                             @test_params.instance_variable_defined?("@boot_cmds#{idx}") ? @test_params.instance_variable_get("@boot_cmds#{idx}") : 
+                             ""     
     # New Simulator SW assets
-    new_params['dmsc']     = new_params['dmsc'] ? new_params['dmsc'] :
-                             @test_params.instance_variable_defined?(:@dmsc) ? @test_params.dmsc :
-                             @test_params.instance_variable_defined?(:@dmsc_file) ? @test_params.dmsc_file :
-                             ''
-    new_params['dmsc_dev'] = new_params['dmsc_dev'] ? new_params['dmsc_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@dmsc_dev) ? @test_params.params_chan.dmsc_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_dmsc_dev) ? @test_params.var_dmsc_dev :
-                             new_params['dmsc'] != '' ? 'eth' : 'none'
-    new_params['dmsc_image_name'] = new_params['dmsc_image_name'] ? new_params['dmsc_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_dmsc_image_name) ? @test_params.var_dmsc_image_name :
-                             new_params['dmsc'] != '' ? File.basename(new_params['dmsc']) : 'dmsc'
+    new_params["dmsc"]     = new_params["dmsc#{idx}"] ? new_params["dmsc#{idx}"] :
+                             @test_params.instance_variable_defined?("@dmsc#{idx}") ? @test_params.instance_variable_get("@dmsc#{idx}") :
+                             @test_params.instance_variable_defined?("@dmsc#{idx}_file") ? @test_params.instance_variable_get("@dmsc#{idx}_file") :
+                             ""
+    new_params["dmsc_dev"] = new_params["dmsc#{idx}_dev"] ? new_params["dmsc#{idx}_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("@dmsc#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@dmsc#{idx}_dev")[0] :
+                             @test_params.instance_variable_defined?("@var_dmsc#{idx}_dev") ? @test_params.instance_variable_get("@var_dmsc#{idx}_dev") :
+                             new_params["dmsc"] != "" ? "eth" : "none"
+    new_params["dmsc_image_name"] = new_params["dmsc#{idx}_image_name"] ? new_params["dmsc#{idx}_image_name"] :
+                             @test_params.instance_variable_defined?("@var_dmsc#{idx}_image_name") ? @test_params.instance_variable_get("@var_dmsc#{idx}_image_name") :
+                             new_params["dmsc"] != "" ? File.basename(new_params["dmsc"]) : "dmsc"
 
-    new_params['atf']     = new_params['atf'] ? new_params['atf'] :
-                             @test_params.instance_variable_defined?(:@atf) ? @test_params.atf :
-                             @test_params.instance_variable_defined?(:@atf_file) ? @test_params.atf_file :
-                             ''
-    new_params['atf_dev'] = new_params['atf_dev'] ? new_params['atf_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@atf_dev) ? @test_params.params_chan.atf_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_atf_dev) ? @test_params.var_atf_dev :
-                             new_params['atf'] != '' ? 'eth' : 'none'
-    new_params['atf_image_name'] = new_params['atf_image_name'] ? new_params['atf_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_atf_image_name) ? @test_params.var_atf_image_name :
-                             new_params['atf'] != '' ? File.basename(new_params['atf']) : 'atf'
-    new_params['atf_fdt']     = new_params['atf_fdt'] ? new_params['atf_fdt'] :
-                             @test_params.instance_variable_defined?(:@atf_fdt) ? @test_params.atf_fdt :
-                             @test_params.instance_variable_defined?(:@atf_fdt_file) ? @test_params.atf_fdt_file :
-                             ''
-    new_params['atf_fdt_dev'] = new_params['atf_fdt_dev'] ? new_params['atf_fdt_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@atf_fdt_dev) ? @test_params.params_chan.atf_fdt_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_atf_fdt_dev) ? @test_params.var_atf_fdt_dev :
-                             new_params['atf_fdt'] != '' ? 'eth' : 'none'
-    new_params['atf_fdt_image_name'] = new_params['atf_fdt_image_name'] ? new_params['atf_fdt_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_atf_fdt_image_name) ? @test_params.var_atf_fdt_image_name :
-                             new_params['atf_fdt'] != '' ? File.basename(new_params['atf_fdt']) : 'atf_fdt'
-    new_params['teeos']     = new_params['teeos'] ? new_params['teeos'] :
-                             @test_params.instance_variable_defined?(:@teeos) ? @test_params.teeos :
-                             @test_params.instance_variable_defined?(:@teeos_file) ? @test_params.teeos_file :
-                             ''
-    new_params['teeos_dev'] = new_params['teeos_dev'] ? new_params['teeos_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@teeos_dev) ? @test_params.params_chan.teeos_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_teeos_dev) ? @test_params.var_teeos_dev :
-                             new_params['teeos'] != '' ? 'eth' : 'none'
-    new_params['teeos_image_name'] = new_params['teeos_image_name'] ? new_params['teeos_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_teeos_image_name) ? @test_params.var_teeos_image_name :
-                             new_params['teeos'] != '' ? File.basename(new_params['teeos']) : 'teeos'
-    new_params['linux_system']     = new_params['linux_system'] ? new_params['linux_system'] :
-                             @test_params.instance_variable_defined?(:@linux_system) ? @test_params.linux_system :
-                             @test_params.instance_variable_defined?(:@linux_system_file) ? @test_params.linux_system_file :
-                             ''
-    new_params['linux_system_dev'] = new_params['linux_system_dev'] ? new_params['linux_system_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@linux_system_dev) ? @test_params.params_chan.linux_system_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_linux_system_dev) ? @test_params.var_linux_system_dev :
-                             new_params['linux_system'] != '' ? 'eth' : 'none'
-    new_params['linux_system_image_name'] = new_params['linux_system_image_name'] ? new_params['linux_system_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_linux_system_image_name) ? @test_params.var_linux_system_image_name :
-                             new_params['linux_system'] != '' ? File.basename(new_params['linux_system']) : 'linux_system'
-    new_params['simulator_startup_files']   = new_params['simulator_startup_files'] ? new_params['simulator_startup_files'] :
-                             @test_params.instance_variable_defined?(:@simulator_startup_files) ? @test_params.simulator_startup_files :
-                             ''
-    new_params['simulator_startup_files_dev'] = new_params['simulator_startup_files_dev'] ? new_params['simulator_startup_files_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@simulator_startup_files_dev) ? @test_params.params_chan.simulator_startup_files_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_simulator_startup_files_dev) ? @test_params.var_simulator_startup_files_dev :
-                             new_params['simulator_startup_files'] != '' ? 'eth' : 'none'
-    new_params['simulator_startup_files_image_name'] = new_params['simulator_startup_files_image_name'] ? new_params['simulator_startup_files_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_simulator_startup_files_image_name) ? @test_params.var_simulator_startup_files_image_name :
-                             new_params['simulator_startup_files'] != '' ? File.basename(new_params['simulator_startup_files']) : 'simulator_startup_files'
-
-
+    new_params["atf"]     = new_params["atf#{idx}"] ? new_params["atf#{idx}"] :
+                             @test_params.instance_variable_defined?("@atf#{idx}") ? @test_params.instance_variable_get("@atf#{idx}") :
+                             @test_params.instance_variable_defined?("@atf#{idx}_file") ? @test_params.instance_variable_get("@atf#{idx}_file") :
+                             ""
+    new_params["atf_dev"] = new_params["atf#{idx}_dev"] ? new_params["atf#{idx}_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("@atf#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@atf#{idx}_dev")[0] :
+                             @test_params.instance_variable_defined?("@var_atf#{idx}_dev") ? @test_params.instance_variable_get("@var_atf#{idx}_dev") :
+                             new_params["atf"] != "" ? "eth" : "none"
+    new_params["atf_image_name"] = new_params["atf#{idx}_image_name"] ? new_params["atf#{idx}_image_name"] :
+                             @test_params.instance_variable_defined?("@var_atf#{idx}_image_name") ? @test_params.instance_variable_get("@var_atf#{idx}_image_name") :
+                             new_params["atf"] != "" ? File.basename(new_params["atf"]) : "atf"
+    new_params["atf_fdt"]     = new_params["atf#{idx}_fdt"] ? new_params["atf#{idx}_fdt"] :
+                             @test_params.instance_variable_defined?("@atf#{idx}_fdt") ? @test_params.instance_variable_get("@atf#{idx}_fdt") :
+                             @test_params.instance_variable_defined?("@atf#{idx}_fdt_file") ? @test_params.instance_variable_get("@atf#{idx}_fdt_file") :
+                             ""
+    new_params["atf_fdt_dev"] = new_params["atf#{idx}_fdt_dev"] ? new_params["atf#{idx}_fdt_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("@atf#{idx}_fdt_dev") ? @test_params.params_chan.instance_variable_get("@atf#{idx}_fdt_dev")[0] :
+                             @test_params.instance_variable_defined?("@var_atf#{idx}_fdt_dev") ? @test_params.instance_variable_get("@var_atf#{idx}_fdt_dev") :
+                             new_params["atf_fdt"] != "" ? "eth" : "none"
+    new_params["atf_fdt_image_name"] = new_params["atf#{idx}_fdt_image_name"] ? new_params["atf#{idx}_fdt_image_name"] :
+                             @test_params.instance_variable_defined?("@var_atf#{idx}_fdt_image_name") ? @test_params.instance_variable_get("@var_atf#{idx}_fdt_image_name") :
+                             new_params["atf_fdt"] != "" ? File.basename(new_params["atf_fdt"]) : "atf_fdt"
+    new_params["teeos"]     = new_params["teeos#{idx}"] ? new_params["teeos#{idx}"] :
+                             @test_params.instance_variable_defined?("@teeos#{idx}") ? @test_params.instance_variable_get("@teeos#{idx}") :
+                             @test_params.instance_variable_defined?("@teeos#{idx}_file") ? @test_params.instance_variable_get("@teeos#{idx}_file") :
+                             ""
+    new_params["teeos_dev"] = new_params["teeos#{idx}_dev"] ? new_params["teeos#{idx}_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("@teeos#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@teeos#{idx}_dev")[0] :
+                             @test_params.instance_variable_defined?("@var_teeos#{idx}_dev") ? @test_params.instance_variable_get("@var_teeos#{idx}_dev") :
+                             new_params["teeos"] != "" ? "eth" : "none"
+    new_params["teeos_image_name"] = new_params["teeos#{idx}_image_name"] ? new_params["teeos#{idx}_image_name"] :
+                             @test_params.instance_variable_defined?("@var_teeos#{idx}_image_name") ? @test_params.instance_variable_get("@var_teeos#{idx}_image_name") :
+                             new_params["teeos"] != "" ? File.basename(new_params["teeos"]) : "teeos"
+    new_params["linux_system"]     = new_params["linux_system#{idx}"] ? new_params["linux_system#{idx}"] :
+                             @test_params.instance_variable_defined?("@linux_system#{idx}") ? @test_params.instance_variable_get("@linux_system#{idx}") :
+                             @test_params.instance_variable_defined?("@linux_system#{idx}_file") ? @test_params.instance_variable_get("@linux_system#{idx}_file") :
+                             ""
+    new_params["linux_system_dev"] = new_params["linux_system#{idx}_dev"] ? new_params["linux_system#{idx}_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("@linux_system#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@linux_system#{idx}_dev")[0] :
+                             @test_params.instance_variable_defined?("@var_linux_system#{idx}_dev") ? @test_params.instance_variable_get("@var_linux_system#{idx}_dev") :
+                             new_params["linux_system"] != "" ? "eth" : "none"
+    new_params["linux_system_image_name"] = new_params["linux_system#{idx}_image_name"] ? new_params["linux_system#{idx}_image_name"] :
+                             @test_params.instance_variable_defined?("@var_linux_system#{idx}_image_name") ? @test_params.instance_variable_get("@var_linux_system#{idx}_image_name") :
+                             new_params["linux_system"] != "" ? File.basename(new_params["linux_system"]) : "linux_system"
+    new_params["simulator_startup_files"]   = new_params["simulator_startup_files#{idx}"] ? new_params["simulator_startup_files#{idx}"] :
+                             @test_params.instance_variable_defined?("@simulator_startup_files#{idx}") ? @test_params.instance_variable_get("@simulator_startup_files#{idx}") :
+                             ""
+    new_params["simulator_startup_files_dev"] = new_params["simulator_startup_files#{idx}_dev"] ? new_params["simulator_startup_files#{idx}_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("@simulator_startup_files#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@simulator_startup_files#{idx}_dev")[0] :
+                             @test_params.instance_variable_defined?("@var_simulator_startup_files#{idx}_dev") ? @test_params.instance_variable_get("@var_simulator_startup_files#{idx}_dev") :
+                             new_params["simulator_startup_files"] != "" ? "eth" : "none"
+    new_params["simulator_startup_files_image_name"] = new_params["simulator_startup_files#{idx}_image_name"] ? new_params["simulator_startup_files#{idx}_image_name"] :
+                             @test_params.instance_variable_defined?("@var_simulator_startup_files#{idx}_image_name") ? @test_params.instance_variable_get("@var_simulator_startup_files#{idx}_image_name") :
+                             new_params["simulator_startup_files"] != "" ? File.basename(new_params["simulator_startup_files"]) : "simulator_startup_files"
 
     new_params = add_dev_loc_to_params(new_params, 'sysfw')
     new_params = add_dev_loc_to_params(new_params, 'initial_bootloader')
@@ -299,10 +303,12 @@ module LspTestScript
     new_params = add_dev_loc_to_params(new_params, 'dtb')
     new_params = add_dev_loc_to_params(new_params, 'fs')
 
-    new_params['dut'].prompt =  /#{@test_params.var_fs_prompt}/ if @test_params.instance_variable_defined?(:@var_fs_prompt)
+    new_prompt = @test_params.instance_variable_get("@var_fs_prompt#{idx}")
+    new_params['dut'].prompt =  /#{new_prompt}/ if @test_params.instance_variable_defined?("@var_fs_prompt#{idx}")
 
     new_params['start_remoteproc_cmd'] = @test_params.instance_variable_defined?(:@var_start_remoteproc_cmd) ? @test_params.var_start_remoteproc_cmd : ''
 
+    new_params.each{|k,v| puts "translate_boot_params.end: #{k}: #{v}"}
     new_params
   end
 
@@ -336,262 +342,6 @@ module LspTestScript
 
     return new_params
   end
-
-  def translate_params2(params)
-    new_params = params.clone
-    new_params['initial_bootloader'] = new_params['initial_bootloader2'] ? new_params['initial_bootloader2'] :
-                             @test_params.instance_variable_defined?(:@initial_bootloader2) ? @test_params.initial_bootloader2 :
-                             ''
-    new_params['sysfw']      = new_params['sysfw2'] ? new_params['sysfw2'] :
-                             @test_params.instance_variable_defined?(:@sysfw2) ? @test_params.sysfw2 :
-                             ''
-    new_params['primary_bootloader'] = new_params['primary_bootloader2'] ? new_params['primary_bootloader2'] : 
-                             @test_params.instance_variable_defined?(:@primary_bootloader2) ? @test_params.primary_bootloader2 : 
-                             ''                                
-    new_params['secondary_bootloader'] = new_params['secondary_bootloader2'] ? new_params['secondary_bootloader2'] : 
-                             @test_params.instance_variable_defined?(:@secondary_bootloader2) ? @test_params.secondary_bootloader2 : 
-                             ''
-    new_params['initial_bootloader_dev']   = new_params['initial_bootloader2_dev'] ? new_params['initial_bootloader2_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@initial_bootloader2_dev) ? @test_params.params_chan.initial_bootloader2_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_initial_bootloader2_dev) ? @test_params.var_initial_bootloader2_dev : "mmc"
-    new_params['sysfw_dev']   = new_params['sysfw2_dev'] ? new_params['sysfw2_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@sysfw2_dev) ? @test_params.params_chan.sysfw2_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_sysfw2_dev) ? @test_params.var_sysfw2_dev : "mmc"
-    new_params['primary_bootloader_dev']   = new_params['primary_bootloader2_dev'] ? new_params['primary_bootloader2_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@primary_bootloader2_dev) ? @test_params.params_chan.primary_bootloader2_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_primary_bootloader2_dev) ? @test_params.var_primary_bootloader2_dev : "mmc"
-    new_params['secondary_bootloader_dev']   = new_params['secondary_bootloader2_dev'] ? new_params['secondary_bootloader2_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader2_dev) ? @test_params.params_chan.secondary_bootloader2_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_secondary_bootloader2_dev) ? @test_params.var_secondary_bootloader2_dev : "mmc"
-    new_params['initial_bootloader_src_dev']   = new_params['initial_bootloader2_src_dev'] ? new_params['initial_bootloader2_src_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@initial_bootloader2_src_dev) ? @test_params.params_chan.initial_bootloader2_src_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_initial_bootloader2_src_dev) ? @test_params.var_initial_bootloader2_src_dev : 
-                             new_params['initial_bootloader'] != '' ? 'uart' : 'none'  
-    new_params['sysfw_src_dev']   = new_params['sysfw2_src_dev'] ? new_params['sysfw2_src_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@sysfw2_src_dev) ? @test_params.params_chan.sysfw2_src_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_sysfw2_src_dev) ? @test_params.var_sysfw2_src_dev :
-                             new_params['sysfw'] != '' ? 'uart' : 'none'
-    new_params['primary_bootloader_src_dev']   = new_params['primary_bootloader2_src_dev'] ? new_params['primary_bootloader2_src_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@primary_bootloader2_src_dev) ? @test_params.params_chan.primary_bootloader2_src_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_primary_bootloader2_src_dev) ? @test_params.var_primary_bootloader2_src_dev : 
-                             new_params['primary_bootloader'] != '' ? 'uart' : 'none'  
-
-    new_params['secondary_bootloader_src_dev']   = new_params['secondary_bootloader2_src_dev'] ? new_params['secondary_bootloader2_src_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@secondary_bootloader2_src_dev) ? @test_params.params_chan.secondary_bootloader2_src_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_secondary_bootloader2_src_dev) ? @test_params.var_secondary_bootloader2_src_dev : 
-                             new_params['secondary_bootloader'] != '' ? 'uart' : 'none'
-
-    new_params['primary_bootloader_image_name'] = new_params['primary_bootloader2_image_name'] ? new_params['primary_bootloader2_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_primary_bootloader2_image_name) ? @test_params.var_primary_bootloader2_image_name :
-                             new_params['primary_bootloader'] != '' ? File.basename(new_params['primary_bootloader']) : 'MLO'
-
-    new_params['secondary_bootloader_image_name'] = new_params['secondary_bootloader2_image_name'] ? new_params['secondary_bootloader2_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_secondary_bootloader2_image_name) ? @test_params.var_secondary_bootloader2_image_name :
-                             new_params['secondary_bootloader'] != '' ? File.basename(new_params['secondary_bootloader']) : 'u-boot.img'
-
-    new_params['kernel']     = new_params['kernel2'] ? new_params['kernel2'] : 
-                             @test_params.instance_variable_defined?(:@kernel2) ? @test_params.kernel2 : 
-                             ''                                
-    new_params['kernel_dev'] = new_params['kernel2_dev'] ? new_params['kernel2_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@kernel2_dev) ? @test_params.params_chan.kernel2_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_kernel2_dev) ? @test_params.var_kernel2_dev : 
-                             new_params['kernel'] != '' ? 'eth' : 'mmc'   
-
-    new_params['kernel_src_dev'] = new_params['kernel2_src_dev'] ? new_params['kernel2_src_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@kernel2_src_dev) ? @test_params.params_chan.kernel2_src_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_kernel2_src_dev) ? @test_params.var_kernel2_src_dev : 
-                             new_params['kernel'] != '' ? 'eth' : 'mmc'   
-
-    new_params['kernel_image_name'] = new_params['kernel2_image_name'] ? new_params['kernel2_image_name'] : 
-                             @test_params.instance_variable_defined?(:@var_kernel2_image_name) ? @test_params.var_kernel2_image_name : 
-                             new_params['kernel'] != '' ? File.basename(new_params['kernel']) : 'uImage'                          
-    new_params['kernel_modules'] = new_params['kernel_modules2'] ? new_params['kernel_modules2'] : 
-                             @test_params.instance_variable_defined?(:@kernel_modules2) ? @test_params.kernel_modules2 : 
-                             ''  
-    new_params['skern']     = new_params['skern2'] ? new_params['skern2'] : 
-                             @test_params.instance_variable_defined?(:@skern2) ? @test_params.skern2 : 
-                             @test_params.instance_variable_defined?(:@skern2_file) ? @test_params.skern2_file : 
-                             ''                               
-    new_params['skern_dev'] = new_params['skern2_dev'] ? new_params['skern2_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@skern2_dev) ? @test_params.params_chan.skern2_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_skern2_dev) ? @test_params.var_skern2_dev : 
-                             new_params['skern'] != '' ? 'eth' : 'none'   
-    new_params['skern_image_name'] = new_params['skern2_image_name'] ? new_params['skern2_image_name'] : 
-                             @test_params.instance_variable_defined?(:@var_skern2_image_name) ? @test_params.var_skern2_image_name : 
-                             new_params['skern'] != '' ? File.basename(new_params['skern']) : 'skern'
-    new_params['initramfs'] = new_params['initramfs2'] ? new_params['initramfs2'] :
-                             @test_params.instance_variable_defined?(:@initramfs2) ? @test_params.initramfs2 :
-                             @test_params.instance_variable_defined?(:@initramfs2_file) ? @test_params.initramfs2_file :
-                             ''
-    new_params['initramfs_dev'] = new_params['initramfs2_dev'] ? new_params['initramfs2_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@initramfs2_dev) ? @test_params.params_chan.initramfs2_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_initramfs2_dev) ? @test_params.var_initramfs2_dev :
-                             new_params['initramfs'] != '' ? 'eth' : 'none'
-    new_params['initramfs_image_name'] = new_params['initramfs2_image_name'] ? new_params['initramfs2_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_initramfs2_image_name) ? @test_params.var_initramfs2_image_name :
-                             new_params['initramfs'] != '' ? File.basename(new_params['initramfs']) : 'initramfs'
-    new_params['pmmc']     = new_params['pmmc2'] ? new_params['pmmc2'] :
-                             @test_params.instance_variable_defined?(:@pmmc2) ? @test_params.pmmc2 :
-                             @test_params.instance_variable_defined?(:@pmmc2_file) ? @test_params.pmmc2_file :
-                             ''
-    new_params['pmmc_dev'] = new_params['pmmc2_dev'] ? new_params['pmmc2_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@pmmc2_dev) ? @test_params.params_chan.pmmc2_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_pmmc2_dev) ? @test_params.var_pmmc2_dev :
-                             new_params['pmmc'] != '' ? 'eth' : 'none'
-    new_params['pmmc_image_name'] = new_params['pmmc2_image_name'] ? new_params['pmmc2_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_pmmc2_image_name) ? @test_params.var_pmmc2_image_name :
-                             new_params['pmmc'] != '' ? File.basename(new_params['pmmc']) : 'pmmc'
-    new_params['fit']     = new_params['fit2'] ? new_params['fit2'] :
-                             @test_params.instance_variable_defined?(:@fit2) ? @test_params.fit2 :
-                             @test_params.instance_variable_defined?(:@fit2_file) ? @test_params.fit2_file :
-                             ''
-    new_params['fit_dev'] = new_params['fit2_dev'] ? new_params['fit2_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@fit2_dev) ? @test_params.params_chan.fit2_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_fit2_dev) ? @test_params.var_fit2_dev :
-                             new_params['fit'] != '' ? 'eth' : 'none'
-    new_params['fit_image_name'] = new_params['fit2_image_name'] ? new_params['fit2_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_fit2_image_name) ? @test_params.var_fit2_image_name :
-                             new_params['fit'] != '' ? File.basename(new_params['fit']) : 'fit'
-
-    new_params['fit_config_suffix'] = new_params['fit2_config_suffix'] ? new_params['fit2_config_suffix'] :
-                             @test_params.params_chan.instance_variable_defined?(:@fit2_config_suffix) ? @test_params.params_chan.fit2_config_suffix[0] : ''
-
-    new_params['dtb']        = new_params['dtb2'] ? new_params['dtb2'] : 
-                             @test_params.instance_variable_defined?(:@dtb2) ? @test_params.dtb2 : 
-                             @test_params.instance_variable_defined?(:@dtb2_file) ? @test_params.dtb2_file : 
-                             ''     
-    new_params['dtb_dev']    = new_params['dtb2_dev'] ? new_params['dtb2_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@dtb2_dev) ? @test_params.params_chan.dtb2_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_dtb2_dev) ? @test_params.var_dtb2_dev : 
-                             new_params['dtb'] != '' ? 'eth' : 'none'   
-
-    new_params['dtb_src_dev']    = new_params['dtb2_src_dev'] ? new_params['dtb2_src_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@dtb2_src_dev) ? @test_params.params_chan.dtb2_src_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_dtb2_src_dev) ? @test_params.var_dtb2_src_dev : 
-                             new_params['dtb'] != '' ? 'eth' : 'none'   
-
-    new_params['dtb_image_name'] = new_params['dtb2_image_name'] ? new_params['dtb2_image_name'] : 
-                             @test_params.instance_variable_defined?(:@var_dtb2_image_name) ? @test_params.var_dtb2_image_name : 
-                             File.basename(new_params['dtb'])
-
-    @test_params.instance_variables.each{|k|
-        if k.to_s.match(/dtbo2_\d+/)
-            key_name = k.to_s.gsub(/[@:]/,'').gsub(/dtbo2_/,'dtbo_')
-            new_params[key_name] = @test_params.instance_variable_get(k)
-            new_params[key_name+'_dev'] = 'eth'
-            new_params[key_name+'_src_dev'] = 'eth'
-        end
-    }
-
-    new_params['fs']         = new_params['fs2'] ? new_params['fs2'] : 
-                             @test_params.instance_variable_defined?(:@fs2) ? @test_params.fs2 : 
-                             @test_params.instance_variable_defined?(:@nfs2) ? @test_params.nfs2 : 
-                             @test_params.instance_variable_defined?(:@ramfs2) ? @test_params.ramfs2 : 
-                             ''                                                          
-    new_params['fs_dev']     = new_params['fs2_dev'] ? new_params['fs2_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@fs2_dev) ? @test_params.params_chan.fs2_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_fs2_dev) ? @test_params.var_fs2_dev :
-                             new_params['fs'] != '' ? 'eth' : 'mmc'
-    new_params['fs_src_dev']     = new_params['fs2_src_dev'] ? new_params['fs2_src_dev'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@fs2_src_dev) ? @test_params.params_chan.fs2_src_dev[0] : 
-                             @test_params.instance_variable_defined?(:@var_fs2_src_dev) ? @test_params.var_fs2_src_dev : 
-                             new_params['fs'] != '' ? 'eth' : 'mmc'                                
-    new_params['fs_type']    = new_params['fs2_type'] ? new_params['fs2_type'] : 
-                             @test_params.params_chan.instance_variable_defined?(:@fs2_type) ? @test_params.params_chan.fs2_type[0] : 
-                             @test_params.instance_variable_defined?(:@var_fs2_type) ? @test_params.var_fs2_type : 
-                             @test_params.instance_variable_defined?(:@nfs2) || @test_params.instance_variable_defined?(:@var_nfs2) ? 'nfs' : 
-                             @test_params.instance_variable_defined?(:@ramfs2) ? 'ramfs' : 
-                             'mmcfs'
-    new_params['fs_image_name'] = new_params['fs2_image_name'] ? new_params['fs2_image_name'] : 
-                             @test_params.instance_variable_defined?(:@var_fs2_image_name) ? @test_params.var_fs2_image_name : 
-                             new_params['fs_type'] != 'nfs' ? File.basename(new_params['fs']) : ''  
-    new_params['ubi_root'] = new_params['ubi2_root'] ? new_params['ubi2_root'] :
-                             @test_params.instance_variable_defined?(:@var_ubi2_root) ? @test_params.var_ubi2_root :
-                             "ubi0:rootfs" 
-    new_params['skip_touchcal'] = new_params['skip_touchcal2'] ? new_params['skip_touchcal2'] :
-                             @test_params.params_chan.instance_variable_defined?(:@skip_touchcal2) ? @test_params.params_chan.skip_touchcal2[0] :
-                             @test_params.instance_variable_defined?(:@var_skip_touchcal2) ? @test_params.var_skip_touchcal2 :
-                             "0"
-
-    # Optional SW asset to copy binary to rootfs                            
-    new_params['user_bins']  = new_params['user2_bins'] ? new_params['user2_bins'] : 
-                             @test_params.instance_variable_defined?(:@user2_bins) ? @test_params.user2_bins : 
-                             ''     
-    # Optional SW asset with user-defined boot commands
-    new_params['boot_cmds']  = new_params['boot2_cmds'] ? new_params['boot2_cmds'] : 
-                             @test_params.instance_variable_defined?(:@boot2_cmds) ? @test_params.boot2_cmds : 
-                             ''     
-    # New Simulator SW assets
-    new_params['dmsc']     = new_params['dmsc2'] ? new_params['dmsc2'] :
-                             @test_params.instance_variable_defined?(:@dmsc2) ? @test_params.dmsc2 :
-                             @test_params.instance_variable_defined?(:@dmsc2_file) ? @test_params.dmsc2_file :
-                             ''
-    new_params['dmsc_dev'] = new_params['dmsc2_dev'] ? new_params['dmsc2_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@dmsc2_dev) ? @test_params.params_chan.dmsc2_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_dmsc2_dev) ? @test_params.var_dmsc2_dev :
-                             new_params['dmsc'] != '' ? 'eth' : 'none'
-    new_params['dmsc_image_name'] = new_params['dmsc2_image_name'] ? new_params['dmsc2_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_dmsc2_image_name) ? @test_params.var_dmsc2_image_name :
-                             new_params['dmsc'] != '' ? File.basename(new_params['dmsc']) : 'dmsc'
-
-    new_params['atf']     = new_params['atf2'] ? new_params['atf2'] :
-                             @test_params.instance_variable_defined?(:@atf2) ? @test_params.atf2 :
-                             @test_params.instance_variable_defined?(:@atf2_file) ? @test_params.atf2_file :
-                             ''
-    new_params['atf_dev'] = new_params['atf2_dev'] ? new_params['atf2_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@atf2_dev) ? @test_params.params_chan.atf2_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_atf2_dev) ? @test_params.var_atf2_dev :
-                             new_params['atf'] != '' ? 'eth' : 'none'
-    new_params['atf_image_name'] = new_params['atf2_image_name'] ? new_params['atf2_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_atf2_image_name) ? @test_params.var_atf2_image_name :
-                             new_params['atf'] != '' ? File.basename(new_params['atf']) : 'atf'
-    new_params['atf_fdt']     = new_params['atf2_fdt'] ? new_params['atf2_fdt'] :
-                             @test_params.instance_variable_defined?(:@atf2_fdt) ? @test_params.atf2_fdt :
-                             @test_params.instance_variable_defined?(:@atf2_fdt_file) ? @test_params.atf2_fdt_file :
-                             ''
-    new_params['atf_fdt_dev'] = new_params['atf2_fdt_dev'] ? new_params['atf2_fdt_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@atf2_fdt_dev) ? @test_params.params_chan.atf2_fdt_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_atf2_fdt_dev) ? @test_params.var_atf2_fdt_dev :
-                             new_params['atf_fdt'] != '' ? 'eth' : 'none'
-    new_params['atf_fdt_image_name'] = new_params['atf2_fdt_image_name'] ? new_params['atf2_fdt_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_atf2_fdt_image_name) ? @test_params.var_atf2_fdt_image_name :
-                             new_params['atf_fdt'] != '' ? File.basename(new_params['atf_fdt']) : 'atf_fdt'
-    new_params['teeos']     = new_params['teeos2'] ? new_params['teeos2'] :
-                             @test_params.instance_variable_defined?(:@teeos2) ? @test_params.teeos2 :
-                             @test_params.instance_variable_defined?(:@teeos2_file) ? @test_params.teeos2_file :
-                             ''
-    new_params['teeos_dev'] = new_params['teeos2_dev'] ? new_params['teeos2_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@teeos2_dev) ? @test_params.params_chan.teeos2_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_teeos2_dev) ? @test_params.var_teeos2_dev :
-                             new_params['teeos'] != '' ? 'eth' : 'none'
-    new_params['teeos_image_name'] = new_params['teeos2_image_name'] ? new_params['teeos2_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_teeos2_image_name) ? @test_params.var_teeos2_image_name :
-                             new_params['teeos'] != '' ? File.basename(new_params['teeos']) : 'teeos'
-    new_params['linux_system']     = new_params['linux_system2'] ? new_params['linux_system2'] :
-                             @test_params.instance_variable_defined?(:@linux_system2) ? @test_params.linux_system2 :
-                             @test_params.instance_variable_defined?(:@linux_system2_file) ? @test_params.linux_system2_file :
-                             ''
-    new_params['linux_system_dev'] = new_params['linux_system2_dev'] ? new_params['linux_system2_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@linux_system2_dev) ? @test_params.params_chan.linux_system2_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_linux_system2_dev) ? @test_params.var_linux_system2_dev :
-                             new_params['linux_system'] != '' ? 'eth' : 'none'
-    new_params['linux_system_image_name'] = new_params['linux_system2_image_name'] ? new_params['linux_system2_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_linux_system2_image_name) ? @test_params.var_linux_system2_image_name :
-                             new_params['linux_system'] != '' ? File.basename(new_params['linux_system']) : 'linux_system'
-    new_params['simulator_startup_files']   = new_params['simulator_startup_files2'] ? new_params['simulator_startup_files2'] :
-                             @test_params.instance_variable_defined?(:@simulator_startup_files2) ? @test_params.simulator_startup_files2 :
-                             ''
-    new_params['simulator_startup_files_dev'] = new_params['simulator_startup_files2_dev'] ? new_params['simulator_startup_files2_dev'] :
-                             @test_params.params_chan.instance_variable_defined?(:@simulator_startup_files2_dev) ? @test_params.params_chan.simulator_startup_files2_dev[0] :
-                             @test_params.instance_variable_defined?(:@var_simulator_startup_files2_dev) ? @test_params.var_simulator_startup_files2_dev :
-                             new_params['simulator_startup_files'] != '' ? 'eth' : 'none'
-    new_params['simulator_startup_files_image_name'] = new_params['simulator_startup_files2_image_name'] ? new_params['simulator_startup_files2_image_name'] :
-                             @test_params.instance_variable_defined?(:@var_simulator_startup_files2_image_name) ? @test_params.var_simulator_startup_files2_image_name :
-                             new_params['simulator_startup_files'] != '' ? File.basename(new_params['simulator_startup_files']) : 'simulator_startup_files'
-
-    return new_params
-  end
-
 
   def install_kernel_modules(params, nfs_root_path_temp)
     if params['kernel_modules'] != '' and params['fs_type'] == 'nfs' and !params.has_key?('var_nfs')
