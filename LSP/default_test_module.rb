@@ -101,12 +101,12 @@ module LspTestScript
                              @test_params.instance_variable_defined?("@kernel#{idx}") ? @test_params.instance_variable_get("@kernel#{idx}") : 
                              ""                                
     new_params["kernel_dev"] = new_params["kernel#{idx}_dev"] ? new_params["kernel#{idx}_dev"] : 
-                             @test_params.params_chan.instance_variable_defined?("@kernel#{idx}#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@kernel#{idx}_dev[0]") : 
+                             @test_params.params_chan.instance_variable_defined?("@kernel#{idx}#{idx}_dev") ? @test_params.params_chan.instance_variable_get("@kernel#{idx}_dev")[0] : 
                              @test_params.instance_variable_defined?("@var_kernel#{idx}_dev") ? @test_params.instance_variable_get("@var_kernel#{idx}_dev") : 
                              new_params["kernel"] != "" ? "eth" : "mmc"   
 
     new_params["kernel_src_dev"] = new_params["kernel#{idx}_src_dev"] ? new_params["kernel#{idx}_src_dev"] : 
-                             @test_params.params_chan.instance_variable_defined?("@kernel#{idx}_src_dev") ? @test_params.params_chan.instance_variable_get("@kernel#{idx}_src_dev[0]") : 
+                             @test_params.params_chan.instance_variable_defined?("@kernel#{idx}_src_dev") ? @test_params.params_chan.instance_variable_get("@kernel#{idx}_src_dev")[0] : 
                              @test_params.instance_variable_defined?("@var_kernel#{idx}_src_dev") ? @test_params.instance_variable_get("@var_kernel#{idx}_src_dev") : 
                              new_params["kernel"] != "" ? "eth" : "mmc"   
 
