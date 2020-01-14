@@ -47,7 +47,7 @@ def run
     boot_params['dut'].set_systemloader(boot_params.merge({'systemloader_class' => SystemLoader::UbootFlashBootloaderSystemLoader}))
     boot_params['dut'].system_loader.run(boot_params)
 
-    # For J7, write 2 firmwares to SD card
+    # For J7, write 2 firmwares to <rootfs>/lib/firmware in SD card
     # j7-main-r5f0_0-fw and j7-mcu-r5f0_0-fw
     if boot_params['dut'].name =~ /j7/ and boot_params['fs'] != ''
       f1 = "j7-main-r5f0_0-fw"
@@ -63,6 +63,19 @@ def run
       ext4write_to_mmc(boot_params, mmcdev_nums['mmc'], f2, f2_size)
     end
   
+    # For J6/am5, write firmwares to boot partition in SD card
+    # dra7-ipu1-fw.xem4
+    if boot_params['dut'].name =~ /dra7|am5/ and boot_params['fs'] != ''
+      f1 = "dra7-ipu1-fw.xem4"
+      tmp_path = @test_params.staf_service_name.to_s.strip.gsub('@','_')
+      untar_path = File.join(boot_params['server'].tftp_path, tmp_path)
+      untar_dir(boot_params, boot_params['fs'], '/lib/firmware', untar_path)
+      fix_symlink(boot_params, "#{untar_path}/lib/firmware", f1)
+      f1_size = tftp_file(boot_params, "#{tmp_path}/lib/firmware/#{f1}")
+      fatwrite_to_mmc(boot_params, mmcdev_nums['mmc'], f1, f1_size)
+      boot_params['dut'].send_cmd("ls mmc #{mmcdev_nums['mmc']}", boot_params['dut'].boot_prompt, 10)
+    end
+
     # Verify if the board can boot using the updated bootloader
     10.times {puts "Please change the switch setting to boot from #{boot_params['primary_bootloader_dev']}!!!"}
     sleep 10
@@ -110,6 +123,12 @@ end
 def ext4write_to_mmc(params, mmcdev, f, size)
   params['dut'].send_cmd("ext4write mmc #{mmcdev}:2 ${loadaddr} /lib/firmware/#{f} #{size}", params['dut'].boot_prompt, 60)
   raise "Failed to ext4write #{f} to mmcdev #{mmcdev}" if !params['dut'].response.match(/written/i)
+end
+
+# fatwrite <interface> <dev[:part]> <addr> <filename> [<bytes> [<offset>]]
+def fatwrite_to_mmc(params, mmcdev, f, size)
+  params['dut'].send_cmd("fatwrite mmc #{mmcdev}:1 ${loadaddr} #{f} #{size}", params['dut'].boot_prompt, 60)
+  raise "Failed to fatwrite #{f} to mmcdev #{mmcdev}" if !params['dut'].response.match(/written/i)
 end
 
 def fix_symlink(params, dir, f)
