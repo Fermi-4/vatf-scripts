@@ -73,6 +73,8 @@ def get_expected_busspeed_sd(platform, sd_mode)
   expected_speed_sd = Hash.new({ 'sdr104' => '192000000', 'ddr50' => '96000000', 'hs' => '48000000'})
   expected_speed_sd['am57xx-evm'] = { 'sdr104' => '48000000', 'ddr50' => '48000000', }
   expected_speed_sd['am574x-idk'] = { 'sdr104' => '48000000', 'ddr50' => '48000000', }
+  expected_speed_sd['j721e-idk-gw'] = { 'ddr50' => '100000000', }
+  expected_speed_sd['j721e-evm'] = expected_speed_sd['j721e-idk-gw']
   return expected_speed_sd[platform][sd_mode]
 end
 
