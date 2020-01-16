@@ -803,6 +803,7 @@ module LspTestScript
     this_equipment.send_cmd("cat /proc/diskstats", this_equipment.prompt)
     this_equipment.send_cmd("cat /proc/interrupts", this_equipment.prompt)
     this_equipment.send_cmd("cat /proc/softirqs", this_equipment.prompt)
+    this_equipment.send_cmd("ls -lR /run/media/mmcblk0p1", this_equipment.prompt)
   end
 
   def query_debug_data(e='dut1')
