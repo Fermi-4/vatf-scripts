@@ -42,7 +42,7 @@ def run
 
   if err_cnt.to_i == 1
     orig_data = @equipment['dut1'].response.match(/Disabling\s+DDR\s+ECC\s+\.\.\..*,\s+read\s+data\s+0x(\h+),/im).captures[0]
-    read_data = @equipment['dut1'].response.match(/Enabling\s+DDR\s+ECC\s+\.\.\..*,\s+read\s+data\s+0x(\h+)/im).captures[0]
+    read_data = @equipment['dut1'].response.match(/(?:Enabled|Enabling)\s+DDR\s+ECC\s+\.\.\..*,\s+read\s+data\s+0x(\h+)/im).captures[0]
     if orig_data != read_data
       set_result(FrameworkConstants::Result[:fail], "Read data with 1-bit ecc is not the same as original data and DDR ECC test failed")
       return
