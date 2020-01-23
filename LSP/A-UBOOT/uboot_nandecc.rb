@@ -173,7 +173,11 @@ def transfer_testdata_to_dut(testfile)
   # tftp to dut
   @equipment['dut1'].send_cmd("setenv serverip #{@equipment['server1'].telnet_ip}", @equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("setenv autoload no", @equipment['dut1'].boot_prompt, 5)
-  @equipment['dut1'].send_cmd("dhcp", @equipment['dut1'].boot_prompt, 30)
+  3.times {
+    @equipment['dut1'].send_cmd("dhcp", /DHCP client bound to address.*#{@equipment['dut1'].boot_prompt}/im, 30)
+    break if !@equipment['dut1'].timeout?
+  }
+
   @equipment['dut1'].send_cmd("tftp ${loadaddr} #{tmp_path}/#{File.basename(testfile)}", @equipment['dut1'].boot_prompt, 60)
   raise "Could not tftp nand testfile to dut" if !@equipment['dut1'].response.match(/Bytes\s+transferred/im)  
 end

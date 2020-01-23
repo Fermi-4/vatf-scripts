@@ -32,7 +32,11 @@ def run
   
   @equipment['dut1'].send_cmd("setenv ethact #{pcie_driver}#0",@equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("setenv serverip #{@equipment['server1'].telnet_ip}",@equipment['dut1'].boot_prompt, 5)
-  @equipment['dut1'].send_cmd("dhcp",@equipment['dut1'].boot_prompt, 60)
+  3.times {
+    @equipment['dut1'].send_cmd("dhcp", /DHCP client bound to address.*#{@equipment['dut1'].boot_prompt}/im, 30)
+    break if !@equipment['dut1'].timeout?
+  }
+
   if !@equipment['dut1'].response.match(/using\s+#{pcie_driver}/i)
     @equipment['dut1'].send_cmd("print ethact",@equipment['dut1'].boot_prompt, 10)
     raise "dhcp did not use PCIe #{pcie_driver} "
