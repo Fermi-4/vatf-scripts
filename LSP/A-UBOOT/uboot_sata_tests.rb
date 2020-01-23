@@ -85,7 +85,7 @@ def tftp_file(memaddr, filepath_in_tftp)
   @equipment['dut1'].send_cmd("setenv serverip #{@equipment['server1'].telnet_ip}", @equipment['dut1'].boot_prompt, 5)
   @equipment['dut1'].send_cmd("setenv autoload no", @equipment['dut1'].boot_prompt, 5)
   3.times {
-    @equipment['dut1'].send_cmd("dhcp", @equipment['dut1'].boot_prompt, 30)
+    @equipment['dut1'].send_cmd("dhcp", /DHCP client bound to address.*#{@equipment['dut1'].boot_prompt}/im, 30)
     break if !@equipment['dut1'].timeout?
   }
 
