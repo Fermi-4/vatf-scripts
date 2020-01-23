@@ -57,6 +57,7 @@ def run
 
   #Boot the board
   @equipment['dut1'].system_loader.run(translated_boot_params)
+  @equipment['dut1'].send_cmd(@test_params.var_post_boot_cmd, @equipment['dut1'].prompt, 60) if @test_params.instance_variable_defined?(:@var_post_boot_cmd)
 
   #Set the sysfs id for each remoteproc
   sysfs_ids = get_sysfs_ids()
