@@ -34,6 +34,7 @@ def run
       PWM_CHANNELS_MAP[dut_name].each_with_index {|channel, channel_index|
         export_channel(channel)
         generate_pwm_on_channel(channel, period, duty_cycle)
+        sleep 2 # Make sure PRU started generating signal
         if test_pwm_signal(channel_index, duty_cycle_index)
           set_result(FrameworkConstants::Result[:fail], "Unexpected PWM signal value on channel #{channel}")
           return
