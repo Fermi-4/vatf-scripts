@@ -201,7 +201,7 @@ def usb_dev_msc()
       command = "modprobe g_mass_storage file=/dev/sda1 stall=0 removable=1"
 
     when $cmd.match(/_msc_slave/)
-      command = create_share_memory("dd if=/dev/zero of=/dev/shm/disk bs=1M count=52", "52+0 records", "mknod /dev/loop0 b 7 0", 10)
+      command = create_share_memory("dd if=/dev/zero of=/dev/shm/disk bs=1M count=16", "16+0 records", "mknod /dev/loop0 b 7 0", 10)
       command = create_share_memory(command, "#", "losetup /dev/loop0 /dev/shm/disk", 5)
       command = create_share_memory(command, "#", "echo $?", 2)
       command = create_share_memory(command, "0", "mkfs.vfat /dev/loop0", 3)
@@ -249,6 +249,7 @@ def usb_dev_msc()
   if (mscdev == '')
      # check dmesg
     mscdev=dmesg_output.match /sd\S/ 
+    mscdev="/dev/#{mscdev}"
     puts "MSCDEV is #{mscdev}\n"
   end
   if (mscdev == '')
@@ -381,7 +382,7 @@ def usb_dev_cdc(packet_count, test_duration, module_name, zlp_test)
   end
   sleep 10
   command = "dmesg"
-  @equipment['dut1'].send_cmd(command, @equipment['dut1'].prompt,60)
+  @equipment['dut1'].send_cmd(command, /usb\d+:\s+link\s+becomes\s+ready/im,60)
   @equipment['server1'].send_sudo_cmd(command, @equipment['server1'].prompt,60)
   response = @equipment['dut1'].response
   response_server = @equipment['server1'].response
