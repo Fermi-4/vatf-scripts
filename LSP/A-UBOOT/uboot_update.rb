@@ -198,6 +198,27 @@ def set_pre_params(params)
                              @test_params.instance_variable_defined?(:@var_pre_secondary_bootloader_image_name) ? @test_params.var_pre_secondary_bootloader_image_name :
                              new_params['secondary_bootloader'] != '' ? File.basename(new_params['secondary_bootloader']) : 'u-boot.img'
 
+    new_params['initial_bootloader'] = new_params['pre_initial_bootloader'] ? new_params['pre_initial_bootloader'] :
+                             @test_params.instance_variable_defined?(:@pre_initial_bootloader) ? @test_params.pre_initial_bootloader :
+                             ''
+    new_params['initial_bootloader_dev']   = new_params['pre_initial_bootloader_dev'] ? new_params['pre_initial_bootloader_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@pre_initial_bootloader_dev) ? @test_params.params_chan.pre_initial_bootloader_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_pre_initial_bootloader_dev) ? @test_params.var_pre_initial_bootloader_dev : "mmc"
+
+    new_params['initial_bootloader_image_name'] = new_params['pre_initial_bootloader_image_name'] ? new_params['pre_initial_bootloader_image_name'] :
+                             @test_params.instance_variable_defined?(:@var_pre_initial_bootloader_image_name) ? @test_params.var_pre_initial_bootloader_image_name :
+                             new_params['initial_bootloader'] != '' ? File.basename(new_params['initial_bootloader']) : 'tiboot3.bin'
+
+    new_params['sysfw'] = new_params['pre_sysfw'] ? new_params['pre_sysfw'] :
+                             @test_params.instance_variable_defined?(:@pre_sysfw) ? @test_params.pre_sysfw :
+                             ''
+    new_params['sysfw_dev']   = new_params['pre_sysfw_dev'] ? new_params['pre_sysfw_dev'] :
+                             @test_params.params_chan.instance_variable_defined?(:@pre_sysfw_dev) ? @test_params.params_chan.pre_sysfw_dev[0] :
+                             @test_params.instance_variable_defined?(:@var_pre_sysfw_dev) ? @test_params.var_pre_sysfw_dev : "mmc"
+
+    new_params['sysfw_image_name'] = new_params['pre_sysfw_image_name'] ? new_params['pre_sysfw_image_name'] :
+                             @test_params.instance_variable_defined?(:@var_pre_sysfw_image_name) ? @test_params.var_pre_sysfw_image_name :
+                             new_params['sysfw'] != '' ? File.basename(new_params['sysfw']) : 'sysfw.itb'
 
     new_params
 end
