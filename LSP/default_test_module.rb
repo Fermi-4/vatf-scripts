@@ -962,8 +962,9 @@ module LspTestScript
     this_equipment.send_cmd("mmc dev 0",this_equipment.boot_prompt, 5)
     this_equipment.send_cmd("mmc dev 1",this_equipment.boot_prompt, 5)
     this_equipment.send_cmd("mmc list",this_equipment.boot_prompt, 5)
-    mmcdev_nums['mmc'] = this_equipment.response.match(/:\s+(\d+)\s*\(SD\)/i) ? this_equipment.response.match(/:\s+(\d+)\s*\(SD\)/i) .captures[0] : '0'
-    mmcdev_nums['emmc'] = this_equipment.response.match(/:\s+(\d+)\s*\(eMMC\)/i) ? this_equipment.response.match(/:\s+(\d+)\s*\(eMMC\)/i) .captures[0] : '1'
+    raise "Could not find mmcdev number for SD in Uboot" if ! this_equipment.response.match(/:\s+(\d+)\s*\(SD\)/i)
+    mmcdev_nums['mmc'] = this_equipment.response.match(/:\s+(\d+)\s*\(SD\)/i).captures[0]
+    mmcdev_nums['emmc'] = this_equipment.response.match(/:\s+(\d+)\s*\(eMMC\)/i)? this_equipment.response.match(/:\s+(\d+)\s*\(eMMC\)/i) .captures[0] : ''
     return mmcdev_nums
   end
 
