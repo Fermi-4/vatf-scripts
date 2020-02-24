@@ -392,6 +392,7 @@ module LspTestScript
     boot_params['var_boot_timeout']  = @test_params.var_boot_timeout  if @test_params.instance_variable_defined?(:@var_boot_timeout)
     boot_params['autologin'] = @test_params.var_autologin if @test_params.instance_variable_defined?(:@var_autologin)
     boot_params['var_simulator_startup_script_name'] = @test_params.var_simulator_startup_script_name if @test_params.instance_variable_defined?(:@var_simulator_startup_script_name)
+    boot_params['packages'] = @test_params.params_chan.packages if @test_params.params_chan.instance_variable_defined?(:@packages)
     boot_params
   end
   
@@ -424,6 +425,24 @@ module LspTestScript
           params['dut'].send_cmd("modprobe #{mod_name}", /#{params['dut'].prompt}/, 30)  
         }
       end
+    end
+  end
+
+  # Determine which Linux distro is being used and set command translator @distro_cmd
+  # Only arago distro supported for now, "cat /etc/issue |grep -i <distro>" could be used to determine it
+  def determine_distro()
+    @distro_cmd = CmdTranslator.method(:get_arago_cmd)
+  end
+
+  # Install distro packages defined in the test case by @test_params.params_chan.packages
+  def install_packages(params)
+    determine_distro()
+    params['dut'] = @equipment['dut1'] if !params['dut']
+    if params['packages'].to_s != ''
+      params['dut'].send_cmd(@distro_cmd.call({'cmd'=>'package-update'}), /#{params['dut'].prompt}/, 240)
+      params['packages'].each {|package|
+        params['dut'].send_cmd("#{@distro_cmd.call({'cmd'=>'package-install'})} #{package}", /#{params['dut'].prompt}/, 1200)
+      }
     end
   end
 
@@ -562,7 +581,7 @@ module LspTestScript
     check_dut_booted(params)
     device_object.send_cmd(@test_params.var_post_boot_cmd, device_object.prompt, 60) if @test_params.instance_variable_defined?(:@var_post_boot_cmd)
     query_start_stats(device_name)
-
+    install_packages(translated_boot_params)
     install_modules(translated_boot_params)
     install_user_binaries(translated_boot_params)
   end
