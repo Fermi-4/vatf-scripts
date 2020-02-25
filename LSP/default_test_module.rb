@@ -436,15 +436,19 @@ module LspTestScript
 
   # Install distro packages defined in the test case by @test_params.params_chan.packages
   def install_packages(params)
+    old_fs_canary = 'packagegroup-arago-test'
     determine_distro()
     params['dut'] = @equipment['dut1'] if !params['dut']
     if params['packages'].to_s != ''
-      params['dut'].send_cmd(@distro_cmd.call({'cmd'=>'package-update'}), /#{params['dut'].prompt}/, 240)
-      raise "Could not update package feeds" if !params['dut'].response.match(/Updated source/i)
-      params['packages'].each {|package|
-        params['dut'].send_cmd("#{@distro_cmd.call({'cmd'=>'package-install'})} #{package}; echo $?", /#{params['dut'].prompt}/, 1200)
-        raise "Could not install package #{package}" if !params['dut'].response.match(/^0/)
-      }
+      params['dut'].send_cmd("#{@distro_cmd.call({'cmd'=>'package-list-installed'})} | grep #{old_fs_canary}; echo $?", /^0/, 3)
+      if params['dut'].timeout?
+        params['dut'].send_cmd(@distro_cmd.call({'cmd'=>'package-update'}), /#{params['dut'].prompt}/, 240)
+        raise "Could not update package feeds" if !params['dut'].response.match(/Updated source/i)
+        params['packages'].each {|package|
+          params['dut'].send_cmd("#{@distro_cmd.call({'cmd'=>'package-install'})} #{package}; echo $?", /#{params['dut'].prompt}/, 1200)
+          raise "Could not install package #{package}" if !params['dut'].response.match(/^0/)
+        }
+      end
     end
   end
 
