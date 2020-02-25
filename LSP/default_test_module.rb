@@ -440,8 +440,10 @@ module LspTestScript
     params['dut'] = @equipment['dut1'] if !params['dut']
     if params['packages'].to_s != ''
       params['dut'].send_cmd(@distro_cmd.call({'cmd'=>'package-update'}), /#{params['dut'].prompt}/, 240)
+      raise "Could not update package feeds" if !params['dut'].response.match(/Updated source/i)
       params['packages'].each {|package|
-        params['dut'].send_cmd("#{@distro_cmd.call({'cmd'=>'package-install'})} #{package}", /#{params['dut'].prompt}/, 1200)
+        params['dut'].send_cmd("#{@distro_cmd.call({'cmd'=>'package-install'})} #{package}; echo $?", /#{params['dut'].prompt}/, 1200)
+        raise "Could not install package #{package}" if !params['dut'].response.match(/^0/)
       }
     end
   end
