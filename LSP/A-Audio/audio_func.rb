@@ -63,6 +63,7 @@ def run
       test_audio = []
 			case (test_type)
 				when 'play'
+          test_result &= dut_play_dev.length > 0
           dut_play_dev.each do |p_dev|
             dut_play_info = [dut_audio_info.merge({'card'=>p_dev['card'],
                                                  'device'=>p_dev['device'],
@@ -76,6 +77,7 @@ def run
             test_audio << host_chk_rec_info['file']
           end
 				when 'record'
+          test_result &= dut_rec_dev.length > 0
           dut_rec_dev.each do |r_dev|
             dut_rec_info = [dut_audio_info.merge({'card'=>r_dev['card'],
                                               'device'=>r_dev['device'],
@@ -93,6 +95,7 @@ def run
 						test_audio << t_file
 					end
 				when 'play+record'
+          test_result &= dut_play_dev.length > 0 && dut_rec_dev.length > 0
           dut_play_dev.each do |p_dev|
             dut_rec_dev.each do |r_dev|
               next if p_dev['card_info'] != r_dev['card_info']
