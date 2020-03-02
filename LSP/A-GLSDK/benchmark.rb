@@ -19,6 +19,7 @@ def run
     @equipment['dut1'].send_cmd("tar -zxvf #{tarball} || rm -rf glbenchmark*", @equipment['dut1'].prompt, 600)
   end
   create_lib_link('/usr/lib/libgbm.so', '/usr/lib/libgbm.so.2')
+  create_lib_link('/usr/lib/libffi.so', '/usr/lib/libffi.so.6')
   if @equipment['dut1'].name.match(/j7*/)
     nulldrm_libdir = "#{@linux_dst_dir}/nulldrmusr"
     if !dut_dir_exist?(nulldrm_libdir)
