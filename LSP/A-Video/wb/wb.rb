@@ -47,7 +47,7 @@ def run
         video_width, video_height = get_scaled_resolution(src_video_width, src_video_height, scaling)
         format_length = @test_params.params_chan.instance_variable_defined?(:@negative_test) ? 4 : get_format_length(test_format)
         @equipment['dut1'].send_cmd("rm #{dut_test_file}", @equipment['dut1'].prompt, 30) #Remove previous test file if any
-        use_memory(src_video_width.to_i * src_video_height.to_i * 8 * format_length + 5*2**20) do
+        use_memory(src_video_width.to_i * src_video_height.to_i * 16 * format_length + 5*2**20) do
           @equipment['dut1'].send_cmd("v4l2-ctl -d #{device} --set-fmt-video-out=width=#{src_video_width},height=#{src_video_height},pixelformat=#{src_format.upcase()} --stream-from=#{dut_src_file} --set-fmt-video=width=#{video_width},height=#{video_height},pixelformat=#{test_format.upcase()} --stream-to=#{dut_test_file} --stream-mmap=#{mmap_buffs} --stream-out-mmap=#{mmap_buffs} --stream-count=#{num_frames} --stream-poll", @equipment['dut1'].prompt, 300)
           #@equipment['dut1'].send_cmd("/home/root/tests/wbtest -d #{device} -i #{dut_src_file} -j #{src_video_width}x#{src_video_height} -k #{src_format.upcase()} -o #{dut_test_file} -p #{video_width}x#{video_height} -q #{test_format.upcase()} -n 70", @equipment['dut1'].prompt, 300)
         end
