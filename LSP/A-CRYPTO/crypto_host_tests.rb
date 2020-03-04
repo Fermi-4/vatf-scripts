@@ -42,6 +42,8 @@ def crypto_test
           set_queue_length('dut1', queue_len)
         elsif (@test_params.params_control.type[0].match('openssl_sw'))
           @equipment['dut1'].send_cmd("ls /dev|grep crypto",@equipment['dut1'].prompt, 10)
+          @equipment['dut1'].send_cmd("ipsec stop",@equipment['dut1'].prompt,10)
+          @equipment['dut1'].send_cmd("modprobe -rf omap_rng",@equipment['dut1'].prompt,10)
           @equipment['dut1'].send_cmd("modprobe -rf omap_aes_driver",@equipment['dut1'].prompt,10)
           @equipment['dut1'].send_cmd("lsmod|grep omap_aes_driver",@equipment['dut1'].prompt,10)
           lsmod_response = @equipment['dut1'].response.lines.to_a[1..-1].join.strip

@@ -3501,6 +3501,8 @@ class IpsecUtilitiesVatf
       puts "module_list is #{module_list}\n"
       module_list.each do |module_name|
         if (mode == "software" || mode == "sideband")
+          @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "ipsec stop", "", @error_bit, 2)
+          @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "modprobe -r omap_rng", "", @error_bit, 2)
           @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "modprobe -r #{module_name}", "", @error_bit, 2)
         else
           @vatf_helper.smart_send_cmd(is_alpha_side, @normal_cmd, "modprobe #{module_name}", "", @error_bit, 2)
