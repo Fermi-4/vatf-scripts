@@ -810,5 +810,17 @@ module EvmData
 	       }
      return  pru_data["#{platform}"]
   end
+
+  # Function to return the list of different names for a driver
+  def get_networking_drivers(driver)
+    driver_data = {
+      'cpsw'   => ['cpsw', 'TI KeyStone Ethernet Driver'],
+      'cpsw2g' => ['am65-cpsw-nuss'],
+      'cpsw9g' => ['j721e-cpsw-virt-mac'],
+      'icssg'  => ['icssg-prueth'],
+      'icssm'  => ['PRUSS Ethernet driver', 'prueth']
+    } 
+    return driver_data["#{driver}"]    
+  end
   
 end

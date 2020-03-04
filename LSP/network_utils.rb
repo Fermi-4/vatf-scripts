@@ -1,5 +1,4 @@
 # Functions used to collect or set network information.
-
 module NetworkUtils
   
   def get_ifconfig_common(dev='dut1', iface_type='eth', get_mode="ip")
@@ -282,4 +281,53 @@ module NetworkUtils
 
   end
 
+  # Function to get active eth interfaces that are implemented by driver
+  def get_interfaces_by_driver(dev, driver)
+    interfaces = get_active_interfaces(dev)
+    
+    ret = []
+    # Check each active interface on the device 
+    interfaces.each do |iface|
+      # Get iface driver info 
+      dev.send_cmd("ethtool -i #{iface} | grep driver", dev.prompt)
+      iface_driver = dev.response.scan(/driver:\s+(.*)/)[0][0].strip()
+
+      # Return interface if it is implemented by the requested driver
+      ret.push(iface) if get_networking_drivers(driver).include?(iface_driver) 
+    end
+    
+    # Could not find interface
+    raise "Could not find an active interface implemented by #{driver} to run test!" if ret.empty?
+    
+    return ret 
+  end
+
+  # Function to get all interfaces with an active link 
+  def get_active_interfaces(dev)
+    dev.send_cmd("ls /sys/class/net")
+    interfaces = dev.response.split(" ")
+    interfaces = interfaces.reject{|val| val.empty? || val !~ /eth\d+/}
+
+    ret = []
+    # Check if link is active, if not try next interface 
+    interfaces.each { |val|
+      iface = val.scan(/(eth\d+)/)[0][0].strip
+      ret.push(iface) if has_active_link(dev, iface)
+    }
+
+    return ret
+  end
+  
+  # Function to check if eth interface has an active link
+  def has_active_link(dev, iface)
+    dev.send_cmd("cat /sys/class/net/#{iface}/operstate", dev.prompt)
+    return dev.response !~ /down/
+  end
+
+  # Function to get the rate at which the interface is currently running
+  def get_line_rate(dev, iface) 
+    dev.send_cmd("cat /sys/class/net/#{iface}/speed", dev.prompt)
+    speed = dev.response.scan(/^(\d+)/)[0][0].to_i
+    return speed
+  end
 end
