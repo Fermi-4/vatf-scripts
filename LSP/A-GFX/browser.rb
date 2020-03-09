@@ -18,7 +18,7 @@ def run
   start_cmd = @test_params.params_chan.browser_cmd[0]
   timeout = @test_params.params_chan.timeout[0].to_i
   
-  @equipment['dut1'].send_cmd("timeout -t #{timeout} #{start_cmd}", @equipment['dut1'].prompt, timeout + 10)
+  @equipment['dut1'].send_cmd("timeout #{timeout} #{start_cmd}", @equipment['dut1'].prompt, timeout + 10)
   if @equipment['dut1'].response.match(/error/im)
     set_result(FrameworkConstants::Result[:fail], "Test failed:\n#{@equipment['dut1'].response}")
   else
