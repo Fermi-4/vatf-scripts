@@ -32,7 +32,7 @@ def run
     pvrtrace_lib = pvrtrace_libs.select { |l| l.match(/#{lib_pattern}$/) || l.match(/#{lib}$/) }
     @equipment['dut1'].send_cmd("ln -sf #{pvrtrace_lib[0]} #{@linux_dst_dir}/#{lib}", @equipment['dut1'].prompt) if !pvrtrace_lib.empty?
   end
-  @equipment['dut1'].send_cmd("LD_LIBRARY_PATH=#{dut_pvhrhub_path}/PVRTrace/Recorder/:#{@linux_dst_dir} PVRHUB_DIR=#{dut_pvhrhub_path} timeout -s 2 weston-simple-egl", @equipment['dut1'].prompt, 120)
+  @equipment['dut1'].send_cmd("LD_LIBRARY_PATH=#{dut_pvhrhub_path}/PVRTrace/Recorder/:#{@linux_dst_dir} PVRHUB_DIR=#{dut_pvhrhub_path} timeout 30 -s 2 weston-simple-egl", @equipment['dut1'].prompt, 120)
   begin
     scp_pull_file(dut_ip, dut_profile_path, local_profile_path)
     @equipment['server1'].send_cmd("ls -l #{local_profile_path}", @equipment['server1'].prompt)
