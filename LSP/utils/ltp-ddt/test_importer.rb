@@ -90,11 +90,11 @@ class TestImporter
       common['setup_requires'] = $1.strip
     end
     testcases = []
-    data.scan(/^\s*(\w+_\w+_[\w\-\.]+)/) {|tag|
+    data.scan(/^\s*([\w\-]+_\w+_[\w\-\.]+)/) {|tag|
       next if skip_test?(tag[0])
       begin
         scenario_file = file.match(/.+ltp-ddt\/runtest\/(.+)$/).captures[0]
-        tag_data = tag[0].match(/^(\w+?)_(\w+?)_([a-zA-Z]+)/).captures
+        tag_data = tag[0].match(/^([\w\-]+?)_(\w+?)_([a-zA-Z]+)/).captures
         raise "Invalid tag. Scope is not XS, S, M, L, XL or XXL" if !(tag_data[1].match(/(XS|S|M|L|XL|XXL)/))
         testcase = {
           'name' => tag[0],
@@ -127,6 +127,13 @@ class TestImporter
     }
     return false
   end
+
+  # Recursively add subdirectories to testsuite
+  def add_subdirs(ts, suite_name)
+    return ts if suite_name.empty?
+    ts = ts.add_element("testsuite", {'name' => suite_name.shift})
+    add_subdirs(ts, suite_name)
+  end
   
   # Takes Testsuites map and creates xml file suitable for Testlink's import
   # at filepath location
@@ -134,8 +141,10 @@ class TestImporter
     doc = Document.new('<?xml version="1.0" encoding="UTF-8"?>')
     root  = doc.add_element "testsuite", {'name' => ''}
     testsuites.each{|k,v|
-      ts  = root.add_element "testsuite", {'name' => k}
+      suite_name = k.split('-') 
+      ts = add_subdirs(root, suite_name)
       tsl = ts.add_element "testsuite", {'name' => "ltp"}
+            
       v.each{|t|
         tc = tsl.add_element "testcase", {'name' => t['name']}
         et = tc.add_element "execution_type"
