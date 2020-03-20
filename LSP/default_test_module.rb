@@ -440,7 +440,7 @@ module LspTestScript
     determine_distro()
     params['dut'] = @equipment['dut1'] if !params['dut']
     if params['packages'].to_s != ''
-      params['dut'].send_cmd("#{@distro_cmd.call({'cmd'=>'package-list-installed'})} | grep #{old_fs_canary}; echo $?", /^0/, 3)
+      params['dut'].send_cmd("#{@distro_cmd.call({'cmd'=>'package-list-installed'})} | grep #{old_fs_canary}; echo $?", /^0/, 10)
       if params['dut'].timeout?
         params['dut'].send_cmd(@distro_cmd.call({'cmd'=>'package-update'}), /#{params['dut'].prompt}/, 240)
         raise "Could not update package feeds" if !params['dut'].response.match(/Updated source/i)
