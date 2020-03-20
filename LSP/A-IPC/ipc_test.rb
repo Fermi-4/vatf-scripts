@@ -179,8 +179,8 @@ def ipc_echo_test(rp)
   sleep(10)
   @equipment['dut1'].send_cmd("dmesg -c", @equipment['dut1'].prompt, 120)
   test_dmesg = @equipment['dut1'].response
-  @equipment['dut1'].send_cmd("ls -d /sys/class/remoteproc/#{rp['sysfs']}/virtio*/virtio*", @equipment['dut1'].prompt)
-  virtio = @equipment['dut1'].response.match(/\/sys\/class\/remoteproc\/#{rp['sysfs']}\/virtio\d+\/(virtio[^\r\n]+)/im).captures[0]
+  @equipment['dut1'].send_cmd("ls -d /sys/class/remoteproc/#{rp['sysfs']}/#{rp['sysfs']}#vdev0buffer/virtio*/virtio*", @equipment['dut1'].prompt)
+  virtio = @equipment['dut1'].response.match(/\/sys\/class\/remoteproc\/#{rp['sysfs']}\/#{rp['sysfs']}\#vdev0buffer\/virtio\d+\/(virtio[^\r\n]+)/im).captures[0]
   test = test_dmesg.match(/rpmsg_client_sample\s*#{virtio}[^:]*:\s*goodbye!/) && test_dmesg.match(/rpmsg_client_sample\s*#{virtio}[^:]*:\s*incoming\s*msg\s*100/)
   rescue Exception => e
     test_dmesg += e.to_s
