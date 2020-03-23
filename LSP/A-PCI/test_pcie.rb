@@ -315,8 +315,8 @@ end
 
 def get_msi_int(response)
   #"333:          0          0   ITS-MSI 134742016 Edge      pci-endpoint-test.0"
-  if response.match(/:\s+(\d+).*(?:PCI-MSI|ITS-MSI).*pci-endpoint-test/)
-    rtn = response.match(/:\s+(\d+).*(?:PCI-MSI|ITS-MSI).*pci-endpoint-test/).captures[0]
+  if response.match(/:\s+(\d+).*(?:PCI-MSI|ITS-MSI).*?(?:0000|pci-endpoint-test)/)
+    rtn = response.match(/:\s+(\d+).*(?:PCI-MSI|ITS-MSI).*?(?:0000|pci-endpoint-test)/).captures[0]
     return rtn
   else
     return "FAIL"
