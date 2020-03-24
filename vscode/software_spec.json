@@ -1,0 +1,76 @@
+[
+	{
+		"label": "kernel",
+		"description": "Kernel Image URI",
+		"detail": "file://... or http://...",
+		"chooseMany": false
+	},
+	{
+		"label": "dtb",
+		"description": "Device tree binary",
+		"detail": "file://... or http://...",
+		"chooseMany": false
+	},
+	{
+		"label": "dtbo",
+		"description": "Device tree overlays",
+		"detail": "file://... or http://...",
+		"chooseMany": true
+	},
+	{
+		"label": "kernel_modules",
+		"description": "Kernel modules archive",
+		"detail": "file://... or http://...",
+		"chooseMany": false
+	},
+	{
+		"label": "sysfw",
+		"description": "Firmware (sysfw.itb or pmmc)",
+		"detail": "file://... or http://...",
+		"chooseMany": false
+	},
+	{
+		"label": "fit",
+		"description": "Fit image",
+		"detail": "file://... or http://...",
+		"chooseMany": false
+	},
+	{
+		"label": "initramfs",
+		"description": "Ram file system",
+		"detail": "file://... or http://...",
+		"chooseMany": false
+	},
+	{
+		"label": "nfs",
+		"description": "Network File system archive",
+		"detail": "file://... or http://...",
+		"chooseMany": false
+	},
+	{
+		"label": "secure_boot_monitor",
+		"description": "Secure boot monitor (skern)",
+		"detail": "file://... or http://...",
+		"chooseMany": false
+	},
+	{
+		"label": "initial_bootloader",
+		"description": "Initial bootloader",
+		"detail": "file://... or http://...",
+		"chooseMany": false
+	},
+	{
+		"label": "primary_bootloader",
+		"description": "Primary bootloader",
+		"detail": "file://... or http://...",
+		"chooseMany": false
+	},
+	{
+		"label": "secondary_bootloader",
+		"description": "Secondary bootloader",
+		"detail": "file://... or http://...",
+		"chooseMany": false
+	}
+]
+
+

@@ -1,0 +1,1004 @@
+[
+	{
+		"label": "10g",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "4-port",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "6-port",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "acontis",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "adc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "android",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "avs",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "b2b",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "be",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "build",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "cal",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "can0",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "can1",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "cclink",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "ccs",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "cmb",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "colorimeter",
+		"description": "",
+		"detail": "",
+		"files": ["LSP/A-Display/drm/lcd.rb"],
+		"drivers": []
+	},
+	{
+		"label": "common",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "corsairn400gbnx500",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "cpsw9g",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "cpsw9geth1",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "csl",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "diag",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "displayport",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "e1000",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "ecat",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "emac",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "emmc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "ethboot",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "fl",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "gmac",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "gpiowake",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "hdmi",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "hdmi4k",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "hdmiqual",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "hflash",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "host",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "hsr",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "ipc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "keyboard",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "lcd",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "le",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "linux",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "loopback",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "matrixkey",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "mcu",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "mmc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "mouse",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "msata",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "mt9t111",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "nand",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "ndk",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "nousbhost",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "ntsc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "oc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "oscope",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "ospi",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "ov10635",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pal",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pciebackplane",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pciegen3ssd",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pciem2",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pciep",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pciethcard",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pciex2",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pciiwlwifi",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pcisatacard",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pciusbcard",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "power",
+		"description": "Can measure power on board",
+		"detail": "Board is able to run tests that require power measurements",
+		"files": ["LSP/A-Power/power_functions.rb",
+			"LSP/A-Power/poweroff.rb"],
+		"drivers": ["AutomationInterfaceDriver.new({},'')"]
+	},
+	{
+		"label": "procsdk",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "promira",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "proxy",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "prp",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "prueth",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "prueth0",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "prueth1",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "prueth2",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "prueth3",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "prueth4",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "prueth5",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "prueth6",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pruethloopback",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pruicss1",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pruicss2",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "pseudohid",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "ptp",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "px128m8p",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "qspi",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "qspiboot",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "remote-host",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "rtos",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "samsungmzvbe1t0",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "samsungmzvlw128",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "sata",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "satadvd",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "satapmp",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "sd",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "sdboot",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "sdhc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "sdhcperf",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "sdmux",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "sdwire",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "sdxc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "secdev",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "singletouch",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "spi",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "starterware",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "sysbootctr",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "sysbootctrl",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "systestaa2",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "tidl",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "tsc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "uarthwflow",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "uartload",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "uhsddr50",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "uhssdr104",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "unit",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbclien",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbclient",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbdev",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbdevice",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbdrd",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbfullspeed",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbgadgetfbs",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbhostaudio",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbhosteth",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbhosthid",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbhosthub",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbhostmsc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbhostmscperf",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbhostmultimsc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbhostperfmsc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbhostserial",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbhostsshub",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbhostssmsc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbhostvideo",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbotghostmsc",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbperf",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "usbssdevice",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "videosensor",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "vlan",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "wifi",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	},
+	{
+		"label": "wlan",
+		"description": "",
+		"detail": "",
+		"files": [],
+		"drivers": []
+	}
+]
