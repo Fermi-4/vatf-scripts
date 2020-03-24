@@ -1,0 +1,224 @@
+[
+	{
+		"label": "am335x-bbb"
+	},
+	{
+		"label": "am335x-evm"
+	},
+	{
+		"label": "am335x-hsevm"
+	},
+	{
+		"label": "am335x-ice"
+	},
+	{
+		"label": "am335x-sk"
+	},
+	{
+		"label": "am37x-evm"
+	},
+	{
+		"label": "am437x-evm"
+	},
+	{
+		"label": "am437x-hsevm"
+	},
+	{
+		"label": "am437x-idk"
+	},
+	{
+		"label": "am437x-sk"
+	},
+	{
+		"label": "am43xx-epos"
+	},
+	{
+		"label": "am43xx-gpevm"
+	},
+	{
+		"label": "am43xx-hsevm"
+	},
+	{
+		"label": "am571-idk-sdomc"
+	},
+	{
+		"label": "am571x-idk"
+	},
+	{
+		"label": "am572-evm-sdomc"
+	},
+	{
+		"label": "am572x-evm"
+	},
+	{
+		"label": "am572x-idk"
+	},
+	{
+		"label": "am572x-idk-dsp-irt"
+	},
+	{
+		"label": "am574-idk-sdomc"
+	},
+	{
+		"label": "am574x-hsidk"
+	},
+	{
+		"label": "am574x-idk"
+	},
+	{
+		"label": "am574x-idk-qspi"
+	},
+	{
+		"label": "am57xx-beagle-x15"
+	},
+	{
+		"label": "am57xx-evm"
+	},
+	{
+		"label": "am57xx-hsevm"
+	},
+	{
+		"label": "am64xx-vlab"
+	},
+	{
+		"label": "am654x-evm"
+	},
+	{
+		"label": "am654x-hsevm"
+	},
+	{
+		"label": "am654x-idk"
+	},
+	{
+		"label": "amic110-ice"
+	},
+	{
+		"label": "bbai"
+	},
+	{
+		"label": "beagleboard"
+	},
+	{
+		"label": "beagleboard-vanilla"
+	},
+	{
+		"label": "beaglebone"
+	},
+	{
+		"label": "beaglebone-black"
+	},
+	{
+		"label": "c6657-evm"
+	},
+	{
+		"label": "c6657_evm-le"
+	},
+	{
+		"label": "c6678-evm"
+	},
+	{
+		"label": "craneboard"
+	},
+	{
+		"label": "dra71x-evm"
+	},
+	{
+		"label": "dra71x-hsevm"
+	},
+	{
+		"label": "dra71x-lcard"
+	},
+	{
+		"label": "dra72x-evm"
+	},
+	{
+		"label": "dra72x-hsevm"
+	},
+	{
+		"label": "dra76x-evm"
+	},
+	{
+		"label": "dra7xx-evm"
+	},
+	{
+		"label": "dra7xx-hsevm"
+	},
+	{
+		"label": "j721e-evm"
+	},
+	{
+		"label": "j721e-idk-gw"
+	},
+	{
+		"label": "k2e-evm"
+	},
+	{
+		"label": "k2e-evm-sdomc"
+	},
+	{
+		"label": "k2e-hsevm"
+	},
+	{
+		"label": "k2g-evm"
+	},
+	{
+		"label": "k2g-evm-sdomc"
+	},
+	{
+		"label": "k2g-hsevm"
+	},
+	{
+		"label": "k2g-ice"
+	},
+	{
+		"label": "k2h-evm"
+	},
+	{
+		"label": "k2h-evm-sdomc"
+	},
+	{
+		"label": "k2hk-evm"
+	},
+	{
+		"label": "k2hk-hsevm"
+	},
+	{
+		"label": "k2k-evm"
+	},
+	{
+		"label": "k2l-evm"
+	},
+	{
+		"label": "k2l-evm-sdomc"
+	},
+	{
+		"label": "k2l-hsevm"
+	},
+	{
+		"label": "ldp3430"
+	},
+	{
+		"label": "n900"
+	},
+	{
+		"label": "omap5-evm"
+	},
+	{
+		"label": "omapl137-evm"
+	},
+	{
+		"label": "omapl138-lcdk"
+	},
+	{
+		"label": "pandaboard-es"
+	},
+	{
+		"label": "pandaboard-vanilla"
+	},
+	{
+		"label": "sdp3430"
+	},
+	{
+		"label": "sdp4430"
+	}
+]

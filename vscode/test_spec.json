@@ -1,0 +1,9 @@
+{
+    "@name": "One line defining the name of the test.",
+    "@description": "Provides short description about the test case. Can be more than one line.",
+    "@requirements": "Comma separated list of functional requirements addressed by the test case. e.g: PRSDK-12345,PRSDK-12346.",
+    "@pass_criteria": "Expected results. eg: app prints 'xyz'",
+    "@setup_requires": "Used to specify test setup requirements. Multiple values can be specified using underscore '_' to separate them, e.g: usbhostaudio_usbhostvideo",
+    "@steps": "Ordered list of actions executed by the test case, eg: Power cycle, boot, run xyz app, parse traces and verify print xyz is printed",
+    "@params": "Comma separated list '<name>=<value1;value2;value3>' entries. eg: iterations=1, ips=vip;cal" 
+}
