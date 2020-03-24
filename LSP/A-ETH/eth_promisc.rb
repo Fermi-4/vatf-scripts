@@ -36,9 +36,9 @@ def run
   # Get DUT ip and mac
   dut_ip = get_ip_address_by_interface('dut1', iface)
   dut_mac = get_mac_addr('dut1', iface)
-
+ 
   # Get server ip 
-  server_ip = get_remote_ip(iface, 'dut1', 'server1')
+  server_ip = get_server_ip_from_dut(dut_ip)
 
   # Dictionary for test params
   eth_params = {
@@ -251,7 +251,6 @@ def check_port_in_use(port)
   end
   raise "Could not find an open port for test!"
 end
-
 
 # Install nping if it is not in host
 def install_nping()
