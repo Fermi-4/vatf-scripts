@@ -34,6 +34,8 @@ def run
   params['linux_version'] = @equipment['dut1'].get_linux_version
   # option: 'legacy, msi, msix'
   params['int_mode'] = @test_params.params_chan.instance_variable_defined?(:@int_mode) ? @test_params.params_chan.int_mode[0] : 'msi'
+  params['dma_mode'] = @test_params.params_chan.instance_variable_defined?(:@dma_mode) ? @test_params.params_chan.dma_mode[0] : '1'
+  dma_opt = params['dma_mode'] == '1' ? '-d' : ""
   msi_map = {"legacy"=>"0", "msi"=>"1", "msix"=>"2"}
 
   prepare_ep(params)
@@ -146,17 +148,17 @@ def run
       @equipment['dut2'].log_info("====In loop #{i.to_s}====")
       params['rw_sizes'].split(' ').each {|size|
         puts "size is: #{size}"
-        @equipment['dut2'].send_cmd("pcitest -w -s #{size} -D #{test_dev}", @equipment['dut2'].prompt, 120)
+        @equipment['dut2'].send_cmd("pcitest -w -s #{size} #{dma_opt} -D #{test_dev}", @equipment['dut2'].prompt, 120)
         if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
           report_msg "Test Fail Reason: Write test w/ #{size} failed", "dut2"
           result += 1
         end
-        @equipment['dut2'].send_cmd("pcitest -r -s #{size} -D #{test_dev}", @equipment['dut2'].prompt, 120)
+        @equipment['dut2'].send_cmd("pcitest -r -s #{size} #{dma_opt} -D #{test_dev}", @equipment['dut2'].prompt, 120)
         if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
           report_msg "Test Fail Reason: Read test w/ #{size} failed", "dut2"
           result += 1
         end
-        @equipment['dut2'].send_cmd("pcitest -c -s #{size} -D #{test_dev}", @equipment['dut2'].prompt, 120)
+        @equipment['dut2'].send_cmd("pcitest -c -s #{size} #{dma_opt} -D #{test_dev}", @equipment['dut2'].prompt, 120)
         if @equipment['dut2'].response.match(/not\s+okay/i) || ! @equipment['dut2'].response.match(/okay/i)
           report_msg "Test Fail Reason: Copy test w/ #{size} test failed", "dut2"
           result += 1
