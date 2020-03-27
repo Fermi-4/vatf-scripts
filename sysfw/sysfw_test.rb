@@ -9,6 +9,8 @@ end
 def run
   expected_resets = @test_params.params_chan.instance_variable_defined?(:@expected_resets) ? @test_params.params_chan.expected_resets[0].to_i :
                     @test_params.instance_variable_defined?(:@var_expected_resets) ? @test_params.var_expected_resets.to_i : 0
+  console_timeout = @test_params.params_chan.instance_variable_defined?(:@timeout) ? @test_params.params_chan.timeout[0].to_i :
+                    @test_params.instance_variable_defined?(:@var_timeout) ? @test_params.var_timeout.to_i : 120
   SysBootModule::set_sysboot(@equipment['dut1'], '0000')
   @power_handler.reset(@equipment['dut1'].power_port) {
     sleep 3
@@ -22,11 +24,11 @@ def run
   @power_handler.por(@equipment['dut1'].power_port)
   expected_resets.times do 
 	load_and_connect(translated_boot_params)
-	@equipment['dut1'].target.wait_on_for(@equipment['dut1'].target.bootloader, /CCCC/, 120)
+	@equipment['dut1'].target.wait_on_for(@equipment['dut1'].target.bootloader, /CCCC/, console_timeout)
 	@equipment['dut1'].target.disconnect_bootloader()
   end
   load_and_connect(translated_boot_params)
-  @equipment['dut1'].target.wait_on_for(@equipment['dut1'].target.bootloader, /Net\s*Result:.*?test/, 120)
+  @equipment['dut1'].target.wait_on_for(@equipment['dut1'].target.bootloader, /Net\s*Result:.*?test/, console_timeout)
   sysfw_res = @equipment['dut1'].target.bootloader.response.match(/Net\s*Result:.*?,\s*(\d+)\s*failed.*?test/)
 
   if sysfw_res == nil
