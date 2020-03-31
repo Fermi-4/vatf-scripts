@@ -42,7 +42,7 @@ def run
   bringup_rc('dut2', '2', params)
 
   # Run pcie ep tests
-  @equipment['dut2'].send_cmd("lspci", @equipment['dut2'].prompt, 10)
+  @equipment['dut2'].send_cmd("lspci -vv", @equipment['dut2'].prompt, 10)
   @equipment['dut2'].send_cmd("echo 1 > /sys/bus/pci/rescan", @equipment['dut2'].prompt, 10)
   sleep 1
   @equipment['dut2'].send_cmd("for f in /sys/bus/pci/devices/*/sriov_numvfs; do echo #{params['num_vfs']} > $f; done", @equipment['dut2'].prompt, 10)
