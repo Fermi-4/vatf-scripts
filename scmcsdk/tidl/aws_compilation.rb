@@ -1,5 +1,14 @@
 # -*- coding: ISO-8859-1 -*-
+
+# This script requires that
+#  1) docker is installed in the host machine, for example:
+#     sudo apt-get update && sudo apt-get install docker.io
+#  2) default user is part of docker group, for example:
+#     sudo groupadd docker && sudo gpasswd -a $USER docker && newgrp docker
+
 require File.dirname(__FILE__)+'/../../LSP/default_test_module'
+require 'date'
+require 'socket'
 
 include LspTestScript
 
@@ -13,17 +22,22 @@ def map_dut_aws_target
 end
 
 def compile_model(timeout)
-    @equipment['server1'].send_cmd("rm #{File.dirname(__FILE__)}/*.tgz", @equipment['server1'].prompt, 10)
-    @equipment['server1'].send_cmd("cd #{File.dirname(__FILE__)}; wget --no-proxy #{@test_params.params_chan.model[0]}", @equipment['server1'].prompt, 10)
-    @equipment['server1'].send_cmd("cd #{File.dirname(__FILE__)}; python compile-local-model.py -f #{File.basename(@test_params.params_chan.model[0])}"\
-                                   " -t #{map_dut_aws_target} -n job#{rand(1000)}", @equipment['server1'].prompt, timeout)
+    @aws_tempdir=`mktemp -d`.gsub(/\n/,'')
+    @equipment['server1'].send_cmd("cd #{@aws_tempdir}; wget --no-proxy #{@test_params.params_chan.model[0]}", @equipment['server1'].prompt, 30)
+    # Load manually until private docker registry is available
+    @equipment['server1'].send_cmd("docker load -i /mnt/gtautoftp/docker_images/aws_buster.tar.gz", @equipment['server1'].prompt, 60)
+    @equipment['server1'].send_cmd("docker run --rm -v /mnt/gtautoftp/:/mnt/gtautoftp "\
+        "-v #{@aws_tempdir}:/testfiles aws:buster python aws_compile_local_model.py "\
+        "-f /testfiles/#{File.basename(@test_params.params_chan.model[0])}  -t #{map_dut_aws_target} "\
+        "-n #{Socket.gethostname.downcase()}-#{DateTime.now.strftime("%y-%m-%dT%H-%M-%S")}",
+        @equipment['server1'].prompt, timeout)
     return @equipment['server1'].response
 end
 
 def copy_model_files_to_target
     dut_ip = get_ip_addr()
     model_name = File.basename(@test_params.params_chan.model[0]).gsub(/\.tgz$/, "-#{map_dut_aws_target}.tgz")
-    scp_push_file(dut_ip, File.join(File.dirname(__FILE__), model_name), '/tmp')
+    scp_push_file(dut_ip, File.join(@aws_tempdir, model_name), '/tmp')
     @equipment['dut1'].send_cmd("cd /tmp; tar -xvzf #{model_name}", @equipment['dut1'].prompt, 30)
     @equipment['dut1'].send_cmd("wget --proxy off #{@test_params.params_chan.image[0]}", @equipment['dut1'].prompt, 30)
     @equipment['dut1'].send_cmd("wget --proxy off #{@test_params.params_chan.tidl_script[0]}", @equipment['dut1'].prompt, 30)
@@ -57,4 +71,9 @@ def run
         set_result(FrameworkConstants::Result[:fail], "Test Failed. Image was not recognized")
    end
 
+end
+
+def clean
+    @equipment['server1'].send_cmd("rm -rf #{@aws_tempdir}", @equipment['dut1'].prompt)
+    super()
 end

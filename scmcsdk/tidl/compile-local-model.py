@@ -3,6 +3,7 @@ import time
 import os
 import boto3
 import botocore
+import shutil
 
 with open('/mnt/gtautoftp/ml_models/aws.info') as file:
     for line in file:
@@ -78,3 +79,4 @@ print(sagemaker.describe_compilation_job(CompilationJobName=args.name))
 
 # Download compile model
 s3.download_file(args.bucket, output_file, output_file)
+shutil.copyfile(output_file, "/testfiles/{}".format(output_file))
