@@ -74,6 +74,6 @@ def run
 end
 
 def clean
-    @equipment['server1'].send_cmd("rm -rf #{@aws_tempdir}", @equipment['dut1'].prompt)
+    @equipment['server1'].send_cmd("rm -rf #{@aws_tempdir}", @equipment['server1'].prompt)
     super()
 end
