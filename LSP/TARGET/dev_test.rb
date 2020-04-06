@@ -1,4 +1,5 @@
 require File.dirname(__FILE__)+'/../default_target_test'
+require 'iconv' unless String.method_defined?(:encode)
 
 include LspTargetTestScript
 
@@ -153,11 +154,21 @@ def run_determine_test_outcome(return_non_zero)
   end
 end
 
+def process_line(line)
+  if String.method_defined?(:encode)
+    line = line.encode('UTF-8', 'UTF-8', :invalid => :replace)
+  else
+    ic = Iconv.new('UTF-8', 'UTF-8//IGNORE')
+    line = ic.iconv(line)
+  end
+  line.gsub(/<\/*(STD|ERR)_OUTPUT>/,'')
+end
+
 def get_detailed_info
   log_file_name = File.join(@linux_temp_folder, 'test.log') 
   all_lines = ''
   File.open(log_file_name, 'r').each {|line|
-    all_lines += line.gsub(/<\/*(STD|ERR)_OUTPUT>/,'')
+    all_lines += process_line(line)
   }
   return all_lines
 end
