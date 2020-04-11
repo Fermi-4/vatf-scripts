@@ -585,6 +585,9 @@ module LspTestScript
 
     connect_to_equipment(device_name)
     check_dut_booted(params)
+    # Use nameserver information provided by dhcp server when doing nfs boot
+    device_object.send_cmd("grep nameserver /proc/net/pnp > /dev/null && ln -sf /proc/net/pnp /etc/resolv.conf && systemctl restart systemd-resolved", device_object.prompt)
+    # Run user-defined commands after login in to the system prompt
     device_object.send_cmd(@test_params.var_post_boot_cmd, device_object.prompt, 60) if @test_params.instance_variable_defined?(:@var_post_boot_cmd)
     query_start_stats(device_name)
     install_packages(translated_boot_params)

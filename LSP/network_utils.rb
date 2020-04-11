@@ -330,4 +330,12 @@ module NetworkUtils
     speed = dev.response.scan(/^(\d+)/)[0][0].to_i
     return speed
   end
+
+  # Gets server IP from dut ip 
+  def get_server_ip_from_dut(dut_ip) 
+    @equipment['server1'].send_cmd("ip route get #{dut_ip}", @equipment['server1'].prompt)
+    server_ip = @equipment['server1'].response.scan(/src\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/)
+    raise "Could not get IP of server from IP of DUT!" if server_ip.empty?
+    return server_ip[0][0]
+  end
 end
