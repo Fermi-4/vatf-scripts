@@ -309,6 +309,22 @@ module LspTestScript
     new_params['start_remoteproc_cmd'] = @test_params.instance_variable_defined?(:@var_start_remoteproc_cmd) ? @test_params.var_start_remoteproc_cmd : ''
 
     new_params.each{|k,v| puts "translate_boot_params.end: #{k}: #{v}"}
+
+    #Handle additional software assets
+    additional_sw_assets = @test_params.instance_variables.select do |ivar|
+	    ival = @test_params.instance_variable_get(ivar)
+	    ival.class == String && File.exist?(ival) && File.file?(ival)
+    end
+    additional_sw_assets.each do |sw|
+	    sw_name = sw.to_s[1..-1]
+	    sw_name = sw_name.split(idx.to_s,2).join('') if idx != ''
+	    next if new_params[sw_name] || ['rtp_path', 'bench_path', 'results_file', 'nfs'].include?(sw_name)
+	    new_params[sw_name] = @test_params.instance_variable_get(sw)
+      new_params["#{sw_name}_dev"] = new_params["#{sw_name}#{idx}_dev"] ? new_params["#{sw_name}#{idx}_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("#{sw}#{idx}_dev") ? @test_params.params_chan.instance_variable_get("#{sw}#{idx}_dev") :
+                             @test_params.instance_variable_defined?("@var_#{sw_name}#{idx}_dev") ? @test_params.instance_variable_get("@var_#{sw}#{idx}_dev") : "eth"
+    end 
+
     new_params
   end
 
