@@ -309,6 +309,22 @@ module LspTestScript
     new_params['start_remoteproc_cmd'] = @test_params.instance_variable_defined?(:@var_start_remoteproc_cmd) ? @test_params.var_start_remoteproc_cmd : ''
 
     new_params.each{|k,v| puts "translate_boot_params.end: #{k}: #{v}"}
+
+    #Handle additional software assets
+    additional_sw_assets = @test_params.instance_variables.select do |ivar|
+	    ival = @test_params.instance_variable_get(ivar)
+	    ival.class == String && File.exist?(ival) && File.file?(ival)
+    end
+    additional_sw_assets.each do |sw|
+	    sw_name = sw.to_s[1..-1]
+	    sw_name = sw_name.split(idx.to_s,2).join('') if idx != ''
+	    next if new_params[sw_name] || ['rtp_path', 'bench_path', 'results_file', 'nfs'].include?(sw_name)
+	    new_params[sw_name] = @test_params.instance_variable_get(sw)
+      new_params["#{sw_name}_dev"] = new_params["#{sw_name}#{idx}_dev"] ? new_params["#{sw_name}#{idx}_dev"] :
+                             @test_params.params_chan.instance_variable_defined?("#{sw}#{idx}_dev") ? @test_params.params_chan.instance_variable_get("#{sw}#{idx}_dev") :
+                             @test_params.instance_variable_defined?("@var_#{sw_name}#{idx}_dev") ? @test_params.instance_variable_get("@var_#{sw}#{idx}_dev") : "eth"
+    end 
+
     new_params
   end
 
@@ -437,16 +453,23 @@ module LspTestScript
   # Install distro packages defined in the test case by @test_params.params_chan.packages
   def install_packages(params)
     old_fs_canary = 'packagegroup-arago-test'
+    package_update_done = false
     determine_distro()
     params['dut'] = @equipment['dut1'] if !params['dut']
     if params['packages'].to_s != ''
       params['dut'].send_cmd("#{@distro_cmd.call({'cmd'=>'package-list-installed'})} | grep #{old_fs_canary}; echo $?", /^0/, 10)
       if params['dut'].timeout?
-        params['dut'].send_cmd(@distro_cmd.call({'cmd'=>'package-update'}), /#{params['dut'].prompt}/, 240)
-        raise "Could not update package feeds" if !params['dut'].response.match(/Updated source/i)
         params['packages'].each {|package|
-          params['dut'].send_cmd("#{@distro_cmd.call({'cmd'=>'package-install'})} #{package}; echo $?", /#{params['dut'].prompt}/, 1200)
-          raise "Could not install package #{package}" if !params['dut'].response.match(/^0/)
+          params['dut'].send_cmd("#{@distro_cmd.call({'cmd'=>'package-list-installed'})} | grep #{package}; echo $?", /^0/, 10)
+          if params['dut'].timeout?
+            if !package_update_done
+              params['dut'].send_cmd(@distro_cmd.call({'cmd'=>'package-update'}), /#{params['dut'].prompt}/, 240)
+              raise "Could not update package feeds" if !params['dut'].response.match(/Updated source/i)
+              package_update_done = true
+            end
+            params['dut'].send_cmd("#{@distro_cmd.call({'cmd'=>'package-install'})} #{package}; echo $?", /#{params['dut'].prompt}/, 1200)
+            raise "Could not install package #{package}" if !params['dut'].response.match(/^0/)
+          end
         }
       end
     end
