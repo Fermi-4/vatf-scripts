@@ -322,7 +322,7 @@ module LspTestScript
 	    new_params[sw_name] = @test_params.instance_variable_get(sw)
       new_params["#{sw_name}_dev"] = new_params["#{sw_name}#{idx}_dev"] ? new_params["#{sw_name}#{idx}_dev"] :
                              @test_params.params_chan.instance_variable_defined?("#{sw}#{idx}_dev") ? @test_params.params_chan.instance_variable_get("#{sw}#{idx}_dev") :
-                             @test_params.instance_variable_defined?("@var_#{sw_name}#{idx}_dev") ? @test_params.instance_variable_get("@var_#{sw}#{idx}_dev") : "eth"
+                             @test_params.instance_variable_defined?("@var_#{sw_name}#{idx}_dev") ? @test_params.instance_variable_get("@var_#{sw_name}#{idx}_dev") : "eth"
     end 
 
     new_params
