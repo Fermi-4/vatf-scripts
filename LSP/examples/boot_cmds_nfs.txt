@@ -1,0 +1,39 @@
+#NFS based Custom boot_cmds file. Defines a custom sequence
+#of u-boot commands to boot the board. Uses nfs to load the
+#images into memory hence all the images must be included
+#in the file system tarball in the paths specified by each
+#command.
+
+#Reset 
+"setenv bootcmd  ''", '=>', 2, false, false
+"setenv autoload no", '=>', 2, false, false
+"setenv serverip #{params['serverip']}", '=>', 2, false, false
+'setenv _initramfs -', '=>'
+
+#Get an IP address
+'dhcp', '=>', 45
+
+#Setup nfs rootfs
+"setenv bootargs console=ttyS2,115200n8 earlyprintk=serial,ttyS2,115200n8 earlycon=ns16550a,mmio32,0x02800000 rootwait fsck.mode=skip ip=:::::eth0:dhcp root=/dev/nfs rw nfsroot=#{params['nfs_path']},nolock,v3,tcp,rsize=4096,wsize=4096", '=>'
+
+#Load and boot rprocs
+"rproc init", '=>'
+#3 -> j7-main-r5f0_1-fw, 4 -> j7-main-r5f1_0-fw, 6 -> j7-c66_0-fw, 7 -> j7-c66_1-fw, 8 -> j7-c71_0-fw are broken links so point to the actual files here
+"setenv rproc_fw_binaries '3 /lib/firmware/pdk-ipc/ipc_echo_test_mcu2_1_release_strip.xer5f 4 /lib/firmware/pdk-ipc/ipc_echo_test_mcu3_0_release_strip.xer5f 6 /lib/firmware/pdk-ipc/ipc_echo_test_c66xdsp_1_release_strip.xe66 7 /lib/firmware/pdk-ipc/ipc_echo_test_c66xdsp_2_release_strip.xe66 8 /lib/firmware/pdk-ipc/ipc_echo_test_c7x_1_release_strip.xe71'", '=>'
+"setenv rproc_load_and_boot_one 'if nfs $loadaddr #{params['nfs_path']}${rproc_fw};then if rproc load ${rproc_id} ${loadaddr} ${filesize}; then rproc start ${rproc_id};fi;fi'", '=>'
+"run boot_rprocs_mmc", '=>', 60
+"rproc list", '=>'
+
+#Load kernel
+"nfs #{params['_env']['kernel_loadaddr']} #{params['nfs_path']}/boot/Image", '=>', 120
+
+#Load dtb
+"nfs #{params['_env']['dtb_loadaddr']} #{params['nfs_path']}/boot/k3-j721e-common-proc-board.dtb", '=>', 20
+
+#Load dtbos
+"fdt address #{params['_env']['dtb_loadaddr']};fdt resize 0x100000", '=>'
+"for overlay in $overlay_files;do;nfs #{params['_env']['overlayaddr']} #{params['nfs_path']}/boot/${overlay} && fdt apply ${overlayaddr};done;", '=>', 60
+
+#Setup bootcmd
+"setenv bootcmd 'booti #{params['_env']['kernel_loadaddr']} - #{params['_env']['dtb_loadaddr']}'", '=>'
+

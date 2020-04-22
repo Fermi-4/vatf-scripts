@@ -1,0 +1,58 @@
+#TFTP based Custom boot_cmds file. Defines a custom sequence
+#of u-boot commands to boot the board. Uses tftp to load the
+#images into memory.
+ 
+#Reset 
+"setenv bootcmd  ''", '=>', 2, false, false
+"setenv autoload no", '=>', 2, false, false
+"setenv serverip #{params['serverip']}", '=>', 2, false, false
+'setenv _initramfs -', '=>'
+
+#Get an IP address
+'dhcp', '=>', 45
+
+#Load and boot rprocs
+"rproc init", '=>'
+#3 -> j7-main-r5f0_1-fw
+"tftp ${loadaddr} #{params['serverip']}:#{params['fw_1_image_name']}", '=>', 120
+"rproc load 3 ${loadaddr} ${filesize}", '=>'
+"rproc start 3", '=>'
+#4 -> j7-main-r5f1_0-fw
+"tftp ${loadaddr} #{params['serverip']}:#{params['fw_2_image_name']}", '=>', 120
+"rproc load 4 ${loadaddr} ${filesize}", '=>'
+"rproc start 4", '=>'
+#6 -> j7-c66_0-fw
+"tftp ${loadaddr} #{params['serverip']}:#{params['fw_3_image_name']}", '=>', 120
+"rproc load 6 ${loadaddr} ${filesize}", '=>'
+"rproc start 6", '=>'
+#7 -> j7-c66_1-fw
+"tftp ${loadaddr} #{params['serverip']}:#{params['fw_4_image_name']}", '=>', 120
+"rproc load 7 ${loadaddr} ${filesize}", '=>'
+"rproc start 7", '=>'
+#8 -> j7-c71_0-fw 
+"tftp ${loadaddr} #{params['serverip']}:#{params['fw_5_image_name']}", '=>', 120
+"rproc load 8 ${loadaddr} ${filesize}", '=>'
+"rproc start 8", '=>'
+"rproc list", '=>'
+
+#Load kernel
+"tftp #{params['_env']['kernel_loadaddr']} #{params['serverip']}:#{params['kernel_image_name']}", '=>', 120
+
+#Load dtb
+"tftp #{params['_env']['dtb_loadaddr']} #{params['serverip']}:#{params['dtb_image_name']}", '=>', 20
+
+#Load dtbos
+#Uncomment lines 23-24 when using dtbo_1 in the software images
+#To add additional overlays copy lines 24-25 and replace dtbo_1_image_name with next dtbo_x used in the software images 
+"fdt address #{params['_env']['dtb_loadaddr']};fdt resize 0x100000", '=>'
+"tftp #{params['_env']['overlayaddr']} #{params['serverip']}:#{params['dtbo_0_image_name']}", '=>'
+"fdt apply #{params['_env']['overlayaddr']}", '=>'
+#"tftp #{params['_env']['overlayaddr']} #{params['serverip']}:#{params['dtbo_1_image_name']}", '=>'
+#"fdt apply #{params['_env']['overlayaddr']}", '=>'
+
+#Setup nfs rootfs
+"setenv bootargs console=ttyS2,115200n8 earlyprintk=serial,ttyS2,115200n8 earlycon=ns16550a,mmio32,0x02800000 rootwait fsck.mode=skip ip=:::::eth0:dhcp root=/dev/nfs rw nfsroot=#{params['nfs_path']},nolock,v3,tcp,rsize=4096,wsize=4096", '=>'
+
+#Setup bootcmd
+"setenv bootcmd 'booti #{params['_env']['kernel_loadaddr']} - #{params['_env']['dtb_loadaddr']}'", '=>'
+

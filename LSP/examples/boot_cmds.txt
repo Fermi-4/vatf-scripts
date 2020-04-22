@@ -1,0 +1,87 @@
+VATF allows the user to override the sequence of u-boot
+commands executed to boot the board via the definition of
+a boot_cmds software asset that points to a file with a
+sequence of u-boot like commands. This file explains the
+syntax supported in this file.
+
+Syntax
+======
+In boot_cmds files line breaks are used as statement
+delimiters. Each line in the file can be either:
+
+  1. Comment: Any line starting with a combination of white
+     space characters and #. Inline comments are not
+     supported.
+
+  2. Empty Line: Any line containing only white space
+     characters. Empty lines are ignored.
+
+  3. Statement: Any line that is not a comment or empty
+     line. A processable boot_cmds statement is composed
+     of a comma separated list of parameters with syntax:
+
+        u-boot_like_cmd[, expected_string][, timeout_in_secs][, check_cmd_echo][,raise_on_timeout]
+
+     where:
+
+        3.1 u-boot_like_cmd: Is a ruby string with the u-boot
+        cmd to execute. Ruby's string interpolation is
+        allowed when double quoted strings are used and the
+        following variables are available for interpolation:
+
+           3.1.1 params['_env']: References a hashtable containing
+           all the u-boot environment variables, for example
+           params['_env']['overlayaddr'] will have the 
+           overlayaddr value stores in the u-boot env settings
+
+           3.1.2 params['nfs_path']: Path of the nfs dir in the
+           nfs server.
+
+           3.1.3 params['serverip']: Ip address of the tftp/nfs
+           server.
+
+           3.1.4 params['<xxx>_image_name']: Refers to the tftp path
+           of the <xxx> software asset, where <xxx> is the name of
+           any software asset in the list of software images/archives
+           defined in the build description. For example,
+           params['dtbo_0_image_name'] will point to the tftp path
+           that can be used to load via tftp the dtbo_0 asset defined
+           build description.
+ 
+      3.2 expected_string: (optional) ruby string that should be
+      printed in console by the u-boot cmd defined in u-boot_like_cmd.
+      VATF will wait for this string to be printed before resuming
+      execution. Defaults to the u-boot prompt configured for that
+      board in the bemch file. It is recommended to always specify
+      this value.
+
+      3.3 timeout_in_secs: (Optional) timeout in secs to wait for
+      expected_string. Default 10 secs.
+
+      3.4 check_cmd_echo: (Optional) boolean (true or false).
+
+        3.4.1 true: Wait for the u-boot cmd to be printed in console
+        before starting the expected_string check. Default value.
+
+        3.4.2 false: Start the expected_string check immendiately
+
+      3.5 raise_on_timeout: (Optional) boolean (true or false).
+
+        3.5.1 true: Raise an error and stop test execution if the
+        expected_string is not seen. Default value.
+
+        3.5.2 false: Record the failure and continue execution.
+
+    All of theser parameters are are positional parameters, i.e to
+    specify raise_on_timeout you will also have to specified all
+    the previous parameters check_cmd_echo, timeout_in_secs, etc.
+
+Example boot_cmds files
+=======================
+The following files include working examples of boot_cmds files:
+
+  1. boot_cmds_tftp.txt: Custom u-boot sequence where files
+     are loaded via tftp.
+
+  2. boot_cmds_nfs.txt: Custom u-boot sequence where files
+     are loaded via nfs.
