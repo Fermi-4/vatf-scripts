@@ -1,6 +1,6 @@
 [
 	{
-		"label": "linuxserver",
+		"label": "linux_server",
 		"description": "Driver to interact with the host machine",
 		"detail": "Implements several methods to send commands and control the host.",
 		"files": ["LSP/default_test_module.rb"],
