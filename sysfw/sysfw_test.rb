@@ -15,6 +15,9 @@ def run
   @power_handler.reset(@equipment['dut1'].power_port) {
     sleep 3
   }
+  while @power_handler.inprogress?
+    sleep 1
+  end
   @equipment['dut1'].connect({'type' => 'serial'})
   @equipment['dut1'].target.disconnect_bootloader()
   translated_boot_params = setup_host_side()
@@ -22,10 +25,13 @@ def run
   s_boot = SysBootModule::get_sysboot_setting(@equipment['dut1'], 'uart')
   SysBootModule::set_sysboot(@equipment['dut1'], s_boot)
   @power_handler.por(@equipment['dut1'].power_port)
+  while @power_handler.inprogress?
+    sleep 1
+  end
   expected_resets.times do 
-	load_and_connect(translated_boot_params)
-	@equipment['dut1'].target.wait_on_for(@equipment['dut1'].target.bootloader, /CCCC/, console_timeout)
-	@equipment['dut1'].target.disconnect_bootloader()
+    load_and_connect(translated_boot_params)
+    @equipment['dut1'].target.wait_on_for(@equipment['dut1'].target.bootloader, /CCCC/, console_timeout)
+    @equipment['dut1'].target.disconnect_bootloader()
   end
   load_and_connect(translated_boot_params)
   @equipment['dut1'].target.wait_on_for(@equipment['dut1'].target.bootloader, /Net\s*Result:.*?test/, console_timeout)
@@ -61,7 +67,10 @@ def load_and_connect(params)
     @equipment['server1'].log_info("TIMEOUT loading image #{params['initial_bootloader']}")
     raise "TIMEOUT loading image #{params['initial_bootloader']}\n#{e}"
   ensure
-    @equipment['server1'].log_info(status)
+    Thread.new {
+      Thread.pass
+      @equipment['server1'].log_info(status)
+    }
     w.close()
     r.close()
 end
